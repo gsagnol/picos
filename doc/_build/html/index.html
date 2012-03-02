@@ -191,17 +191,6 @@ For example,</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pyMathProg.Problem.defaultOptions">
-<tt class="descname">defaultOptions</tt><big>(</big><em>opt</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.defaultOptions" title="Permalink to this definition">¶</a></dt>
-<dd><p>set the default options, if not already defined in opt:
-tol=1e-7
-maxit=50
-verbose=1
-solver=None
-step_sqp=1</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="pyMathProg.Problem.isContinuous">
 <tt class="descname">isContinuous</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.isContinuous" title="Permalink to this definition">¶</a></dt>
 <dd><p>return True if there is only continuous variables</p>
@@ -236,7 +225,7 @@ The function returns a constant <a class="reference internal" href="#pyMathProg.
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Declaring parameters is optional, since the expression can
-as well be given by using normal variables. (see Example below).
+as well be given by using normal variables (see Example below).
 However, if you use this function to declare your parameters,
 the names of the parameters will be display when you <strong>print</strong>
 an <a class="reference internal" href="#pyMathProg.Expression" title="pyMathProg.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a> or a <a class="reference internal" href="#pyMathProg.Constraint" title="pyMathProg.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
@@ -254,9 +243,9 @@ the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" t
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>)
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>) with the value given in parameter
 (resp. a <tt class="docutils literal"><span class="pre">list</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> of the same length as <strong>value</strong>,
-a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> indexed by the keys of <strong>value</strong>)</p>
+a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> indexed by the keys of <strong>value</strong>).</p>
 </td>
 </tr>
 </tbody>
@@ -290,6 +279,39 @@ Otherwise, it raises an <tt class="docutils literal"><span class="pre">Attribute
 </dd></dl>
 
 <dl class="method">
+<dt id="pyMathProg.Problem.set_all_options">
+<tt class="descname">set_all_options</tt><big>(</big><em>opt</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_all_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>set all the options indicated in the
+dictionary <strong>opt</strong> to the given values,
+and the other options to their default.
+The pair of &#8216;option keys&#8217;/&#8217;default values&#8217; are the as follows:</p>
+<ul class="simple">
+<li>&#8216;tol&#8217;=1e-7 [optimality tolerance for the solver]</li>
+<li>&#8216;feastol&#8217;=1e-7 [feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;abstol&#8217;=1e-7 [absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;reltol&#8217;=1e-6 [relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;maxit&#8217;=50 [maximum number of iterations]</li>
+<li>&#8216;verbose&#8217;=1 [verbosity level]</li>
+<li>&#8216;solver&#8217;=&#8217;CVXOPT&#8217; [currently the other available solvers are &#8216;cplex&#8217;,&#8217;mosek&#8217;]</li>
+<li>&#8216;step_sqp&#8217;=1 [&#8216;first step length for the sequential quadratic programming procedure&#8217;]</li>
+<li>&#8216;harmonic_steps&#8217;=Trye [step at the ith step of the sqp procedure is step_sqp/i]</li>
+<li>&#8216;onlyChangeObjective&#8217;=False [useful when we want to recompute the solution of a
+problem but with a different objective function. If set to <em>True</em> and a new
+objective function has been passed to the solver, the constraints
+of the problem will not be parsed next time <a class="reference internal" href="#pyMathProg.Problem.solve" title="pyMathProg.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> is called (this can lead
+to a huge gain of time).</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not all options are handled by all solvers yet.</p>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">raise a warning when a solver ignores an option</p>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="pyMathProg.Problem.set_objective">
 <tt class="descname">set_objective</tt><big>(</big><em>typ</em>, <em>expr</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_objective" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the objective function of the problem.</p>
@@ -303,6 +325,24 @@ Otherwise, it raises an <tt class="docutils literal"><span class="pre">Attribute
 or &#8216;find&#8217; (feasibility problem).</li>
 <li><strong>expr</strong> &#8211; an <a class="reference internal" href="#pyMathProg.Expression" title="pyMathProg.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>. The expression to be minimized
 or maximized. This parameter will be ignored if typ==&#8217;find&#8217;.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.set_option">
+<tt class="descname">set_option</tt><big>(</big><em>key</em>, <em>val</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the option <strong>key</strong> to the value <strong>val</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str.</em>) &#8211; The key of an option (see the list of keys in <a class="reference internal" href="#pyMathProg.Problem.set_all_options" title="pyMathProg.Problem.set_all_options"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options()</span></tt></a>).</li>
+<li><strong>val</strong> &#8211; New value for the option <strong>key</strong>.</li>
 </ul>
 </td>
 </tr>
@@ -368,7 +408,7 @@ In particular, the solver can be specified here (if not specified before)</p>
 <dt id="pyMathProg.AffinExpr">
 <em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">AffinExpr</tt><big>(</big><em>factors={}</em>, <em>constant=None</em>, <em>size=(1</em>, <em>1)</em>, <em>string='0'</em><big>)</big><a class="headerlink" href="#pyMathProg.AffinExpr" title="Permalink to this definition">¶</a></dt>
 <dd><p>a class for defining vectorial (or matrix) affine expressions
-<a href="#id1"><span class="problematic" id="id2">*</span></a>The dictionary &#8216;factors&#8217; stores, for each variable, a
+<a href="#id3"><span class="problematic" id="id4">*</span></a>The dictionary &#8216;factors&#8217; stores, for each variable, a
 tuple (fact,string), where &#8216;string&#8217; is a representation of the
 linear combination, and &#8216;fact&#8217; is the factor by which the variable
 it is multiplied, (if the variable is a matrix, then the factor
@@ -387,7 +427,7 @@ corresponding to each column of X</div></blockquote>
 </dl>
 </div></blockquote>
 <dl class="docutils">
-<dt><a href="#id3"><span class="problematic" id="id4">*</span></a>Similarly, the &#8216;constant&#8217; attribute stores a tuple</dt>
+<dt><a href="#id5"><span class="problematic" id="id6">*</span></a>Similarly, the &#8216;constant&#8217; attribute stores a tuple</dt>
 <dd>( &lt;vectorized constant&gt;,string )
 If the constant is 0, then &#8216;constant&#8217; can be (None,&#8216;0&#8217;)</dd>
 </dl>

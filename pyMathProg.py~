@@ -499,7 +499,7 @@ class Problem:
 		self.listOfVars = {}
 		self.consNumbering=[]
 		
-		self.options=self.defaultOptions(options)
+		self.set_all_options(options)
 		self._set_as_current_problem()
 
 		self.longestkey=0 #for a nice display of constraints
@@ -770,73 +770,67 @@ class Problem:
 		return G,h
 
 				
-	#obsolete
+	#obsolete name
 	def defaultOptions(self,opt):
-                self.set_options(opt)
+                self.set_all_options(opt)
                 
 	def set_all_options(self,opt):
-		"""set all the options to their default values, or to the value
-		in the dictionary **opt** if provided.
-		The pair of option keys/default values are the as follows:
+		"""set all the options indicated in the
+		dictionary **opt** to the given values,
+		and the other options to their default.
+		The pair of 'option keys'/'default values' are the as follows:
 		
-		default options, if not already defined in self.opt:
-		tol=1e-7
-		maxit=50
-		verbose=1
-		solver=None
-		step_sqp=1
+		* 'tol'=1e-7 [optimality tolerance for the solver]
+		* 'feastol'=1e-7 [feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
+		* 'abstol'=1e-7 [absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
+		* 'reltol'=1e-6 [relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
+		* 'maxit'=50 [maximum number of iterations]
+		* 'verbose'=1 [verbosity level]
+		* 'solver'='CVXOPT' [currently the other available solvers are 'cplex','mosek']
+		* 'step_sqp'=1 ['first step length for the sequential quadratic programming procedure']
+		* 'harmonic_steps'=Trye [step at the ith step of the sqp procedure is step_sqp/i]
+		* 'onlyChangeObjective'=False [useful when we want to recompute the solution of a
+		  problem but with a different objective function. If set to *True* and a new
+		  objective function has been passed to the solver, the constraints
+		  of the problem will not be parsed next time :func:`solve` is called (this can lead
+		  to a huge gain of time).
+                                 
+                .. Warning:: Not all options are handled by all solvers yet.
+                
+                .. Todo:: raise a warning when a solver ignores an option
 		"""
 		self._set_as_current_problem()
-		default_options={'tol'     :1e-7,
-                                 'feastol' :1e-7,
-                                 'abstol'  :1e-7,
-                                 'reltol'  :1e-7,
-                                 'maxit'   :50,
-                                 'verbose' :1,
-                                 'solver'  :'CVXOPT',
-                                 'step_sqp' :1,
+		default_options={'tol'            :1e-7,
+                                 'feastol'        :1e-7,
+                                 'abstol'         :1e-7,
+                                 'reltol'         :1e-6,
+                                 'maxit'          :50,
+                                 'verbose'        :1,
+                                 'solver'         :'CVXOPT',
+                                 'step_sqp'       :1,
+                                 'harmonic_steps' :1,
+                                 'onlyChangeObjective':False,
+                                 }
                                  
                                  
-                               
-                               
-		if not 'tol' in opt.keys():
-			opt['tol']=1e-7
-		
-		if not 'feastol' in opt.keys():
-			opt['feastol']=opt['tol']
-
-		if not 'abstol' in opt.keys():
-			opt['abstol']=opt['tol']
-
-		if not 'reltol' in opt.keys():
-			opt['reltol']=10*opt['tol']
-
-		if not 'maxit' in opt.keys():
-			opt['maxit']=50
-
-		if not 'verbose' in opt.keys():
-			opt['verbose']=1
-
-		if not 'solver' in opt.keys():
-			opt['solver']='CVXOPT'
-
-		if not 'step_sqp' in opt.keys():
-			opt['step_sqp']=1
-
-		if not 'harmonic_steps' in opt.keys():
-			opt['harmonic_steps']=False
-
-		return opt
+                self.options=default_options
+                self.update_options(opt)
 
 	def set_option(self,key,val):
 		self._set_as_current_problem()
+		if k not in self.options:
+                        raise AttributeError('unkown option key :'+str(k))
 		self.options[key]=val
 		if key=='tol':
 			self.options['feastol']=val
 			self.options['abstol']=val
-			self.options['reltol']=val
+			self.options['reltol']=val*10
 
+	#obsolete name
 	def set_options(self,dictKeyToVal):
+                self.update_options(dictKeyToVal)
+	
+	def update_options(self,dictKeyToVal):
 		self._set_as_current_problem()
 		for k in dictKeyToVal.keys():
 			self.set_option(k,dictKeyToVal[k])
@@ -1571,10 +1565,10 @@ class Problem:
 			print('mosek library not found')
 
                 #only change the objective coefficients
-		if 'onlyChangeObjective' in self.options:
+		if self.options['onlyChangeObjective']:
                         if self.msk_task is None:
                                 raise Exception('option is only available when msk_task has been defined before')
-                        newobj=self.options['onlyChangeObjective']
+                        newobj=self.objective[1]
                         (cobj,constantInObjective)=self._makeGandh(newobj)
                         self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
                         
@@ -1811,10 +1805,10 @@ class Problem:
 		
 		#WARNING: 'mosek' is obsolete, bug in cvxopt. USE direct MSK i'nstead'
                 if (self.options['solver']=='CVXOPT' or self.options['solver']=='mosek' or self.options['solver'] is None):
-			if 'onlyChangeObjective' in self.options:
+			if self.options['onlyChangeObjective']:
 				if self.cvxoptVars['c'] is None:
 					raise Exception('option is only available when cvxoptVars has been defined before')
-				newobj=self.options['onlyChangeObjective']
+				newobj=self.objective[1]
 				(cobj,constantInObjective)=self._makeGandh(newobj)
 				self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
 			else:
