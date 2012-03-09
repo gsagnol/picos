@@ -34,6 +34,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="#">pyMathProg 0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -51,6 +54,636 @@
 </ul>
 </div>
 <p>This is something about pyMathProg.</p>
+<span class="target" id="module-pyMathProg"></span><dl class="function">
+<dt id="pyMathProg._retrieve_matrix">
+<tt class="descclassname">pyMathProg.</tt><tt class="descname">_retrieve_matrix</tt><big>(</big><em>mat</em>, <em>exSize=None</em><big>)</big><a class="headerlink" href="#pyMathProg._retrieve_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>parses the variable <em>mat</em> and convert it to a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>.
+If the variable <strong>exSize</strong> is provided, the function tries
+to return a matrix that matches this expected size, or raise an
+error.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If there is a conflit between the size of <strong>mat</strong> and
+the expected size <strong>exsize</strong>, the function might still
+return something without raising an error !</p>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Better Exception handling</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mat</strong> &#8211; <p>The value to be converted into a cvx.spmatrix.
+The function will try to parse this variable and
+format it to a vector/matrix. <em>mat</em> can be of one
+of the following types:</p>
+<blockquote>
+<div><ul>
+<li><tt class="docutils literal"><span class="pre">list</span></tt> [creates a vecor of dimension len(list)]</li>
+<li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.matrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt></a></li>
+<li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a></li>
+<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7.dev-ba40918)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">real</span></tt> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
+whith all entries equal to <strong>mat</strong>.</li>
+<li>following strings:<blockquote>
+<div><ul class="simple">
+<li>&#8216;<tt class="docutils literal"><span class="pre">|a|</span></tt>&#8216; for a matrix with all terms equal to a</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">|a|(n,m)</span></tt>&#8216; for a matrix forced to be of size n x m, with all terms equal to a</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">e_i(n,m)</span></tt>&#8216; matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">e_i,j(n,m)</span></tt>&#8216; matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">I</span></tt>&#8216; for the identity matrix</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">a%s</span></tt>&#8216;, where <tt class="docutils literal"><span class="pre">%s</span></tt> is one of the above string: the matrix that 
+should be returned when <strong>mat</strong> == <tt class="docutils literal"><span class="pre">%s</span></tt>, multiplied by the scalar a.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of the form (<strong>M</strong>, <strong>s</strong>), where <strong>M</strong> is the conversion of <strong>mat</strong> into a
+<a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>, and <strong>s</strong>
+is a string representation of <strong>mat</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyMathProg</span> <span class="kn">as</span> <span class="nn">MP</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">(&lt;3x1 sparse matrix, tc=&#39;d&#39;, nnz=3&gt;, &#39;[ 3 x 1 MAT ]&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_5(7,1)&#39;</span><span class="p">)</span>
+<span class="go">(&lt;7x1 sparse matrix, tc=&#39;d&#39;, nnz=1&gt;, &#39;e_5&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_11(7,2)&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">[   0        0    ]</span>
+<span class="go">[   0        0    ]</span>
+<span class="go">[   0        0    ]</span>
+<span class="go">[   0        0    ]</span>
+<span class="go">[   0        1.000]</span>
+<span class="go">[   0        0    ]</span>
+<span class="go">[   0        0    ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;5.3I&#39;</span><span class="p">,(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">(&lt;2x2 sparse matrix, tc=&#39;d&#39;, nnz=2&gt;, &#39;5.3I&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.Problem">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Problem</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents an optimization problem</p>
+<dl class="method">
+<dt id="pyMathProg.Problem.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The constructor creates an empty problem.
+A dictionary of <em>options</em> (<strong>option_name-&gt;value</strong>) can be given</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.add_constraint">
+<tt class="descname">add_constraint</tt><big>(</big><em>cons</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.add_constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a constraint in the problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cons</strong> (<a class="reference internal" href="#pyMathProg.Constraint" title="pyMathProg.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>) &#8211; The constraint to be added.</li>
+<li><strong>key</strong> (<em>str.</em>) &#8211; Optional parameter to describe the constraint with a key string.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.add_list_of_constraints">
+<tt class="descname">add_list_of_constraints</tt><big>(</big><em>lst</em>, <em>it=None</em>, <em>indices=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.add_list_of_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>adds a list of constraints in the problem.
+This fonction can be used with lists created on the fly by python (see the example below).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lst</strong> &#8211; <tt class="docutils literal"><span class="pre">list</span></tt> of <a class="reference internal" href="#pyMathProg.Constraint" title="pyMathProg.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</li>
+<li><strong>it</strong> (<em>None or str or tuple.</em>) &#8211; Description of the letters which should
+be used to replace the dummy indices.
+The function tries to find a template
+for the string representations of the
+constraints in the list. If several indices change in the
+list, their letters should be given as a
+tuple of string, in their order of appearance in the
+resulting string. For example, if three indices
+change in the constraints, and you want them to be named
+&#8216;i&#8217;,&#8217;j&#8217; and &#8216;k&#8217;, set <strong>it</strong> = (&#8216;i&#8217;,&#8217;j&#8217;,&#8217;k&#8217;).
+You can also group two indices which always appear together,
+e.g. if &#8216;i&#8217; always appear next to &#8216;j&#8217; you
+could set <strong>it</strong> = ((&#8216;ij&#8217;,2),&#8217;k&#8217;). Here, the number 2
+indicates that &#8216;ij&#8217; replaces 2 indices.
+If <strong>it</strong> = None, or if the function is not able to find a
+template, the string of the first constraint will be used to
+represent this list of constraints.</li>
+<li><strong>indices</strong> (<em>str.</em>) &#8211; a string to denote the set where the indices belong to.</li>
+<li><strong>key</strong> (<em>str.</em>) &#8211; Optional parameter to describe the list of constraints with a key string.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyMathProg</span> <span class="kn">as</span> <span class="nn">MP</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">MP</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> 
+<span class="go">[# (2 x 1)-affine expression: x[0] #,</span>
+<span class="go"> # (2 x 1)-affine expression: x[1] #,</span>
+<span class="go"> # (2 x 1)-affine expression: x[2] #,</span>
+<span class="go"> # (2 x 1)-affine expression: x[3] #,</span>
+<span class="go"> # (2 x 1)-affine expression: x[4] #]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IJ</span><span class="o">=</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="o">=</span><span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">ij</span> <span class="ow">in</span> <span class="n">IJ</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">w</span><span class="p">[</span><span class="n">ij</span><span class="p">]</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ij</span><span class="p">),</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">... </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;u&#39;</span><span class="p">,</span><span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+<span class="gp">... </span><span class="p">[</span><span class="n">u</span><span class="o">.</span><span class="n">T</span><span class="p">()</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&lt;</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)],</span>
+<span class="gp">... </span><span class="s">&#39;i&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="s">&#39;[5]&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+<span class="gp">... </span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span><span class="o">&lt;</span><span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="n">IJ</span><span class="p">],</span>
+<span class="gp">... </span><span class="p">((</span><span class="s">&#39;ij&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">),),</span>
+<span class="gp">... </span><span class="s">&#39;IJ&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># (The function will not succeed to find a string template in the next example)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+<span class="gp">... </span><span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">y</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span>
+<span class="gp">... </span><span class="s">&#39;t&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="s">&#39;[4]&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>
+<span class="go">---------------------</span>
+<span class="go">optimization problem:</span>
+<span class="go">24 variables, 9 affine constraints, 9 vars in a cone</span>
+
+<span class="go">x         : list of 5 variables, (2, 1), continuous</span>
+<span class="go">w         : dict of 3 variables, (3, 1), continuous</span>
+<span class="go">y         : (5, 1), continuous</span>
+
+<span class="go">        find vars</span>
+<span class="go">such that</span>
+<span class="go">  u.T*x[i] &lt; y[i] for all i in [5]</span>
+<span class="go">  ||w[ij]|| &lt; y[ij__1] for all ij in IJ</span>
+<span class="go">  [4 constraints (first: y[0] &gt; y[1])]</span>
+<span class="go">---------------------</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.add_variable">
+<tt class="descname">add_variable</tt><big>(</big><em>name</em>, <em>size=1</em>, <em>vtype='continuous'</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.add_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>adds a variable in the problem,
+and returns an <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> representing this variable.</p>
+<p>For example,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">MP</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go"># (3 x 1)-affine expression: x #</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str.</em>) &#8211; The name of the variable.</li>
+<li><strong>size</strong> (<em>int or tuple.</em>) &#8211; <p>The size of the variable.</p>
+<p>Can be either</p>
+<blockquote>
+<div><ul>
+<li>an <tt class="docutils literal"><span class="pre">int</span></tt> <em>n</em> , in which case the variable is a <strong>vector of dimension n</strong></li>
+<li>or a <tt class="docutils literal"><span class="pre">tuple</span></tt> <em>(n,m)</em>, and the variable is a <strong>n x m-matrix</strong>.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><strong>vtype</strong> (<em>str.</em>) &#8211; variable type. Can be : &#8216;continuous&#8217;, &#8216;binary&#8217;, &#8216;integer&#8217;, &#8216;semicont&#8217;, or &#8216;semiint&#8217;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">an instance of the class <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> &#8211; Affine expression representing the created variable.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.eliminate_useless_variables">
+<tt class="descname">eliminate_useless_variables</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.eliminate_useless_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes from the problem the variables that do not
+appear in any constraint or in the objective function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.eval_all">
+<tt class="descname">eval_all</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.eval_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the big vector with all variable values,
+in the order induced by sorted(self.variables.keys()).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.get_constraint">
+<tt class="descname">get_constraint</tt><big>(</big><em>ind</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.get_constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a constraint of the problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>int or tuple.</em>) &#8211; <p>There is two ways to index a constraint.</p>
+<ul class="simple">
+<li>if ind is an <tt class="docutils literal"><span class="pre">int</span></tt> <em>n</em>, then the nth constraint (starting from 0)
+will be returned, where all the constraints are counted
+in the order where they were passed to the problem.</li>
+<li>if ind is a <tt class="docutils literal"><span class="pre">tuple</span></tt> <em>(k,i)</em>, then the ith constraint
+from the kth group of constraints is returned
+(starting from 0). By            
+<em>group of constraints</em>, it is meant a single constraint
+or a list of constraints added together with the
+function <a class="reference internal" href="#pyMathProg.Problem.add_list_of_constraints" title="pyMathProg.Problem.add_list_of_constraints"><tt class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyMathProg</span> <span class="kn">as</span> <span class="nn">MP</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">MP</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+<span class="gp">... </span><span class="p">[(</span><span class="mi">1</span><span class="o">|</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)],</span>
+<span class="gp">... </span><span class="s">&#39;i&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="s">&#39;[5]&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">y</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>
+<span class="go">---------------------</span>
+<span class="go">optimization problem:</span>
+<span class="go">15 variables, 10 affine constraints</span>
+
+<span class="go">x         : list of 5 variables, (2, 1), continuous</span>
+<span class="go">y         : (5, 1), continuous</span>
+
+<span class="go">        find vars</span>
+<span class="go">such that</span>
+<span class="go">  〈 |1| | x[i] 〉 &lt; y[i] for all i in [5]</span>
+<span class="go">  y &gt; 0</span>
+<span class="go">---------------------</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go"># (1x1)-affine constraint: 〈 |1| | x[1] 〉 &lt; y[1] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="go"># (1x1)-affine constraint: 〈 |1| | x[3] 〉 &lt; y[3] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">1</span><span class="p">,))</span>
+<span class="go"># (5x1)-affine constraint: y &gt; 0 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go"># (5x1)-affine constraint: y &gt; 0 #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.get_valued_variable">
+<tt class="descname">get_valued_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.get_valued_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODOC</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.get_variable">
+<tt class="descname">get_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.get_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the variable (as an <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>) with the given <strong>name</strong>.
+If <strong>name</strong> is a list (resp. dict) of variables,
+named with the template &#8216;name[index]&#8217; (resp. &#8216;name[key]&#8217;),
+then the function returns the list (resp. dict)
+of these variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.is_continuous">
+<tt class="descname">is_continuous</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.is_continuous" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns True if there is only continuous variables</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.makeCplex_Instance">
+<tt class="descname">makeCplex_Instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.makeCplex_Instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines the variables cplex_Instance and cplexvar</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.make_cvxopt_instance">
+<tt class="descname">make_cvxopt_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_cvxopt_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines the variables in self.cvxoptVars, used by the cvxopt solver</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.make_mosek_instance">
+<tt class="descname">make_mosek_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_mosek_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines the variables msk_env and msk_task used by the solver mosek.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.new_param">
+<tt class="descname">new_param</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.new_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Declare a parameter for the problem, that will be stored
+as a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>.
+It is possible to give a <tt class="docutils literal"><span class="pre">list</span></tt> or a <tt class="docutils literal"><span class="pre">dict</span></tt> of parameters.
+The function returns a constant <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> 
+(or a <tt class="docutils literal"><span class="pre">list</span></tt> or a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>) representing this parameter.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Declaring parameters is optional, since the expression can
+as well be given by using normal variables. (see Example below).
+However, if you use this function to declare your parameters,
+the names of the parameters will be display when you <strong>print</strong>
+an <a class="reference internal" href="#pyMathProg.Expression" title="pyMathProg.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a> or a <a class="reference internal" href="#pyMathProg.Constraint" title="pyMathProg.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str.</em>) &#8211; The name given to this parameter.</li>
+<li><strong>value</strong> &#8211; The value (resp <tt class="docutils literal"><span class="pre">list</span></tt> of values, <tt class="docutils literal"><span class="pre">dict</span></tt> of values) of the parameter.
+The type of <strong>value</strong> (resp. the elements of the <tt class="docutils literal"><span class="pre">list</span></tt> <strong>value</strong>,
+the values of the <tt class="docutils literal"><span class="pre">dict</span></tt> <strong>value</strong>) should be understandable by
+the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" title="pyMathProg._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>)
+(resp. a <tt class="docutils literal"><span class="pre">list</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> of the same length as <strong>value</strong>,
+a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a> indexed by the keys of <strong>value</strong>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">MP</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;foo&#39;</span><span class="p">:</span><span class="mf">17.4</span><span class="p">,</span><span class="s">&#39;matrix&#39;</span><span class="p">:</span><span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]]),</span><span class="s">&#39;ones&#39;</span><span class="p">:</span><span class="s">&#39;|1|(4,1)&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="p">[</span><span class="s">&#39;matrix&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">B</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+<span class="go"># (2 x 1)-affine expression: [ 2 x 3 MAT ]*x + |17.4| #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">#(in the string above, |17.4| represents the 2-dim vector [17.4,17.4])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span><span class="n">B</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="p">[</span><span class="s">&#39;matrix&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">B</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+<span class="go"># (2 x 1)-affine expression: B[matrix]*x + |B[foo]| #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.obj_value">
+<tt class="descname">obj_value</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.obj_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the problem was already solved, returns the objective value.
+Otherwise, it raises an <tt class="docutils literal"><span class="pre">AttributeError</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.remove_variable">
+<tt class="descname">remove_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.remove_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>removes the variable <strong>name</strong> from the problem</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.set_all_options_to_default">
+<tt class="descname">set_all_options_to_default</tt><big>(</big><em>opt=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_all_options_to_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>set all the options indicated in the
+dictionary <strong>opt</strong> to the given values,
+and the other options to their default.
+The pair of &#8216;option keys&#8217;/&#8217;default values&#8217; are the as follows:</p>
+<ul class="simple">
+<li>&#8216;tol&#8217;=1e-7 [optimality tolerance for the solver]</li>
+<li>&#8216;feastol&#8217;=1e-7 [feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;abstol&#8217;=1e-7 [absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;reltol&#8217;=1e-6 [relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
+<li>&#8216;maxit&#8217;=50 [maximum number of iterations]</li>
+<li>&#8216;verbose&#8217;=1 [verbosity level]</li>
+<li>&#8216;solver&#8217;=&#8217;CVXOPT&#8217; [currently the other available solvers are &#8216;cplex&#8217;,&#8217;mosek&#8217;]</li>
+<li>&#8216;step_sqp&#8217;=1 [&#8216;first step length for the sequential quadratic programming procedure&#8217;]</li>
+<li>&#8216;harmonic_steps&#8217;=Trye [step at the ith step of the sqp procedure is step_sqp/i]</li>
+<li>&#8216;onlyChangeObjective&#8217;=False [useful when we want to recompute the solution of a
+problem but with a different objective function. If set to <em>True</em> and a new
+objective function has been passed to the solver, the constraints
+of the problem will not be parsed next time <a class="reference internal" href="#pyMathProg.Problem.solve" title="pyMathProg.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> is called (this can lead
+to a huge gain of time).</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not all options are handled by all solvers yet.</p>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">raise a warning when a solver ignores an option</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.set_objective">
+<tt class="descname">set_objective</tt><big>(</big><em>typ</em>, <em>expr</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the objective function of the problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>typ</strong> (<em>str.</em>) &#8211; can be either &#8216;max&#8217; (maximization problem),
+&#8216;min&#8217; (minimization problem),
+or &#8216;find&#8217; (feasibility problem).</li>
+<li><strong>expr</strong> &#8211; an <a class="reference internal" href="#pyMathProg.Expression" title="pyMathProg.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>. The expression to be minimized
+or maximized. This parameter will be ignored if typ==&#8217;find&#8217;.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.set_option">
+<tt class="descname">set_option</tt><big>(</big><em>key</em>, <em>val</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the option <strong>key</strong> to the value <strong>val</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str.</em>) &#8211; The key of an option (see the list of keys in <tt class="xref py py-func docutils literal"><span class="pre">set_all_options()</span></tt>).</li>
+<li><strong>val</strong> &#8211; New value for the option <strong>key</strong>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.set_var_value">
+<tt class="descname">set_var_value</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_var_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets a variable to the given value. This can be useful to check
+the value of a complicated <a class="reference internal" href="#pyMathProg.Expression" title="pyMathProg.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>, or to use
+a solver with a <em>hot start algorithm (not implemented yet)</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str.</em>) &#8211; name of the variable to which the value will be given</li>
+<li><strong>value</strong> &#8211; The value for the variable. The function will try to
+parse this variable as a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>
+of the desired size by using
+the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" title="pyMathProg._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">MP</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">set_var_value</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+<span class="go">#quadratic expression: ||x||**2 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="go">25.0</span>
+<span class="gp">&gt;&gt;&gt; </span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.solve">
+<tt class="descname">solve</tt><big>(</big><em>options={}</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the problem.</p>
+<p><strong>option</strong> is a dictionary of options that will be updated before
+the solver is called. In particular, the solver can be specified here.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.update_options">
+<tt class="descname">update_options</tt><big>(</big><em>dictKeyToVal</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.update_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the option <tt class="docutils literal"><span class="pre">dict</span></tt> for the pairs
+(key,value) in <strong>dictKeyToVal</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dictKeyToVal</strong> (<em>dict.</em>) &#8211; dictionary containing the
+new values of the options to
+be updated. The keys must be
+valid option keys (see the
+list of keys in
+<a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.zibopt">
+<tt class="descname">zibopt</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.zibopt" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.Variable">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Variable</tt><big>(</big><em>name</em>, <em>size</em>, <em>Id</em>, <em>startIndex</em>, <em>vtype='continuous'</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Variable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.Expression">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Expression</tt><big>(</big><em>string</em>, <em>variables</em><big>)</big><a class="headerlink" href="#pyMathProg.Expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>the parent class of AffinExpr, Norm, LogSumExp, QuadExp, GeneralFun</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.AffinExpr">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">AffinExpr</tt><big>(</big><em>factors=None</em>, <em>constant=None</em>, <em>size=(1</em>, <em>1)</em>, <em>string='0'</em>, <em>variables=None</em><big>)</big><a class="headerlink" href="#pyMathProg.AffinExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>a class for defining vectorial (or matrix) affine expressions
+<a href="#id3"><span class="problematic" id="id4">*</span></a>The dictionary &#8216;factors&#8217; stores, for each variable, a
+tuple (fact,string), where &#8216;string&#8217; is a representation of the
+linear combination, and &#8216;fact&#8217; is the factor by which the variable
+it is multiplied, (if the variable is a matrix, then the factor
+is with respect to the column-vectorization of the variable).
+The factor is stored as a cvx matrix or cvx spmatrix.
+For example (if x is a vector variable and X is a matrix variable):</p>
+<blockquote>
+<div><p>_the product A*x is stored as a pair &#8216;x&#8217;:A
+_the product A*X is stored as a pair &#8216;X&#8217;:blkdiag(A,...,A)</p>
+<blockquote>
+<div>where the bloc diagonal matrix has a block
+corresponding to each column of X</div></blockquote>
+<dl class="docutils">
+<dt>_the scalar product &lt;A,X&gt; is stored as &#8216;X&#8217;:A[:].T</dt>
+<dd>where A[:] is the colum-vectorization of A</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt><a href="#id5"><span class="problematic" id="id6">*</span></a>Similarly, the &#8216;constant&#8217; attribute stores a tuple</dt>
+<dd>( &lt;vectorized constant&gt;,string )
+If the constant is 0, then &#8216;constant&#8217; can be (None,&#8216;0&#8217;)</dd>
+</dl>
+<dl class="method">
+<dt id="pyMathProg.AffinExpr.T">
+<tt class="descname">T</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.AffinExpr.T" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transposition</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.Norm">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Norm</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#pyMathProg.Norm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.QuadExp">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">QuadExp</tt><big>(</big><em>quad</em>, <em>aff</em>, <em>string</em>, <em>LR=None</em>, <em>variables=None</em><big>)</big><a class="headerlink" href="#pyMathProg.QuadExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>quad are the quadratic factors,
+aff is the affine part of the expression,
+string is a string,
+and LR stores a factorization of the expression for norms (||x|| -&gt; LR=(x,None))</p>
+<blockquote>
+<div>and product of scalar expressions)</div></blockquote>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.LogSumExp">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">LogSumExp</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#pyMathProg.LogSumExp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.GeneralFun">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">GeneralFun</tt><big>(</big><em>fun</em>, <em>Exp</em>, <em>funstring</em><big>)</big><a class="headerlink" href="#pyMathProg.GeneralFun" title="Permalink to this definition">¶</a></dt>
+<dd><p>a class storing a general scalar function,
+applied to an affine expression</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyMathProg.Constraint">
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Constraint</tt><big>(</big><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>a class for describing a constraint (see the method addConstraint)</p>
+</dd></dl>
+
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -103,6 +736,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="#">pyMathProg 0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>

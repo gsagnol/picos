@@ -1,6 +1,4 @@
 # coding: utf-8
-from __future__ import unicode_literals
-from __future__ import print_function
 import cvxopt as cvo
 import cvxmod as cvx
 import numpy as np
@@ -10,10 +8,6 @@ from progress_bar import ProgressBar
 global MSK_INFINITY
 MSK_INFINITY=1e16
 
-try:
-  str = unicode
-except NameError:
-  pass # Forward compatibility with Py3k
 
 #----------------------------------------------------
 #        Grouping constraints, summing expressions
@@ -45,8 +39,7 @@ def sum(lst,it=None,indices=None):
                         sumstr+=' in '+indices+'}'
                 indstr=putIndices([l.affstring() for l in lst],it)
                 sumstr+=' '+indstr
-                #sigma=u'\u03A3'.encode('utf-8')
-                sigma='\u03A3'
+                sigma=u'\u03A3'.encode('utf-8')
                 affSum.string=sigma+sumstr
         return affSum
 
@@ -490,7 +483,7 @@ class Problem:
 
 		self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
 				'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
-				'F':None,'g':None}
+				'F':None,'g':None, 'quadcons': None}
 		
 		self.gurobi_Instance = None
 		self.grbvar = {}
@@ -504,8 +497,10 @@ class Problem:
 		self.listOfVars = {}
 		self.consNumbering=[]
 		
+		self.options = {}
 		if options is None: options={}
-		self.options=self.defaultOptions(options)
+		self.set_all_options_to_default()
+		self.update_options(options)
 
 		self.longestkey=0 #for a nice display of constraints
 		self.varIndices=[]
@@ -767,7 +762,7 @@ class Problem:
         def defaultOptions(self,opt):
                 self.set_all_options(opt)
                 
-        def set_all_options(self,opt):
+        def set_all_options_to_default(self,opt = None):
                 """set all the options indicated in the
                 dictionary **opt** to the given values,
                 and the other options to their default.
@@ -806,7 +801,6 @@ class Problem:
                                  
                                  
                 self.options=default_options
-                self.update_options(opt)
 
         def set_option(self,key,val):
                 """
@@ -817,7 +811,7 @@ class Problem:
                 :param val: New value for the option **key**.
                 """
                 if key not in self.options:
-                        raise AttributeError('unkown option key :'+str(k))
+                        raise AttributeError('unkown option key :'+str(key))
                 self.options[key]=val
                 if key=='tol':
                         self.options['feastol']=val
@@ -838,7 +832,7 @@ class Problem:
                                      be updated. The keys must be
                                      valid option keys (see the
                                      list of keys in
-                                     :func:`set_all_options`)
+                                     :func:`set_all_options_to_default`)
                 :type dictKeyToVal: dict.
                 """
                 for k in dictKeyToVal.keys():
@@ -918,7 +912,6 @@ class Problem:
                 
                 """
 
-<<<<<<< pyMathProg.py
 		if name in self.variables:
 			raise Exception('this variable already exists')
 		if isinstance(size,int):
@@ -1129,26 +1122,105 @@ class Problem:
                                 strlis='['+str(len(lst))+' constraints (first: '+lst[0].constring()+')]\n'
                 self.groupsOfConstraints[firstCons]=[lastCons,strlis,key]
                         
-
-        def get_variable(self,var):
-                """TODOC (ou virer ?)"""
+        def get_valued_variable(self,name):
+                """
+                TODOC
+                """
+                var=name
                 if var in self.listOfVars.keys():
-                        if self.listOfVars[var]=='dict':
+                        if self.listOfVars[var]['type']=='dict':
                                 rvar={}
                         else:
-                                rvar=[]
+                                rvar=[0]*self.listOfVars[var]['numvars']
+                        seenKeys=[]
                         for ind in [vname[len(var)+1:-1] for vname in self.variables.keys() if \
                                  (vname[:len(var)] ==var and vname[len(var)]=='[')]:
-                                rvar[eval(ind)]=AffinExpr({},constant=self.variables[var+'['+ind+']'].value,
-                                        size=self.variables[var+'['+ind+']'].size,string=var+'['+ind+']')
+                                if ind.isdigit():
+                                        key=int(ind)
+                                        if key not in seenKeys:
+                                                seenKeys.append(key)
+                                        else:
+                                                key=ind
+                                elif ',' in ind:
+                                        isplit=ind.split(',')
+                                        if isplit[0].startswith('('):
+                                                isplit[0]=isplit[0][1:]
+                                        if isplit[-1].endswith(')'):
+                                                isplit[-1]=isplit[-1][:-1]
+                                        if all([i.isdigit() for i in isplit]):
+                                                key=tuple([int(i) for i in isplit])
+                                                if key not in seenKeys:
+                                                        seenKeys.append(key)
+                                                else:
+                                                        key=ind
+                                        else:
+                                                key=ind
+                                else:
+                                        try:
+                                                key=float(ind)
+                                        except ValueError:
+                                                key=ind
+                                rvar[key]=self.variables[var+'['+ind+']'].value
+                                
                         return rvar
                 else:
-                        return AffinExpr({},constant=self.variables[var].value,size=self.variables[var].size,string=var)
+                        return self.variables[var].value
 
-        def get_varExp(self,var):
-                """TODOC (ou virer ?)"""
-                sz=self.variables[var].size
-                return AffinExpr({var:cvx.speye(sz[0]*sz[1])},constant=0,size=sz,string=var)
+
+        def get_variable(self,name):
+                """
+                Returns the variable (as an :class:`AffinExpr`) with the given **name**.
+                If **name** is a list (resp. dict) of variables,
+                named with the template 'name[index]' (resp. 'name[key]'),
+                then the function returns the list (resp. dict)
+                of these variables.
+                """
+                var=name
+                if var in self.listOfVars.keys():
+                        if self.listOfVars[var]['type']=='dict':
+                                rvar={}
+                        else:
+                                rvar=[0]*self.listOfVars[var]['numvars']
+                        seenKeys=[]
+                        for ind in [vname[len(var)+1:-1] for vname in self.variables.keys() if \
+                                 (vname[:len(var)] ==var and vname[len(var)]=='[')]:
+                                if ind.isdigit():
+                                        key=int(ind)
+                                        if key not in seenKeys:
+                                                seenKeys.append(key)
+                                        else:
+                                                key=ind
+                                elif ',' in ind:
+                                        isplit=ind.split(',')
+                                        if isplit[0].startswith('('):
+                                                isplit[0]=isplit[0][1:]
+                                        if isplit[-1].endswith(')'):
+                                                isplit[-1]=isplit[-1][:-1]
+                                        if all([i.isdigit() for i in isplit]):
+                                                key=tuple([int(i) for i in isplit])
+                                                if key not in seenKeys:
+                                                        seenKeys.append(key)
+                                                else:
+                                                        key=ind
+                                        else:
+                                                key=ind
+                                else:
+                                        try:
+                                                key=float(ind)
+                                        except ValueError:
+                                                key=ind
+                                sz=self.variables[var+'['+ind+']'].size
+                                rvar[key]=AffinExpr({var+'['+ind+']':cvx.speye(sz[0]*sz[1])},
+                                        constant=0,
+                                        size=self.variables[var+'['+ind+']'].size,string=var+'['+ind+']',
+                                        variables=self.variables)
+                        return rvar
+                else:
+                        sz=self.variables[var].size
+                        return AffinExpr({var:cvx.speye(sz[0]*sz[1])},constant=0,
+                                size=sz,string=var,
+                                variables=self.variables)
+
 
         def get_constraint(self,ind):
                 """
@@ -1219,10 +1291,13 @@ class Problem:
                 return self.constraints[lsind]
                 
         def eval_all(self):
-                #TODO: implement as list ?, OK for Matrix vars ?
+                """
+                Returns the big vector with all variable values,
+                in the order induced by sorted(self.variables.keys()).
+                """
                 xx=cvx.matrix([],(0,1))
-                for v in self.variables:
-                        xx=cvx.concatvert(xx,self.variables[v].value)
+                for v in sorted(self.variables.keys()):
+                        xx=cvx.concatvert(xx,self.variables[v].value[:])
                 return xx
 
         """
@@ -1309,7 +1384,7 @@ class Problem:
                 return self.is_continuous()
                 
         def is_continuous(self):
-                """ returns True if there is only continuous variables"""
+                """ Returns True if there are only continuous variables"""
                 for kvar in self.variables.keys():
                         if self.variables[kvar].vtype != 'continuous':
                                 return False
@@ -1321,7 +1396,10 @@ class Problem:
                 
         def makeCplex_Instance(self):
                 """
-                defines the variables cplex_Instance and cplexvar
+                Defines the variables cplex_Instance and cplexvar,
+                used by the cplex solver.
+                
+                TODO: feasibility problems
                 """
                 import cplex
                 c = cplex.Cplex()
@@ -1349,8 +1427,8 @@ class Problem:
                         c.objective.set_sense(c.objective.sense.maximize)
                 elif sense_opt == 'min':
                         c.objective.set_sense(c.objective.sense.minimize)
-                else:
-                        raise ValueError('Should we min or max ? Not comprehsible...')
+                #else:
+                #        raise ValueError('feasibility problems not implemented ?')
                 
                 self.options['solver'] = 'cplex'
                 
@@ -1377,7 +1455,11 @@ class Problem:
                 ub=[cplex.infinity]*self.numberOfVars
                 lb=[-cplex.infinity]*self.numberOfVars
                 
-                objective = self.objective[1].factors
+                if self.objective[1] is None:
+                        objective = {}
+                else:
+                        objective = self.objective[1].factors
+                
                 for kvar,variable in self.variables.iteritems():
                         sj=self.variables[kvar].startIndex
                         if objective.has_key(kvar):
@@ -1391,7 +1473,7 @@ class Problem:
                                 #<--display progress
                                 prog.increment_amount()
                                 if oldprog != str(prog):
-                                        print(prog, "\r",)
+                                        print prog, "\r",
                                         sys.stdout.flush()
                                         oldprog=str(prog)
                                 #-->
@@ -1471,7 +1553,7 @@ class Problem:
                         #<--display progress
                         prog.increment_amount()
                         if oldprog != str(prog):
-                                print(prog, "\r",)
+                                print prog, "\r",
                                 sys.stdout.flush()
                                 oldprog=str(prog)
                         #-->
@@ -1599,12 +1681,12 @@ class Problem:
                         #<--display progress
                         prog.increment_amount()
                         if oldprog != str(prog):
-                                print(prog, "\r",)
+                                print prog, "\r",
                                 sys.stdout.flush()
                                 oldprog=str(prog)
                         #-->
                 prog.update_amount(limitbar)
-                print(prog, "\r",)
+                print prog, "\r",
                 sys.stdout.flush()
                 print
 
@@ -1849,11 +1931,58 @@ class Problem:
                         print('mosek instance built')
 
 
-        def zibopt(self):
+        def make_zibopt(self):
                 """
-                defines
+                defines TODOC
                 """
-                pass
+                #TODO LIB_PATH in bash rc ?
+                from zibopt import scip
+                scip_solver = scip.solver()
+                
+                if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
+                        raise Exception('SDP, SOCP, or GP constraints are not implemented in mosek')
+                if bool(self.cvxoptVars['quadcons']):
+                        raise Exception('not implemented yet')
+                
+                self.makeCVXOPT_Instance()
+                #TODO integer vars
+                x=[]
+                for i in range(self.cvxoptVars['A'].size[1]):
+                    x.append(scip_solver.variable(scip.CONTINUOUS))
+                
+                #TODO equalities
+                
+                #inequalities
+                Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
+                ijvs=sorted(zip(Gli,Glj,Glv))
+                del Gli,Glj,Glv
+                itojv={}
+                lasti=-1
+                for (i,j,v) in ijvs:
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
+                        
+                for i,jv in itojv.iteritems():
+                        exp=0
+                        for term in jv:
+                                exp+= term[1]*x[term[0]]
+                        solver += exp <= self.cvxoptVars['hl'][i]
+                
+                              
+                obj=0
+                for i in range(self.cvxoptVars['A'].size[1]):
+                        obj += self.cvxoptVars['c'][i]*x[i]
+                        
+                
+                self.scip_solver=scip_solver
+                self.scip_obj=obj
+   
+                
+                
+
                 
         """
         -----------------------------------------------
@@ -2212,7 +2341,7 @@ class Problem:
                 else:
                         for i,d in enumerate(duals):
                                 self.constraints[i].set_dualVar(d)
-                if obj=='toEval':
+                if obj=='toEval' and not(self.objective[1] is None):
                         obj=self.objective[1].eval()
                 sol['obj']=obj
                 return sol
@@ -2318,7 +2447,7 @@ class Expression:
 	def __init__(self,string,variables):
                 self.string=string
                 if variables is None:
-                        'unexpected case'
+                        raise Exception('unexpected case')
                 self.variables=variables
 		
 #----------------------------------
@@ -3085,10 +3214,10 @@ class QuadExp(Expression):
                         if self.LR[1] is None:
                                 val+=(ex1.T*ex1)
                         else:
-                                if LR[0].size!=(1,1) or LR[1].size!=(1,1):
-                                        raise Exception('unexpected product of Expressions')
+                                if self.LR[0].size!=(1,1) or self.LR[1].size!=(1,1):
+                                        raise Exception('QuadExp of size (1,1) only are implemented')
                                 else:
-                                        ex2=self.LR[0].eval()
+                                        ex2=self.LR[1].eval()
                                         val+=(ex1*ex2)
                                 
                                 
@@ -3134,7 +3263,7 @@ class QuadExp(Expression):
 						selfcopy.LR=(fact*self.LR[0],self.LR[1])
 				return selfcopy
 			else:
-				raise Exception('not implemented')			
+				raise Exception('not implemented')
 		else: #constant term
 			fact,factString=_retrieve_matrix(fact,(1,1))
 			return self*AffinExpr({},constant=fact[:],size=fact.size,string=factString,variables=self.variables)
@@ -3237,8 +3366,8 @@ class QuadExp(Expression):
 			if exp.size<>(1,1):
 				raise Exception('RHS must be scalar')
 			if exp.isconstant():
-				cst=AffinExpr( factors={},constant=cvx.matrix(np.sqrt(exp.eval()),(1,1),variables=self.variables),
-					size=(1,1),string=exp.string)
+				cst=AffinExpr( factors={},constant=cvx.matrix(np.sqrt(exp.eval()),(1,1)),
+					size=(1,1),string=exp.string,variables=self.variables)
 				return (Norm(cst)**2)<self
 			else:
 				return (-self)<(-exp)
