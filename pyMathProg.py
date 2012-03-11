@@ -782,6 +782,7 @@ class Problem:
                   objective function has been passed to the solver, the constraints
                   of the problem will not be parsed next time :func:`solve` is called (this can lead
                   to a huge gain of time).
+                *  'noduals'=False [if True, do not retrieve the dual variables]
                                  
                 .. Warning:: Not all options are handled by all solvers yet.
                 
@@ -797,6 +798,7 @@ class Problem:
                                  'step_sqp'       :1,
                                  'harmonic_steps' :1,
                                  'onlyChangeObjective':False,
+                                 'noduals'        :False,
                                  }
                                  
                                  
@@ -1124,7 +1126,15 @@ class Problem:
                         
         def get_valued_variable(self,name):
                 """
-                TODOC
+                Returns the optimal value of the variable (as an :class:`AffinExpr`)
+                with the given **name**.
+                If **name** is a list (resp. dict) of variables,
+                named with the template 'name[index]' (resp. 'name[key]'),
+                then the function returns the list (resp. dict)
+                of these variables.
+                
+                .. Warning:: If the problem has not been solved,
+                             this function will raise an Exception.
                 """
                 var=name
                 if var in self.listOfVars.keys():
@@ -1160,11 +1170,17 @@ class Problem:
                                                 key=float(ind)
                                         except ValueError:
                                                 key=ind
-                                rvar[key]=self.variables[var+'['+ind+']'].value
+                                valkey=self.variables[var+'['+ind+']'].value
+                                if valkey is None:
+                                        raise Exception('the variable '+var+' is not valued')
+                                rvar[key]=valkey
                                 
                         return rvar
                 else:
-                        return self.variables[var].value
+                        valkey=self.variables[var].value
+                        if valkey is None:
+                                raise Exception('the variable '+var+' is not valued')
+                        return valkey
 
 
         def get_variable(self,name):
@@ -1783,19 +1799,32 @@ class Problem:
                         task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
 
                 #equality constraints:
+                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+                ijvs=sorted(zip(Ai,Aj,Av))
+                del Ai,Aj,Av
+                itojv={}
+                lasti=-1
+                for (i,j,v) in ijvs:
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
                 iaff=0
-                for i in range(self.cvxoptVars['A'].size[0]):
-                        J=list(self.cvxoptVars['A'][i,:].J)
-                        V=list(self.cvxoptVars['A'][i,:].V)
+                for i,jv in itojv.iteritems():
+                        J=[jvk[0] for jvk in jv]
+                        V=[jvk[1] for jvk in jv]
                         if len(J)==1:
                                 #fixed variable
                                 b=self.cvxoptVars['b'][i]/V[0]
                                 task.putbound(mosek.accmode.var,J[0],mosek.boundkey.fx,b,b)
                         else:
-                                #equality constraint
+                        
+                                #affine inequality
                                 b=self.cvxoptVars['b'][i]
                                 task.putaijlist([iaff]*len(J),J,V)
-                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,b,b)
+                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,
+                                                b,b)
                                 iaff+=1
 
                 #inequality constraints:
@@ -1933,11 +1962,12 @@ class Problem:
 
         def make_zibopt(self):
                 """
-                defines TODOC
+                Defines the variables scip_solver and scip_vars, used by the zibopt solver.
+                
+                .. TODO:: handle the quadratic problems
                 """
-                #TODO LIB_PATH in bash rc ?
                 from zibopt import scip
-                scip_solver = scip.solver()
+                scip_solver = scip.solver(quiet=False)
                 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
                         raise Exception('SDP, SOCP, or GP constraints are not implemented in mosek')
@@ -1946,12 +1976,49 @@ class Problem:
                 
                 self.makeCVXOPT_Instance()
                 #TODO integer vars
+                #max handled directly by scip
+                if self.objective[0]=='max':
+                        self.cvxoptVars['c']=-self.cvxoptVars['c']
+                
+                zib_types={ 'continuous':scip.CONTINUOUS,
+                            'integer'   :scip.INTEGER,
+                            'binary'    :scip.BINARY,
+                           }
+                types=[0]*self.cvxoptVars['A'].size[1]
+                for var in self.variables.keys():
+                                si=self.variables[var].startIndex
+                                ei=self.variables[var].endIndex
+                                vtype=self.variables[var].vtype
+                                try:
+                                        types[si:ei]=[zib_types[vtype]]*(ei-si)
+                                except:
+                                        raise Exception('this vtype is not handled by scip: '+str(vtype))
+                
                 x=[]
                 for i in range(self.cvxoptVars['A'].size[1]):
-                    x.append(scip_solver.variable(scip.CONTINUOUS))
+                    x.append(scip_solver.variable(types[i],
+                                lower=-MSK_INFINITY,
+                                coefficient=self.cvxoptVars['c'][i])
+                            )
                 
-                #TODO equalities
-                
+                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+                ijvs=sorted(zip(Ai,Aj,Av))
+                del Ai,Aj,Av
+                itojv={}
+                lasti=-1
+                for (i,j,v) in ijvs:
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
+                        
+                for i,jv in itojv.iteritems():
+                        exp=0
+                        for term in jv:
+                                exp+= term[1]*x[term[0]]
+                        scip_solver += exp == self.cvxoptVars['b'][i]
+                        
                 #inequalities
                 Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
                 ijvs=sorted(zip(Gli,Glj,Glv))
@@ -1969,17 +2036,12 @@ class Problem:
                         exp=0
                         for term in jv:
                                 exp+= term[1]*x[term[0]]
-                        solver += exp <= self.cvxoptVars['hl'][i]
-                
-                              
-                obj=0
-                for i in range(self.cvxoptVars['A'].size[1]):
-                        obj += self.cvxoptVars['c'][i]*x[i]
-                        
+                        scip_solver += exp <= self.cvxoptVars['hl'][i]
+                                        
                 
                 self.scip_solver=scip_solver
-                self.scip_obj=obj
-   
+                self.scip_vars=x
+                
                 
                 
 
@@ -1990,13 +2052,16 @@ class Problem:
         -----------------------------------------------
         """        
 
-        def solve(self,options={}):
+        def solve(self,options=None):
                 """
                 Solves the problem.
                 
                 **option** is a dictionary of options that will be updated before
                 the solver is called. In particular, the solver can be specified here.
+                
+                .. TODO:: probleme ik ou il pas defini absence con= ou con< ?
                 """
+                if options is None: options={}
                 self.set_options(options)
 
                 #self.eliminate_useless_variables()
@@ -2240,12 +2305,25 @@ class Problem:
                                 #index of inequality constraint in mosekcons (without fixed vars)
 			idcone=0 #number of seen cones
 			Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
+			
+			#indices for ineq constraints
 			ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
 			if len(ijvs)>0:
                                 (ik,jk,vk)=ijvs.pop()
                                 curik=-1
                                 delNext=False
 			del Gli,Glj,Glv
+			
+			#indices for eq constraints
+			Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+			ijls=sorted(zip(Ai,Aj,Av),reverse=True)
+			if len(ijls)>0:
+                                (il,jl,vl)=ijls.pop()
+                                curil=-1
+                                delNext=False
+			del Ai,Aj,Av
+			
+			#now we parse the constraints
 			for k in self.constraints.keys():
                                 #conic constraint
                                 if self.constraints[k].typeOfConstraint[2:]=='cone':
@@ -2259,9 +2337,19 @@ class Problem:
                                 elif self.constraints[k].typeOfConstraint=='lin=':
                                         szcons=int(np.product(self.constraints[k].Exp1.size))
                                         fxd=[]
-                                        for l in range(szcons):
-                                                if len(self.cvxoptVars['A'][ideq+l,:].J)==1:
-                                                        fxd.append(l)
+                                        while il<ideq+szcons:
+                                                if il!=curil:
+                                                        fxd.append(il)
+                                                        curil=il
+                                                        delNext=True
+                                                elif delNext:
+                                                        del fxd[-1]
+                                                        delNext=False
+                                                try:
+                                                        (il,jl,vl)=ijls.pop()
+                                                except IndexError:
+                                                        break
+                                                        
                                         v=np.zeros(szcons-len(fxd),float)
                                         task.getsolutionslice(soltype,mosek.solitem.y,
                                                       idconeq,idconeq+szcons-len(fxd),v)
@@ -2329,6 +2417,25 @@ class Problem:
                         if '_ptch_' in self.variables:
                                 self.remove_variable('_ptch_')
                                 del primals['_ptch_']
+                
+                elif (self.options['solver']=='zibopt'):
+                        self.make_zibopt()
+                        if self.objective[0]=='max':
+                                sol=self.scip_solver.maximize()
+                        else:
+                                sol=self.scip_solver.minimize()
+                        
+                        val=sol.values()
+                        primals={}
+                        for var in self.variables.keys():
+                                si=self.variables[var].startIndex
+                                ei=self.variables[var].endIndex
+                                varvect=self.scip_vars[si:ei]
+                                primals[var]=cvx.matrix([val[v] for v in varvect],
+                                 self.variables[var].size)
+                        options['noduals']=True
+                        obj=sol.objective
+                        sol=sol.__dict__
                 else:
                         pass                        
                         #TODO:Other solvers (GUROBI, ...)

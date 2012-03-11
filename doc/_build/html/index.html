@@ -361,7 +361,17 @@ function <a class="reference internal" href="#pyMathProg.Problem.add_list_of_con
 <dl class="method">
 <dt id="pyMathProg.Problem.get_valued_variable">
 <tt class="descname">get_valued_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.get_valued_variable" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODOC</p>
+<dd><p>Returns the optimal value of the variable (as an <a class="reference internal" href="#pyMathProg.AffinExpr" title="pyMathProg.AffinExpr"><tt class="xref py py-class docutils literal"><span class="pre">AffinExpr</span></tt></a>)
+with the given <strong>name</strong>.
+If <strong>name</strong> is a list (resp. dict) of variables,
+named with the template &#8216;name[index]&#8217; (resp. &#8216;name[key]&#8217;),
+then the function returns the list (resp. dict)
+of these variables.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If the problem has not been solved, the value 0 will be
+returned without generating an error</p>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -377,13 +387,15 @@ of these variables.</p>
 <dl class="method">
 <dt id="pyMathProg.Problem.is_continuous">
 <tt class="descname">is_continuous</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.is_continuous" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns True if there is only continuous variables</p>
+<dd><p>Returns True if there are only continuous variables</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyMathProg.Problem.makeCplex_Instance">
 <tt class="descname">makeCplex_Instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.makeCplex_Instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>defines the variables cplex_Instance and cplexvar</p>
+<dd><p>Defines the variables cplex_Instance and cplexvar,
+used by the cplex solver.</p>
+<p>TODO: feasibility problems</p>
 </dd></dl>
 
 <dl class="method">
@@ -396,6 +408,12 @@ of these variables.</p>
 <dt id="pyMathProg.Problem.make_mosek_instance">
 <tt class="descname">make_mosek_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_mosek_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>defines the variables msk_env and msk_task used by the solver mosek.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyMathProg.Problem.make_zibopt">
+<tt class="descname">make_zibopt</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_zibopt" title="Permalink to this definition">¶</a></dt>
+<dd><p>defines TODOC</p>
 </dd></dl>
 
 <dl class="method">
@@ -484,6 +502,7 @@ problem but with a different objective function. If set to <em>True</em> and a n
 objective function has been passed to the solver, the constraints
 of the problem will not be parsed next time <a class="reference internal" href="#pyMathProg.Problem.solve" title="pyMathProg.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> is called (this can lead
 to a huge gain of time).</li>
+<li>&#8216;noduals&#8217;=False [if True, do not retrieve the dual variables]</li>
 </ul>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -570,7 +589,7 @@ the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" t
 
 <dl class="method">
 <dt id="pyMathProg.Problem.solve">
-<tt class="descname">solve</tt><big>(</big><em>options={}</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">solve</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves the problem.</p>
 <p><strong>option</strong> is a dictionary of options that will be updated before
 the solver is called. In particular, the solver can be specified here.</p>
@@ -594,12 +613,6 @@ list of keys in
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyMathProg.Problem.zibopt">
-<tt class="descname">zibopt</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.zibopt" title="Permalink to this definition">¶</a></dt>
-<dd><p>defines</p>
 </dd></dl>
 
 </dd></dl>
