@@ -783,6 +783,7 @@ class Problem:
                   of the problem will not be parsed next time :func:`solve` is called (this can lead
                   to a huge gain of time).
                 *  'noduals'=False [if True, do not retrieve the dual variables]
+                * 'smcp_feas'=False [if True, use the feasible start solver with SMCP]
                                  
                 .. Warning:: Not all options are handled by all solvers yet.
                 
@@ -799,6 +800,7 @@ class Problem:
                                  'harmonic_steps' :1,
                                  'onlyChangeObjective':False,
                                  'noduals'        :False,
+                                 'smcp_feas'      :False,
                                  }
                                  
                                  
@@ -1408,16 +1410,20 @@ class Problem:
         
         #obsolete name
         def makeCplex_Instance(self):
-                self.make_cplex_instance()  
+                self._make_cplex_instance()  
                 
-        def makeCplex_Instance(self):
+        def _make_cplex_instance(self):
                 """
                 Defines the variables cplex_Instance and cplexvar,
                 used by the cplex solver.
                 
                 TODO: feasibility problems
                 """
-                import cplex
+                try:
+                        import cplex
+                except:
+                        Exception('cplex library not found')
+                
                 c = cplex.Cplex()
                 import itertools
                 
@@ -1448,7 +1454,7 @@ class Problem:
                 
                 self.options['solver'] = 'cplex'
                 
-                cplex_type = {        'continuous' : c.variables.type.continuous, 
+                cplex_type = {  'continuous' : c.variables.type.continuous, 
                                 'binary' : c.variables.type.binary, 
                                 'integer' : c.variables.type.integer, 
                                 'semicont' : c.variables.type.semi_continuous, 
@@ -1600,9 +1606,9 @@ class Problem:
         
         #obsolete name
         def makeCVXOPT_Instance(self):
-                self.make_cvxopt_instance()
+                self._make_cvxopt_instance()
                 
-        def make_cvxopt_instance(self):
+        def _make_cvxopt_instance(self):
                 """
                 defines the variables in self.cvxoptVars, used by the cvxopt solver
                 """
@@ -1715,7 +1721,7 @@ class Problem:
                 sys.stdout.write(text)
                 sys.stdout.flush()
 
-        def make_mosek_instance(self):
+        def _make_mosek_instance(self):
                 """
                 defines the variables msk_env and msk_task used by the solver mosek.
                 """
@@ -1762,7 +1768,7 @@ class Problem:
                 # Give MOSEK an estimate of the size of the input data.
                 # This is done to increase the speed of inputting data.                                
                                 
-                self.makeCVXOPT_Instance()
+                self._make_cvxopt_instance()
                 NUMVAR = self.numberOfVars+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
                 NUMCON = self.numberAffConstraints+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
                 NUMCONE = self.numberConeConstraints
@@ -1960,13 +1966,17 @@ class Problem:
                         print('mosek instance built')
 
 
-        def make_zibopt(self):
+        def _make_zibopt(self):
                 """
                 Defines the variables scip_solver and scip_vars, used by the zibopt solver.
                 
                 .. TODO:: handle the quadratic problems
                 """
-                from zibopt import scip
+                try:
+                        from zibopt import scip
+                except:
+                        raise Exception('scip library not found')
+                
                 scip_solver = scip.solver(quiet=False)
                 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
@@ -1974,7 +1984,7 @@ class Problem:
                 if bool(self.cvxoptVars['quadcons']):
                         raise Exception('not implemented yet')
                 
-                self.makeCVXOPT_Instance()
+                self._make_cvxopt_instance()
                 #TODO integer vars
                 #max handled directly by scip
                 if self.objective[0]=='max':
@@ -2056,8 +2066,17 @@ class Problem:
                 """
                 Solves the problem.
                 
-                **option** is a dictionary of options that will be updated before
-                the solver is called. In particular, the solver can be specified here.
+                Once the problem has been solved, the optimal variables
+                can be obtained thanks to the :func:``eval``. The
+                duals variables can be accessed by the method :func:``dual``
+                of the class :class:``Constraint``.
+                
+                :param options: A dictionary of options that will be updated before
+                                  the solver is called. In particular, the solver can
+                                  be specified here.
+                :type options: dict.
+                :returns: A dictionary **sol** which contains the information
+                            returned by the solver.
                 
                 .. TODO:: probleme ik ou il pas defini absence con= ou con< ?
                 """
@@ -2067,110 +2086,220 @@ class Problem:
                 #self.eliminate_useless_variables()
 
                 if isinstance(self.objective[1],GeneralFun):
-                        return self.sqpsolve(options)
+                        return self._sqpsolve(options)
                 
-                #WARNING: 'mosek' is obsolete, bug in cvxopt. USE direct MSK i'nstead'
-                if (self.options['solver']=='CVXOPT' or self.options['solver']=='mosek' or self.options['solver'] is None):
+                #WARNING: Bug with cvxopt-mosek ?
+                if (self.options['solver']=='CVXOPT' or self.options['solver']=='cvxopt-mosek'
+                        or self.options['solver']=='smcp'):
 
-                        if self.options['onlyChangeObjective']:
-                                if self.cvxoptVars['c'] is None:
-                                        raise Exception('option is only available when cvxoptVars has been defined before')
-                                newobj=self.objective[1]
-                                (cobj,constantInObjective)=self._makeGandh(newobj)
-                                self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
-                        else:
-                                self.makeCVXOPT_Instance()
-                        cvo.solvers.options['maxiters']=self.options['maxit']
-                        cvo.solvers.options['abstol']=self.options['abstol']
-                        cvo.solvers.options['feastol']=self.options['feastol']
-                        cvo.solvers.options['reltol']=self.options['reltol']
-                        cvo.solvers.options['show_progress']=bool(self.options['verbose']>0)
-                        if self.options['solver']=='CVXOPT':
-                                currentsolver=None
-                        else:
-                                currentsolver='mosek'
-                        if  self.numberQuadConstraints>0:#QCQP
-                                raise Exception('CVXOPT with Quadratic constraints is not handled')
-                        elif self.numberLSEConstraints>0:#GP
-                                if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
-                                        raise Exception('cone constraints + LSE not implemented')
-                                probtype='GP'
-                                sol=cvo.solvers.gp(self.cvxoptVars['K'],
-                                                        self.cvxoptVars['F'],self.cvxoptVars['g'],
-                                                        self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
-                                                        self.cvxoptVars['A'],self.cvxoptVars['b'])
-                        elif len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])==0:#LP
-                                probtype='LP'
+                        primals,duals,obj,sol=self._cvxopt_solve()
+                        
+                # For cplex (only LP and MIP implemented)
+                elif (self.options['solver']=='cplex'):
+                        
+                        primals,duals,obj,sol=self._cplex_solve()
+
+                # for mosek
+                elif (self.options['solver']=='MSK'):
+                        
+                        primals,duals,obj,sol=self._mosek_solve()
+
+                
+                elif (self.options['solver']=='zibopt'):
+                        
+                        primals,duals,obj,sol=self._zibopt_solve()
+
+                else:
+                        raise Exception('unknown solver')                       
+                        #TODO:Other solvers (GUROBI, ...)
+                
+                for k in primals.keys():
+                        if not primals[k] is None:
+                                self.set_varValue(k,primals[k])
+                if 'noduals' in self.options and self.options['noduals']:
+                        pass
+                else:
+                        for i,d in enumerate(duals):
+                                self.constraints[i].set_dualVar(d)
+                if obj=='toEval' and not(self.objective[1] is None):
+                        obj=self.objective[1].eval()
+                sol['obj']=obj
+                return sol
+
+                
+        def _cvxopt_solve(self):
+                """
+                Solves a problem with the cvxopt solver.
+                
+                .. Todo:: * handle quadratic problems
+                          * handle SDP
+                """
+                
+                #--------------------#
+                # makes the instance #
+                #--------------------#
+                
+                if self.options['onlyChangeObjective']:
+                        if self.cvxoptVars['c'] is None:
+                                raise Exception('option is only available when cvxoptVars has been defined before')
+                        newobj=self.objective[1]
+                        (cobj,constantInObjective)=self._makeGandh(newobj)
+                        self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
+                else:
+                        self._make_cvxopt_instance()
+                #--------------------#        
+                #  sets the options  #
+                #--------------------#
+                cvo.solvers.options['maxiters']=self.options['maxit']
+                cvo.solvers.options['abstol']=self.options['abstol']
+                cvo.solvers.options['feastol']=self.options['feastol']
+                cvo.solvers.options['reltol']=self.options['reltol']
+                cvo.solvers.options['show_progress']=bool(self.options['verbose']>0)
+                if self.options['solver']=='CVXOPT':
+                        currentsolver=None
+                elif self.options['solver']=='cvxopt-mosek':
+                        currentsolver='mosek'
+                elif self.options['solver']=='smcp':
+                        currentsolver='smcp'
+                #-------------------------------#
+                #  runs the appropriate solver  #
+                #-------------------------------#
+                
+                if  self.numberQuadConstraints>0:#QCQP
+                        probtype='QCQP'
+                        raise Exception('CVXOPT with Quadratic constraints is not handled')
+                elif self.numberLSEConstraints>0:#GP
+                        if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
+                                raise Exception('cone constraints + LSE not implemented')
+                        probtype='GP'
+                        sol=cvo.solvers.gp(self.cvxoptVars['K'],
+                                                self.cvxoptVars['F'],self.cvxoptVars['g'],
+                                                self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
+                                                self.cvxoptVars['A'],self.cvxoptVars['b'])
+                #changes to adapt the problem for the conelp interface:
+                elif currentsolver=='cvxopt-mosek':
+                        if len(self.cvxoptVars['Gs'])>0:
+                                raise Exception('CVXOPT does not handle SDP with MOSEK')
+                        if len(self.cvxoptVars['Gq'])>0:
                                 sol=cvo.solvers.lp(self.cvxoptVars['c'],
-                                                        self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
-                                                        self.cvxoptVars['A'],self.cvxoptVars['b'],
-                                                        solver=currentsolver)
-                        elif len(self.cvxoptVars['Gs'])==0:#SOCP
-                                probtype='SOCP'                                
+                                                self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
+                                                self.cvxoptVars['A'],self.cvxoptVars['b'],
+                                                solver=currentsolver)
+                                probtype='LP'
+                        else:
                                 sol=cvo.solvers.socp(self.cvxoptVars['c'],
                                                         self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                         self.cvxoptVars['Gq'],self.cvxoptVars['hq'],
                                                         self.cvxoptVars['A'],self.cvxoptVars['b'],
                                                         solver=currentsolver)
+                                probtype='SOCP'
+                else:
+                        dims={}
+                        dims['s']=[]
+                        dims['l']=self.cvxoptVars['Gl'].size[0]
+                        dims['q']=[Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+                        G=self.cvxoptVars['Gl']
+                        h=self.cvxoptVars['hl']
+                        for i in range(len(dims['q'])):
+                                G=cvx.sparse([G,self.cvxoptVars['Gq'][i]])
+                                h=cvx.concatvert(h,self.cvxoptVars['hq'][i])
+                        if currentsolver=='smcp':
+                                if self.cvxoptVars['A'].size[0]>0:
+                                        eps=1e-6 #TODO write as parameter
+                                        m=self.cvxoptVars['A'].size[1]
+                                        Aq=cvx.sparse([cvx.spmatrix([],[],[],(1,m)),-self.cvxoptVars['A']])
+                                        bq=cvx.concatvert(cvx.matrix(eps,(1,1)),-self.cvxoptVars['b'])
+                                        G=cvx.sparse([G,Aq])
+                                        h=cvx.concatvert(h,bq)
+                                        dims['q'].append(Aq.size[0])
+                                try:
+                                        import smcp
+                                except:
+                                        raise Exception('library smcp not found')
+                                sol=smcp.solvers.conelp(self.cvxoptVars['c'],
+                                                        G,h,dims,feas=self.options['smcp_feas'])
                         else:
-                                raise Exception('Kind Of Problem not handled yet')
-                        #PRIMAL VARIABLES        
-                        primals={}
-                        if not (sol['x'] is None):
-                                for var in self.variables.keys():
-                                        si=self.variables[var].startIndex
-                                        ei=self.variables[var].endIndex
-                                        varvect=sol['x'][si:ei]
-                                        primals[var]=cvx.matrix(varvect, self.variables[var].size)
-                        else:
-                                print('##################################')
-                                print('WARNING: Primal Solution Not Found')
-                                print('##################################')
-                                primals=None
-                        #DUAL VARIABLES
-                        duals=[]
+                                sol=cvo.solvers.conelp(self.cvxoptVars['c'],
+                                                        G,h,dims,
+                                                        self.cvxoptVars['A'],
+                                                        self.cvxoptVars['b'])
+                        probtype='ConeLP'
+                        
+                                
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#
+                 
+                primals={}
+                if not (sol['x'] is None):
+                        for var in self.variables.keys():
+                                si=self.variables[var].startIndex
+                                ei=self.variables[var].endIndex
+                                varvect=sol['x'][si:ei]
+                                primals[var]=cvx.matrix(varvect, self.variables[var].size)
+                else:
+                        print('##################################')
+                        print('WARNING: Primal Solution Not Found')
+                        print('##################################')
+                        primals=None
+
+                #--------------------#
+                # retrieve the duals #
+                #--------------------#
+                duals=[]
+                if 'noduals' in self.options and self.options['noduals']:
+                        pass
+                else:
+                        
                         printnodual=False
                         (indy,indzl,indzq,indznl)=(0,0,0,0)
-        
+                        if probtype=='LP' or probtype=='ConeLP':
+                                zkey='z'
+                        else:
+                                zkey='zl'
+                        zqkey='zq'
+                        if probtype=='ConeLP':
+                                indzq=dims['l']
+                                zqkey='z'
+                        ykey='y'
+                        minus=1.
+                        if currentsolver=='smcp':
+                                indy=dims['l']+sum(dims['q'][:-1])+1
+                                ykey='z'
+                                minus=-1.
+
                         for k in self.constraints.keys():
                                 #Equality
                                 if self.constraints[k].typeOfConstraint=='lin=':
-                                        if not (sol['y'] is None):
+                                        if not (sol[ykey] is None):
                                                 consSz=np.product(self.constraints[k].Exp1.size)
-                                                duals.append(sol['y'][indy:indy+consSz])
+                                                duals.append(minus*sol[ykey][indy:indy+consSz])
                                                 indy+=consSz
                                         else:
                                                 printnodual=True
                                                 duals.append(None)
                                 #Inequality
                                 elif self.constraints[k].typeOfConstraint[:3]=='lin':
-                                        if probtype=='LP':
-                                                if not (sol['z'] is None):
-                                                        consSz=np.product(self.constraints[k].Exp1.size)
-                                                        if self.constraints[k].typeOfConstraint[3]=='<':
-                                                                duals.append(sol['z'][indzl:indzl+consSz])
-                                                        else:
-                                                                duals.append(sol['z'][indzl:indzl+consSz])
-                                                        indzl+=consSz
+                                        if not (sol[zkey] is None):
+                                                consSz=np.product(self.constraints[k].Exp1.size)
+                                                if self.constraints[k].typeOfConstraint[3]=='<':
+                                                        duals.append(sol[zkey][indzl:indzl+consSz])
                                                 else:
-                                                        printnodual=True
-                                                        duals.append(None)
-                                        elif probtype=='SOCP' or probtype=='GP':
-                                                if not (sol['zl'] is None):
-                                                        consSz=np.product(self.constraints[k].Exp1.size)
-                                                        if self.constraints[k].typeOfConstraint[3]=='<':
-                                                                duals.append(sol['zl'][indzl:indzl+consSz])
-                                                        else:
-                                                                duals.append(sol['zl'][indzl:indzl+consSz])
-                                                        indzl+=consSz
-                                                else:
-                                                        printnodual=True
-                                                        duals.append(None)
+                                                        duals.append(sol[zkey][indzl:indzl+consSz])
+                                                indzl+=consSz
+                                        else:
+                                                printnodual=True
+                                                duals.append(None)
                                 #SOCP constraint [Rotated or not]
                                 elif self.constraints[k].typeOfConstraint[2:]=='cone':
-                                        if not (sol['zq'] is None):
-                                                duals.append(sol['zq'][indzq])
-                                                indzq+=1
+                                        if not (sol[zqkey] is None):
+                                                if probtype=='ConeLP':
+                                                        consSz=np.product(self.constraints[k].Exp1.size)+1
+                                                        duals.append(sol[zqkey][indzq:indzq+consSz])
+                                                        indzq+=consSz
+                                                else:
+                                                        duals.append(sol[zqkey][indzq])
+                                                        indzq+=1
                                         else:
                                                 printnodual=True
                                                 duals.append(None)
@@ -2185,117 +2314,169 @@ class Problem:
                                                 duals.append(None)
                                 else:
                                         raise Exception('constraint cannot be handled')
+                                
                         if printnodual:
                                 print('################################')
                                 print('WARNING: Dual Solution Not Found')
                                 print('################################')                
-                        #OBJECTIVE                        
-                        if self.numberLSEConstraints>0:#GP
-                                obj='toEval'
-                        else:#LP or SOCP
-                                if sol['primal objective'] is None:
-                                        if sol['dual objective'] is None:
-                                                obj=None
-                                        else:
-                                                obj=sol['dual objective']
-                                else:
-                                        if sol['dual objective'] is None:
-                                                obj=sol['primal objective']
-                                        else:
-                                                obj=0.5*(sol['primal objective']+sol['dual objective'])
-                                
-                                if self.objective[0]=='max' and not obj is None:
-                                        obj = -obj
-                        
-                # For cplex (only LP and MIP implemented)
-                elif (self.options['solver']=='cplex'):
-                        self.makeCplex_Instance()
-                        c = self.cplex_Instance
-                        
-                        if c is None:
-                                raise ValueError('Create a cplex instance before solving with cplex plz')
-                        c.solve()
-                        self.cplex_Instance = c
-                        
-                        # solution.get_status() returns an integer code
-                        print("Solution status = " , c.solution.get_status(), ":",)
-                        # the following line prints the corresponding string
-                        print(c.solution.status[c.solution.get_status()])
-                        
-                        #TODO : settings parameters
-                        
-                        #primals
-                        primals = {}
-                        for kvar in self.variables:
-                                value = []
-                                for i in range(self.variables[kvar].size[0]):
-                                        name = kvar + '_' + str(i)
-                                        value.append(c.solution.get_values(name))
-                                primals[kvar] = value
-                        
-                        #duals
-                        if 'noduals' in options and options['noduals']:
-                                pass
-                        else:
-                                duals = [] # not available for a MIP (only for LP)
-                                if self.isContinuous():
-                                        pos_cplex = 0 # the next scalar constraint line to study (num of cplex)
-                                        # pos_interface the next vect constraint in our interface
-                                        # for each constraint
-                                        for pos_interface in self.constraints.keys():
-                                                dim = self.constraints[pos_interface].Exp1.size[0]
-                                                # take all the composants of the constraint
-                                                dual_lines = range(pos_cplex, pos_cplex + dim)
-                                                dual_values = c.solution.get_dual_values(dual_lines)
-                                                duals.append(dual_values)
-                                                pos_cplex += dim
-                                
-                        obj = c.solution.get_objective_value()
-                        sol = {}
                 
-                elif (self.options['solver']=='MSK'):
-                        import mosek                        
-                        #direct mosek
-                        self.make_mosek_instance()
-                        task=self.msk_task
-
-                        #optimize
-                        task.optimize()
+                #-----------------#
+                # objective value #
+                #-----------------#
+                if self.numberLSEConstraints>0:#GP
+                        obj='toEval'
+                else:#LP or SOCP
+                        if sol['primal objective'] is None:
+                                if sol['dual objective'] is None:
+                                        obj=None
+                                else:
+                                        obj=sol['dual objective']
+                        else:
+                                if sol['dual objective'] is None:
+                                        obj=sol['primal objective']
+                                else:
+                                        obj=0.5*(sol['primal objective']+sol['dual objective'])
                         
-                        # Print a summary containing information
-                        # about the solution for debugging purposes
-                        task.solutionsummary(mosek.streamtype.msg)
-                        prosta = []
-                        solsta = []
+                        if self.objective[0]=='max' and not obj is None:
+                                obj = -obj
+                
+                return (primals,duals,obj,sol)
+                
 
+        def  _cplex_solve(self):
+                """
+                Solves a problem with the cvxopt solver.
+                
+                .. Todo::  * set solver settings
+                           * handle SOCP ?
+                """
+                #----------------------------#
+                #  create the cplex instance #
+                #----------------------------#
+                self._make_cplex_instance()
+                c = self.cplex_Instance
+                
+                if c is None:
+                        raise ValueError('a cplex instance should have been created before')
+                
+                #--------------------#
+                #  call the solver   #
+                #--------------------#                
+                c.solve()
+                self.cplex_Instance = c
+                
+                # solution.get_status() returns an integer code
+                print("Solution status = " , c.solution.get_status(), ":",)
+                # the following line prints the corresponding string
+                print(c.solution.status[c.solution.get_status()])
+                
+                #TODO : settings parameters
+                
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#
+                #primals
+                primals = {}
+                for kvar in self.variables:
+                        value = []
+                        for i in range(self.variables[kvar].size[0]):
+                                name = kvar + '_' + str(i)
+                                value.append(c.solution.get_values(name))
+                        primals[kvar] = value
+                
+                #--------------------#
+                # retrieve the duals #
+                #--------------------#
+                duals = [] 
+                if 'noduals' in self.options and self.options['noduals']:
+                        pass
+                else:
+                        # not available for a MIP (only for LP)
                         if self.isContinuous():
-                                soltype=mosek.soltype.itr
-                        else:
-                                soltype=mosek.soltype.itg
+                                pos_cplex = 0 # the next scalar constraint line to study (num of cplex)
+                                # pos_interface the next vect constraint in our interface
+                                # for each constraint
+                                for pos_interface in self.constraints.keys():
+                                        dim = self.constraints[pos_interface].Exp1.size[0]
+                                        # take all the composants of the constraint
+                                        dual_lines = range(pos_cplex, pos_cplex + dim)
+                                        dual_values = c.solution.get_dual_values(dual_lines)
+                                        duals.append(cvx.matrix(dual_values))
+                                        pos_cplex += dim
+                #-----------------#
+                # objective value #
+                #-----------------#             
+                obj = c.solution.get_objective_value()
+                sol = {'cplex_solution':c.solution}
+                return (primals,duals,obj,sol)
+                
 
-                        [prosta,solsta] = task.getsolutionstatus(soltype) #changer itg en itr
-                        
-                        # Output a solution
-                        xx = np.zeros(self.numberOfVars, float)
-                        task.getsolutionslice(
-                                soltype, mosek.solitem.xx, 0,self.numberOfVars, xx)
-                        #PRIMAL VARIABLES        
-                        primals={}
-                        if (solsta == mosek.solsta.optimal or
-                            solsta == mosek.solsta.near_optimal or
-                            solsta == mosek.solsta.unknown or
-                            solsta == mosek.solsta.integer_optimal):
-                                for var in self.variables.keys():
-                                        si=self.variables[var].startIndex
-                                        ei=self.variables[var].endIndex
-                                        varvect=xx[si:ei]
-                                        primals[var]=cvx.matrix(varvect, self.variables[var].size)
-                                if solsta == mosek.solsta.near_optimal or solsta == mosek.solsta.unknown:
-                                        print('warning, solution status is ' +repr(solsta))
-                        else:
-                                raise Exception('unknown status (solsta)')
+        def _mosek_solve(self):
+                """
+                Solves the problem with mosek
+                
+                .. Todo:: * Solver settings
+                          * Dual vars for QP
+                          * Direct handling of rotated cones
+                """
+                #----------------------------#
+                #  create the mosek instance #
+                #----------------------------#
+                import mosek
+                self._make_mosek_instance()
+                task=self.msk_task
 
-                        duals=[]
+                #TODO : settings parameters
+                
+                #--------------------#
+                #  call the solver   #
+                #--------------------# 
+                #optimize
+                task.optimize()
+                
+                # Print a summary containing information
+                # about the solution for debugging purposes
+                task.solutionsummary(mosek.streamtype.msg)
+                prosta = []
+                solsta = []
+
+                if self.isContinuous():
+                        soltype=mosek.soltype.itr
+                else:
+                        soltype=mosek.soltype.itg
+
+                [prosta,solsta] = task.getsolutionstatus(soltype)
+                
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#
+                # Output a solution
+                xx = np.zeros(self.numberOfVars, float)
+                task.getsolutionslice(
+                        soltype, mosek.solitem.xx, 0,self.numberOfVars, xx)
+                #PRIMAL VARIABLES        
+                primals={}
+                if (solsta == mosek.solsta.optimal or
+                        solsta == mosek.solsta.near_optimal or
+                        solsta == mosek.solsta.unknown or
+                        solsta == mosek.solsta.integer_optimal):
+                        for var in self.variables.keys():
+                                si=self.variables[var].startIndex
+                                ei=self.variables[var].endIndex
+                                varvect=xx[si:ei]
+                                primals[var]=cvx.matrix(varvect, self.variables[var].size)
+                        if solsta == mosek.solsta.near_optimal or solsta == mosek.solsta.unknown:
+                                print('warning, solution status is ' +repr(solsta))
+                else:
+                        raise Exception('unknown status (solsta)')
+
+                #--------------------#
+                # retrieve the duals #
+                #--------------------#
+                duals=[]
+                if 'noduals' in self.options and self.options['noduals']:
+                        pass
+                else:
                         idvarcone=self.numberOfVars #index of variables in cone
                         ideq=0 #index of equality constraint in cvxoptVars['A']
                         idconeq=0 #index of equality constraint in mosekcons (without fixed vars)
@@ -2303,28 +2484,28 @@ class Problem:
                         idconin=len([1 for ida in range(self.cvxoptVars['A'].size[0])
                                         if len(self.cvxoptVars['A'][ida,:].J)>1])
                                 #index of inequality constraint in mosekcons (without fixed vars)
-			idcone=0 #number of seen cones
-			Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
-			
-			#indices for ineq constraints
-			ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
-			if len(ijvs)>0:
+                        idcone=0 #number of seen cones
+                        Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
+                        
+                        #indices for ineq constraints
+                        ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
+                        if len(ijvs)>0:
                                 (ik,jk,vk)=ijvs.pop()
                                 curik=-1
                                 delNext=False
-			del Gli,Glj,Glv
-			
-			#indices for eq constraints
-			Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
-			ijls=sorted(zip(Ai,Aj,Av),reverse=True)
-			if len(ijls)>0:
+                        del Gli,Glj,Glv
+                        
+                        #indices for eq constraints
+                        Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+                        ijls=sorted(zip(Ai,Aj,Av),reverse=True)
+                        if len(ijls)>0:
                                 (il,jl,vl)=ijls.pop()
                                 curil=-1
                                 delNext=False
-			del Ai,Aj,Av
-			
-			#now we parse the constraints
-			for k in self.constraints.keys():
+                        del Ai,Aj,Av
+                        
+                        #now we parse the constraints
+                        for k in self.constraints.keys():
                                 #conic constraint
                                 if self.constraints[k].typeOfConstraint[2:]=='cone':
                                         szcone=self.cvxoptVars['Gq'][idcone].size[0]
@@ -2339,7 +2520,7 @@ class Problem:
                                         fxd=[]
                                         while il<ideq+szcons:
                                                 if il!=curil:
-                                                        fxd.append(il)
+                                                        fxd.append((il-ideq,jl,vl))
                                                         curil=il
                                                         delNext=True
                                                 elif delNext:
@@ -2349,13 +2530,20 @@ class Problem:
                                                         (il,jl,vl)=ijls.pop()
                                                 except IndexError:
                                                         break
-                                                        
+                                        
                                         v=np.zeros(szcons-len(fxd),float)
-                                        task.getsolutionslice(soltype,mosek.solitem.y,
-                                                      idconeq,idconeq+szcons-len(fxd),v)
-                                        v=(-v).tolist()
-                                        for l in fxd: #dual of fixed var constraints
-                                                v.insert(l,0.0)
+                                        if len(v)>0:
+                                                task.getsolutionslice(soltype,mosek.solitem.y,
+                                                        idconeq,idconeq+szcons-len(fxd),v)
+                                        v=v.tolist()
+                                        for (l,var,coef) in fxd: #dual of fixed var constraints
+                                                duu=np.zeros(1,float)
+                                                dul=np.zeros(1,float)
+                                                task.getsolutionslice(soltype,mosek.solitem.sux,
+                                                                        var,var+1,duu)
+                                                task.getsolutionslice(soltype,mosek.solitem.slx,
+                                                                        var,var+1,dul)
+                                                v.insert(l,(dul[0]-duu[0])/coef)
                                         duals.append(cvx.matrix(v))
                                         ideq+=szcons
                                         idconeq+=(szcons-len(fxd))
@@ -2374,7 +2562,7 @@ class Problem:
                                                         (ik,jk,vk)=ijvs.pop()
                                                 except IndexError:
                                                         break
-                                                                              
+                                                                                
                                         #for k in range(szcons):
                                                 #if len(self.cvxoptVars['Gl'][idin+k,:].J)==1:
                                                         #fxd.append((k,
@@ -2384,7 +2572,7 @@ class Problem:
                                         if len(v)>0:
                                                 task.getsolutionslice(soltype,mosek.solitem.y,
                                                         idconin,idconin+szcons-len(fxd),v)
-                                        v=(-v).tolist()
+                                        v=v.tolist()
                                         for (l,var,coef) in fxd: #dual of simple bound constraints
                                                 du=np.zeros(1,float)
                                                 bound=self.cvxoptVars['hl'][idin+l]/coef
@@ -2393,67 +2581,86 @@ class Problem:
                                                         if bound==bu:
                                                                 task.getsolutionslice(soltype,mosek.solitem.sux,
                                                                         var,var+1,du)
-                                                                v.insert(l,du[0]/coef)
+                                                                v.insert(l,-du[0]/coef)
                                                         else:
                                                                 v.insert(l,0.) #inactive bound
                                                 else:   #lower bound
                                                         if bound==bl:
                                                                 task.getsolutionslice(soltype,mosek.solitem.slx,
                                                                         var,var+1,du)
-                                                                v.insert(l,-du[0]/coef)
+                                                                v.insert(l,du[0]/coef)
                                                         else:
                                                                 v.insert(l,0.) #inactive bound
                                         duals.append(cvx.matrix(v))
                                         idin+=szcons
                                         idconin+=(szcons-len(fxd))
                                 else:
-                                         print('not handled yet')
+                                                print('dual for this constraint is not handled yet')
+                                                duals.append(None)
+                #-----------------#
+                # objective value #
+                #-----------------#  
+                #OBJECTIVE
+                sol = {'mosek_task':task}
+                obj = 'toEval'
 
-                        #OBJECTIVE
-                        sol = {'mosek_task':task}
-                        obj = 'toEval'
-
-                        #delete the patch variable for quad prog with 1 var
-                        if '_ptch_' in self.variables:
-                                self.remove_variable('_ptch_')
-                                del primals['_ptch_']
+                #delete the patch variable for quad prog with 1 var
+                if '_ptch_' in self.variables:
+                        self.remove_variable('_ptch_')
+                        del primals['_ptch_']
                 
-                elif (self.options['solver']=='zibopt'):
-                        self.make_zibopt()
-                        if self.objective[0]=='max':
-                                sol=self.scip_solver.maximize()
-                        else:
-                                sol=self.scip_solver.minimize()
-                        
-                        val=sol.values()
-                        primals={}
-                        for var in self.variables.keys():
-                                si=self.variables[var].startIndex
-                                ei=self.variables[var].endIndex
-                                varvect=self.scip_vars[si:ei]
-                                primals[var]=cvx.matrix([val[v] for v in varvect],
-                                 self.variables[var].size)
-                        options['noduals']=True
-                        obj=sol.objective
-                        sol=sol.__dict__
-                else:
-                        pass                        
-                        #TODO:Other solvers (GUROBI, ...)
+                return (primals,duals,obj,sol)                
                 
-                for k in primals.keys():
-                        if not primals[k] is None:
-                                self.set_varValue(k,primals[k])
-                if 'noduals' in options and options['noduals']:
-                        pass
+        def _zibopt_solve(self):
+                """
+                Solves the problem with the zib optimization suite
+                
+                .. Todo:: * dual variables ?
+                          * solver parameters
+                """
+                #-----------------------------#
+                #  create the zibopt instance #
+                #-----------------------------#
+                self._make_zibopt()
+                
+                #TODO : settings parameters
+                
+                #--------------------#
+                #  call the solver   #
+                #--------------------#                 
+                if self.objective[0]=='max':
+                        sol=self.scip_solver.maximize()
                 else:
-                        for i,d in enumerate(duals):
-                                self.constraints[i].set_dualVar(d)
-                if obj=='toEval' and not(self.objective[1] is None):
-                        obj=self.objective[1].eval()
-                sol['obj']=obj
-                return sol
+                        sol=self.scip_solver.minimize()
+                
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#                
+                val=sol.values()
+                primals={}
+                for var in self.variables.keys():
+                        si=self.variables[var].startIndex
+                        ei=self.variables[var].endIndex
+                        varvect=self.scip_vars[si:ei]
+                        primals[var]=cvx.matrix([val[v] for v in varvect],
+                                self.variables[var].size)
 
-        def sqpsolve(self,options):
+
+                duals = []
+                #-----------------#
+                # objective value #
+                #-----------------#  
+                obj=sol.objective
+                solver=sol.solver
+                sol={}
+                sol['zibopt_solver']=solver
+                return (primals,duals,obj,sol)
+                
+                
+        def _sqpsolve(self,options):
+                """
+                Solves the problem by sequential Quadratic Programming.
+                """
                 import copy
                 for v in self.variables:
                         if self.variables[v].value is None:

@@ -84,7 +84,7 @@ of the following types:</p>
 <li><tt class="docutils literal"><span class="pre">list</span></tt> [creates a vecor of dimension len(list)]</li>
 <li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.matrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt></a></li>
 <li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a></li>
-<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7.dev-ba40918)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
+<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7.dev-39029f5)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
 <li><tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">real</span></tt> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
 whith all entries equal to <strong>mat</strong>.</li>
 <li>following strings:<blockquote>
@@ -369,8 +369,8 @@ then the function returns the list (resp. dict)
 of these variables.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">If the problem has not been solved, the value 0 will be
-returned without generating an error</p>
+<p class="last">If the problem has not been solved,
+this function will raise an Exception.</p>
 </div>
 </dd></dl>
 
@@ -388,32 +388,6 @@ of these variables.</p>
 <dt id="pyMathProg.Problem.is_continuous">
 <tt class="descname">is_continuous</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.is_continuous" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if there are only continuous variables</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyMathProg.Problem.makeCplex_Instance">
-<tt class="descname">makeCplex_Instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.makeCplex_Instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the variables cplex_Instance and cplexvar,
-used by the cplex solver.</p>
-<p>TODO: feasibility problems</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyMathProg.Problem.make_cvxopt_instance">
-<tt class="descname">make_cvxopt_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_cvxopt_instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>defines the variables in self.cvxoptVars, used by the cvxopt solver</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyMathProg.Problem.make_mosek_instance">
-<tt class="descname">make_mosek_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_mosek_instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>defines the variables msk_env and msk_task used by the solver mosek.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyMathProg.Problem.make_zibopt">
-<tt class="descname">make_zibopt</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.make_zibopt" title="Permalink to this definition">¶</a></dt>
-<dd><p>defines TODOC</p>
 </dd></dl>
 
 <dl class="method">
@@ -591,8 +565,27 @@ the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" t
 <dt id="pyMathProg.Problem.solve">
 <tt class="descname">solve</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves the problem.</p>
-<p><strong>option</strong> is a dictionary of options that will be updated before
-the solver is called. In particular, the solver can be specified here.</p>
+<p>Once the problem has been solved, the optimal variables
+can be obtained thanks to the :func:<tt class="docutils literal"><span class="pre">eval</span></tt>. The
+duals variables can be accessed by the method :func:<tt class="docutils literal"><span class="pre">dual</span></tt>
+of the class :class:<tt class="docutils literal"><span class="pre">Constraint</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>options</strong> (<em>dict.</em>) &#8211; A dictionary of options that will be updated before
+the solver is called. In particular, the solver can
+be specified here.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary <strong>sol</strong> which contains the information
+returned by the solver.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-2">
+<p class="first admonition-title">Todo</p>
+<p class="last">probleme ik ou il pas defini absence con= ou con&lt; ?</p>
+</div>
 </dd></dl>
 
 <dl class="method">
