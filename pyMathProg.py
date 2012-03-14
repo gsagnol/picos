@@ -39,7 +39,7 @@ def sum(lst,it=None,indices=None):
                         sumstr+=' in '+indices+'}'
                 indstr=putIndices([l.affstring() for l in lst],it)
                 sumstr+=' '+indstr
-                sigma=u'\u03A3'.encode('utf-8')
+                sigma='Σ' #'u'\u03A3'.encode('utf-8')
                 affSum.string=sigma+sumstr
         return affSum
 
@@ -253,6 +253,7 @@ def _retrieve_matrix(mat,exSize=None):
                                 * '``e_i(n,m)``' matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)
                                 * '``e_i,j(n,m)``' matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)
                                 * '``I``' for the identity matrix
+                                * '``I(n)``' for the identity matrix, forced to be of size n x n.
                                 * '``a%s``', where ``%s`` is one of the above string: the matrix that 
                                   should be returned when **mat** == ``%s``, multiplied by the scalar a.
         :returns: A tuple of the form (**M**, **s**), where **M** is the conversion of **mat** into a
@@ -399,7 +400,20 @@ def _retrieve_matrix(mat,exSize=None):
                         retmat=cvx.spmatrix([],[],[],(i1,i2) )
                         retmat[idx]=1
                 #identity
-                elif (mat=='I'):
+                elif (mat.startswith('I')):
+                        if len(mat)>1 and mat[1]=='(':
+                                if mat[-1]!=')':
+                                        raise Exception('this string shlud have the format "I(n)"')
+                                szstr=mat[2:-1]
+                                if not(szstr.isdigit()):
+                                        raise Exception('this string shlud have the format "I(n)"')
+                                sz=int(szstr)
+                                if (not exSize is None) and (
+                                        (isinstance(exSize,int) and  exSize!=sz) or
+                                        (isinstance(exSize,tuple) and ((exSize[0]!=sz) or (exSize[1]!=sz)))):
+                                        raise Exception('exSize does not match the n in "I(n)"')
+                                exSize=(sz,sz)
+                                retstr='I'
                         if exSize is None:
                                 raise Exception('size unspecified')
                         if isinstance(exSize,tuple):
@@ -445,11 +459,92 @@ def _retrieve_matrix(mat,exSize=None):
                 return _retrieve_matrix(retmat[0],exSize)
         return cvx.sparse(retmat),retstr
 
-def fullOrSparse(spmat):
-        if cvx.nnz(spmat)/float(spmat.size[0]*spmat.size[1])>0.5:
-                return cvx.matrix(spmat,tc='d')
+def svec(mat):
+        """
+        mat must be symmetric,
+        return the svec representation of mat.
+        """
+        if not isinstance(mat,cvx.spmatrix):
+                mat=cvx.sparse(mat)
+        
+        s0=mat.size[0]
+        if s0!=mat.size[1]:
+                raise ValueError('mat but be symmetric')
+        
+        I=[]
+        J=[]
+        V=[]
+        for (i,j,v) in zip((mat.I),(mat.J),(mat.V)):
+                if mat[j,i]!=v:
+                        raise ValueError('mat but be symmetric')
+                if i<=j:
+                        isvec=j*(j+1)/2+i
+                        J.append(0)
+                        I.append(isvec)
+                        if i==j:
+                                V.append(v)
+                        else:
+                                V.append(np.sqrt(2)*v)
+
+        return cvx.spmatrix(V,I,J,(s0*(s0+1)/2,1))
+
+def svecm1(vec):
+        if vec.size[1]>1:
+                raise ValueError('should be a column vector')
+        v=vec.size[0]
+        n=int(np.sqrt(1+8*v)-1)/2
+        if n*(n+1)/2 != v:
+                raise ValueError('vec should be of dimension n(n+1)/2')
+        if not isinstance(vec,cvx.spmatrix):
+                vec=cvx.sparse(vec)
+        I=[]
+        J=[]
+        V=[]
+        for i,v in zip(vec.I,vec.V):
+                c=int(np.sqrt(1+8*i)-1)/2
+                r=i-c*(c+1)/2
+                I.append(r)
+                J.append(c)
+                if r==c:
+                        V.append(v)
+                else:
+                        I.append(c)
+                        J.append(r)
+                        V.extend([v/np.sqrt(2)]*2)
+        return cvx.spmatrix(V,I,J,(n,n))
+             
+                
+        
+        
+def _svecm1_identity(vtype,size):
+        """
+        row wise svec-1 transformation of the
+        identity matrix of size size[0]*size[1]
+        """
+        if vtype=='symmetric':
+                s0=size[0]
+                if size[1]!=s0:
+                        raise ValueError('should be square')
+                I=range(s0*s0)
+                J=[]
+                V=[]
+                for i in I:
+                        rc= (i%s0,i/s0)
+                        (r,c)=(min(rc),max(rc))
+                        j=c*(c+1)/2+r
+                        J.append(j)
+                        if r==c:
+                                V.append(1)
+                        else:
+                                V.append(1/np.sqrt(2))
+                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0+1)/2))
+        
         else:
-                return spmat
+                sp=size[0]*size[1]
+                idmat=cvx.spmatrix([1]*sp,range(sp),range(sp),(sp,sp))
+                
+        return idmat
+                
 """
 ----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------
@@ -480,6 +575,8 @@ class Problem:
 		self.numberLSEConstraints=0
 		self.numberQuadConstraints=0
 		self.numberQuadNNZ=0
+		self.numberSDPConstraints=0
+		self.numberSDPVars=0
 
 		self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
 				'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
@@ -511,11 +608,14 @@ class Problem:
 		probstr+='{0} variables, {1} affine constraints'.format(
 				self.numberOfVars,self.numberAffConstraints)
 		if self.numberConeVars>0:
-			probstr+=', {0} vars in a cone'.format(
+			probstr+=', {0} vars in a SO cone'.format(
 				self.numberConeVars)
 		if self.numberLSEConstraints>0:
 			probstr+=', {0} vars in a LOG-SUM-EXP'.format(
 				self.numberLSEConstraints)
+                if self.numberSDPConstraints>0:
+                        probstr+=', {0} vars in a SD cone'.format(
+                                self.numberSDPVars)
 		probstr+='\n'
 
 		printedlis=[]
@@ -589,6 +689,8 @@ class Problem:
 		self.numberLSEConstraints=0
 		self.groupsOfConstraints ={}
 		self.consNumbering=[]
+		self.numberSDPConstraints=0
+		self.numberSDPVars=0
 		
 	
 	def obj_value(self):
@@ -658,6 +760,8 @@ class Problem:
 		valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
 		if valuemat.size<>self.variables[name].size:
 			raise Exception('should be of size {0}'.format(self.variables[name].size))
+		if self.variables[name].vtype=='symmetric':
+                        valuemat=svec(valuemat)
 		self.variables[name].value=valuemat
 
         def new_param(self,name,value):
@@ -754,6 +858,8 @@ class Problem:
 			h=cvx.matrix(0,(n1,1),tc='d')
 		else:
 			h=affExpr.constant
+                if not isinstance(h,cvx.matrix):
+                        h=cvx.matrix(h,tc='d')
 		if h.typecode<>'d':
 			h=cvx.matrix(h,tc='d')
 		return G,h
@@ -783,12 +889,15 @@ class Problem:
                   of the problem will not be parsed next time :func:`solve` is called (this can lead
                   to a huge gain of time).
                 *  'noduals'=False [if True, do not retrieve the dual variables]
-                * 'smcp_feas'=False [if True, use the feasible start solver with SMCP]
                                  
                 .. Warning:: Not all options are handled by all solvers yet.
                 
                 .. Todo:: raise a warning when a solver ignores an option
                 """
+                #Additional, hidden option (requires a patch of smcp, to use conlp to
+                #interface the feasible starting point solver):
+                #
+                #* 'smcp_feas'=False [if True, use the feasible start solver with SMCP]
                 default_options={'tol'            :1e-7,
                                  'feastol'        :1e-7,
                                  'abstol'         :1e-7,
@@ -942,10 +1051,20 @@ class Problem:
 				else:
 					self.listOfVars[lisname]['type']='dict'
 		self.variables[name]=Variable(name,size,self.countVar,self.numberOfVars, vtype)
+		if vtype=='symmetric':
+                        if size[0]!=size[1]:
+                                raise ValueError('symmetric variables must be square')
+                        s0=size[0]
+                        self.numberOfVars+=s0*(s0+1)/2
+                else:
+                        self.numberOfVars+=size[0]*size[1]
 		self.varIndices.append(self.countVar)
 		self.countVar+=1
-		self.numberOfVars+=size[0]*size[1]
-		return AffinExpr({name:cvx.speye(size[0]*size[1])},
+		
+		#svec operation
+		idmat=_svecm1_identity(vtype,size)
+		
+		return AffinExpr({name:idmat},
                                  size=size,
                                  string=name,
                                  variables=self.variables)
@@ -1004,6 +1123,10 @@ class Problem:
                 elif cons.typeOfConstraint=='quad':
                         self.numberQuadConstraints+=1
                         self.numberQuadNNZ+=cons.Exp1.nnz()
+                elif cons.typeOfConstraint[:3]=='sdp':
+                        self.numberSDPConstraints+=1
+                        self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                
 
         def add_list_of_constraints(self,lst,it=None,indices=None,key=None):
                 """adds a list of constraints in the problem.
@@ -1138,52 +1261,17 @@ class Problem:
                 .. Warning:: If the problem has not been solved,
                              this function will raise an Exception.
                 """
-                var=name
-                if var in self.listOfVars.keys():
-                        if self.listOfVars[var]['type']=='dict':
-                                rvar={}
-                        else:
-                                rvar=[0]*self.listOfVars[var]['numvars']
-                        seenKeys=[]
-                        for ind in [vname[len(var)+1:-1] for vname in self.variables.keys() if \
-                                 (vname[:len(var)] ==var and vname[len(var)]=='[')]:
-                                if ind.isdigit():
-                                        key=int(ind)
-                                        if key not in seenKeys:
-                                                seenKeys.append(key)
-                                        else:
-                                                key=ind
-                                elif ',' in ind:
-                                        isplit=ind.split(',')
-                                        if isplit[0].startswith('('):
-                                                isplit[0]=isplit[0][1:]
-                                        if isplit[-1].endswith(')'):
-                                                isplit[-1]=isplit[-1][:-1]
-                                        if all([i.isdigit() for i in isplit]):
-                                                key=tuple([int(i) for i in isplit])
-                                                if key not in seenKeys:
-                                                        seenKeys.append(key)
-                                                else:
-                                                        key=ind
-                                        else:
-                                                key=ind
-                                else:
-                                        try:
-                                                key=float(ind)
-                                        except ValueError:
-                                                key=ind
-                                valkey=self.variables[var+'['+ind+']'].value
-                                if valkey is None:
-                                        raise Exception('the variable '+var+' is not valued')
-                                rvar[key]=valkey
-                                
-                        return rvar
+                exp=self.get_variable(name)
+                if isinstance(exp,list):
+                        for i in xrange(len(exp)):
+                                exp[i]=exp[i].eval()
+                elif isinstance(exp,dict):
+                        for i in exp:
+                                exp[i]=exp[i].eval()
                 else:
-                        valkey=self.variables[var].value
-                        if valkey is None:
-                                raise Exception('the variable '+var+' is not valued')
-                        return valkey
-
+                        exp=exp.eval()
+                return exp
+                
 
         def get_variable(self,name):
                 """
@@ -1308,7 +1396,7 @@ class Problem:
                                 raise Exception('too few indices')
                 return self.constraints[lsind]
                 
-        def eval_all(self):
+        def _eval_all(self):
                 """
                 Returns the big vector with all variable values,
                 in the order induced by sorted(self.variables.keys()).
@@ -1654,7 +1742,7 @@ class Problem:
                                         self.cvxoptVars['F']=-cvx.matrix(F,tc='d')
                                         self.cvxoptVars['g']=-cvx.matrix(g,tc='d')
                 
-                limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints
+                limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
                 prog = ProgressBar(0,limitbar, 77, mode='fixed')
                 oldprog = str(prog)
                 
@@ -1698,6 +1786,18 @@ class Problem:
                                 (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1.aff)
                                 self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
                                 self.cvxoptVars['hl']=cvx.concatvert(self.cvxoptVars['hl'],-h_lhs)
+                        elif self.constraints[k].typeOfConstraint[:3]=='sdp':
+                                sense=self.constraints[k].typeOfConstraint[3]
+                                (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1)
+                                (G_rhs,h_rhs)=self._makeGandh(self.constraints[k].Exp2)
+                                if sense=='<':
+                                        self.cvxoptVars['Gs'].append(G_lhs-G_rhs)
+                                        self.cvxoptVars['hs'].append(h_rhs-h_lhs)
+                                elif sense=='>':
+                                        self.cvxoptVars['Gs'].append(G_rhs-G_lhs)
+                                        self.cvxoptVars['hs'].append(h_lhs-h_rhs)
+                                else:
+                                        raise NameError('unexpected case')
                         else:
                                 raise NameError('unexpected case')
                         #<--display progress
@@ -1707,6 +1807,12 @@ class Problem:
                                 sys.stdout.flush()
                                 oldprog=str(prog)
                         #-->
+                        
+                #reshape hs matrices as square matrices
+                #for m in self.cvxoptVars['hs']:
+                #        n=int(np.sqrt(len(m)))
+                #        m.size=(n,n)
+                        
                 prog.update_amount(limitbar)
                 print prog, "\r",
                 sys.stdout.flush()
@@ -2132,7 +2238,9 @@ class Problem:
                 Solves a problem with the cvxopt solver.
                 
                 .. Todo:: * handle quadratic problems
-                          * handle SDP
+                
+                .. Warning:: CVXOPT will raise an error if an equality of
+                             the form 0==0 is implied by matrices A and b.
                 """
                 
                 #--------------------#
@@ -2164,7 +2272,6 @@ class Problem:
                 #-------------------------------#
                 #  runs the appropriate solver  #
                 #-------------------------------#
-                
                 if  self.numberQuadConstraints>0:#QCQP
                         probtype='QCQP'
                         raise Exception('CVXOPT with Quadratic constraints is not handled')
@@ -2172,21 +2279,33 @@ class Problem:
                         if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
                                 raise Exception('cone constraints + LSE not implemented')
                         probtype='GP'
+                        if self.options['verbose']>0:
+                                print '-----------------------------------'
+                                print '         cvxopt GP solver'
+                                print '-----------------------------------'
                         sol=cvo.solvers.gp(self.cvxoptVars['K'],
                                                 self.cvxoptVars['F'],self.cvxoptVars['g'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                 self.cvxoptVars['A'],self.cvxoptVars['b'])
                 #changes to adapt the problem for the conelp interface:
-                elif currentsolver=='cvxopt-mosek':
+                elif currentsolver=='mosek':
                         if len(self.cvxoptVars['Gs'])>0:
-                                raise Exception('CVXOPT does not handle SDP with MOSEK')
-                        if len(self.cvxoptVars['Gq'])>0:
+                                raise Exception('CVXOPT does not handle SDP with MOSEK')                            
+                        if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs']):
+                                if self.options['verbose']>0:
+                                        print '------------------------------------------'
+                                        print '  mosek LP solver interfaced by cvxopt'
+                                        print '------------------------------------------'
                                 sol=cvo.solvers.lp(self.cvxoptVars['c'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                 self.cvxoptVars['A'],self.cvxoptVars['b'],
                                                 solver=currentsolver)
                                 probtype='LP'
                         else:
+                                if self.options['verbose']>0:
+                                        print '-------------------------------------------'
+                                        print '  mosek SOCP solver interfaced by cvxopt'
+                                        print '-------------------------------------------'
                                 sol=cvo.solvers.socp(self.cvxoptVars['c'],
                                                         self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                         self.cvxoptVars['Gq'],self.cvxoptVars['hq'],
@@ -2195,30 +2314,54 @@ class Problem:
                                 probtype='SOCP'
                 else:
                         dims={}
-                        dims['s']=[]
+                        dims['s']=[int(np.sqrt(Gsi.size[0])) for Gsi in self.cvxoptVars['Gs']]
                         dims['l']=self.cvxoptVars['Gl'].size[0]
                         dims['q']=[Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
                         G=self.cvxoptVars['Gl']
                         h=self.cvxoptVars['hl']
+                        if currentsolver=='smcp':
+                                if self.cvxoptVars['A'].size[0]>0:
+                                       G=cvx.sparse([G,self.cvxoptVars['A']]) 
+                                       G=cvx.sparse([G,-self.cvxoptVars['A']])
+                                       h=cvx.concatvert(h,self.cvxoptVars['b'])
+                                       h=cvx.concatvert(h,-self.cvxoptVars['b'])
+                                       dims['l']+=(2*self.cvxoptVars['A'].size[0])
                         for i in range(len(dims['q'])):
                                 G=cvx.sparse([G,self.cvxoptVars['Gq'][i]])
                                 h=cvx.concatvert(h,self.cvxoptVars['hq'][i])
+                        ''' old version with cone constraint for equalities
                         if currentsolver=='smcp':
                                 if self.cvxoptVars['A'].size[0]>0:
-                                        eps=1e-6 #TODO write as parameter
+                                        eps=1e-6
                                         m=self.cvxoptVars['A'].size[1]
                                         Aq=cvx.sparse([cvx.spmatrix([],[],[],(1,m)),-self.cvxoptVars['A']])
                                         bq=cvx.concatvert(cvx.matrix(eps,(1,1)),-self.cvxoptVars['b'])
                                         G=cvx.sparse([G,Aq])
                                         h=cvx.concatvert(h,bq)
                                         dims['q'].append(Aq.size[0])
+                        '''
+
+                                         
+                        for i in range(len(dims['s'])):
+                                G=cvx.sparse([G,self.cvxoptVars['Gs'][i]])
+                                h=cvx.concatvert(h,self.cvxoptVars['hs'][i])
+                        if currentsolver=='smcp':
                                 try:
                                         import smcp
                                 except:
                                         raise Exception('library smcp not found')
-                                sol=smcp.solvers.conelp(self.cvxoptVars['c'],
+                                if self.options['smcp_feas']:
+                                        sol=smcp.solvers.conelp(self.cvxoptVars['c'],
                                                         G,h,dims,feas=self.options['smcp_feas'])
+                                else:
+                                        sol=smcp.solvers.conelp(self.cvxoptVars['c'],
+                                                        G,h,dims)
                         else:
+
+                                if self.options['verbose']>0:
+                                        print '--------------------------'
+                                        print '  cvxopt CONELP solver'
+                                        print '--------------------------'
                                 sol=cvo.solvers.conelp(self.cvxoptVars['c'],
                                                         G,h,dims,
                                                         self.cvxoptVars['A'],
@@ -2236,6 +2379,10 @@ class Problem:
                                 si=self.variables[var].startIndex
                                 ei=self.variables[var].endIndex
                                 varvect=sol['x'][si:ei]
+                                if self.variables[var].vtype=='symmetric':
+                                        varvect=svecm1(varvect) #varvect was the svec
+                                                                #representation of X
+                                
                                 primals[var]=cvx.matrix(varvect, self.variables[var].size)
                 else:
                         print('##################################')
@@ -2252,21 +2399,29 @@ class Problem:
                 else:
                         
                         printnodual=False
-                        (indy,indzl,indzq,indznl)=(0,0,0,0)
+                        (indy,indzl,indzq,indznl,indzs)=(0,0,0,0,0)
                         if probtype=='LP' or probtype=='ConeLP':
                                 zkey='z'
                         else:
                                 zkey='zl'
                         zqkey='zq'
+                        zskey='zs'
                         if probtype=='ConeLP':
                                 indzq=dims['l']
                                 zqkey='z'
+                                zskey='z'
+                                indzs=dims['l']+sum(dims['q'])
                         ykey='y'
                         minus=1.
                         if currentsolver=='smcp':
+                                '''old version with cone constraint for equalities
                                 indy=dims['l']+sum(dims['q'][:-1])+1
                                 ykey='z'
                                 minus=-1.
+                                '''
+                                nbeq=self.cvxoptVars['A'].size[0]
+                                indy=dims['l']-2*nbeq
+                                ykey='z'
 
                         for k in self.constraints.keys():
                                 #Equality
@@ -2275,6 +2430,9 @@ class Problem:
                                                 consSz=np.product(self.constraints[k].Exp1.size)
                                                 duals.append(minus*sol[ykey][indy:indy+consSz])
                                                 indy+=consSz
+                                                if currentsolver=='smcp':
+                                                        dualm=sol[ykey][indy-consSz+nbeq:indy+nbeq]
+                                                        duals[-1]-=dualm
                                         else:
                                                 printnodual=True
                                                 duals.append(None)
@@ -2300,6 +2458,19 @@ class Problem:
                                                 else:
                                                         duals.append(sol[zqkey][indzq])
                                                         indzq+=1
+                                        else:
+                                                printnodual=True
+                                                duals.append(None)
+                                #SDP constraint
+                                elif self.constraints[k].typeOfConstraint[:3]=='sdp':
+                                        if not (sol[zskey] is None):
+                                                if probtype=='ConeLP':
+                                                        consSz=np.product(self.constraints[k].Exp1.size)
+                                                        duals.append(sol[zskey][indzs:indzs+consSz])
+                                                        indzs+=consSz
+                                                else:
+                                                        duals.append(sol[zskey][indzs])
+                                                        indzs+=1
                                         else:
                                                 printnodual=True
                                                 duals.append(None)
@@ -2667,7 +2838,7 @@ class Problem:
                                 self.set_varValue(v,cvx.rand(self.variables[v].size))
                 #lower the display level for mosek                
                 self.options['verbose']-=1
-                oldvar=self.eval_all()
+                oldvar=self._eval_all()
                 subprob=copy.deepcopy(self)
                 print('solve by SQP method with proximal convexity enforcement')
                 print('it:     crit\t\tproxF\tstep')
@@ -2713,8 +2884,8 @@ class Problem:
                                 raise Exception('function not convex before proxF reached 100 times the initial value')
 
                         for v in subprob.variables:
-                                self.set_varValue(v,subprob.variables[v].value)
-                        newvar=self.eval_all()
+                                self.set_varValue(v,subprob.get_valued_variable(v))
+                        newvar=self._eval_all()
                         step=cvx.norm2(newvar-oldvar)
                         if isinstance(step,cvx.matrix):
                                 step=step[0]
@@ -2746,11 +2917,15 @@ class Variable:
                 self.Id=Id
                 self.vtype=vtype
                 self.startIndex=startIndex #starting position in the global vector of all variables
-                self.endIndex=startIndex+size[0]*size[1] #end position +1
+                if vtype=='symmetric':
+                        self.endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
+                else:
+                        self.endIndex=startIndex+size[0]*size[1] #end position +1
                 self.value=value
 
         def __str__(self):
-                return '<variable {0}:({1} x {2})>'.format(self.name,self.size[0],self.size[1])
+                return '<variable {0}:({1} x {2}),{3}>'.format(
+                        self.name,self.size[0],self.size[1],self.vtype)
 
 #----------------------------------
 #                Expression
@@ -2839,22 +3014,30 @@ class AffinExpr(Expression):
 		return cvx.matrix(val,self.size)
 		
         def set_value(self,value):
+                #TODO: Improve for set_value on items ?
                 if len(self.factors)>1:
                         raise Exception('set_value can only be called on a simple Expression representing a variable')
                 mm=self.factors.values()[0] #should be identity matrix
-                i,j,v=list(mm.I),list(mm.J),list(mm.V)
-                n=mm.size[0]
-                if i==range(n) and j==range(n) and v==[1.]*n:
-                        name=self.factors.keys()[0]
-                        if name not in self.variables:
-                                raise Exception('unexpected case')
-                        valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
-                        if valuemat.size<>self.variables[name].size:
-                                raise Exception('should be of size {0}'.format(self.variables[name].size))
-                        self.variables[name].value=valuemat
-                else:
-                        raise Exception('set_value can only be called on a simple Expression representing a variable')
-
+                name=self.factors.keys()[0]
+                if name not in self.variables:
+                        raise Exception('unexpected variable name')
+                vtype=self.variables[name].vtype
+                size=self.variables[name].size
+                idmat=_svecm1_identity(vtype,size)
+                
+                #test if mm==idmat
+                mlist=sorted(zip(mm.I,mm.J,mm.V))
+                idlist=sorted(zip(idmat.I,idmat.J,idmat.V))
+                if (mlist!=idlist):
+                        raise Exception('set_value can only be called on a simple Expression representing a variable.')
+                
+                valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
+                if valuemat.size<>self.variables[name].size:
+                        raise Exception('should be of size {0}'.format(self.variables[name].size))
+                if vtype=='symmetric':
+                        valuemat=svec(valuemat)
+                self.variables[name].value=valuemat
+                
 	def is0(self):
 		return ( not(bool(self.constant)) and self.factors=={})
 
@@ -2926,9 +3109,12 @@ class AffinExpr(Expression):
 			newfac=bfac*selfcopy.constant
 		selfcopy.constant=newfac
 		selfcopy.size=(fac.size[0],selfcopy.size[1])
+		#the following removes 'I' from the string when a matrix is multiplied
+                #by the identity. We leave the 'I' when the factor of identity is a scalar
 		if len(facString)>0:		
 			if facString[-1]=='I' and (len(facString)==1
-				 or facString[-2].isdigit() or facString[-2]=='.'):
+				 or facString[-2].isdigit() or facString[-2]=='.') and (
+				 self.size != (1,1)):
 				facString=facString[:-1]
 		if len(facString)>0:
 			if ('+' in selfcopy.affstring()) or ('-' in selfcopy.affstring()):
@@ -2988,7 +3174,10 @@ class AffinExpr(Expression):
 			return QuadExp*fact
 		#product with a constant
 		else:
-			fac,facString=_retrieve_matrix(fact,self.size[1])
+			if self.size==(1,1): #scalar mult. of the constant
+                                fac,facString=_retrieve_matrix(fact,None)
+                        else: #normal matrix multiplication, we expect a size        
+                                fac,facString=_retrieve_matrix(fact,self.size[1])
 		selfcopy=AffinExpr(self.factors.copy(),self.constant,self.size,
 				self.string,variables=self.variables)
 		if fac.size==(1,1) and selfcopy.size[1]<>1:
@@ -2999,9 +3188,12 @@ class AffinExpr(Expression):
 			selfcopy.string=oldstring
 		prod=(self.T().__rmul__(fac.T)).T()
 		prod.size=(selfcopy.size[0],fac.size[1])
+		#the following removes 'I' from the string when a matrix is multiplied
+		#by the identity. We leave the 'I' when the factor of identity is a scalar
 		if len(facString)>0:
 			if facString[-1]=='I' and (len(facString)==1
-				 or facString[-2].isdigit() or facString[-2]=='.'):
+				 or facString[-2].isdigit() or facString[-2]=='.') and(
+				 self.size != (1,1)):
 				facString=facString[:-1]
 		if len(facString)>0:
 			if ('+' in selfcopy.affstring()) or ('-' in selfcopy.affstring()):
@@ -3041,7 +3233,8 @@ class AffinExpr(Expression):
 			selfcopy.string=facString[:-1]+'trace( '+selfcopy.string+' )'
 		else:
 			#selfcopy.string= u'\u2329 '+selfcopy.string+' | '+facString+u' \u232a'
-			selfcopy.string='\xe2\x8c\xa9 '+selfcopy.string+' | '+facString+' \xe2\x8c\xaa'
+			selfcopy.string='〈 '+selfcopy.string+' | '+facString+' 〉'
+			#'\xe2\x8c\xa9 '+selfcopy.string+' | '+facString+' \xe2\x8c\xaa'
 		return selfcopy
 
 	def __ror__(self,fact):
@@ -3386,12 +3579,12 @@ class AffinExpr(Expression):
 			selfcopy.string='['+sstring+','+estring+']'
 			return selfcopy
 		else:
-			Exp,ExpString=_retrieve_matrix(exp,None)
+			Exp,ExpString=_retrieve_matrix(exp,self.size[0])
 			exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
 			return (self & exp2)
 
 	def __rand__(self,exp):
-		Exp,ExpString=_retrieve_matrix(exp,None)
+		Exp,ExpString=_retrieve_matrix(exp,self.size[0])
 		exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
 		return (exp2 & self)
 			
@@ -3409,17 +3602,39 @@ class AffinExpr(Expression):
 			concat.string='['+sstring+';'+estring+']'
 			return concat
 		else:
-			Exp,ExpString=_retrieve_matrix(exp,None)
+			Exp,ExpString=_retrieve_matrix(exp,self.size[1])
 			exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
 			return (self // exp2)
 
 	def __rfloordiv__(self,exp):
-		Exp,ExpString=_retrieve_matrix(exp,None)
+		Exp,ExpString=_retrieve_matrix(exp,self.size[1])
 		exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
 		return (exp2 // self)
 
         def apply_function(self,fun):
                 return GeneralFun(fun,self,fun())
+        
+        def __lshift__(self,exp):
+                if self.size[0]<>self.size[1]:
+                        raise Exception('both sides of << must be square')
+                if isinstance(exp,AffinExpr):
+                        return Constraint('sdp<',None,self,exp)
+                else:
+                       n=self.size[0]
+                       Exp,ExpString=_retrieve_matrix(exp,(n,n))
+                       exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                       return (self << exp2)
+                       
+        def __rshift__(self,exp):
+                if self.size[0]<>self.size[1]:
+                        raise Exception('both sides of << must be square')
+                if isinstance(exp,AffinExpr):
+                        return Constraint('sdp>',None,self,exp)
+                else:
+                       n=self.size[0]
+                       Exp,ExpString=_retrieve_matrix(exp,(n,n))
+                       exp2=AffinExpr(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                       return (self >> exp2)
 
 #---------------------------------------------
 #        Class Norm and ProductOfAffinExpr  
@@ -3499,11 +3714,14 @@ class LogSumExp(Expression):
 			return Constraint('lse',None,self.Exp,0)
 
 class QuadExp(Expression):
-	"""quad are the quadratic factors,
-		aff is the affine part of the expression,
-		string is a string,
-		and LR stores a factorization of the expression for norms (||x|| -> LR=(x,None))
+	"""
+	quad are the quadratic factors,
+	aff is the affine part of the expression,
+	string is a string,
+	and LR stores a factorization of the expression for norms (||x|| -> LR=(x,None))
 								and product of scalar expressions)
+								
+	.. Todo:: quad expression of dimension>1							
 	"""
 	def __init__(self,quad,aff,string,LR=None,variables=None):
 		Expression.__init__(self,string,variables)
@@ -3537,17 +3755,19 @@ class QuadExp(Expression):
                                 
                 elif not self.quad is None:
                         for i,j in self.quad:
-                                if MATH_PROG_PROBLEMS['current'] is None:
+                                if not i in self.variables:
                                         raise Exception(i+' is not valued')
-                                if not MATH_PROG_PROBLEMS['current'].variables[i].value is None:
-                                        xi=MATH_PROG_PROBLEMS['current'].variables[i].value[:]
-                                else:
+                                if self.variables[i].value is None:
                                         raise Exception(i+' is not valued')
-                                if not MATH_PROG_PROBLEMS['current'].variables[j].value is None:
-                                        xj=MATH_PROG_PROBLEMS['current'].variables[j].value[:]
-                                else:
+                                if not j in self.variables:
                                         raise Exception(j+' is not valued')
+                                if self.variables[j].value is None:
+                                        raise Exception(j+' is not valued')
+                                xi=self.variables[i].value[:]
+                                xj=self.variables[j].value[:]
                                 val=val+xi.T*self.quad[i,j]*xj
+
+                
 		return val[0]
 	
 	def nnz(self):
@@ -3743,12 +3963,17 @@ class Constraint:
 					'expression on the rhs should be scalar')
 		if typeOfConstraint=='lse':
 			if not (Exp2==0 or Exp2.is0()):
-				raise Exception('lhs must be 0')
+				raise NameError('lhs must be 0')
 			self.Exp2=AffinExpr(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1),variables=self.variables)
 		if typeOfConstraint=='quad':
 			if not (Exp2==0 or Exp2.is0()):
-				raise Exception('lhs must be 0')
+				raise NameError('lhs must be 0')
 			self.Exp2=AffinExpr(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1),variables=self.variables)
+                if typeOfConstraint[:3]=='sdp':
+                        if Exp1.size<>Exp2.size:
+                                raise NameError('incoherent lhs and rhs')
+                        if Exp1.size[0]<>Exp1.size[1]:
+                                raise NameError('lhs and rhs should be square')
 
 	def __str__(self):
 		if not(self.myfullconstring is None):
@@ -3767,6 +3992,9 @@ class Constraint:
 						self.Exp1.size[0],self.Exp1.size[1])
 		if self.typeOfConstraint=='quad':
 			constr='#Quadratic constraint '
+                if self.typeOfConstraint[:3]=='sdp':
+                        constr='# ({0}x{1})-SDP constraint '.format(
+                                                self.Exp1.size[0],self.Exp1.size[1])
 		if not self.key is None:
 			constr+='('+self.key+')'
 		constr+=': '
@@ -3787,6 +4015,9 @@ class Constraint:
 						self.Exp1.size[0],self.Exp1.size[1])
 		if self.typeOfConstraint=='quad':
 			constr='#Quadratic constraint '
+                if self.typeOfConstraint[:3]=='sdp':
+                        constr='# ({0}x{1})-SDP constraint '.format(
+                                                self.Exp1.size[0],self.Exp1.size[1])
 		return constr+self.constring()+' #'
 
 	def constring(self):
@@ -3827,6 +4058,18 @@ class Constraint:
 			return 'LSE[ '+self.Exp1.affstring()+' ] < 0'
 		if self.typeOfConstraint=='quad':
 			return self.Exp1.string+' < 0'
+		if self.typeOfConstraint[:3]=='sdp':
+                        #sense=' '+self.typeOfConstraint[-1]+' '
+                        if self.typeOfConstraint[-1]=='<':
+                                sense = '≼' #≺,≼,⊰
+                        else:
+                                sense = '≽' #≻,≽,⊱
+                        if self.Exp2.is0():
+                                return self.Exp1.affstring()+sense+'0'
+                        elif self.Exp1.is0():
+                                return '0'+sense+self.Exp2.affstring()
+                        else:
+                                return self.Exp1.affstring()+sense+self.Exp2.affstring()
 
 	def keyconstring(self,lgstkey=None):
 		constr=''		
