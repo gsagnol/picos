@@ -1,6 +1,5 @@
 # coding: utf-8
-import cvxopt as cvo
-import cvxmod as cvx
+import cvxopt as cvx
 import numpy as np
 import sys
 from progress_bar import ProgressBar
@@ -282,12 +281,12 @@ def _retrieve_matrix(mat,exSize=None):
         retstr=None
         if isinstance(mat,np.ndarray):
                 retmat=cvx.matrix(mat,tc='d')
-        elif isinstance(mat,cvo.base.matrix):
+        elif isinstance(mat,cvx.base.matrix):
                 if mat.typecode=='d':
                         retmat=mat
                 else:
                         retmat=cvx.matrix(mat,tc='d')
-        elif isinstance(mat,cvo.base.spmatrix):
+        elif isinstance(mat,cvx.base.spmatrix):
                 retmat=mat
         elif isinstance(mat,list):
                 retmat=cvx.matrix(np.array(mat),tc='d')
@@ -311,10 +310,10 @@ def _retrieve_matrix(mat,exSize=None):
                                 retmat=cvx.matrix(mat,(1,1))
                         elif isinstance(exSize,int):
                                 #exSize is an int -> alpha * identity matrix
-                                retmat=mat*cvx.speye(exSize)
+                                retmat=mat*cvx.spdiag([1.]*exSize)
                         elif isinstance(exSize,tuple):
                                 #exSize is a tuple -> zeros of desired size
-                                retmat=mat*cvx.ones( exSize )
+                                retmat=mat*cvx.matrix(1., exSize )
                         retstr=str(mat)
         elif isinstance(mat,str):
                 retstr=mat
@@ -365,7 +364,7 @@ def _retrieve_matrix(mat,exSize=None):
                                 i1,i2=exSize
                         else:
                                 raise Exception('size unspecified')
-                        retmat=fact*cvx.ones(  i1, i2  )
+                        retmat=fact*cvx.matrix(1.,  i1, i2  )
                 #unit vector
                 elif (mat.find('e_')>=0):
                         mspl=mat.split('e_')
@@ -419,9 +418,9 @@ def _retrieve_matrix(mat,exSize=None):
                         if isinstance(exSize,tuple):
                                 if exSize[0]!=exSize[1]:
                                         raise Exception('matrix should be square')
-                                retmat=cvx.speye(exSize[0])
+                                retmat=cvx.spdiag([1.]*exSize[0])
                         else:#we have an integer
-                                retmat=cvx.speye(exSize)
+                                retmat=cvx.spdiag([1.]*exSize)
                 else:
                         raise NameError('unexpected mat variable')
                 if transpose:
@@ -1316,14 +1315,14 @@ class Problem:
                                         except ValueError:
                                                 key=ind
                                 sz=self.variables[var+'['+ind+']'].size
-                                rvar[key]=AffinExpr({var+'['+ind+']':cvx.speye(sz[0]*sz[1])},
+                                rvar[key]=AffinExpr({var+'['+ind+']':cvx.spdiag([1.]*sz[0]*sz[1])},
                                         constant=0,
                                         size=self.variables[var+'['+ind+']'].size,string=var+'['+ind+']',
                                         variables=self.variables)
                         return rvar
                 else:
                         sz=self.variables[var].size
-                        return AffinExpr({var:cvx.speye(sz[0]*sz[1])},constant=0,
+                        return AffinExpr({var:cvx.spdiag([1.]*sz[0]*sz[1])},constant=0,
                                 size=sz,string=var,
                                 variables=self.variables)
 
@@ -1403,7 +1402,7 @@ class Problem:
                 """
                 xx=cvx.matrix([],(0,1))
                 for v in sorted(self.variables.keys()):
-                        xx=cvx.concatvert(xx,self.variables[v].value[:])
+                        xx=cvx.matrix([xx,self.variables[v].value[:]])
                 return xx
 
         """
@@ -1755,37 +1754,37 @@ class Problem:
                                 (G_rhs,h_rhs)=self._makeGandh(self.constraints[k].Exp2)
                                 if sense=='=':
                                         self.cvxoptVars['A']=cvx.sparse([self.cvxoptVars['A'],G_lhs-G_rhs])
-                                        self.cvxoptVars['b']=cvx.concatvert(self.cvxoptVars['b'],h_rhs-h_lhs)
+                                        self.cvxoptVars['b']=cvx.matrix([self.cvxoptVars['b'],h_rhs-h_lhs])
                                 elif sense=='<':
                                         self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs-G_rhs])
-                                        self.cvxoptVars['hl']=cvx.concatvert(self.cvxoptVars['hl'],h_rhs-h_lhs)
+                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],h_rhs-h_lhs])
                                 elif sense=='>':
                                         self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_rhs-G_lhs])
-                                        self.cvxoptVars['hl']=cvx.concatvert(self.cvxoptVars['hl'],h_lhs-h_rhs)
+                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],h_lhs-h_rhs])
                                 else:
                                         raise NameError('unexpected case')
                         elif self.constraints[k].typeOfConstraint=='SOcone':
                                 (A,b)=self._makeGandh(self.constraints[k].Exp1)
                                 (c,d)=self._makeGandh(self.constraints[k].Exp2)
                                 self.cvxoptVars['Gq'].append(cvx.sparse([-c,-A]))
-                                self.cvxoptVars['hq'].append(cvx.concatvert(d,b))
+                                self.cvxoptVars['hq'].append(cvx.matrix([d,b]))
                         elif self.constraints[k].typeOfConstraint=='RScone':
                                 (A,b)=self._makeGandh(self.constraints[k].Exp1)
                                 (c1,d1)=self._makeGandh(self.constraints[k].Exp2)
                                 (c2,d2)=self._makeGandh(self.constraints[k].Exp3)
                                 self.cvxoptVars['Gq'].append(cvx.sparse([-c1-c2,-2*A,c2-c1]))
-                                self.cvxoptVars['hq'].append(cvx.concatvert(cvx.concatvert(d1+d2,2*b),d1-d2))
+                                self.cvxoptVars['hq'].append(cvx.matrix([d1+d2,2*b,d1-d2]))
                         elif self.constraints[k].typeOfConstraint=='lse':
                                 (F,g)=self._makeGandh(self.constraints[k].Exp1)
                                 self.cvxoptVars['F']=cvx.sparse([self.cvxoptVars['F'],F])
-                                self.cvxoptVars['g']=cvx.concatvert(self.cvxoptVars['g'],g)
+                                self.cvxoptVars['g']=cvx.matrix([self.cvxoptVars['g'],g])
                                 self.cvxoptVars['K'].append(F.size[0])
                         elif self.constraints[k].typeOfConstraint=='quad':
                                 self.cvxoptVars['quadcons'].append((k,self.cvxoptVars['Gl'].size[0]))
                                 #quadratic part handled later
                                 (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1.aff)
                                 self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
-                                self.cvxoptVars['hl']=cvx.concatvert(self.cvxoptVars['hl'],-h_lhs)
+                                self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-h_lhs])
                         elif self.constraints[k].typeOfConstraint[:3]=='sdp':
                                 sense=self.constraints[k].typeOfConstraint[3]
                                 (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1)
@@ -1878,7 +1877,7 @@ class Problem:
                 NUMVAR = self.numberOfVars+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
                 NUMCON = self.numberAffConstraints+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
                 NUMCONE = self.numberConeConstraints
-                NUMANZ= cvx.nnz(self.cvxoptVars['A'])+cvx.nnz(self.cvxoptVars['Gl'])
+                NUMANZ= len(self.cvxoptVars['A'].I)+len(self.cvxoptVars['Gl'].I)
                 NUMQNZ= self.numberQuadNNZ
 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']):
@@ -2258,11 +2257,11 @@ class Problem:
                 #--------------------#        
                 #  sets the options  #
                 #--------------------#
-                cvo.solvers.options['maxiters']=self.options['maxit']
-                cvo.solvers.options['abstol']=self.options['abstol']
-                cvo.solvers.options['feastol']=self.options['feastol']
-                cvo.solvers.options['reltol']=self.options['reltol']
-                cvo.solvers.options['show_progress']=bool(self.options['verbose']>0)
+                cvx.solvers.options['maxiters']=self.options['maxit']
+                cvx.solvers.options['abstol']=self.options['abstol']
+                cvx.solvers.options['feastol']=self.options['feastol']
+                cvx.solvers.options['reltol']=self.options['reltol']
+                cvx.solvers.options['show_progress']=bool(self.options['verbose']>0)
                 if self.options['solver']=='CVXOPT':
                         currentsolver=None
                 elif self.options['solver']=='cvxopt-mosek':
@@ -2283,7 +2282,7 @@ class Problem:
                                 print '-----------------------------------'
                                 print '         cvxopt GP solver'
                                 print '-----------------------------------'
-                        sol=cvo.solvers.gp(self.cvxoptVars['K'],
+                        sol=cvx.solvers.gp(self.cvxoptVars['K'],
                                                 self.cvxoptVars['F'],self.cvxoptVars['g'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                 self.cvxoptVars['A'],self.cvxoptVars['b'])
@@ -2296,7 +2295,7 @@ class Problem:
                                         print '------------------------------------------'
                                         print '  mosek LP solver interfaced by cvxopt'
                                         print '------------------------------------------'
-                                sol=cvo.solvers.lp(self.cvxoptVars['c'],
+                                sol=cvx.solvers.lp(self.cvxoptVars['c'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                 self.cvxoptVars['A'],self.cvxoptVars['b'],
                                                 solver=currentsolver)
@@ -2306,7 +2305,7 @@ class Problem:
                                         print '-------------------------------------------'
                                         print '  mosek SOCP solver interfaced by cvxopt'
                                         print '-------------------------------------------'
-                                sol=cvo.solvers.socp(self.cvxoptVars['c'],
+                                sol=cvx.solvers.socp(self.cvxoptVars['c'],
                                                         self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                         self.cvxoptVars['Gq'],self.cvxoptVars['hq'],
                                                         self.cvxoptVars['A'],self.cvxoptVars['b'],
@@ -2319,32 +2318,23 @@ class Problem:
                         dims['q']=[Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
                         G=self.cvxoptVars['Gl']
                         h=self.cvxoptVars['hl']
+                        # handle the equalities as 2 ineq for smcp
                         if currentsolver=='smcp':
                                 if self.cvxoptVars['A'].size[0]>0:
                                        G=cvx.sparse([G,self.cvxoptVars['A']]) 
                                        G=cvx.sparse([G,-self.cvxoptVars['A']])
-                                       h=cvx.concatvert(h,self.cvxoptVars['b'])
-                                       h=cvx.concatvert(h,-self.cvxoptVars['b'])
+                                       h=cvx.matrix([h,self.cvxoptVars['b']])
+                                       h=cvx.matrix([h,-self.cvxoptVars['b']])
                                        dims['l']+=(2*self.cvxoptVars['A'].size[0])
+
                         for i in range(len(dims['q'])):
                                 G=cvx.sparse([G,self.cvxoptVars['Gq'][i]])
-                                h=cvx.concatvert(h,self.cvxoptVars['hq'][i])
-                        ''' old version with cone constraint for equalities
-                        if currentsolver=='smcp':
-                                if self.cvxoptVars['A'].size[0]>0:
-                                        eps=1e-6
-                                        m=self.cvxoptVars['A'].size[1]
-                                        Aq=cvx.sparse([cvx.spmatrix([],[],[],(1,m)),-self.cvxoptVars['A']])
-                                        bq=cvx.concatvert(cvx.matrix(eps,(1,1)),-self.cvxoptVars['b'])
-                                        G=cvx.sparse([G,Aq])
-                                        h=cvx.concatvert(h,bq)
-                                        dims['q'].append(Aq.size[0])
-                        '''
+                                h=cvx.matrix([h,self.cvxoptVars['hq'][i]])
 
                                          
                         for i in range(len(dims['s'])):
                                 G=cvx.sparse([G,self.cvxoptVars['Gs'][i]])
-                                h=cvx.concatvert(h,self.cvxoptVars['hs'][i])
+                                h=cvx.matrix([h,self.cvxoptVars['hs'][i]])
                         if currentsolver=='smcp':
                                 try:
                                         import smcp
@@ -2362,7 +2352,7 @@ class Problem:
                                         print '--------------------------'
                                         print '  cvxopt CONELP solver'
                                         print '--------------------------'
-                                sol=cvo.solvers.conelp(self.cvxoptVars['c'],
+                                sol=cvx.solvers.conelp(self.cvxoptVars['c'],
                                                         G,h,dims,
                                                         self.cvxoptVars['A'],
                                                         self.cvxoptVars['b'])
@@ -2412,13 +2402,7 @@ class Problem:
                                 zskey='z'
                                 indzs=dims['l']+sum(dims['q'])
                         ykey='y'
-                        minus=1.
                         if currentsolver=='smcp':
-                                '''old version with cone constraint for equalities
-                                indy=dims['l']+sum(dims['q'][:-1])+1
-                                ykey='z'
-                                minus=-1.
-                                '''
                                 nbeq=self.cvxoptVars['A'].size[0]
                                 indy=dims['l']-2*nbeq
                                 ykey='z'
@@ -2428,7 +2412,7 @@ class Problem:
                                 if self.constraints[k].typeOfConstraint=='lin=':
                                         if not (sol[ykey] is None):
                                                 consSz=np.product(self.constraints[k].Exp1.size)
-                                                duals.append(minus*sol[ykey][indy:indy+consSz])
+                                                duals.append(sol[ykey][indy:indy+consSz])
                                                 indy+=consSz
                                                 if currentsolver=='smcp':
                                                         dualm=sol[ykey][indy-consSz+nbeq:indy+nbeq]
@@ -2835,7 +2819,7 @@ class Problem:
                 import copy
                 for v in self.variables:
                         if self.variables[v].value is None:
-                                self.set_varValue(v,cvx.rand(self.variables[v].size))
+                                self.set_varValue(v,cvx.uniform(self.variables[v].size))
                 #lower the display level for mosek                
                 self.options['verbose']-=1
                 oldvar=self._eval_all()
@@ -2873,7 +2857,7 @@ class Problem:
                                         solFound=True
                                 except Exception as ex:
                                         if str(ex)[:6]=='(1296)': #function not convex
-                                                proxF*=(1+cvx.rand())
+                                                proxF*=(1+cvx.uniform(1))
                                         else:
                                                 #reinit the initial verbosity
                                                 self.options['verbose']+=1
@@ -2886,7 +2870,7 @@ class Problem:
                         for v in subprob.variables:
                                 self.set_varValue(v,subprob.get_valued_variable(v))
                         newvar=self._eval_all()
-                        step=cvx.norm2(newvar-oldvar)
+                        step=np.linalg.norm(newvar-oldvar)
                         if isinstance(step,cvx.matrix):
                                 step=step[0]
                         oldvar=newvar
@@ -3092,7 +3076,7 @@ class AffinExpr(Expression):
 		else:
 			fac,facString=_retrieve_matrix(fact,self.size[0])		
 		if fac.size==(1,1) and selfcopy.size[0]<>1:
-			fac=fac[0]*cvx.speye(selfcopy.size[0])
+			fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[0])
 		if self.size==(1,1) and fac.size[1]<>1:
 			oldstring=selfcopy.string
 			selfcopy=selfcopy.diag(fac.size[1])
@@ -3181,7 +3165,7 @@ class AffinExpr(Expression):
 		selfcopy=AffinExpr(self.factors.copy(),self.constant,self.size,
 				self.string,variables=self.variables)
 		if fac.size==(1,1) and selfcopy.size[1]<>1:
-			fac=fac[0]*cvx.speye(selfcopy.size[1])
+			fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[1])
 		if self.size==(1,1) and fac.size[0]<>1:
 			oldstring=selfcopy.string
 			selfcopy=selfcopy.diag(fac.size[0])
@@ -3274,11 +3258,11 @@ class AffinExpr(Expression):
 		if isinstance(term,AffinExpr):
 			if term.size==(1,1) and self.size<>(1,1):
 				oldstring=term.string
-				term=cvx.ones(self.size)*term.diag(self.size[1])
+				term=cvx.matrix(1.,self.size)*term.diag(self.size[1])
 				term.string='|'+oldstring+'|'
 			if self.size==(1,1) and term.size<>(1,1):
 				oldstring=self.string
-				selfone=cvx.ones(term.size)*self.diag(term.size[1])
+				selfone=cvx.matrix(1.,term.size)*self.diag(term.size[1])
 				selfone.string='|'+oldstring+'|'
 				return (selfone+term)
 			if term.size<>selfcopy.size:
@@ -3444,11 +3428,11 @@ class AffinExpr(Expression):
 		if isinstance(exp,AffinExpr):
 			if exp.size==(1,1) and self.size<>(1,1):
 				oldstring=exp.string
-				exp=cvx.ones(self.size)*exp.diag(self.size[1])
+				exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
 				exp.string='|'+oldstring+'|'
 			if self.size==(1,1) and exp.size<>(1,1):
 				oldstring=self.string
-				selfone=cvx.ones(exp.size)*self.diag(exp.size[1])
+				selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
 				selfone.string='|'+oldstring+'|'
 				return (selfone<exp)
 			return Constraint('lin<',None,self,exp)
@@ -3472,11 +3456,11 @@ class AffinExpr(Expression):
 		if isinstance(exp,AffinExpr):
 			if exp.size==(1,1) and self.size<>(1,1):
 				oldstring=exp.string
-				exp=cvx.ones(self.size)*exp.diag(self.size[1])
+				exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
 				exp.string='|'+oldstring+'|'
 			if self.size==(1,1) and exp.size<>(1,1):
 				oldstring=self.string
-				selfone=cvx.ones(exp.size)*self.diag(exp.size[1])
+				selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
 				selfone.string='|'+oldstring+'|'
 				return (selfone>exp)	
 			return Constraint('lin>',None,self,exp)
@@ -3491,11 +3475,11 @@ class AffinExpr(Expression):
 		if isinstance(exp,AffinExpr):
 			if exp.size==(1,1) and self.size<>(1,1):
 				oldstring=exp.string
-				exp=cvx.ones(self.size)*exp.diag(self.size[1])
+				exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
 				exp.string='|'+oldstring+'|'
 			if self.size==(1,1) and exp.size<>(1,1):
 				oldstring=self.string
-				selfone=cvx.ones(exp.size)*self.diag(exp.size[1])
+				selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
 				selfone.string='|'+oldstring+'|'
 				return (selfone==exp)
 			return Constraint('lin=',None,self,exp)
@@ -3520,7 +3504,7 @@ class AffinExpr(Expression):
 			raise Exception('not implemented')
 		selfcopy=AffinExpr(self.factors.copy(),self.constant,self.size,
 				self.string,variables=self.variables)
-		idx=cvx.speye(dim)[:].I
+		idx=cvx.spdiag([1.]*dim)[:].I
 		for k in self.factors.keys():
 			selfcopy.factors[k]=cvx.spmatrix([],[],[],(dim**2,self.factors[k].size[1]))
 			for i in idx:
@@ -3654,7 +3638,7 @@ class Norm(Expression):
 		
 	def eval(self):
 		vec=self.exp.eval()
-		return cvx.norm2(vec)
+		return np.linalg.norm(vec)
 
 	def __pow__(self,exponent):
 		if (exponent<>2):
@@ -3773,7 +3757,7 @@ class QuadExp(Expression):
 	def nnz(self):
 		nz=0
 		for ij in self.quad:
-			nz+=cvx.nnz(self.quad[ij])
+			nz+=len(self.quad[ij].I)
 		return nz
 
 	#OVERLOADS:
@@ -3883,7 +3867,7 @@ class QuadExp(Expression):
 		if isinstance(exp,AffinExpr):
 			if exp.size<>(1,1):
 				raise Exception('RHS must be scalar')
-			exp2=AffinExpr(factors={},constant=cvx.ones((1,1)),size=(1,1),string='1',variables=self.variables)
+			exp2=AffinExpr(factors={},constant=cvx.matrix(1.,(1,1)),size=(1,1),string='1',variables=self.variables)
 			expQE=QuadExp({},exp,exp.affstring(),LR=(exp,exp2),variables=self.variables)
 			return self<expQE
 		else:
