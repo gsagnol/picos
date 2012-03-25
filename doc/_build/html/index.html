@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Welcome to pyMathProg’s documentation! &mdash; pyMathProg 0.1 documentation</title>
+    <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; pyMathProg 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -25,7 +25,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pyMathProg 0.1 documentation" href="#" /> 
+    <link rel="top" title="pyMathProg 0.1 documentation" href="#" />
+    <link rel="next" title="Introduction" href="intro.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,6 +38,9 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             accesskey="N">next</a> |</li>
         <li><a href="#">pyMathProg 0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -46,11 +50,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="welcome-to-pymathprog-s-documentation">
-<h1>Welcome to pyMathProg&#8217;s documentation!<a class="headerlink" href="#welcome-to-pymathprog-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
+  <div class="section" id="picos-a-python-interface-for-conic-optimization-solvers">
+<h1>PICOS: A Python Interface for Conic Optimization Solvers<a class="headerlink" href="#picos-a-python-interface-for-conic-optimization-solvers" title="Permalink to this headline">¶</a></h1>
+<p id="contents"><strong>PICOS Documentation contents</strong></p>
 <div class="toctree-wrapper compound">
-<ul class="simple">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <p>This is something about pyMathProg.</p>
@@ -84,7 +95,7 @@ of the following types:</p>
 <li><tt class="docutils literal"><span class="pre">list</span></tt> [creates a vecor of dimension len(list)]</li>
 <li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.matrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt></a></li>
 <li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a></li>
-<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7.dev-39029f5)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
+<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7.dev-3503c5f)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
 <li><tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">real</span></tt> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
 whith all entries equal to <strong>mat</strong>.</li>
 <li>following strings:<blockquote>
@@ -94,6 +105,7 @@ whith all entries equal to <strong>mat</strong>.</li>
 <li>&#8216;<tt class="docutils literal"><span class="pre">e_i(n,m)</span></tt>&#8216; matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)</li>
 <li>&#8216;<tt class="docutils literal"><span class="pre">e_i,j(n,m)</span></tt>&#8216; matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)</li>
 <li>&#8216;<tt class="docutils literal"><span class="pre">I</span></tt>&#8216; for the identity matrix</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">I(n)</span></tt>&#8216; for the identity matrix, forced to be of size n x n.</li>
 <li>&#8216;<tt class="docutils literal"><span class="pre">a%s</span></tt>&#8216;, where <tt class="docutils literal"><span class="pre">%s</span></tt> is one of the above string: the matrix that 
 should be returned when <strong>mat</strong> == <tt class="docutils literal"><span class="pre">%s</span></tt>, multiplied by the scalar a.</li>
 </ul>
@@ -115,14 +127,14 @@ is a string representation of <strong>mat</strong></td>
 <span class="go">(&lt;3x1 sparse matrix, tc=&#39;d&#39;, nnz=3&gt;, &#39;[ 3 x 1 MAT ]&#39;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_5(7,1)&#39;</span><span class="p">)</span>
 <span class="go">(&lt;7x1 sparse matrix, tc=&#39;d&#39;, nnz=1&gt;, &#39;e_5&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_11(7,2)&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<span class="go">[   0        0    ]</span>
-<span class="go">[   0        0    ]</span>
-<span class="go">[   0        0    ]</span>
-<span class="go">[   0        0    ]</span>
-<span class="go">[   0        1.000]</span>
-<span class="go">[   0        0    ]</span>
-<span class="go">[   0        0    ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_11(7,2)&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        1.00e+00]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">MP</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;5.3I&#39;</span><span class="p">,(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
 <span class="go">(&lt;2x2 sparse matrix, tc=&#39;d&#39;, nnz=2&gt;, &#39;5.3I&#39;)</span>
 </pre></div>
@@ -131,15 +143,13 @@ is a string representation of <strong>mat</strong></td>
 
 <dl class="class">
 <dt id="pyMathProg.Problem">
-<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Problem</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class represents an optimization problem</p>
-<dl class="method">
-<dt id="pyMathProg.Problem.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>The constructor creates an empty problem.
-A dictionary of <em>options</em> (<strong>option_name-&gt;value</strong>) can be given</p>
-</dd></dl>
-
+<em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Problem</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents an optimization problem.
+The constructor creates an empty problem.
+Some options can be provided under the form
+<strong>key</strong> = <strong>value</strong>.
+See the list of available options
+in <a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a></p>
 <dl class="method">
 <dt id="pyMathProg.Problem.add_constraint">
 <tt class="descname">add_constraint</tt><big>(</big><em>cons</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.add_constraint" title="Permalink to this definition">¶</a></dt>
@@ -227,16 +237,16 @@ represent this list of constraints.</li>
 <span class="gp">... </span><span class="s">&#39;t&#39;</span><span class="p">,</span>
 <span class="gp">... </span><span class="s">&#39;[4]&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span> 
 <span class="go">---------------------</span>
 <span class="go">optimization problem:</span>
-<span class="go">24 variables, 9 affine constraints, 9 vars in a cone</span>
+<span class="go">24 variables, 9 affine constraints, 9 vars in a SO cone</span>
 
-<span class="go">x         : list of 5 variables, (2, 1), continuous</span>
-<span class="go">w         : dict of 3 variables, (3, 1), continuous</span>
-<span class="go">y         : (5, 1), continuous</span>
+<span class="go">x   : list of 5 variables, (2, 1), continuous</span>
+<span class="go">w   : dict of 3 variables, (3, 1), continuous</span>
+<span class="go">y   : (5, 1), continuous</span>
 
-<span class="go">        find vars</span>
+<span class="go">    find vars</span>
 <span class="go">such that</span>
 <span class="go">  u.T*x[i] &lt; y[i] for all i in [5]</span>
 <span class="go">  ||w[ij]|| &lt; y[ij__1] for all ij in IJ</span>
@@ -292,13 +302,6 @@ appear in any constraint or in the objective function.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pyMathProg.Problem.eval_all">
-<tt class="descname">eval_all</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.eval_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the big vector with all variable values,
-in the order induced by sorted(self.variables.keys()).</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="pyMathProg.Problem.get_constraint">
 <tt class="descname">get_constraint</tt><big>(</big><em>ind</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.get_constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a constraint of the problem.</p>
@@ -306,7 +309,7 @@ in the order induced by sorted(self.variables.keys()).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>int or tuple.</em>) &#8211; <p>There is two ways to index a constraint.</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>int or tuple.</em>) &#8211; <p>There are two ways to index a constraint.</p>
 <ul class="simple">
 <li>if ind is an <tt class="docutils literal"><span class="pre">int</span></tt> <em>n</em>, then the nth constraint (starting from 0)
 will be returned, where all the constraints are counted
@@ -333,15 +336,15 @@ function <a class="reference internal" href="#pyMathProg.Problem.add_list_of_con
 <span class="gp">... </span><span class="s">&#39;i&#39;</span><span class="p">,</span>
 <span class="gp">... </span><span class="s">&#39;[5]&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">y</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span> 
 <span class="go">---------------------</span>
 <span class="go">optimization problem:</span>
 <span class="go">15 variables, 10 affine constraints</span>
 
-<span class="go">x         : list of 5 variables, (2, 1), continuous</span>
-<span class="go">y         : (5, 1), continuous</span>
+<span class="go">x   : list of 5 variables, (2, 1), continuous</span>
+<span class="go">y   : (5, 1), continuous</span>
 
-<span class="go">        find vars</span>
+<span class="go">    find vars</span>
 <span class="go">such that</span>
 <span class="go">  〈 |1| | x[i] 〉 &lt; y[i] for all i in [5]</span>
 <span class="go">  y &gt; 0</span>
@@ -456,27 +459,25 @@ Otherwise, it raises an <tt class="docutils literal"><span class="pre">Attribute
 
 <dl class="method">
 <dt id="pyMathProg.Problem.set_all_options_to_default">
-<tt class="descname">set_all_options_to_default</tt><big>(</big><em>opt=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_all_options_to_default" title="Permalink to this definition">¶</a></dt>
-<dd><p>set all the options indicated in the
-dictionary <strong>opt</strong> to the given values,
-and the other options to their default.
-The pair of &#8216;option keys&#8217;/&#8217;default values&#8217; are the as follows:</p>
+<tt class="descname">set_all_options_to_default</tt><big>(</big><big>)</big><a class="headerlink" href="#pyMathProg.Problem.set_all_options_to_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>set all the options to their default.
+The following options are available:</p>
 <ul class="simple">
-<li>&#8216;tol&#8217;=1e-7 [optimality tolerance for the solver]</li>
-<li>&#8216;feastol&#8217;=1e-7 [feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
-<li>&#8216;abstol&#8217;=1e-7 [absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
-<li>&#8216;reltol&#8217;=1e-6 [relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>]</li>
-<li>&#8216;maxit&#8217;=50 [maximum number of iterations]</li>
-<li>&#8216;verbose&#8217;=1 [verbosity level]</li>
-<li>&#8216;solver&#8217;=&#8217;CVXOPT&#8217; [currently the other available solvers are &#8216;cplex&#8217;,&#8217;mosek&#8217;]</li>
-<li>&#8216;step_sqp&#8217;=1 [&#8216;first step length for the sequential quadratic programming procedure&#8217;]</li>
-<li>&#8216;harmonic_steps&#8217;=Trye [step at the ith step of the sqp procedure is step_sqp/i]</li>
-<li>&#8216;onlyChangeObjective&#8217;=False [useful when we want to recompute the solution of a
+<li>tol=1e-7 : optimality tolerance for the solver</li>
+<li>feastol=1e-7 : feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a></li>
+<li>abstol=1e-7 : absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a></li>
+<li>reltol=1e-6 : relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a></li>
+<li>maxit=50 : maximum number of iterations</li>
+<li>verbose=1 : verbosity level</li>
+<li>solver=&#8217;cvxopt&#8217; : currently the other available solvers are &#8216;cplex&#8217;,&#8217;mosek&#8217;,&#8217;smcp&#8217;,&#8217;zibopt&#8217;</li>
+<li>step_sqp=1 : &#8216;first step length for the sequential quadratic programming procedure&#8217;</li>
+<li>harmonic_steps=True : step at the ith step of the sqp procedure is step_sqp/i]</li>
+<li>onlyChangeObjective&#8217;=False : useful when we want to recompute the solution of a
 problem but with a different objective function. If set to <em>True</em> and a new
 objective function has been passed to the solver, the constraints
 of the problem will not be parsed next time <a class="reference internal" href="#pyMathProg.Problem.solve" title="pyMathProg.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> is called (this can lead
 to a huge gain of time).</li>
-<li>&#8216;noduals&#8217;=False [if True, do not retrieve the dual variables]</li>
+<li>noduals=False : if True, do not retrieve the dual variables</li>
 </ul>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -484,7 +485,7 @@ to a huge gain of time).</li>
 </div>
 <div class="admonition-todo admonition" id="index-1">
 <p class="first admonition-title">Todo</p>
-<p class="last">raise a warning when a solver ignores an option</p>
+<p class="last">Organize above options</p>
 </div>
 </dd></dl>
 
@@ -518,7 +519,7 @@ or maximized. This parameter will be ignored if typ==&#8217;find&#8217;.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>key</strong> (<em>str.</em>) &#8211; The key of an option (see the list of keys in <tt class="xref py py-func docutils literal"><span class="pre">set_all_options()</span></tt>).</li>
+<li><strong>key</strong> (<em>str.</em>) &#8211; The key of an option (see the list of keys in <a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>).</li>
 <li><strong>val</strong> &#8211; New value for the option <strong>key</strong>.</li>
 </ul>
 </td>
@@ -563,7 +564,7 @@ the function <a class="reference internal" href="#pyMathProg._retrieve_matrix" t
 
 <dl class="method">
 <dt id="pyMathProg.Problem.solve">
-<tt class="descname">solve</tt><big>(</big><em>options=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">solve</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves the problem.</p>
 <p>Once the problem has been solved, the optimal variables
 can be obtained thanks to the :func:<tt class="docutils literal"><span class="pre">eval</span></tt>. The
@@ -573,9 +574,13 @@ of the class :class:<tt class="docutils literal"><span class="pre">Constraint</s
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>options</strong> (<em>dict.</em>) &#8211; A dictionary of options that will be updated before
-the solver is called. In particular, the solver can
-be specified here.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>options</strong> &#8211; A list of options to update before
+the call to the solver. In particular, 
+the solver can
+be specified here,
+under the form key = value.
+See the list of available options
+in <a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary <strong>sol</strong> which contains the information
 returned by the solver.</td>
@@ -590,22 +595,10 @@ returned by the solver.</td>
 
 <dl class="method">
 <dt id="pyMathProg.Problem.update_options">
-<tt class="descname">update_options</tt><big>(</big><em>dictKeyToVal</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.update_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>update the option <tt class="docutils literal"><span class="pre">dict</span></tt> for the pairs
-(key,value) in <strong>dictKeyToVal</strong>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dictKeyToVal</strong> (<em>dict.</em>) &#8211; dictionary containing the
-new values of the options to
-be updated. The keys must be
-valid option keys (see the
-list of keys in
-<a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>)</td>
-</tr>
-</tbody>
-</table>
+<tt class="descname">update_options</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#pyMathProg.Problem.update_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the option <tt class="docutils literal"><span class="pre">dict</span></tt>, for the pairs
+key = value. For a list of available options,
+see <a class="reference internal" href="#pyMathProg.Problem.set_all_options_to_default" title="pyMathProg.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -670,6 +663,10 @@ string is a string,
 and LR stores a factorization of the expression for norms (||x|| -&gt; LR=(x,None))</p>
 <blockquote>
 <div>and product of scalar expressions)</div></blockquote>
+<div class="admonition-todo admonition" id="index-3">
+<p class="first admonition-title">Todo</p>
+<p class="last">quad expression of dimension&gt;1</p>
+</div>
 </dd></dl>
 
 <dl class="class">
@@ -687,7 +684,7 @@ applied to an affine expression</p>
 <dl class="class">
 <dt id="pyMathProg.Constraint">
 <em class="property">class </em><tt class="descclassname">pyMathProg.</tt><tt class="descname">Constraint</tt><big>(</big><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#pyMathProg.Constraint" title="Permalink to this definition">¶</a></dt>
-<dd><p>a class for describing a constraint (see the method addConstraint)</p>
+<dd><p>a class for describing a constraint (see the method add_constraint)</p>
 </dd></dl>
 
 </div>
@@ -708,12 +705,15 @@ applied to an affine expression</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to pyMathProg&#8217;s documentation!</a><ul>
+<li><a class="reference internal" href="#">PICOS: A Python Interface for Conic Optimization Solvers</a><ul>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
+  <h4>Next topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="next chapter">Introduction</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/index.txt"
@@ -745,6 +745,9 @@ applied to an affine expression</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             >next</a> |</li>
         <li><a href="#">pyMathProg 0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>

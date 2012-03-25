@@ -36,7 +36,10 @@ def sum(lst,it=None,indices=None):
                                 sumstr+=','+str(it[k])
                 if not indices is None:
                         sumstr+=' in '+indices+'}'
-                indstr=putIndices([l.affstring() for l in lst],it)
+                try:
+		  indstr=putIndices([l.affstring() for l in lst],it)
+                except Exception:
+		  indstr='['+str(len(lst))+' expressions (first: '+lst[0].string+')]'
                 sumstr+=' '+indstr
                 sigma='Σ' #'u'\u03A3'.encode('utf-8')
                 affSum.string=sigma+sumstr
@@ -266,14 +269,14 @@ def _retrieve_matrix(mat,exSize=None):
         (<3x1 sparse matrix, tc='d', nnz=3>, '[ 3 x 1 MAT ]')
         >>> MP._retrieve_matrix('e_5(7,1)')
         (<7x1 sparse matrix, tc='d', nnz=1>, 'e_5')
-        >>> print MP._retrieve_matrix('e_11(7,2)')[0]
-        [   0        0    ]
-        [   0        0    ]
-        [   0        0    ]
-        [   0        0    ]
-        [   0        1.000]
-        [   0        0    ]
-        [   0        0    ]
+        >>> print MP._retrieve_matrix('e_11(7,2)')[0] #doctest: +NORMALIZE_WHITESPACE
+        [   0        0       ]
+        [   0        0       ]
+        [   0        0       ]
+        [   0        0       ]
+        [   0        1.00e+00]
+        [   0        0       ]
+        [   0        0       ]
         >>> print MP._retrieve_matrix('5.3I',(2,2))
         (<2x2 sparse matrix, tc='d', nnz=2>, '5.3I')
 
@@ -364,7 +367,7 @@ def _retrieve_matrix(mat,exSize=None):
                                 i1,i2=exSize
                         else:
                                 raise Exception('size unspecified')
-                        retmat=fact*cvx.matrix(1.,  i1, i2  )
+                        retmat=fact*cvx.matrix(1.,  (i1, i2)  )
                 #unit vector
                 elif (mat.find('e_')>=0):
                         mspl=mat.split('e_')
@@ -555,12 +558,14 @@ def _svecm1_identity(vtype,size):
 """
 
 class Problem:
-	"""This class represents an optimization problem"""
-	def __init__(self,options=None):
-                """
-                The constructor creates an empty problem.
-                A dictionary of *options* (**option_name->value**) can be given
-                """
+	"""This class represents an optimization problem.
+	The constructor creates an empty problem.
+        Some options can be provided under the form
+        **key** = **value**.
+	See the list of available options
+        in :func:`set_all_options_to_default`
+	"""
+	def __init__(self,**options):
 		self.objective = ('find',None) #feasibility problem only
 		self.constraints = {}
 		self.variables = {}
@@ -596,7 +601,7 @@ class Problem:
 		self.options = {}
 		if options is None: options={}
 		self.set_all_options_to_default()
-		self.update_options(options)
+		self.update_options(**options)
 
 		self.longestkey=0 #for a nice display of constraints
 		self.varIndices=[]
@@ -724,10 +729,6 @@ class Problem:
 			self.numberQuadConstraints+=1
 			self.numberQuadNNZ+=expr.nnz()
 		self.objective=(typ,expr)
-
-        #obsolete
-        def set_varValue(self,name,value):
-                self.set_var_value(name,value)
         
         def set_var_value(self,name,value):
                 """
@@ -862,36 +863,31 @@ class Problem:
 		if h.typecode<>'d':
 			h=cvx.matrix(h,tc='d')
 		return G,h
-                                
-        #obsolete name
-        def defaultOptions(self,opt):
-                self.set_all_options(opt)
+
                 
-        def set_all_options_to_default(self,opt = None):
-                """set all the options indicated in the
-                dictionary **opt** to the given values,
-                and the other options to their default.
-                The pair of 'option keys'/'default values' are the as follows:
+        def set_all_options_to_default(self):
+                """set all the options to their default.
+                The following options are available:
                 
-                * 'tol'=1e-7 [optimality tolerance for the solver]
-                * 'feastol'=1e-7 [feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
-                * 'abstol'=1e-7 [absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
-                * 'reltol'=1e-6 [relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_]
-                * 'maxit'=50 [maximum number of iterations]
-                * 'verbose'=1 [verbosity level]
-                * 'solver'='CVXOPT' [currently the other available solvers are 'cplex','mosek']
-                * 'step_sqp'=1 ['first step length for the sequential quadratic programming procedure']
-                * 'harmonic_steps'=Trye [step at the ith step of the sqp procedure is step_sqp/i]
-                * 'onlyChangeObjective'=False [useful when we want to recompute the solution of a
+                * tol=1e-7 : optimality tolerance for the solver
+                * feastol=1e-7 : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                * abstol=1e-7 : absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                * reltol=1e-6 : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                * maxit=50 : maximum number of iterations
+                * verbose=1 : verbosity level
+                * solver='cvxopt' : currently the other available solvers are 'cplex','mosek','smcp','zibopt'
+                * step_sqp=1 : 'first step length for the sequential quadratic programming procedure'
+                * harmonic_steps=True : step at the ith step of the sqp procedure is step_sqp/i]
+                * onlyChangeObjective'=False : useful when we want to recompute the solution of a
                   problem but with a different objective function. If set to *True* and a new
                   objective function has been passed to the solver, the constraints
                   of the problem will not be parsed next time :func:`solve` is called (this can lead
                   to a huge gain of time).
-                *  'noduals'=False [if True, do not retrieve the dual variables]
+                * noduals=False : if True, do not retrieve the dual variables
                                  
                 .. Warning:: Not all options are handled by all solvers yet.
                 
-                .. Todo:: raise a warning when a solver ignores an option
+                .. Todo:: Organize above options
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
                 #interface the feasible starting point solver):
@@ -918,7 +914,7 @@ class Problem:
                 """
                 Sets the option **key** to the value **val**.
                 
-                :param key: The key of an option (see the list of keys in :func:`set_all_options`).
+                :param key: The key of an option (see the list of keys in :func:`set_all_options_to_default`).
                 :type key: str.
                 :param val: New value for the option **key**.
                 """
@@ -930,25 +926,16 @@ class Problem:
                         self.options['abstol']=val
                         self.options['reltol']=val*10
 
-        #obsolete name
-        def set_options(self,dictKeyToVal):
-                self.update_options(dictKeyToVal)
         
-        def update_options(self,dictKeyToVal):
+        def update_options(self, **options):
                 """
-                update the option ``dict`` for the pairs
-                (key,value) in **dictKeyToVal**.
+                update the option ``dict``, for the pairs
+                key = value. For a list of available options,
+                see :func:`set_all_options_to_default`.
+                """
                 
-                :param dictKeyToVal: dictionary containing the
-                                     new values of the options to
-                                     be updated. The keys must be
-                                     valid option keys (see the
-                                     list of keys in
-                                     :func:`set_all_options_to_default`)
-                :type dictKeyToVal: dict.
-                """
-                for k in dictKeyToVal.keys():
-                        self.set_option(k,dictKeyToVal[k])
+                for k in options.keys():
+                        self.set_option(k,options[k])
                 
         def eliminate_useless_variables(self):
                 """
@@ -1094,10 +1081,6 @@ class Problem:
                         ind+=self.variables[nam].size[0]*self.variables[nam].size[1]
                         self.variables[nam].endIndex=ind
 
-        """obsolete, will be removed"""
-        def addConstraint(self,cons):
-                self.add_constraint(cons)
-
         def add_constraint(self,cons, key=None):
                 """Adds a constraint in the problem.
                 
@@ -1128,7 +1111,7 @@ class Problem:
                 
 
         def add_list_of_constraints(self,lst,it=None,indices=None,key=None):
-                """adds a list of constraints in the problem.
+                u"""adds a list of constraints in the problem.
                 This fonction can be used with lists created on the fly by python (see the example below).
                 
                 :param lst: ``list`` of :class:`Constraint`.
@@ -1161,7 +1144,7 @@ class Problem:
                 >>> import cvxopt as cvx
                 >>> prob=MP.Problem()
                 >>> x=[prob.add_variable('x[{0}]'.format(i),2) for i in range(5)]
-                >>> x 
+                >>> x #doctest: +NORMALIZE_WHITESPACE
                 [# (2 x 1)-affine expression: x[0] #,
                  # (2 x 1)-affine expression: x[1] #,
                  # (2 x 1)-affine expression: x[2] #,
@@ -1190,16 +1173,16 @@ class Problem:
                 ... 't',
                 ... '[4]')
                 >>> 
-                >>> print prob
+                >>> print prob #doctest: +NORMALIZE_WHITESPACE
                 ---------------------
                 optimization problem:
-                24 variables, 9 affine constraints, 9 vars in a cone
+                24 variables, 9 affine constraints, 9 vars in a SO cone
                 <BLANKLINE>
-                x         : list of 5 variables, (2, 1), continuous
-                w         : dict of 3 variables, (3, 1), continuous
-                y         : (5, 1), continuous
+                x   : list of 5 variables, (2, 1), continuous
+                w   : dict of 3 variables, (3, 1), continuous
+                y   : (5, 1), continuous
                 <BLANKLINE>
-                        find vars
+                    find vars
                 such that
                   u.T*x[i] < y[i] for all i in [5]
                   ||w[ij]|| < y[ij__1] for all ij in IJ
@@ -1209,7 +1192,7 @@ class Problem:
                 """
                 firstCons=self.countCons
                 for ks in lst:
-                        self.addConstraint(ks)
+                        self.add_constraint(ks)
                         self.consNumbering.pop()
                 self.consNumbering.append(range(firstCons,self.countCons))
                 lastCons=self.countCons-1
@@ -1328,10 +1311,10 @@ class Problem:
 
 
         def get_constraint(self,ind):
-                """
+                u"""
                 returns a constraint of the problem.
                 
-                :param ind: There is two ways to index a constraint.
+                :param ind: There are two ways to index a constraint.
                 
                                * if ind is an ``int`` *n*, then the nth constraint (starting from 0)
                                  will be returned, where all the constraints are counted
@@ -1358,15 +1341,15 @@ class Problem:
                 ... 'i',
                 ... '[5]')
                 >>> prob.add_constraint(y>0)
-                >>> print prob
+                >>> print prob #doctest: +NORMALIZE_WHITESPACE
                 ---------------------
                 optimization problem:
                 15 variables, 10 affine constraints
                 <BLANKLINE>
-                x         : list of 5 variables, (2, 1), continuous
-                y         : (5, 1), continuous
+                x   : list of 5 variables, (2, 1), continuous
+                y   : (5, 1), continuous
                 <BLANKLINE>
-                        find vars
+                    find vars
                 such that
                   〈 |1| | x[i] 〉 < y[i] for all i in [5]
                   y > 0
@@ -1483,10 +1466,6 @@ class Problem:
                                 rhs = LinExpr(rhsparam, rhsvar)
                                 m.addConstr(lhs, sense, rhs)
         '''
-        
-        #obsolete name
-        def isContinuous(self):
-                return self.is_continuous()
                 
         def is_continuous(self):
                 """ Returns True if there are only continuous variables"""
@@ -1494,10 +1473,6 @@ class Problem:
                         if self.variables[kvar].vtype != 'continuous':
                                 return False
                 return True
-        
-        #obsolete name
-        def makeCplex_Instance(self):
-                self._make_cplex_instance()  
                 
         def _make_cplex_instance(self):
                 """
@@ -1674,7 +1649,7 @@ class Problem:
                 c.linear_constraints.set_coefficients(zip(rows, cols, vals))
                 
                 # define problem type
-                if self.isContinuous():
+                if self.is_continuous():
                         c.set_problem_type(c.problem_type.LP)
                 
                 self.cplex_Instance = c
@@ -1690,10 +1665,6 @@ class Problem:
                         listOut.append(cvxArray[0,i])
                 return listOut
 
-        
-        #obsolete name
-        def makeCVXOPT_Instance(self):
-                self._make_cvxopt_instance()
                 
         def _make_cvxopt_instance(self):
                 """
@@ -1741,9 +1712,10 @@ class Problem:
                                         self.cvxoptVars['F']=-cvx.matrix(F,tc='d')
                                         self.cvxoptVars['g']=-cvx.matrix(g,tc='d')
                 
-                limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
-                prog = ProgressBar(0,limitbar, 77, mode='fixed')
-                oldprog = str(prog)
+                if self.options['verbose']>0:
+                        limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
+                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        oldprog = str(prog)
                 
                 #constraints                
                 for k in self.constraints.keys():
@@ -1799,23 +1771,25 @@ class Problem:
                                         raise NameError('unexpected case')
                         else:
                                 raise NameError('unexpected case')
-                        #<--display progress
-                        prog.increment_amount()
-                        if oldprog != str(prog):
-                                print prog, "\r",
-                                sys.stdout.flush()
-                                oldprog=str(prog)
-                        #-->
+                        if self.options['verbose']>0:
+                                #<--display progress
+                                prog.increment_amount()
+                                if oldprog != str(prog):
+                                        print prog, "\r",
+                                        sys.stdout.flush()
+                                        oldprog=str(prog)
+                                #-->
                         
                 #reshape hs matrices as square matrices
                 #for m in self.cvxoptVars['hs']:
                 #        n=int(np.sqrt(len(m)))
                 #        m.size=(n,n)
-                        
-                prog.update_amount(limitbar)
-                print prog, "\r",
-                sys.stdout.flush()
-                print
+                   
+                if self.options['verbose']>0:
+                        prog.update_amount(limitbar)
+                        print prog, "\r",
+                        sys.stdout.flush()
+                        print
 
         #-----------
         #mosek tool
@@ -2082,7 +2056,7 @@ class Problem:
                 except:
                         raise Exception('scip library not found')
                 
-                scip_solver = scip.solver(quiet=False)
+                scip_solver = scip.solver(quiet=not(self.options['verbose']))
                 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
                         raise Exception('SDP, SOCP, or GP constraints are not implemented in mosek')
@@ -2167,7 +2141,7 @@ class Problem:
         -----------------------------------------------
         """        
 
-        def solve(self,options=None):
+        def solve(self, **options):
                 """
                 Solves the problem.
                 
@@ -2176,17 +2150,20 @@ class Problem:
                 duals variables can be accessed by the method :func:``dual``
                 of the class :class:``Constraint``.
                 
-                :param options: A dictionary of options that will be updated before
-                                  the solver is called. In particular, the solver can
-                                  be specified here.
-                :type options: dict.
+                :keyword options: A list of options to update before
+                                  the call to the solver. In particular, 
+                                  the solver can
+                                  be specified here,
+                                  under the form key = value.
+                                  See the list of available options
+                                  in :func:`set_all_options_to_default`
                 :returns: A dictionary **sol** which contains the information
                             returned by the solver.
                 
                 .. TODO:: probleme ik ou il pas defini absence con= ou con< ?
                 """
                 if options is None: options={}
-                self.set_options(options)
+                self.update_options(**options)
 
                 #self.eliminate_useless_variables()
 
@@ -2194,8 +2171,10 @@ class Problem:
                         return self._sqpsolve(options)
                 
                 #WARNING: Bug with cvxopt-mosek ?
-                if (self.options['solver']=='CVXOPT' or self.options['solver']=='cvxopt-mosek'
-                        or self.options['solver']=='smcp'):
+                if (self.options['solver']=='CVXOPT' #obolete name, use lower case
+                    or self.options['solver']=='cvxopt-mosek'
+                    or self.options['solver']=='smcp'
+                    or self.options['solver']=='cvxopt'):
 
                         primals,duals,obj,sol=self._cvxopt_solve()
                         
@@ -2205,7 +2184,8 @@ class Problem:
                         primals,duals,obj,sol=self._cplex_solve()
 
                 # for mosek
-                elif (self.options['solver']=='MSK'):
+                elif (self.options['solver']=='MSK' #obsolete value, use lower case
+                        or self.options['solver']=='mosek'):
                         
                         primals,duals,obj,sol=self._mosek_solve()
 
@@ -2220,7 +2200,7 @@ class Problem:
                 
                 for k in primals.keys():
                         if not primals[k] is None:
-                                self.set_varValue(k,primals[k])
+                                self.set_var_value(k,primals[k])
                 if 'noduals' in self.options and self.options['noduals']:
                         pass
                 else:
@@ -2257,12 +2237,13 @@ class Problem:
                 #--------------------#        
                 #  sets the options  #
                 #--------------------#
+                import cvxopt.solvers
                 cvx.solvers.options['maxiters']=self.options['maxit']
                 cvx.solvers.options['abstol']=self.options['abstol']
                 cvx.solvers.options['feastol']=self.options['feastol']
                 cvx.solvers.options['reltol']=self.options['reltol']
                 cvx.solvers.options['show_progress']=bool(self.options['verbose']>0)
-                if self.options['solver']=='CVXOPT':
+                if self.options['solver'].upper()=='CVXOPT':
                         currentsolver=None
                 elif self.options['solver']=='cvxopt-mosek':
                         currentsolver='mosek'
@@ -2514,6 +2495,9 @@ class Problem:
                 if c is None:
                         raise ValueError('a cplex instance should have been created before')
                 
+                
+                #TODO : settings parameters
+                
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
@@ -2525,7 +2509,6 @@ class Problem:
                 # the following line prints the corresponding string
                 print(c.solution.status[c.solution.get_status()])
                 
-                #TODO : settings parameters
                 
                 #----------------------#
                 # retrieve the primals #
@@ -2547,7 +2530,7 @@ class Problem:
                         pass
                 else:
                         # not available for a MIP (only for LP)
-                        if self.isContinuous():
+                        if self.is_continuous():
                                 pos_cplex = 0 # the next scalar constraint line to study (num of cplex)
                                 # pos_interface the next vect constraint in our interface
                                 # for each constraint
@@ -2595,7 +2578,7 @@ class Problem:
                 prosta = []
                 solsta = []
 
-                if self.isContinuous():
+                if self.is_continuous():
                         soltype=mosek.soltype.itr
                 else:
                         soltype=mosek.soltype.itg
@@ -2790,7 +2773,7 @@ class Problem:
                 
                 #----------------------#
                 # retrieve the primals #
-                #----------------------#                
+                #----------------------#
                 val=sol.values()
                 primals={}
                 for var in self.variables.keys():
@@ -2819,7 +2802,7 @@ class Problem:
                 import copy
                 for v in self.variables:
                         if self.variables[v].value is None:
-                                self.set_varValue(v,cvx.uniform(self.variables[v].size))
+                                self.set_var_value(v,cvx.uniform(self.variables[v].size))
                 #lower the display level for mosek                
                 self.options['verbose']-=1
                 oldvar=self._eval_all()
@@ -2868,7 +2851,7 @@ class Problem:
                                 raise Exception('function not convex before proxF reached 100 times the initial value')
 
                         for v in subprob.variables:
-                                self.set_varValue(v,subprob.get_valued_variable(v))
+                                self.set_var_value(v,subprob.get_valued_variable(v))
                         newvar=self._eval_all()
                         step=np.linalg.norm(newvar-oldvar)
                         if isinstance(step,cvx.matrix):
@@ -2890,6 +2873,32 @@ class Problem:
                 self.options['verbose']+=1
                 sol['lastStep']=step
                 return sol
+                
+                
+#----------------------------------------
+#                 Obsolete functions
+#----------------------------------------
+
+        def set_varValue(self,name,value):
+                self.set_var_value(name,value)
+                
+        def defaultOptions(self,**opt):
+                self.set_all_options_to_default(opt)
+                
+        def set_options(self, **options):
+                self.update_options( **options)
+
+        def addConstraint(self,cons):
+                self.add_constraint(cons)
+       
+        def isContinuous(self):
+                return self.is_continuous()
+                
+        def makeCplex_Instance(self):
+                self._make_cplex_instance()
+                
+        def makeCVXOPT_Instance(self):
+                self._make_cvxopt_instance()
 #----------------------------------------
 #                 Variable class
 #----------------------------------------
@@ -3920,7 +3929,7 @@ class GeneralFun(Expression):
 #----------------------------------
 
 class Constraint:
-        """a class for describing a constraint (see the method addConstraint)
+        """a class for describing a constraint (see the method add_constraint)
         """
 
 	def __init__(self,typeOfConstraint,Id,Exp1,Exp2,Exp3=None,dualVariable=None,key=None):

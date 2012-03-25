@@ -3,13 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyMathProg's documentation!
-======================================
+PICOS: A Python Interface for Conic Optimization Solvers
+========================================================
 
-Contents:
+.. _contents:
+
+**PICOS Documentation contents**
 
 .. toctree::
    :maxdepth: 2
+
+   intro
 
 This is something about pyMathProg.
 
@@ -17,7 +21,6 @@ This is something about pyMathProg.
     :members: _retrieve_matrix
 
 .. autoclass:: Problem
-    :special-members: __init__
     :members:
 
 .. autoclass:: Variable
