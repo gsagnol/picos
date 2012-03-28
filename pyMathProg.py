@@ -603,6 +603,8 @@ class Problem:
 		self.set_all_options_to_default()
 		self.update_options(**options)
 
+		self.number_solutions=0
+		
 		self.longestkey=0 #for a nice display of constraints
 		self.varIndices=[]
 
@@ -730,7 +732,7 @@ class Problem:
 			self.numberQuadNNZ+=expr.nnz()
 		self.objective=(typ,expr)
         
-        def set_var_value(self,name,value):
+        def set_var_value(self,name,value,optimalvar=False):
                 """
                 sets a variable to the given value. This can be useful to check
                 the value of a complicated :class:`Expression`, or to use
@@ -754,15 +756,29 @@ class Problem:
                 25.0
                 >>> 
 
+                .. Todo::
+                Virer cette doc, passer en private, et donner doc de set_value d'une exp
                 """
-		if not name in self.variables.keys():
+                ind = None
+                if isinstance(name,tuple): # alternative solution
+                        ind=name[0]
+                        name=name[1]
+
+                if not name in self.variables.keys():
 			raise Exception('unknown variable name')
 		valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
 		if valuemat.size<>self.variables[name].size:
 			raise Exception('should be of size {0}'.format(self.variables[name].size))
 		if self.variables[name].vtype=='symmetric':
                         valuemat=svec(valuemat)
-		self.variables[name].value=valuemat
+		if ind is None:
+                        self.variables[name].value=valuemat
+                        if optimalvar:
+                                self.number_solutions=max(self.number_solutions,1)
+                else:
+                        self.variables[name].value_alt[ind]=valuemat
+                        if optimalvar:
+                                self.number_solutions=max(self.number_solutions,ind+1)
 
         def new_param(self,name,value):
                 """
@@ -884,6 +900,17 @@ class Problem:
                   of the problem will not be parsed next time :func:`solve` is called (this can lead
                   to a huge gain of time).
                 * noduals=False : if True, do not retrieve the dual variables
+                * nbsol=None (solver default) : maximum number of computed
+                  solutions in the solution pool.
+                * timelimit =None (infinity) : time limit for the solver
+                * acceptableGap =None (0%) : If the time limit is reached, consider the solution as
+                  acceptable if the gap is less than this value.
+                * treemomory = None (solver default) : size of the buffer for the branch and bound tree,
+                  in Megabytes.
+                * gaplim = None (0%) : returns a solution as soon as this gap is reached.
+                * pool_gap = None (0%) : keeps only the solution
+                  within this gap in the pool
+                                 
                                  
                 .. Warning:: Not all options are handled by all solvers yet.
                 
@@ -905,6 +932,12 @@ class Problem:
                                  'onlyChangeObjective':False,
                                  'noduals'        :False,
                                  'smcp_feas'      :False,
+                                 'nbsol'          :None,
+                                 'timelimit'      :None,
+                                 'acceptablegap'  :None,
+                                 'treememory'     :None,
+                                 'gaplim'         :None,
+                                 'pool_gap'       :None
                                  }
                                  
                                  
@@ -1489,22 +1522,27 @@ class Problem:
                 c = cplex.Cplex()
                 import itertools
                 
-                if 'timelimit' in self.options:
+                if not self.options['timelimit'] is None:
                         import timelimitcallback
                         import time
                         timelim_cb = c.register_callback(timelimitcallback.TimeLimitCallback)
                         timelim_cb.starttime = time.time()
                         timelim_cb.timelimit = self.options['timelimit']
-                        if 'acceptablegap' in self.options:
+                        if not self.options['acceptablegap'] is None:
                                 timelim_cb.acceptablegap =self.options['acceptableGap']
                         else:
                                 timelim_cb.acceptablegap = 100
                         timelim_cb.aborted = 0
                         #c.parameters.tuning.timelimit.set(self.options['timelimit']) #DOES NOT WORK LIKE THIS ?
-                if 'treememory' in self.options:
+                if not self.options['treememory'] is None:
                         c.parameters.mip.limits.treememory.set(self.options['treememory'])
-                if 'gaplim' in self.options:
+                if not self.options['gaplim'] is None:
                         c.parameters.mip.tolerances.mipgap.set(self.options['gaplim'])
+                if not self.options['nbsol'] is None:
+                        c.parameters.mip.limits.solutions.set(self.options['nbsol'])
+                if not self.options['pool_gap'] is None:
+                        c.parameters.mip.pool.relgap.set(self.options['pool_gap'])
+                
                 
                 sense_opt = self.objective[0]
                 if sense_opt == 'max':
@@ -1523,11 +1561,12 @@ class Problem:
                                 'semiint' : c.variables.type.semi_integer }                
                 
                 
-                limitbar=self.numberOfVars
-                prog = ProgressBar(0,limitbar, 77, mode='fixed')
-                oldprog = str(prog)
-                print('Creating variables...')
-                print
+                if self.options['verbose']>0:
+                        limitbar=self.numberOfVars
+                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        oldprog = str(prog)
+                        print('Creating variables...')
+                        print
                 
                 #variables
                 
@@ -1554,23 +1593,31 @@ class Problem:
                                 colnames[sj+k]=kvar+'_'+str(k)
                                 obj[sj+k]=vectorObjective[k]
                                 types[sj+k]=cplex_type[variable.vtype]
-                                #<--display progress
-                                prog.increment_amount()
-                                if oldprog != str(prog):
-                                        print prog, "\r",
-                                        sys.stdout.flush()
-                                        oldprog=str(prog)
-                                #-->
+                                
+                                if self.options['verbose']>0:
+                                        #<--display progress
+                                        prog.increment_amount()
+                                        if oldprog != str(prog):
+                                                print prog, "\r",
+                                                sys.stdout.flush()
+                                                oldprog=str(prog)
+                                        #-->
+                
+                if self.options['verbose']>0:
+                        prog.update_amount(limitbar)
+                        print prog, "\r",
+                        print
                 
                 #constraints
                 
                 #progress bar
-                print
-                print('adding constraints...')
-                print 
-                limitbar=self.numberAffConstraints
-                prog = ProgressBar(0,limitbar, 77, mode='fixed')
-                oldprog = str(prog)
+                if self.options['verbose']>0:
+                        print
+                        print('adding constraints...')
+                        print 
+                        limitbar=self.numberAffConstraints
+                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        oldprog = str(prog)
                 
                 rows=[]
                 cols=[]
@@ -1599,8 +1646,8 @@ class Problem:
                                         vals.append(-v)
                                         nnz+=1
                         
-                        szcons = constr.Exp1.size[0]
-                        rhstmp = cvx.matrix(0,(szcons,1))
+                        szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                        rhstmp = cvx.matrix(0.,(szcons,1))
                         constant1 = constr.Exp1.constant #None or a 1*1 matrix
                         constant2 = constr.Exp2.constant
                         if not constant1 is None:
@@ -1634,13 +1681,19 @@ class Problem:
                                         senses += "E"*szcons # equal
                                 irow+=szcons
                         
-                        #<--display progress
-                        prog.increment_amount()
-                        if oldprog != str(prog):
-                                print prog, "\r",
-                                sys.stdout.flush()
-                                oldprog=str(prog)
-                        #-->
+                        if self.options['verbose']>0:
+                                #<--display progress
+                                prog.increment_amount()
+                                if oldprog != str(prog):
+                                        print prog, "\r",
+                                        sys.stdout.flush()
+                                        oldprog=str(prog)
+                                #-->
+                
+                if self.options['verbose']>0:
+                        prog.update_amount(limitbar)
+                        print prog, "\r",
+                        print
                 
                 print
                 print('Passing to cplex...')
@@ -2200,7 +2253,8 @@ class Problem:
                 
                 for k in primals.keys():
                         if not primals[k] is None:
-                                self.set_var_value(k,primals[k])
+                                self.set_var_value(k,primals[k],optimalvar=True)
+                                
                 if 'noduals' in self.options and self.options['noduals']:
                         pass
                 else:
@@ -2501,7 +2555,19 @@ class Problem:
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
-                c.solve()
+              
+                if not self.options['nbsol'] is None:
+                        try:
+                                c.populate_solution_pool()
+                        except CplexSolverError:
+                                print "Exception raised during populate"
+                else:
+                        try:
+                                c.solve()
+                        except CplexSolverError:
+                                print "Exception raised during solve"
+                                
+        
                 self.cplex_Instance = c
                 
                 # solution.get_status() returns an integer code
@@ -2513,15 +2579,39 @@ class Problem:
                 #----------------------#
                 # retrieve the primals #
                 #----------------------#
+                
                 #primals
+                numsol = c.solution.pool.get_num()
+                if numsol>1:
+                        objvals=[]
+                        for i in range(numsol):
+                                objvals.append((c.solution.pool.get_objective_value(i),i))
+                        indsols=[]
+                        rev=(self.objective[0]=='max')
+                        for ob,ind in sorted(objvals,reverse=rev)[:self.options['nbsol']]:
+                                indsols.append(ind)
+                
                 primals = {}
                 for kvar in self.variables:
                         value = []
-                        for i in range(self.variables[kvar].size[0]):
+                        sz_var = self.variables[kvar].size[0]*self.variables[kvar].size[1]
+                        for i in range(sz_var):
                                 name = kvar + '_' + str(i)
                                 value.append(c.solution.get_values(name))
-                        primals[kvar] = value
+                                             
+                        primals[kvar] = cvx.matrix(value,self.variables[kvar].size)
                 
+                if numsol>1:
+                        for ii,ind in enumerate(indsols):
+                                for kvar in self.variables:
+                                        value = []
+                                        sz_var = self.variables[kvar].size[0]*self.variables[kvar].size[1]
+                                        for i in range(sz_var):
+                                                name = kvar + '_' + str(i)
+                                                value.append(c.solution.pool.get_values(ind,name))
+                                             
+                                        primals[(ii,kvar)] = cvx.matrix(value,self.variables[kvar].size)
+                        
                 #--------------------#
                 # retrieve the duals #
                 #--------------------#
@@ -2761,15 +2851,29 @@ class Problem:
                 #-----------------------------#
                 self._make_zibopt()
                 
-                #TODO : settings parameters
+                timelimit=10000000.
+                gaplim=0.
+                nbsol=-1
+                if not self.options['timelimit'] is None:
+                        timelimit=self.options['timelimit']
+                if not self.options['gaplim'] is None:        
+                        gaplim=self.options['gaplim']
+                
+                #if fact, nbsol is a limit on the number of feasible nodes visited
+                #if not self.options['nbsol'] is None:
+                #        nbsol=self.options['nbsol']
                 
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                 
                 if self.objective[0]=='max':
-                        sol=self.scip_solver.maximize()
+                        sol=self.scip_solver.maximize(time=timelimit,
+                                                        gap=gaplim,
+                                                        nsol=nbsol)
                 else:
-                        sol=self.scip_solver.minimize()
+                        sol=self.scip_solver.minimize(time=timelimit,
+                                                        gap=gaplim,
+                                                        nsol=nbsol)
                 
                 #----------------------#
                 # retrieve the primals #
@@ -2789,10 +2893,9 @@ class Problem:
                 # objective value #
                 #-----------------#  
                 obj=sol.objective
-                solver=sol.solver
-                sol={}
-                sol['zibopt_solver']=solver
-                return (primals,duals,obj,sol)
+                solt={}
+                solt['zibopt_sol']=sol
+                return (primals,duals,obj,solt)
                 
                 
         def _sqpsolve(self,options):
@@ -2915,6 +3018,7 @@ class Variable:
                 else:
                         self.endIndex=startIndex+size[0]*size[1] #end position +1
                 self.value=value
+                self.value_alt = {} #alternative values for solution pools
 
         def __str__(self):
                 return '<variable {0}:({1} x {2}),{3}>'.format(
@@ -2985,7 +3089,7 @@ class AffinExpr(Expression):
 	def affstring(self):
 		return self.string
 
-	def eval(self):
+	def eval(self,ind=None):
 		if self.constant is None:
 			val=cvx.spmatrix([],[],[],(self.size[0]*self.size[1],1))
 		else:
@@ -2999,11 +3103,17 @@ class AffinExpr(Expression):
 				#raise Exception(k+' is not valued')
                 for k in self.factors.keys():
                         if k not in self.variables:
-                                raise Exception(k+' is not valued')
-                        if not self.variables[k].value is None:
-                                val=val+self.factors[k]*self.variables[k].value[:]
+                                raise Exception(k+' is an unknown variable')
+                        if ind is None:
+                                if not self.variables[k].value is None:
+                                        val=val+self.factors[k]*self.variables[k].value[:]
+                                else:
+                                        raise Exception(k+' is not valued')
                         else:
-                                raise Exception(k+' is not valued')
+                                if ind in self.variables[k].value_alt:
+                                        val=val+self.factors[k]*self.variables[k].value_alt[ind][:]
+                                else:
+                                        raise Exception(k+' does not have a value for the index '+str(ind))
 		return cvx.matrix(val,self.size)
 		
         def set_value(self,value):
@@ -3645,8 +3755,8 @@ class Norm(Expression):
 		normstr+=' #'
 		return normstr		
 		
-	def eval(self):
-		vec=self.exp.eval()
+	def eval(self, ind=None):
+		vec=self.exp.eval(ind)
 		return np.linalg.norm(vec)
 
 	def __pow__(self,exponent):
@@ -3697,8 +3807,8 @@ class LogSumExp(Expression):
 	def affstring(self):
 		return 'LSE['+self.Exp.affstring()+']'
 
-	def eval(self):
-		return np.log(np.sum(np.exp(self.Exp.eval())))
+	def eval(self, ind=None):
+		return np.log(np.sum(np.exp(self.Exp.eval(ind))))
 
 	def __lt__(self,exp):
 		if exp<>0:
@@ -3729,35 +3839,43 @@ class QuadExp(Expression):
         def __repr__(self):
                 return '#quadratic expression: '+self.string+' #'
 
-        def eval(self):
+        def eval(self, ind=None):
                 if not self.aff is None:
-                        val=self.aff.eval()
+                        val=self.aff.eval(ind)
                 else:
                         val=cvx.matrix(0.,(1,1))
                 if not self.LR is None:
-                        ex1=self.LR[0].eval()
+                        ex1=self.LR[0].eval(ind)
                         if self.LR[1] is None:
                                 val+=(ex1.T*ex1)
                         else:
                                 if self.LR[0].size!=(1,1) or self.LR[1].size!=(1,1):
                                         raise Exception('QuadExp of size (1,1) only are implemented')
                                 else:
-                                        ex2=self.LR[1].eval()
+                                        ex2=self.LR[1].eval(ind)
                                         val+=(ex1*ex2)
                                 
                                 
                 elif not self.quad is None:
                         for i,j in self.quad:
                                 if not i in self.variables:
-                                        raise Exception(i+' is not valued')
-                                if self.variables[i].value is None:
-                                        raise Exception(i+' is not valued')
+                                        raise Exception(i+' is unknown')
                                 if not j in self.variables:
-                                        raise Exception(j+' is not valued')
-                                if self.variables[j].value is None:
-                                        raise Exception(j+' is not valued')
-                                xi=self.variables[i].value[:]
-                                xj=self.variables[j].value[:]
+                                        raise Exception(j+' is unknown')
+                                if ind is None:
+                                        if self.variables[i].value is None:
+                                                raise Exception(i+' is not valued')
+                                        if self.variables[j].value is None:
+                                                raise Exception(j+' is not valued')
+                                        xi=self.variables[i].value[:]
+                                        xj=self.variables[j].value[:]
+                                else:
+                                        if ind not in self.variables[i].value_alt:
+                                                raise Exception(i+' does not have a value for the index '+str(ind))
+                                        if ind not in self.variables[j].value_alt:
+                                                raise Exception(j+' does not have a value for the index '+str(ind))
+                                        xi=self.variables[i].value_alt[ind][:]
+                                        xj=self.variables[j].value_alt[ind][:]
                                 val=val+xi.T*self.quad[i,j]*xj
 
                 
@@ -3919,8 +4037,8 @@ class GeneralFun(Expression):
 		return '# general function '+self.string+' #'
 		
 
-	def eval(self):
-		val=self.Exp.eval()
+	def eval(self,ind=None):
+		val=self.Exp.eval(ind)
 		o,g,h=self.fun(val)
 		return o
 
