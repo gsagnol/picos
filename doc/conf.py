@@ -33,7 +33,6 @@ extensions = ['sphinx.ext.autodoc',
 	      'sphinx.ext.intersphinx',
 	      'sphinx.ext.todo',
 	      'sphinx.ext.doctest',
-	      'sphinx.ext.mathbase',
 	      'sphinx.ext.pngmath']
 intersphinx_cache_limit = 10     # days to keep the cached inventories
 intersphinx_mapping = {
