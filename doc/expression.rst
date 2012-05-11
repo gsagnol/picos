@@ -5,13 +5,21 @@ Expression
 ==========
 
 .. autoclass:: picos.Expression
-    :members:
 
 
 AffinExp
 ========
 
 .. autoclass:: picos.AffinExp
+    :members:
+
+
+Variable
+""""""""
+
+.. _variable:
+
+.. autoclass:: picos.Variable
     :members:
 
 Norm

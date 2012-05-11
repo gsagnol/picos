@@ -19,26 +19,37 @@ class Problem:
         Some options can be provided under the form
         ``key = value``.
         See the list of available options
-        in :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`
+        in the doc of :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`
         """
         
         def __init__(self,**options):
                 self.objective = ('find',None) #feasibility problem only
                 self.constraints = {}
+                """dictionary of constraints indexed by identifiers"""
                 self.variables = {}
-                
+                """dictionary of variables indexed by variable names"""
                 self.countVar=0
+                """number of (multidimensional) variables"""
                 self.countCons=0
+                """numner of (multidimensional) constraints"""
                 self.numberOfVars=0
+                """total number of (scalar) variables"""
                 self.numberAffConstraints=0
+                """total number of (scalar) affine constraints"""
                 self.numberConeVars=0
+                """number of auxilary variables required to handle the SOC constraints"""
                 self.numberConeConstraints=0
+                """number of SOC constraints"""
                 self.numberLSEConstraints=0
+                """number of LogSumExp constraints (+1 if the objective is a LogSumExp)"""
                 self.numberQuadConstraints=0
+                """number of quadratic constraints (+1 if the objective is quadratic)"""
                 self.numberQuadNNZ=0
+                """number of nonzero entries in the matrices defining the quadratic expressions"""
                 self.numberSDPConstraints=0
+                """number of SDP constraints"""
                 self.numberSDPVars=0
-
+                """size of the s-vecotrized matrices involved in SDP constraints"""
                 self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
                                 'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
                                 'F':None,'g':None, 'quadcons': None}
@@ -47,10 +58,15 @@ class Problem:
                 self.grbvar = {}
                 
                 self.cplex_Instance = None
-
+                self.cplex_boundcons = None
+                
                 self.msk_env=None
                 self.msk_task=None
 
+                self.scip_solver = None
+                self.scip_vars = None
+                self.scip_obj = None
+                
                 self.groupsOfConstraints = {}
                 self.listOfVars = {}
                 self.consNumbering=[]
@@ -61,13 +77,14 @@ class Problem:
                 self.update_options(**options)
 
                 self.number_solutions=0
+                #TODOC ?
                 
                 self.longestkey=0 #for a nice display of constraints
                 self.varIndices=[]
 
         def __str__(self):
                 probstr='---------------------\n'               
-                probstr+='optimization problem:\n'
+                probstr+='optimization problem  ({0}):\n'.format(self.type)
                 probstr+='{0} variables, {1} affine constraints'.format(
                                 self.numberOfVars,self.numberAffConstraints)
                 if self.numberConeVars>0:
@@ -202,6 +219,33 @@ class Problem:
                 self.objective=(typ,expr)
         
         def set_var_value(self,name,value,optimalvar=False):
+                """
+                Sets the :attr:`value<picos.Variable.value>` attribute of the
+                given variable.
+                
+                ..
+                   This can be useful to check
+                   the value of a complicated :class:`Expression <picos.Expression>`,
+                   or to use a solver with a *hot start* option.
+                
+                :param name: name of the variable to which the value will be given
+                :type name: str.
+                :param value: The value to be given. The type of
+                              ``value`` must be recognized by the function
+                              :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`,
+                              so that it can be parsed into a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`
+                              of the desired size.
+                
+                **Example**
+                
+                >>> prob=pic.Problem()
+                >>> x=prob.add_variable('x',2)
+                >>> prob.set_var_value('x',[3,4])
+                >>> abs(x)**2
+                #quadratic expression: ||x||**2 #
+                >>> print (abs(x)**2).value
+                25.0
+                """
                 ind = None
                 if isinstance(name,tuple): # alternative solution
                         ind=name[0]
@@ -223,63 +267,6 @@ class Problem:
                         if optimalvar:
                                 self.number_solutions=max(self.number_solutions,ind+1)
 
-        def new_param(self,name,value):
-                """
-                Declare a parameter for the problem, that will be stored
-                as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
-                It is possible to give a ``list`` or a ``dict`` of parameters.
-                The function returns a constant :class:`AffinExp <picos.AffinExp>` 
-                (or a ``list`` or a ``dict`` of :class:`AffinExp <picos.AffinExp>`) representing this parameter.
-                
-                .. note :: Declaring parameters is optional, since the expression can
-                           as well be given by using normal variables. (see Example below).
-                           However, if you use this function to declare your parameters,
-                           the names of the parameters will be displayed when you **print**
-                           an :class:`Expression <picos.Expression>` or a :class:`Constraint <picos.Constraint>`
-                
-                :param name: The name given to this parameter.
-                :type name: str.
-                :param value: The value (resp ``list`` of values, ``dict`` of values) of the parameter.
-                              The type of **value** (resp. the elements of the ``list`` **value**,
-                              the values of the ``dict`` **value**) should be understandable by
-                              the function :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`.
-                :returns: A constant affine expression (:class:`AffinExp <picos.AffinExp>`)
-                          (resp. a ``list`` of :class:`AffinExp <picos.AffinExp>` of the same length as **value**,
-                          a ``dict`` of :class:`AffinExp <picos.AffinExp>` indexed by the keys of **value**)
-                          
-                **Example:**
-                
-                >>> import cvxopt as cvx
-                >>> prob=pic.Problem()
-                >>> x=prob.add_variable('x',3)
-                >>> B={'foo':17.4,'matrix':cvx.matrix([[1,2],[3,4],[5,6]]),'ones':'|1|(4,1)'}
-                >>> B['matrix']*x+B['foo']
-                # (2 x 1)-affine expression: [ 2 x 3 MAT ]*x + |17.4| #
-                >>> #(in the string above, |17.4| represents the 2-dim vector [17.4,17.4])
-                >>> B=prob.new_param('B',B)
-                >>> B['matrix']*x+B['foo']
-                # (2 x 1)-affine expression: B[matrix]*x + |B[foo]| #
-                """
-                if isinstance(value,list):
-                        if all([isinstance(x,int) or isinstance(x,float) for x in value]):
-                                #list with numeric data
-                                term,termString=_retrieve_matrix(value,None)
-                                return AffinExp({},constant=term[:],size=term.size,string=name,variables=self.variables)
-                        else:
-                                L=[]
-                                for i,l in enumerate(value):
-                                        L.append( self.new_param(name+'['+str(i)+']',l) )
-                                return L
-                elif isinstance(value,dict):
-                        D={}
-                        for k in value.keys():
-                                D[k]=self.new_param(name+'['+str(k)+']',value[k])
-                        return D
-                else:
-                        term,termString=_retrieve_matrix(value,None)
-                        return AffinExp({},constant=term[:],size=term.size,string=name,variables=self.variables)
-
-
         def _makeGandh(self,affExpr):
                 """if affExpr is an affine expression,
                 this method creates a bloc matrix G to be multiplied by the large
@@ -288,30 +275,17 @@ class Problem:
                 """
                 n1=affExpr.size[0]*affExpr.size[1]
                 #matrix G               
-                """
-                Gmats=[]
-                import pdb; pdb.set_trace()
-                for i in self.varIndices:
-                        nam=self.get_varName(i)
-                        if nam in affExpr.factors.keys():
-                                Gmats.append([affExpr.factors[nam]])
-                        else:
-                                zz=cvx.spmatrix([],[],[],(n1,
-                                        self.variables[nam].size[0]*self.variables[nam].size[1]) )
-                                Gmats.append([zz])
-                G=cvx.sparse(Gmats,tc='d')              
-                """             
-                
                 I=[]
                 J=[]
                 V=[]
-                for nam in affExpr.factors:
-                        si = self.variables[nam].startIndex
-                        if type(affExpr.factors[nam])<>cvx.base.spmatrix:
-                                affExpr.factors[nam]=cvx.sparse(affExpr.factors[nam])
-                        I.extend(affExpr.factors[nam].I)
-                        J.extend([si+j for j in affExpr.factors[nam].J])
-                        V.extend(affExpr.factors[nam].V)
+                for var in affExpr.factors:
+                        si = var.startIndex
+                        facvar=affExpr.factors[var]
+                        if type(facvar)!=cvx.base.spmatrix:
+                                facvar=cvx.sparse(facvar)
+                        I.extend(facvar.I)
+                        J.extend([si+j for j in facvar.J])
+                        V.extend(facvar.V)
                 G=cvx.spmatrix(V,I,J,(n1,self.numberOfVars))
                 
                 #is it really sparse ?
@@ -339,7 +313,8 @@ class Problem:
                 * reltol=1e-6 : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
                 * maxit=50 : maximum number of iterations
                 * verbose=1 : verbosity level
-                * solver='cvxopt' : currently the other available solvers are 'cplex','mosek','smcp','zibopt'
+                * solver=None : currently the available solvers are 'cvxopt','cplex','mosek','smcp','zibopt'.
+                  ``None`` means that you let picos select a solver for you.
                 * step_sqp=1 : 'first step length for the sequential quadratic programming procedure'
                 * harmonic_steps=True : step at the ith step of the sqp procedure is step_sqp/i]
                 * onlyChangeObjective'=False : useful when we want to recompute the solution of a
@@ -363,6 +338,7 @@ class Problem:
                 .. Warning:: Not all options are handled by all solvers yet.
                 
                 .. Todo:: Organize above options
+                          Ajouter option hotstart
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
                 #interface the feasible starting point solver):
@@ -374,7 +350,7 @@ class Problem:
                                  'reltol'         :1e-6,
                                  'maxit'          :50,
                                  'verbose'        :1,
-                                 'solver'         :'CVXOPT',
+                                 'solver'         :None,
                                  'step_sqp'       :1,
                                  'harmonic_steps' :1,
                                  'onlyChangeObjective':False,
@@ -395,10 +371,11 @@ class Problem:
                 """
                 Sets the option **key** to the value **val**.
                 
-                :param key: The key of an option (see the list of keys in
+                :param key: The key of an option
+                            (see the list of keys in the doc of
                             :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`).
                 :type key: str.
-                :param val: New value for the option **key**.
+                :param val: New value for the option.
                 """
                 if key not in self.options:
                         raise AttributeError('unkown option key :'+str(key))
@@ -411,9 +388,9 @@ class Problem:
         
         def update_options(self, **options):
                 """
-                update the option ``dict``, for the pairs
-                key = value. For a list of available options,
-                see :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`.
+                update the option dictionary, for each pair of the form
+                ``key = value``. For a list of available options and their default values,
+                see the doc of :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`.
                 """
                 
                 for k in options.keys():
@@ -424,19 +401,19 @@ class Problem:
                 Removes from the problem the variables that do not
                 appear in any constraint or in the objective function.
                 """
-                for var in self.variables.keys():
+                for var in self.variables.values():
                         found=False
                         for cons in self.constraints.keys():
                                 if isinstance(self.constraints[cons].Exp1,AffinExp):
-                                        if var in self.constraints[cons].Exp1.factors.keys():
+                                        if var in self.constraints[cons].Exp1.factors:
                                                 found=True
-                                        if var in self.constraints[cons].Exp2.factors.keys():
+                                        if var in self.constraints[cons].Exp2.factors:
                                                 found=True
                                         if not self.constraints[cons].Exp3 is None:
-                                                if var in self.constraints[cons].Exp3.factors.keys():
+                                                if var in self.constraints[cons].Exp3.factors:
                                                         found=True
                                 elif isinstance(self.constraints[cons].Exp1,QuadExp):
-                                        if var in self.constraints[cons].Exp1.aff.factors.keys():
+                                        if var in self.constraints[cons].Exp1.aff.factors:
                                                 found=True
                                         for ij in self.constraints[cons].Exp1.quad:
                                                 if var in ij:
@@ -444,10 +421,10 @@ class Problem:
                                 #TODO manque case LSE ?
                         if not self.objective[1] is None:
                                 if isinstance(self.objective[1],AffinExp):
-                                        if var in self.objective[1].factors.keys():
+                                        if var in self.objective[1].factors:
                                                 found=True
                                 elif isinstance(self.objective[1],QuadExp):
-                                        if var in self.objective[1].aff.factors.keys():
+                                        if var in self.objective[1].aff.factors:
                                                 found=True
                                         for ij in self.objective[1].quad:
                                                 if var in ij:
@@ -456,8 +433,8 @@ class Problem:
                                         if var in self.objective[1].Exp.factors.keys():
                                                 found=True
                         if not found:
-                                self.remove_variable(var)
-                                print('variable '+var+' was useless and has been removed')
+                                self.remove_variable(var.name)
+                                print('variable '+var.namer+' was useless and has been removed')
 
         """
         ----------------------------------------------------------------
@@ -466,6 +443,9 @@ class Problem:
         """
 
         def add_variable(self,name,size=1, vtype = 'continuous' ):
+                """
+                TEST
+                """
                 """
                 adds a variable in the problem,
                 and returns an :class:`AffinExp <picos.AffinExp>` representing this variable.
@@ -487,7 +467,9 @@ class Problem:
                                 * or a ``tuple`` *(n,m)*, and the variable is a **n x m-matrix**.
                 
                 :type size: int or tuple.
-                :param vtype: variable type. Can be : 'continuous', 'binary', 'integer', 'semicont', or 'semiint'
+                :param vtype: variable :attr:`type <picos.Variable.vtype>`. 
+                              Can be : 'continuous', 'binary', 'integer',
+                              'symmetric', 'semicont', or 'semiint'
                 :type vtype: str.
                 :returns: An instance of the class :class:`AffinExp <picos.AffinExp>`:
                           Affine expression representing the created variable.
@@ -519,7 +501,10 @@ class Problem:
                                         self.listOfVars[lisname]['type']='list'
                                 else:
                                         self.listOfVars[lisname]['type']='dict'
-                self.variables[name]=Variable(name,size,self.countVar,self.numberOfVars, vtype)
+                
+                countvar=self.countVar
+                numbervar=self.numberOfVars
+                
                 if vtype=='symmetric':
                         if size[0]!=size[1]:
                                 raise ValueError('symmetric variables must be square')
@@ -533,14 +518,19 @@ class Problem:
                 #svec operation
                 idmat=_svecm1_identity(vtype,size)
                 
-                return AffinExp({name:idmat},
-                                 size=size,
-                                 string=name,
-                                 variables=self.variables)
+                self.variables[name]=Variable(name,
+                                        size,
+                                        countvar,
+                                        numbervar,
+                                        vtype=vtype)
+                return self.variables[name]
+        
         
         def remove_variable(self,name):
                 """
-                removes the variable **name** from the problem
+                Removes the variable ``name`` from the problem.
+                :param name: name of the variable to remove.
+                :type name: str.
                 """
                 if '[' in name and ']' in name:#list or dict of variables
                         lisname=name[:name.index('[')]
@@ -568,7 +558,7 @@ class Problem:
                 """Adds a constraint in the problem.
                 
                 :param cons: The constraint to be added.
-                :type cons: :class:`Constraint`
+                :type cons: :class:`Constraint<picos.Constraint>``
                 :param key: Optional parameter to describe the constraint with a key string.
                 :type key: str.
                 """
@@ -595,9 +585,10 @@ class Problem:
 
         def add_list_of_constraints(self,lst,it=None,indices=None,key=None):
                 u"""adds a list of constraints in the problem.
-                This fonction can be used with lists created on the fly by python (see the example below).
+                This fonction can be used with python list comprehensions
+                (see the example below).
                 
-                :param lst: ``list`` of :class:`Constraint`.
+                :param lst: list of :class:`Constraint<picos.Constraint>`.
                 :param it: Description of the letters which should
                            be used to replace the dummy indices.
                            The function tries to find a template
@@ -629,18 +620,18 @@ class Problem:
                 >>> prob=pic.Problem()
                 >>> x=[prob.add_variable('x[{0}]'.format(i),2) for i in range(5)]
                 >>> x #doctest: +NORMALIZE_WHITESPACE
-                [# (2 x 1)-affine expression: x[0] #,
-                 # (2 x 1)-affine expression: x[1] #,
-                 # (2 x 1)-affine expression: x[2] #,
-                 # (2 x 1)-affine expression: x[3] #,
-                 # (2 x 1)-affine expression: x[4] #]
+                [# variable x[0]:(2 x 1),continuous #,
+                 # variable x[1]:(2 x 1),continuous #,
+                 # variable x[2]:(2 x 1),continuous #,
+                 # variable x[3]:(2 x 1),continuous #,
+                 # variable x[4]:(2 x 1),continuous #]
                 >>> y=prob.add_variable('y',5)
                 >>> IJ=[(1,2),(2,0),(4,2)]
                 >>> w={}
                 >>> for ij in IJ:
                 ...         w[ij]=prob.add_variable('w[{0}]'.format(ij),3)
                 ... 
-                >>> u=prob.new_param('u',cvx.matrix([2,5]))
+                >>> u=pic.new_param('u',cvx.matrix([2,5]))
                 >>> prob.add_list_of_constraints(
                 ... [u.T*x[i]<y[i] for i in range(5)],
                 ... 'i',
@@ -658,7 +649,7 @@ class Problem:
                 >>> 
                 >>> print prob #doctest: +NORMALIZE_WHITESPACE
                 ---------------------
-                optimization problem:
+                optimization problem (SOCP):
                 24 variables, 9 affine constraints, 9 vars in a SO cone
                 <BLANKLINE>
                 x   : list of 5 variables, (2, 1), continuous
@@ -717,12 +708,15 @@ class Problem:
 
         def get_valued_variable(self,name):
                 """
-                Returns the value of the variable (as an :class:`AffinExp <picos.AffinExp>`)
-                with the given **name**.
-                If **name** is a list (resp. dict) of variables,
+                Returns the value of the variable (as an :func:`cvxopt matrix <cvxopt:cvxopt.matrix>`)
+                with the given ``name``.
+                If ``name`` refers to a list (resp. dict) of variables,
                 named with the template ``name[index]`` (resp. ``name[key]``),
                 then the function returns the list (resp. dict)
                 of these variables.
+                
+                :param name: name of the variable, or of a list/dict of variables.
+                :type name: str.
                 
                 .. Warning:: If the problem has not been solved,
                              or if the variable is not valued,
@@ -742,12 +736,15 @@ class Problem:
 
         def get_variable(self,name):
                 """
-                Returns the variable (as an :class:`AffinExp <picos.AffinExp>`)
-                with the given **name**.
-                If **name** is a list (resp. dict) of variables,
+                Returns the variable (as a :class:`Variable <picos.Variable>`)
+                with the given ``name``.
+                If ``name`` refers to a list (resp. dict) of variables,
                 named with the template ``name[index]`` (resp. ``name[key]``),
                 then the function returns the list (resp. dict)
                 of these variables.
+                
+                :param name: name of the variable, or of a list/dict of variables.
+                :type name: str.
                 """
                 var=name
                 if var in self.listOfVars.keys():
@@ -783,17 +780,11 @@ class Problem:
                                                 key=float(ind)
                                         except ValueError:
                                                 key=ind
-                                sz=self.variables[var+'['+ind+']'].size
-                                rvar[key]=AffinExp({var+'['+ind+']':cvx.spdiag([1.]*sz[0]*sz[1])},
-                                        constant=0,
-                                        size=self.variables[var+'['+ind+']'].size,string=var+'['+ind+']',
-                                        variables=self.variables)
+                                rvar[key]=self.variables[var+'['+ind+']']
                         return rvar
                 else:
-                        sz=self.variables[var].size
-                        return AffinExp({var:cvx.spdiag([1.]*sz[0]*sz[1])},constant=0,
-                                size=sz,string=var,
-                                variables=self.variables)
+                        return self.variables[var]
+                        
 
 
         def get_constraint(self,ind):
@@ -829,7 +820,7 @@ class Problem:
                 >>> prob.add_constraint(y>0)
                 >>> print prob #doctest: +NORMALIZE_WHITESPACE
                 ---------------------
-                optimization problem:
+                optimization problem (LP):
                 15 variables, 10 affine constraints
                 <BLANKLINE>
                 x   : list of 5 variables, (2, 1), continuous
@@ -968,7 +959,7 @@ class Problem:
                 Defines the variables cplex_Instance and cplexvar,
                 used by the cplex solver.
                 
-                TODO: feasibility problems
+                TODO: SOCP
                 """
                 try:
                         import cplex
@@ -1036,13 +1027,15 @@ class Problem:
                 
                 if self.objective[1] is None:
                         objective = {}
-                else:
+                elif isinstance(self.objective[1],QuadExp):
+                        objective = self.objective[1].aff.factors
+                elif isinstance(self.objective[1],AffinExp):
                         objective = self.objective[1].factors
                 
                 for kvar,variable in self.variables.iteritems():
-                        sj=self.variables[kvar].startIndex
-                        if objective.has_key(kvar):
-                                vectorObjective = objective[kvar]
+                        sj=variable.startIndex
+                        if objective.has_key(variable):
+                                vectorObjective = objective[variable]
                         else:
                                 vectorObjective = [0]*(variable.size[0]*variable.size[1])
                         for k in range(variable.size[0]*variable.size[1]):
@@ -1064,6 +1057,24 @@ class Problem:
                         print prog, "\r",
                         print
                 
+                
+                #quad part of the objective
+                quad_terms = []
+                if isinstance(self.objective[1],QuadExp):
+                        qd=self.objective[1].quad
+                        for i,j in qd:
+                                fact=qd[i,j]
+                                si=i.startIndex
+                                sj=j.startIndex
+                                if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                        if si<sj:
+                                                fact+=qd[j,i].T
+                                        elif si>sj:
+                                                fact=cvx.sparse([0])
+                                        elif si==sj:
+                                                pass
+                                quad_terms += zip(fact.I+si,fact.J+sj,2*fact.V)
+
                 #constraints
                 
                 #progress bar
@@ -1081,21 +1092,153 @@ class Problem:
                 rhs=[]
                 senses= ''
                 
+                ql=[]
+                qq=[]
+                qc=[]
+                
+                boundcons={} #dictionary of i,j,b,v for bound constraints
+                
                 irow=0
                 for constrKey,constr in self.constraints.iteritems():
+                        # NEW VERSION
+                        if constr.typeOfConstraint[:3] == 'lin':
+                                #init of boundcons[key]
+                                boundcons[constrKey]=[]
+                                
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
+                                        sj=var.startIndex
+                                        ijv.extend(zip( fact.I,fact.J+sj,fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
+                                
+                                #constant term
+                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                rhstmp = cvx.matrix(0.,(szcons,1))
+                                constant1 = constr.Exp1.constant #None or a 1*1 matrix
+                                constant2 = constr.Exp2.constant
+                                if not constant1 is None:
+                                        rhstmp = rhstmp-constant1
+                                if not constant2 is None:
+                                        rhstmp = rhstmp+constant2
+                                
+                                
+                                for i,jv in itojv.iteritems():
+                                        r=rhstmp[i]
+                                        if len(jv)==1:
+                                                #BOUND
+                                                j,v=jv[0]
+                                                b=r/float(v)
+                                                if v>0:
+                                                        if constr.typeOfConstraint in ['lin<','lin=']:
+                                                                if b<ub[j]:
+                                                                        ub[j]=b
+                                                        if constr.typeOfConstraint in ['lin>','lin=']:
+                                                                if b>lb[j]:
+                                                                        lb[j]=b
+                                                else:#v<0
+                                                        if constr.typeOfConstraint in ['lin<','lin=']:
+                                                                if b>lb[j]:
+                                                                        lb[j]=b
+                                                        if constr.typeOfConstraint in ['lin>','lin=']:
+                                                                if b<ub[j]:
+                                                                        ub[j]=b
+                                                boundcons[constrKey].append((i,j,b,v))
+                                        else:
+                                                if constr.typeOfConstraint == 'lin<':
+                                                        senses += "L" # lower
+                                                elif constr.typeOfConstraint == 'lin>':
+                                                        senses += "G" # greater
+                                                elif constr.typeOfConstraint == 'lin=':
+                                                        senses += "E" # equal
+                                                
+                                                rows.extend([irow]*len(jv))
+                                                cols.extend([j for j,v in jv])
+                                                vals.extend([v for j,v in jv])
+                                                rhs.append(r)
+                                                irow+=1
+                        
+                        elif constr.typeOfConstraint == 'quad':
+                                #quad part
+                                qind1,qind2,qval=[],[],[]
+                                qd=constr.Exp1.quad
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        qind1.extend(fact.I+si)
+                                        qind2.extend(fact.J+sj)
+                                        qval.extend(fact.V)
+                                q_exp=cplex.SparseTriple(ind1 = qind1,
+                                                         ind2 = qind2,
+                                                         val = qval)
+                                #lin part
+                                lind,lval=[],[]
+                                af=constr.Exp1.aff.factors
+                                for var in af:
+                                        lind.extend(af[var].J)
+                                        lval.extend(af[var].V)
+                                l_exp=cplex.SparsePair(ind = lind, val = lval)
+                                
+                                #constant
+                                qcs=0.
+                                if not(constr.Exp1.aff.constant is None):
+                                        qcs = - constr.Exp1.aff.constant[0]
+                                
+                                ql+= [l_exp]
+                                qq+= [q_exp]
+                                qc+= [qcs]
+                                
+                        else:
+                                raise Exception('type of constraint not handled (yet ?) for cplex:{0}'.format(
+                                        constr.typeOfConstraint))
+                                
+                        
+                        if self.options['verbose']>0:
+                                #<--display progress
+                                prog.increment_amount()
+                                if oldprog != str(prog):
+                                        print prog, "\r",
+                                        sys.stdout.flush()
+                                        oldprog=str(prog)
+                                #-->
+                        
+                        
+                        
+                        
+                        
+                        
+                        # OLD VERSION
+                        """
                         nnz=0
-                        for kvar,lin_expr_fact in constr.Exp1.factors.iteritems():
+                        for var,lin_expr_fact in constr.Exp1.factors.iteritems():
                                 # add each var one by one if val =! 0
-                                sj=self.variables[kvar].startIndex
+                                sj=var.startIndex
                                 for i,j,v in itertools.izip(lin_expr_fact.I,lin_expr_fact.J,lin_expr_fact.V):
                                         rows.append(irow+i)
                                         cols.append(sj+j)
                                         vals.append(v)
                                         nnz+=1
                                 
-                        for kvar,lin_expr_fact in constr.Exp2.factors.iteritems():
+                        for var,lin_expr_fact in constr.Exp2.factors.iteritems():
                                 # add each var one by one if val =! 0
-                                sj=self.variables[kvar].startIndex
+                                sj=var.startIndex
                                 for i,j,v in itertools.izip(lin_expr_fact.I,lin_expr_fact.J,lin_expr_fact.V):
                                         rows.append(irow+i)
                                         cols.append(sj+j)
@@ -1112,7 +1255,7 @@ class Problem:
                                 rhstmp = rhstmp+constant2
                         
                         rhs.extend(rhstmp)
-                        
+                        import pdb;pdb.set_trace()
                         if nnz == 1:
                                 #BOUND
                                 i=rows.pop()
@@ -1145,7 +1288,8 @@ class Problem:
                                         sys.stdout.flush()
                                         oldprog=str(prog)
                                 #-->
-                
+                        """
+                        
                 if self.options['verbose']>0:
                         prog.update_amount(limitbar)
                         print prog, "\r",
@@ -1154,19 +1298,46 @@ class Problem:
                 print
                 print('Passing to cplex...')
                 c.variables.add(obj = obj, ub = ub, lb=lb, names = colnames,types=types)
+                if len(quad_terms)>0:
+                        c.objective.set_quadratic_coefficients(quad_terms)
                 c.linear_constraints.add(rhs = rhs, senses = senses)
-                c.linear_constraints.set_coefficients(zip(rows, cols, vals))
+                if len(rows)>0:
+                        c.linear_constraints.set_coefficients(zip(rows, cols, vals))
+                for lp,qp,qcs in zip(ql,qq,qc):
+                        c.quadratic_constraints.add(lin_expr = lp,
+                                                    quad_expr = qp,
+                                                    rhs = qcs,
+                                                    sense = "L")
                 
-                # define problem type
-                if self.is_continuous():
+                
+                #TODO: pour mosek et cplex, parfois probleme pour
+                #dual d'une variable fixe dupliquée.
+                #cplex: dual lue une seule fois, mais parfois avec mauvais signe
+                #mosek: duale lue deux fois, ms peut marcher qd meme (qd bon signe)
+                #       car 0 mis sur inegalite qd il y a une egalite
+                tp=self.type
+                if tp == 'LP':
                         c.set_problem_type(c.problem_type.LP)
+                elif tp == 'MIP':
+                        c.set_problem_type(c.problem_type.MILP)
+                elif tp == 'QCQP':
+                        c.set_problem_type(c.problem_type.QCP)
+                elif tp == 'MIQCP':
+                        c.set_problem_type(c.problem_type.MIQCP)
+                elif tp == 'QP':
+                        c.set_problem_type(c.problem_type.QP)
+                elif tp == 'MIQP':
+                        c.set_problem_type(c.problem_type.MIQP)
+                else:
+                        raise Exception('unhandled type of problem')
                 
                 self.cplex_Instance = c
                 print('CPLEX INSTANCE created')
+                self.cplex_boundcons=boundcons
                 return c, self
 
                 
-        def _make_cvxopt_instance(self):
+        def _make_cvxopt_instance(self,aff_part_of_quad=True):
                 """
                 defines the variables in self.cvxoptVars, used by the cvxopt solver
                 """
@@ -1212,6 +1383,9 @@ class Problem:
                                         self.cvxoptVars['F']=-cvx.matrix(F,tc='d')
                                         self.cvxoptVars['g']=-cvx.matrix(g,tc='d')
                 
+                if not(aff_part_of_quad) and isinstance(self.objective[1],QuadExp):
+                        self.cvxoptVars['c']=cvx.matrix(0,(ss,1),tc='d')
+
                 if self.options['verbose']>0:
                         limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
                         prog = ProgressBar(0,limitbar, 77, mode='fixed')
@@ -1253,10 +1427,11 @@ class Problem:
                                 self.cvxoptVars['K'].append(F.size[0])
                         elif self.constraints[k].typeOfConstraint=='quad':
                                 self.cvxoptVars['quadcons'].append((k,self.cvxoptVars['Gl'].size[0]))
-                                #quadratic part handled later
-                                (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1.aff)
-                                self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
-                                self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-h_lhs])
+                                if aff_part_of_quad:
+                                        #quadratic part handled later
+                                        (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1.aff)
+                                        self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
+                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-h_lhs])
                         elif self.constraints[k].typeOfConstraint[:3]=='sdp':
                                 sense=self.constraints[k].typeOfConstraint[3]
                                 (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1)
@@ -1501,8 +1676,8 @@ class Problem:
                                 qexpr=self.constraints[k].Exp1
 
                         for i,j in qexpr.quad:
-                                si,ei=self.variables[i].startIndex,self.variables[i].endIndex
-                                sj,ej=self.variables[j].startIndex,self.variables[j].endIndex
+                                si,ei=i.startIndex,i.endIndex
+                                sj,ej=j.startIndex,j.endIndex
                                 Qij=qexpr.quad[i,j]
                                 if not isinstance(Qij,cvx.spmatrix):
                                         Qij=cvx.sparse(Qij)
@@ -1547,9 +1722,10 @@ class Problem:
 
         def _make_zibopt(self):
                 """
-                Defines the variables scip_solver and scip_vars, used by the zibopt solver.
+                Defines the variables scip_solver, scip_vars and scip_obj,
+                used by the zibopt solver.
                 
-                .. TODO:: handle the quadratic problems
+                .. TODO:: Some quadratic problems do not pass. Ask Ryan after reinstallation
                 """
                 try:
                         from zibopt import scip
@@ -1558,13 +1734,11 @@ class Problem:
                 
                 scip_solver = scip.solver(quiet=not(self.options['verbose']))
                 
+                self._make_cvxopt_instance(aff_part_of_quad=False)
+                
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
                         raise Exception('SDP, SOCP, or GP constraints are not implemented in mosek')
-                if bool(self.cvxoptVars['quadcons']):
-                        raise Exception('not implemented yet')
-                
-                self._make_cvxopt_instance()
-                #TODO integer vars
+                                
                 #max handled directly by scip
                 if self.objective[0]=='max':
                         self.cvxoptVars['c']=-self.cvxoptVars['c']
@@ -1585,11 +1759,16 @@ class Problem:
                 
                 x=[]
                 for i in range(self.cvxoptVars['A'].size[1]):
-                    x.append(scip_solver.variable(types[i],
+                    if not(self.cvxoptVars['c'] is None):
+                        x.append(scip_solver.variable(types[i],
                                 lower=-INFINITY,
                                 coefficient=self.cvxoptVars['c'][i])
                             )
+                    else:
+                        x.append(scip_solver.variable(types[i],
+                                lower=-INFINITY))
                 
+                #equalities
                 Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
                 ijvs=sorted(zip(Ai,Aj,Av))
                 del Ai,Aj,Av
@@ -1626,10 +1805,47 @@ class Problem:
                         for term in jv:
                                 exp+= term[1]*x[term[0]]
                         scip_solver += exp <= self.cvxoptVars['hl'][i]
-                                        
+
+                ###
+                #quadratic constraints
+                for (k,iaff) in self.cvxoptVars['quadcons']:
+                        subI=[]
+                        subJ=[]
+                        subV=[]
+                        if k=='_obj':
+                                qexpr=self.objective[1]
+                        else:
+                                qexpr=self.constraints[k].Exp1
+
+                        qd=0
+                        for i,j in qexpr.quad:
+                                si,ei=i.startIndex,i.endIndex
+                                sj,ej=j.startIndex,j.endIndex
+                                Qij=qexpr.quad[i,j]
+                                if not isinstance(Qij,cvx.spmatrix):
+                                        Qij=cvx.sparse(Qij)
+                                for ii,jj,vv in zip(Qij.I,Qij.J,Qij.V):
+                                        qd+=vv*x[ii+si]*x[jj+sj]
+                        
+                        if not(qexpr.aff is None):
+                                for v,fac in qexpr.aff.factors.iteritems():
+                                        if not isinstance(fac,cvx.spmatrix):
+                                                fac=cvx.sparse(fac)
+                                        sv=v.startIndex
+                                        for jj,vv in zip(fac.J,fac.V):
+                                                qd+=vv*x[jj+sv]
+                                if not(qexpr.aff.constant is None):
+                                        qd+=qexpr.aff.constant[0]
+                        
+                        if k=='_obj':
+                                self.scip_obj = qd
+                        else:
+                                scip_solver += qd <= 0
+                ###
                 
                 self.scip_solver=scip_solver
                 self.scip_vars=x
+                
                 
                 
                 
@@ -1646,23 +1862,28 @@ class Problem:
                 Solves the problem.
                 
                 Once the problem has been solved, the optimal variables
-                can be obtained thanks to the :func:``eval``. The
-                duals variables can be accessed by the method :func:``dual``
-                of the class :class:``Constraint``.
+                can be obtained thanks to the property :attr:`value <picos.Expression.value>`
+                of the class :class:`Expression<picos.Expression>`.
+                The optimal dual variables can be accessed by the method
+                :func:`picos.Constraint.dual` of the class
+                :class:`Constraint<picos.Constraint>`.
                 
                 :keyword options: A list of options to update before
                                   the call to the solver. In particular, 
                                   the solver can
                                   be specified here,
-                                  under the form key = value.
+                                  under the form ``key = value``.
                                   See the list of available options
-                                  in :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`
+                                  in the doc of 
+                                  :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`
                 :returns: A dictionary **sol** which contains the information
                             returned by the solver.
                 
                 """
                 if options is None: options={}
                 self.update_options(**options)
+                if self.options['solver'] is None:
+                        self.solver_selection()
 
                 #self._eliminate_useless_variables()
 
@@ -1707,7 +1928,7 @@ class Problem:
                         for i,d in enumerate(duals):
                                 self.constraints[i].set_dualVar(d)
                 if obj=='toEval' and not(self.objective[1] is None):
-                        obj=self.objective[1].eval()
+                        obj=self.objective[1].eval()[0]
                 sol['obj']=obj
                 return sol
 
@@ -1859,15 +2080,15 @@ class Problem:
                  
                 primals={}
                 if not (sol['x'] is None):
-                        for var in self.variables.keys():
-                                si=self.variables[var].startIndex
-                                ei=self.variables[var].endIndex
+                        for var in self.variables.values():
+                                si=var.startIndex
+                                ei=var.endIndex
                                 varvect=sol['x'][si:ei]
-                                if self.variables[var].vtype=='symmetric':
+                                if var.vtype=='symmetric':
                                         varvect=svecm1(varvect) #varvect was the svec
                                                                 #representation of X
                                 
-                                primals[var]=cvx.matrix(varvect, self.variables[var].size)
+                                primals[var.name]=cvx.matrix(varvect, var.size)
                 else:
                         print('##################################')
                         print('WARNING: Primal Solution Not Found')
@@ -1998,6 +2219,7 @@ class Problem:
                 
                 .. Todo::  * set solver settings
                            * handle SOCP ?
+                           * dual of quadratics ?
                 """
                 #----------------------------#
                 #  create the cplex instance #
@@ -2051,48 +2273,75 @@ class Problem:
                                 indsols.append(ind)
                 
                 primals = {}
-                for kvar in self.variables:
+                for var in self.variables.values():
                         value = []
-                        sz_var = self.variables[kvar].size[0]*self.variables[kvar].size[1]
+                        sz_var = var.size[0]*var.size[1]
                         for i in range(sz_var):
-                                name = kvar + '_' + str(i)
+                                name = var.name + '_' + str(i)
                                 value.append(c.solution.get_values(name))
                                              
-                        primals[kvar] = cvx.matrix(value,self.variables[kvar].size)
+                        primals[var.name] = cvx.matrix(value,var.size)
                 
                 if numsol>1:
                         for ii,ind in enumerate(indsols):
-                                for kvar in self.variables:
+                                for var in self.variables.values():
                                         value = []
-                                        sz_var = self.variables[kvar].size[0]*self.variables[kvar].size[1]
+                                        sz_var = var.size[0]*var.size[1]
                                         for i in range(sz_var):
-                                                name = kvar + '_' + str(i)
+                                                name = var.name + '_' + str(i)
                                                 value.append(c.solution.pool.get_values(ind,name))
                                              
-                                        primals[(ii,kvar)] = cvx.matrix(value,self.variables[kvar].size)
+                                        primals[(ii,var.name)] = cvx.matrix(value,var.size)
                         
                 #--------------------#
                 # retrieve the duals #
                 #--------------------#
                 duals = [] 
-                if 'noduals' in self.options and self.options['noduals']:
+                if not(self.isContinuous()) or (
+                     'noduals' in self.options and self.options['noduals']):
                         pass
                 else:
-                        # not available for a MIP (only for LP)
-                        if self.is_continuous():
-                                pos_cplex = 0 # the next scalar constraint line to study (num of cplex)
-                                # pos_interface the next vect constraint in our interface
-                                # for each constraint
-                                for pos_interface in self.constraints.keys():
-                                        dim = self.constraints[pos_interface].Exp1.size[0]
-                                        # take all the composants of the constraint
-                                        dual_lines = range(pos_cplex, pos_cplex + dim)
-                                        dual_values = c.solution.get_dual_values(dual_lines)
-                                        duals.append(cvx.matrix(dual_values))
-                                        pos_cplex += dim
+                        try:
+                                pos_cplex = 0 #row position in the cplex linear constraints
+                                basis_status = c.solution.basis.get_col_basis()
+                                seen_bounded_vars = []
+                                for k,constr in self.constraints.iteritems():
+                                        if constr.typeOfConstraint[:3] == 'lin':
+                                                dim = constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                dim = dim - len(self.cplex_boundcons[k])
+                                                dual_lines = range(pos_cplex, pos_cplex + dim)
+                                                if len(dual_lines)==0:
+                                                        dual_values = []
+                                                else:
+                                                        dual_values = c.solution.get_dual_values(dual_lines)
+                                                for (i,j,b,v) in self.cplex_boundcons[k]:
+                                                        xj = c.solution.get_values(j)
+                                                        if (xj == b) and (j not in seen_bounded_vars):
+                                                                seen_bounded_vars.append(j)
+                                                                du=c.solution.get_reduced_costs(j)/abs(v)
+                                                                if basis_status[j]==0:#lower bound
+                                                                        dual_values.insert(i,-du)
+                                                                elif basis_status[j] ==2:#upper bound
+                                                                        dual_values.insert(i,du)
+                                                        else:
+                                                                dual_values.insert(i,0.)
+                                                pos_cplex += dim
+                                                duals.append(cvx.matrix(dual_values))
+                                                
+                                                
+                                        else:
+                                                print 'duals for this type of constraint not supported yet'
+                                                duals.append(None)
+
+                        except Exception as ex:
+                                import pdb;pdb.set_trace()
+                                import warnings
+                                warnings.warn('error while retrieving duals')
+                                duals = []
                 #-----------------#
                 # objective value #
                 #-----------------#             
+                
                 obj = c.solution.get_objective_value()
                 sol = {'cplex_solution':c.solution}
                 return (primals,duals,obj,sol)
@@ -2129,8 +2378,10 @@ class Problem:
 
                 if self.is_continuous():
                         soltype=mosek.soltype.itr
+                        intg=False
                 else:
                         soltype=mosek.soltype.itg
+                        intg=True
 
                 [prosta,solsta] = task.getsolutionstatus(soltype)
                 
@@ -2141,7 +2392,7 @@ class Problem:
                 xx = np.zeros(self.numberOfVars, float)
                 task.getsolutionslice(
                         soltype, mosek.solitem.xx, 0,self.numberOfVars, xx)
-                #PRIMAL VARIABLES        
+                #PRIMAL VARIABLES
                 primals={}
                 if (solsta == mosek.solsta.optimal or
                         solsta == mosek.solsta.near_optimal or
@@ -2161,129 +2412,140 @@ class Problem:
                 # retrieve the duals #
                 #--------------------#
                 duals=[]
-                if 'noduals' in self.options and self.options['noduals']:
+                if intg or ('noduals' in self.options and self.options['noduals']):
                         pass
                 else:
-                        idvarcone=self.numberOfVars #index of variables in cone
-                        ideq=0 #index of equality constraint in cvxoptVars['A']
-                        idconeq=0 #index of equality constraint in mosekcons (without fixed vars)
-                        idin=0 #index of inequality constraint in cvxoptVars['Gl']
-                        idconin=len([1 for ida in range(self.cvxoptVars['A'].size[0])
-                                        if len(self.cvxoptVars['A'][ida,:].J)>1])
-                                #index of inequality constraint in mosekcons (without fixed vars)
-                        idcone=0 #number of seen cones
-                        Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
-                        
-                        #indices for ineq constraints
-                        ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
-                        if len(ijvs)>0:
-                                (ik,jk,vk)=ijvs.pop()
-                                curik=-1
-                                delNext=False
-                        del Gli,Glj,Glv
-                        
-                        #indices for eq constraints
-                        Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
-                        ijls=sorted(zip(Ai,Aj,Av),reverse=True)
-                        if len(ijls)>0:
-                                (il,jl,vl)=ijls.pop()
-                                curil=-1
-                                delNext=False
-                        del Ai,Aj,Av
-                        
-                        #now we parse the constraints
-                        for k in self.constraints.keys():
-                                #conic constraint
-                                if self.constraints[k].typeOfConstraint[2:]=='cone':
-                                        szcone=self.cvxoptVars['Gq'][idcone].size[0]
-                                        v=np.zeros(szcone,float)
-                                        task.getsolutionslice(soltype,mosek.solitem.snx,
-                                                        idvarcone,idvarcone+szcone,v)
-                                        duals.append(cvx.matrix(v))
-                                        idvarcone+=szcone
-                                        idcone+=1
-                                elif self.constraints[k].typeOfConstraint=='lin=':
-                                        szcons=int(np.product(self.constraints[k].Exp1.size))
-                                        fxd=[]
-                                        while il<ideq+szcons:
-                                                if il!=curil:
-                                                        fxd.append((il-ideq,jl,vl))
-                                                        curil=il
-                                                        delNext=True
-                                                elif delNext:
-                                                        del fxd[-1]
-                                                        delNext=False
-                                                try:
-                                                        (il,jl,vl)=ijls.pop()
-                                                except IndexError:
-                                                        break
-                                        
-                                        v=np.zeros(szcons-len(fxd),float)
-                                        if len(v)>0:
-                                                task.getsolutionslice(soltype,mosek.solitem.y,
-                                                        idconeq,idconeq+szcons-len(fxd),v)
-                                        v=v.tolist()
-                                        for (l,var,coef) in fxd: #dual of fixed var constraints
-                                                duu=np.zeros(1,float)
-                                                dul=np.zeros(1,float)
-                                                task.getsolutionslice(soltype,mosek.solitem.sux,
-                                                                        var,var+1,duu)
-                                                task.getsolutionslice(soltype,mosek.solitem.slx,
-                                                                        var,var+1,dul)
-                                                v.insert(l,(dul[0]-duu[0])/coef)
-                                        duals.append(cvx.matrix(v))
-                                        ideq+=szcons
-                                        idconeq+=(szcons-len(fxd))
-                                elif self.constraints[k].typeOfConstraint[:3]=='lin':#inequality
-                                        szcons=int(np.product(self.constraints[k].Exp1.size))
-                                        fxd=[]
-                                        while ik<idin+szcons:
-                                                if ik!=curik:
-                                                        fxd.append((ik-idin,jk,vk))
-                                                        curik=ik
-                                                        delNext=True
-                                                elif delNext:
-                                                        del fxd[-1]
-                                                        delNext=False
-                                                try:
-                                                        (ik,jk,vk)=ijvs.pop()
-                                                except IndexError:
-                                                        break
-                                                                                
-                                        #for k in range(szcons):
-                                                #if len(self.cvxoptVars['Gl'][idin+k,:].J)==1:
-                                                        #fxd.append((k,
-                                                                #self.cvxoptVars['Gl'][idin+k,:].J[0],
-                                                                #self.cvxoptVars['Gl'][idin+k,:].V[0]))
-                                        v=np.zeros(szcons-len(fxd),float)
-                                        if len(v)>0:
-                                                task.getsolutionslice(soltype,mosek.solitem.y,
-                                                        idconin,idconin+szcons-len(fxd),v)
-                                        v=v.tolist()
-                                        for (l,var,coef) in fxd: #dual of simple bound constraints
-                                                du=np.zeros(1,float)
-                                                bound=self.cvxoptVars['hl'][idin+l]/coef
-                                                bk,bl,bu=task.getbound(mosek.accmode.var,var)
-                                                if coef>0: #upper bound
-                                                        if bound==bu:
-                                                                task.getsolutionslice(soltype,mosek.solitem.sux,
-                                                                        var,var+1,du)
-                                                                v.insert(l,-du[0]/coef)
-                                                        else:
-                                                                v.insert(l,0.) #inactive bound
-                                                else:   #lower bound
-                                                        if bound==bl:
-                                                                task.getsolutionslice(soltype,mosek.solitem.slx,
-                                                                        var,var+1,du)
-                                                                v.insert(l,du[0]/coef)
-                                                        else:
-                                                                v.insert(l,0.) #inactive bound
-                                        duals.append(cvx.matrix(v))
-                                        idin+=szcons
-                                        idconin+=(szcons-len(fxd))
-                                else:
-                                                print('dual for this constraint is not handled yet')
-                                                duals.append(None)
+                        try:
+                                idvarcone=self.numberOfVars #index of variables in cone
+                                ideq=0 #index of equality constraint in cvxoptVars['A']
+                                idconeq=0 #index of equality constraint in mosekcons (without fixed vars)
+                                idin=0 #index of inequality constraint in cvxoptVars['Gl']
+                                idconin=len([1 for ida in range(self.cvxoptVars['A'].size[0])
+                                                if len(self.cvxoptVars['A'][ida,:].J)>1])
+                                        #index of inequality constraint in mosekcons (without fixed vars)
+                                idcone=0 #number of seen cones
+                                Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
+                                
+                                #indices for ineq constraints
+                                ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
+                                if len(ijvs)>0:
+                                        (ik,jk,vk)=ijvs.pop()
+                                        curik=-1
+                                        delNext=False
+                                del Gli,Glj,Glv
+                                
+                                #indices for eq constraints
+                                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+                                ijls=sorted(zip(Ai,Aj,Av),reverse=True)
+                                if len(ijls)>0:
+                                        (il,jl,vl)=ijls.pop()
+                                        curil=-1
+                                        delNext=False
+                                del Ai,Aj,Av
+                                
+                                seen_bounded_vars = []
+                                
+                                #now we parse the constraints
+                                for k in self.constraints.keys():
+                                        if k==1:
+                                                import pdb;pdb.set_trace()
+                                        #conic constraint
+                                        if self.constraints[k].typeOfConstraint[2:]=='cone':
+                                                szcone=self.cvxoptVars['Gq'][idcone].size[0]
+                                                v=np.zeros(szcone,float)
+                                                task.getsolutionslice(soltype,mosek.solitem.snx,
+                                                                idvarcone,idvarcone+szcone,v)
+                                                duals.append(cvx.matrix(v))
+                                                idvarcone+=szcone
+                                                idcone+=1
+                                        elif self.constraints[k].typeOfConstraint=='lin=':
+                                                szcons=int(np.product(self.constraints[k].Exp1.size))
+                                                fxd=[]
+                                                while il<ideq+szcons:
+                                                        if il!=curil:
+                                                                fxd.append((il-ideq,jl,vl))
+                                                                curil=il
+                                                                delNext=True
+                                                        elif delNext:
+                                                                del fxd[-1]
+                                                                delNext=False
+                                                        try:
+                                                                (il,jl,vl)=ijls.pop()
+                                                        except IndexError:
+                                                                break
+                                                
+                                                v=np.zeros(szcons-len(fxd),float)
+                                                if len(v)>0:
+                                                        task.getsolutionslice(soltype,mosek.solitem.y,
+                                                                idconeq,idconeq+szcons-len(fxd),v)
+                                                v=v.tolist()
+                                                for (l,var,coef) in fxd: #dual of fixed var constraints
+                                                        duu=np.zeros(1,float)
+                                                        dul=np.zeros(1,float)
+                                                        task.getsolutionslice(soltype,mosek.solitem.sux,
+                                                                                var,var+1,duu)
+                                                        task.getsolutionslice(soltype,mosek.solitem.slx,
+                                                                                var,var+1,dul)
+                                                        v.insert(l,(dul[0]-duu[0])/coef)
+                                                duals.append(cvx.matrix(v))
+                                                ideq+=szcons
+                                                idconeq+=(szcons-len(fxd))
+                                        elif self.constraints[k].typeOfConstraint[:3]=='lin':#inequality
+                                                szcons=int(np.product(self.constraints[k].Exp1.size))
+                                                fxd=[]
+                                                while ik<idin+szcons:
+                                                        if ik!=curik:
+                                                                fxd.append((ik-idin,jk,vk))
+                                                                curik=ik
+                                                                delNext=True
+                                                        elif delNext:
+                                                                del fxd[-1]
+                                                                delNext=False
+                                                        try:
+                                                                (ik,jk,vk)=ijvs.pop()
+                                                        except IndexError:
+                                                                break
+                                                                                        
+                                                #for k in range(szcons):
+                                                        #if len(self.cvxoptVars['Gl'][idin+k,:].J)==1:
+                                                                #fxd.append((k,
+                                                                        #self.cvxoptVars['Gl'][idin+k,:].J[0],
+                                                                        #self.cvxoptVars['Gl'][idin+k,:].V[0]))
+                                                v=np.zeros(szcons-len(fxd),float)
+                                                if len(v)>0:
+                                                        task.getsolutionslice(soltype,mosek.solitem.y,
+                                                                idconin,idconin+szcons-len(fxd),v)
+                                                v=v.tolist()
+                                                for (l,var,coef) in fxd: #dual of simple bound constraints
+                                                        du=np.zeros(1,float)
+                                                        bound=self.cvxoptVars['hl'][idin+l]/coef
+                                                        bk,bl,bu=task.getbound(mosek.accmode.var,var)
+                                                        if coef>0: #upper bound
+                                                                if bound==bu and (var not in seen_bounded_vars):
+                                                                        seen_bounded_vars.append(var)
+                                                                        task.getsolutionslice(soltype,mosek.solitem.sux,
+                                                                                var,var+1,du)
+                                                                        v.insert(l,-du[0]/coef)
+                                                                else:
+                                                                        v.insert(l,0.) #inactive bound, or active already seen
+                                                        else:   #lower bound
+                                                                if bound==bl and (var not in seen_bounded_vars):
+                                                                        seen_bounded_vars.append(var)
+                                                                        task.getsolutionslice(soltype,mosek.solitem.slx,
+                                                                                var,var+1,du)
+                                                                        v.insert(l,du[0]/coef)
+                                                                else:
+                                                                        v.insert(l,0.) #inactive bound, or active already seen
+                                                duals.append(cvx.matrix(v))
+                                                idin+=szcons
+                                                idconin+=(szcons-len(fxd))
+                                        else:
+                                                        print('dual for this constraint is not handled yet')
+                                                        duals.append(None)
+                        except Exception:
+                                import warnings
+                                warnings.warn('error while retrieving the duals')
+                                duals = []
                 #-----------------#
                 # objective value #
                 #-----------------#  
@@ -2324,15 +2586,28 @@ class Problem:
                 
                 #--------------------#
                 #  call the solver   #
-                #--------------------#                 
+                #--------------------#
+                
                 if self.objective[0]=='max':
-                        sol=self.scip_solver.maximize(time=timelimit,
+                        if self.scip_obj is None:
+                                sol=self.scip_solver.maximize(time=timelimit,
                                                         gap=gaplim,
                                                         nsol=nbsol)
+                        else:#quadratic obj
+                                sol=self.scip_solver.maximize(time=timelimit,
+                                                        gap=gaplim,
+                                                        nsol=nbsol,
+                                                        objective=self.scip_obj)
                 else:
-                        sol=self.scip_solver.minimize(time=timelimit,
+                        if self.scip_obj is None:
+                                sol=self.scip_solver.minimize(time=timelimit,
                                                         gap=gaplim,
                                                         nsol=nbsol)
+                        else:#quadratic obj
+                                sol=self.scip_solver.minimize(time=timelimit,
+                                                        gap=gaplim,
+                                                        nsol=nbsol,
+                                                        objective=self.scip_obj)
                 
                 #----------------------#
                 # retrieve the primals #
@@ -2347,6 +2622,11 @@ class Problem:
                                 self.variables[var].size)
 
 
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#
+                
+                #not available by python-zibopt (yet ? )
                 duals = []
                 #-----------------#
                 # objective value #
@@ -2436,6 +2716,110 @@ class Problem:
                 sol['lastStep']=step
                 return sol
                 
+        def what_type(self):
+                
+                iv= [v for v in self.variables.values() if v.vtype not in ('continuous','symmetric') ]
+                #continuous problem
+                if len(iv)==0:
+                        #general convex
+                        if not(self.objective[1] is None) and isinstance(self.objective[1],GeneralFun):
+                                return 'general-obj'
+                        #GP
+                        if self.numberLSEConstraints>0:
+                                if (self.numberConeConstraints ==0
+                                and self.numberQuadConstraints == 0
+                                and self.numberSDPConstraints == 0):
+                                        return 'GP'
+                                else:
+                                        return 'unknown type'
+                        #SDP
+                        if self.numberSDPConstraints>0:
+                                if (self.numberConeConstraints ==0
+                                and self.numberQuadConstraints == 0):
+                                        return 'SDP'
+                                elif self.numberQuadConstraints == 0:
+                                        return 'ConeP'
+                                else:
+                                        return 'SDP + quadratic constraint (not handled -- need to reformulate)'
+                        #SOCP
+                        if self.numberConeConstraints > 0:
+                                if self.numberQuadConstraints == 0:
+                                        return 'SOCP'
+                                else:
+                                        return 'SOCP + quadratic constraint (not handled -- need to reformulate)'
+
+                        #quadratic problem
+                        if self.numberQuadConstraints>0:
+                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints.values()]):
+                                        return 'QCQP'
+                                else:
+                                        return 'QP'
+                                
+                        return 'LP'
+                else:
+                        if not(self.objective[1] is None) and isinstance(self.objective[1],GeneralFun):
+                                return 'unknown type'
+                        if self.numberLSEConstraints>0:
+                                return 'unknown type'
+                        if self.numberSDPConstraints>0:
+                                return 'unknown type'
+                        if self.numberConeConstraints > 0:
+                                if self.numberQuadConstraints == 0:
+                                        return 'MISOCP'
+                                else:
+                                        return 'integer SOCP + QP (not handled)'
+                        if self.numberQuadConstraints>0:
+                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints.values()]):
+                                        return 'MIQCP'
+                                else:
+                                        return 'MIQP'
+                        return 'MIP' #(or simply IP)
+                        
+                        
+        def set_type(self,value):
+                raise AttributeError('type is not writable')
+        
+        def del_type(self):
+                raise AttributeError('type is not writable')
+        
+        type=property(what_type,set_type,del_type)
+        """Type of Optimization Problem ('LP', 'MIP', 'SOCP', 'QCQP',...)"""
+        #TODO example in the tuto ?                                        
+
+        def solver_selection(self):
+                """Selects an appropriate solver for this problem
+                and sets the option ``'solver'``.
+                """
+                tp=self.type
+                if tp == 'LP':
+                        order=['cplex','mosek','zibopt','cvxopt','smcp']
+                elif tp == 'QCQP': #add cplex,zibopt ?
+                        order=['mosek','zibopt','cvxopt']
+                elif tp == 'SOCP':
+                        order=['mosek','cvxopt','smcp']
+                elif tp == 'SDP':
+                        order=['cvxopt','smcp']
+                elif tp == 'ConeP': #add cplex ?
+                        order=['cvxopt','smcp']
+                elif tp == 'GP': #add cplex ?
+                        order=['cvxopt']
+                elif tp == 'general-obj':
+                        order=['mosek','zibopt','cvxopt']
+                elif tp == 'MIP':
+                        order=['cplex','mosek','zibopt']
+                elif tp == 'MIQCP': #add cplex,zibopt ?
+                        order=['mosek']
+                elif tp == 'MISOCP':
+                        order=['mosek']
+                else:
+                        raise Exception('no solver available for problem of type {0}'.format(tp))
+                avs=available_solvers()
+                for sol in order:
+                        if sol in avs:
+                                self.set_option('solver',sol)
+                                return
+                #not found
+                raise Exception('no solver available for problem of type {0}'.format(tp))
                 
 #----------------------------------------
 #                 Obsolete functions
@@ -2461,24 +2845,3 @@ class Problem:
                 
         def makeCVXOPT_Instance(self):
                 self._make_cvxopt_instance()
-#----------------------------------------
-#                 Variable class
-#----------------------------------------
-
-class Variable:
-        def __init__(self,name,size,Id,startIndex, vtype = 'continuous',value=None):
-                self.name=name
-                self.size=size
-                self.Id=Id
-                self.vtype=vtype
-                self.startIndex=startIndex #starting position in the global vector of all variables
-                if vtype=='symmetric':
-                        self.endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
-                else:
-                        self.endIndex=startIndex+size[0]*size[1] #end position +1
-                self.value=value
-                self.value_alt = {} #alternative values for solution pools
-
-        def __str__(self):
-                return '<variable {0}:({1} x {2}),{3}>'.format(
-                        self.name,self.size[0],self.size[1],self.vtype)

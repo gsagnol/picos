@@ -8,7 +8,6 @@ The PICOS API
    :maxdepth: 2
 
    problem.rst
-   tools.rst   
-   variable.rst
+   tools.rst
    expression.rst
    constraint.rst

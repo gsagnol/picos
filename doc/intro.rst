@@ -35,7 +35,7 @@ Here is a very simple example of the usage of PICOS:
 >>> prob.set_objective('max',x)                   #maximize x
 >>> print prob #doctest: +NORMALIZE_WHITESPACE
 ---------------------
-optimization problem:
+optimization problem (MIP):
 1 variables, 1 affine constraints
 x   : (1, 1), integer
     maximize x
@@ -43,7 +43,7 @@ such that
   x < 5.2
 ---------------------
 >>> sol = prob.solve(solver='zibopt',verbose=0)
->>> print x.eval()                                #optimal value of x #doctest: +NORMALIZE_WHITESPACE
+>>> print x                                #optimal value of x #doctest: +NORMALIZE_WHITESPACE
 [ 5.00e+00]
 
 
@@ -85,6 +85,10 @@ main differences with PICOS:
     This is a user-friendly interface to the `ZIB optimization suite <http://zibopt.zib.de/>`_
     for solving mixed integer programs (**MIP**). PICOS
     provides an interface to this interface.
+
+  .. Todo::
+        
+        pyomo and openopt
 
 First Example
 =============
@@ -135,15 +139,15 @@ Frobenius norm of
         l = [ Ai.size[1] for Ai in A ]
         r = K.size[1]
         
-        #creates a problem and the variables
+        #creates a problem and the optimization variables
         prob = pic.Problem()
         mu = prob.add_variable('mu',s)
         Z  = [prob.add_variable('Z[' + str(i) + ']', (l[i],r))
               for i in range(s)]
 
         #convert the constants into params of the problem
-        A = prob.new_param('A',A)
-        K = prob.new_param('K',K)
+        A = pic.new_param('A',A)
+        K = pic.new_param('K',K)
 
         #add the constraints
         prob.add_constraint( pic.sum([ A[i]*Z[i] for i in range(s)], #summands
@@ -167,13 +171,13 @@ Frobenius norm of
 
         #show the value of the optimal variable
         print '\n  mu ='
-        print mu.eval()
+        print mu
 
         #show the dual variable of the equality constraint
         print'\nThe optimal dual variable of the'
         print prob.get_constraint(0)
         print 'is :'
-        print prob.get_constraint(0).dual()
+        print prob.get_constraint(0).dual
 
 This generates the output:
 
@@ -181,7 +185,7 @@ This generates the output:
    :options: +NORMALIZE_WHITESPACE
 
     ---------------------
-    optimization problem:
+    optimization problem (SOCP):
     15 variables, 6 affine constraints, 12 vars in a SO cone
     
     mu  : (3, 1), continuous

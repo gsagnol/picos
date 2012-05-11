@@ -9,20 +9,44 @@ from .tools import *
 __all__=['Constraint']
 
 class Constraint:
-        """a class for describing a constraint (see the method add_constraint)
+        """A class for describing a constraint.
         """
 
         def __init__(self,typeOfConstraint,Id,Exp1,Exp2,Exp3=None,dualVariable=None,key=None):
                 from .expression import AffinExp
                 self.typeOfConstraint=typeOfConstraint
+                u"""A string from the following values,
+                   indicating the type of constraint:
+                
+                        * ``lin<``, ``lin=`` or ``lin>`` : Linear (in)equality
+                          ``Exp1 ≤ Exp2``, ``Exp1 = Exp2`` or ``Exp1 ≥ Exp2``.
+                        * ``SOcone`` : Second Order Cone constraint ``||Exp1|| < Exp2``.
+                        * ``RScone`` : Rotated Cone constraint
+                          ``||Exp1||**2 < Exp2 * Exp3``.
+                        * ``lse`` : Geometric Programming constraint ``LogSumExp(Exp1)<0``
+                        * ``quad``: scalar quadratic constraint ``Exp1 < 0``.
+                        * ``sdp<`` or ``sdp>``: semidefinite constraint
+                          ``Exp1 ⪳ Exp2`` or ``Exp1 ⪴ Exp2``.
+                """
+
                 self.Exp1=Exp1
+                """LHS"""
                 self.Exp2=Exp2
+                """RHS
+                   (ignored for constraints of type ``lse`` and ``quad``, where
+                   ``Exp2`` is set to ``0``)
+                """
                 self.Exp3=Exp3
+                """Second factor of the RHS for ``RScone`` constraints
+                   (see :attr:`typeOfConstraint<picos.Constraint.typeOfConstraint>`).
+                """
                 self.Id=Id
+                """An integer identifier"""
                 self.dualVariable=dualVariable
                 self.key=None
-                self.myconstring = None
-                self.myfullconstring = None
+                """A string to give a key name to the constraint"""
+                self.myconstring = None #workaround to redefine string representation
+                self.myfullconstring = None #workaround to redefine complete constraint (with # ... #) string
                 if typeOfConstraint=='RScone' and Exp3 is None:
                         raise NameError('I need a 3d expression')
                 if typeOfConstraint[:3]=='lin':
@@ -38,11 +62,11 @@ class Constraint:
                 if typeOfConstraint=='lse':
                         if not (Exp2==0 or Exp2.is0()):
                                 raise NameError('lhs must be 0')
-                        self.Exp2=AffinExp(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1),variables=Exp1.variables)
+                        self.Exp2=AffinExp(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1))
                 if typeOfConstraint=='quad':
                         if not (Exp2==0 or Exp2.is0()):
                                 raise NameError('lhs must be 0')
-                        self.Exp2=AffinExp(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1),variables=Exp1.variables)
+                        self.Exp2=AffinExp(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1))
                 if typeOfConstraint[:3]=='sdp':
                         if Exp1.size<>Exp2.size:
                                 raise NameError('incoherent lhs and rhs')
@@ -62,7 +86,7 @@ class Constraint:
                         constr='# ({0}x{1})-Rotated SOC constraint '.format(
                                                 self.Exp1.size[0],self.Exp1.size[1])
                 if self.typeOfConstraint=='lse':
-                        constr='# ({0}x{1})-Log-Sum-Exp constraint '.format(
+                        constr='# ({0}x{1})-Geometric Programming constraint '.format(
                                                 self.Exp1.size[0],self.Exp1.size[1])
                 if self.typeOfConstraint=='quad':
                         constr='#Quadratic constraint '
@@ -85,7 +109,7 @@ class Constraint:
                         constr='# ({0}x{1})-Rotated SOC constraint: '.format(
                                                 self.Exp1.size[0],self.Exp1.size[1])
                 if self.typeOfConstraint=='lse':
-                        constr='# ({0}x{1})-Log-Sum-Exp constraint '.format(
+                        constr='# ({0}x{1})-Geometric Programming constraint '.format(
                                                 self.Exp1.size[0],self.Exp1.size[1])
                 if self.typeOfConstraint=='quad':
                         constr='#Quadratic constraint '
@@ -173,11 +197,16 @@ class Constraint:
         def set_dualVar(self,value):
                 self.dualVariable=value
         
-        def dual(self):
-                """returns the optimal dual variable associated to the constraint"""
+        def dual_var(self):
                 return self.dualVariable
+                
+        def del_dual(self):
+                self.dualVariable=None
+                
+        dual=property(dual_var,set_dualVar,del_dual)
+        """Value of the dual variable associated to this constraint"""
 
-        def slack(self):
+        def slack_var(self):
                 """returns the slack of the constraint
                 (For an inequality of the type ``lhs<rhs``,
                 the slack is ``rhs-lhs``, and for ``lhs<rhs``
@@ -197,3 +226,14 @@ class Constraint:
                 elif self.typeOfConstraint=='quad':
                         return -(Exp1.eval())
 
+        def set_slack(self,value):
+                raise AttributeError('slack is not writable')
+        
+        def del_slack(self):
+                raise AttributeError('slack is not writable')
+        
+        slack=property(slack_var,set_slack,del_slack)
+        """Value of the slack variable associated to this constraint
+           (should be nonnegative/zero if the inequality/equality
+           is satisfied)"""
+        

@@ -5,4 +5,4 @@ picos.tools
 ===========
 
 .. automodule:: picos.tools
-    :members: sum, lse, _retrieve_matrix
+    :members: available_solvers, diag, lse, new_param, sum, _retrieve_matrix

@@ -12,7 +12,10 @@ __all__=['_retrieve_matrix',
         '_blocdiag',
         'svec',
         'svecm1',
-        'sum'
+        'sum',
+        'diag',
+        'new_param',
+        'available_solvers'
 ]
 
 
@@ -21,7 +24,55 @@ __all__=['_retrieve_matrix',
 #----------------------------------------------------
 
 def sum(lst,it=None,indices=None):
-        """TODOC"""
+        u"""sum of a list of affine expressions.
+        This fonction can be used with python list comprehensions
+        (see the example below).
+        
+        :param lst: list of :class:`AffinExp <picos.AffinExp>`.
+        :param it: Description of the letters which should
+                        be used to replace the dummy indices.
+                        The function tries to find a template
+                        for the string representations of the
+                        affine expressions in the list.
+                        If several indices change in the
+                        list, their letters should be given as a
+                        list of strings, in their order of appearance in
+                        the resulting string. For example, if three indices
+                        change in the summands, and you want them to be
+                        named ``'i'``, ``'j'`` and ``'k'``, set ``it = ['i','j','k']``.
+                        You can also group two indices which always appear together,
+                        e.g. if ``'i'`` always appear next to ``'j'`` you
+                        could set ``it = [('ij',2),'k']``. Here, the number 2
+                        indicates that ``'ij'`` replaces 2 indices.
+                        If ``it`` is set to ``None``, or if the function is not
+                        able to find a template, the string of
+                        the first summand will be used for
+                        the string representation of the sum.
+        :type it: None or str or list.
+        :param indices: a string to denote the set where the indices belong to.
+        :type indices: str.
+                                
+        **Example:**
+
+        >>> import picos as pic
+        >>> prob=pic.Problem()
+        >>> x={}
+        >>> names=['foo','bar','baz']
+        >>> for n in names:
+        ...   x[n]=prob.add_variable( 'x[{0}]'.format(n),(3,5) )
+        >>> x #doctest: +NORMALIZE_WHITESPACE
+        {'baz': # variable x[baz]:(3 x 5),continuous #,
+         'foo': # variable x[foo]:(3 x 5),continuous #,
+         'bar': # variable x[bar]:(3 x 5),continuous #}
+        >>> pic.sum([x[n] for n in names],'n','names')
+        # (3 x 5)-affine expression: Σ_{n in names} x[n] #
+        >>> pic.sum([(i+1) * x[n] for i,n in enumerate(names)],['i','n'],'[3] x names') #two indices
+        # (3 x 5)-affine expression: Σ_{i,n in [3] x names} i*x[n] #
+        >>> IJ = [(1,2),(2,4),(0,1),(1,3)]
+        >>> pic.sum([x['foo'][ij] for ij in IJ],[('ij',2)],'IJ') #double index
+        # (1 x 1)-affine expression: Σ_{ij in IJ} x[foo][ij] #
+        
+        """
         import __builtin__
         affSum=__builtin__.sum(lst)
         if not it is None:
@@ -115,7 +166,10 @@ def cut_in_frames(lsStrings):
                                 break
                 if not piece_of_frame_found:
                         #there was no template frame between successive indices
-                        raise Exception('unexpected template')
+                        if curInd[0]==0: #we are still at the beginning
+                                pass
+                        else:
+                                raise Exception('unexpected template')
                 #go back until we get a non index char
                 #import pdb;pdb.set_trace()
                 if curInd[0]<len(lsStrings[0]):
@@ -230,19 +284,9 @@ def put_indices_on_frames(frames,indices):
         return ret_string
                 
 
-                
-#test
-'''
-lst = [ '2*x[0] + x[2]- y[0,Bob,1]',
-        '2*x[1] + x[3]- y[1,Boris,2]',
-        '2*x[7] + x[3]- y[7,Bonny,2]',
-        '2*x[7] + x[2]- y[7,Boom,1]',
-        '2*x[0] + x[1]- y[0,Boss,0]']
-
-TODO: mettre au propre putIndices. Remove obsolete functions. test, test, test
-'''                
 def eval_dict(dict_of_variables):
-        """evaluates all the variables in the dictionary
+        """TODOC:
+        evaluates all the variables in the dictionary
         and returns the same dictionary, but evaluated"""
         for k in dict_of_variables:
                 dict_of_variables[k] = dict_of_variables[k].eval()
@@ -292,11 +336,56 @@ def _blocdiag(X,n,sub1=0,sub2='n'):
 
 def lse(exp):
         """
-        shorter name for the creator of the class :class:`LogSumExp <picos.LogSumExp>`
+        shorter name for the constructor of the class :class:`LogSumExp <picos.LogSumExp>`
+        
+        **Example**
+        
+        >>> import picos as pic
+        >>> import cvxopt as cvx
+        >>> prob=pic.Problem()
+        >>> x=prob.add_variable('x',3)
+        >>> A=pic.new_param('A',cvx.matrix([[1,2],[3,4],[5,6]]))
+        >>> pic.lse(A*x)<0
+        # (2x1)-Geometric Programming constraint LSE[ A*x ] < 0 #
+        
         """
         from .expression import LogSumExp
         return LogSumExp(exp)
 
+def diag(exp,dim):
+        r"""
+        if ``exp`` is a scalar affine expression,
+        ``diag(exp)`` returns a diagonal matrix of size ``dim`` :math:`\times` ``dim``,
+        wiith the diagonal elements equal to ``exp``.
+        
+        **Example**
+        
+        >>> import picos as pic
+        >>> prob=pic.Problem()
+        >>> x=prob.add_variable('x',1)
+        >>> y=prob.add_variable('y',1)
+        >>> pic.tools.diag(x-y,4)
+        # (4 x 4)-affine expression: diag(x -y) #
+        
+        """
+        from .expression import AffinExp
+        if exp.size<>(1,1):
+                raise Exception('not implemented')
+        expcopy=AffinExp(exp.factors.copy(),exp.constant,exp.size,
+                        exp.string)
+        idx=cvx.spdiag([1.]*dim)[:].I
+        for k in exp.factors.keys():
+                expcopy.factors[k]=cvx.spmatrix([],[],[],(dim**2,exp.factors[k].size[1]))
+                for i in idx:
+                        expcopy.factors[k][i,:]=exp.factors[k]
+        expcopy.constant=cvx.matrix(0.,(dim**2,1))
+        if not exp.constant is None:           
+                for i in idx:
+                        expcopy.constant[i]=exp.constant[0]
+        expcopy.size=(dim,dim)
+        expcopy.string='diag('+expcopy.string+')'
+        return expcopy        
+        
 def _retrieve_matrix(mat,exSize=None):
         """
         parses the variable *mat* and convert it to a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
@@ -629,3 +718,109 @@ def _svecm1_identity(vtype,size):
                 idmat=cvx.spmatrix([1]*sp,range(sp),range(sp),(sp,sp))
                 
         return idmat
+        
+def new_param(name,value):
+        """TODOC again
+        Declare a parameter for the problem, that will be stored
+        as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
+        It is possible to give a list or a dictionary of parameters.
+        The function returns a constant :class:`AffinExp <picos.AffinExp>` 
+        (or a ``list`` or a ``dict`` of :class:`AffinExp <picos.AffinExp>`) representing this parameter.
+        
+        .. note :: Declaring parameters is optional, since the expression can
+                        as well be given by using normal variables. (see Example below).
+                        However, if you use this function to declare your parameters,
+                        the names of the parameters will be displayed when you **print**
+                        an :class:`Expression <picos.Expression>` or a :class:`Constraint <picos.Constraint>`
+        
+        :param name: The name given to this parameter.
+        :type name: str.
+        :param value: The value (resp ``list`` of values, ``dict`` of values) of the parameter.
+                        The type of **value** (resp. the elements of the ``list`` **value**,
+                        the values of the ``dict`` **value**) should be understandable by
+                        the function :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`.
+        :returns: A constant affine expression (:class:`AffinExp <picos.AffinExp>`)
+                        (resp. a ``list`` of :class:`AffinExp <picos.AffinExp>` of the same length as **value**,
+                        a ``dict`` of :class:`AffinExp <picos.AffinExp>` indexed by the keys of **value**)
+                        
+        **Example:**
+        
+        >>> import cvxopt as cvx
+        >>> prob=pic.Problem()
+        >>> x=prob.add_variable('x',3)
+        >>> B={'foo':17.4,'matrix':cvx.matrix([[1,2],[3,4],[5,6]]),'ones':'|1|(4,1)'}
+        >>> B['matrix']*x+B['foo']
+        # (2 x 1)-affine expression: [ 2 x 3 MAT ]*x + |17.4| #
+        >>> #(in the string above, |17.4| represents the 2-dim vector [17.4,17.4])
+        >>> B=pic.new_param('B',B)
+        >>> B['matrix']*x+B['foo']
+        # (2 x 1)-affine expression: B[matrix]*x + |B[foo]| #
+        """
+        from .expression import AffinExp
+        if isinstance(value,list):
+                if all([isinstance(x,int) or isinstance(x,float) for x in value]):
+                        #list with numeric data
+                        term,termString=_retrieve_matrix(value,None)
+                        return AffinExp({},constant=term[:],size=term.size,string=name)
+                elif (all([isinstance(x,list) for x in value]) and
+                    all([len(x)==len(value[0]) for x in value]) and
+                    all([isinstance(xi,int) or isinstance(xi,float) for x in value for xi in x])
+                    ):
+                        #list of numeric lists of the same length
+                        sz=len(value),len(value[0])
+                        term,termString=_retrieve_matrix(value,sz)
+                        return AffinExp({},constant=term[:],size=term.size,string=name)
+                else:
+                        L=[]
+                        for i,l in enumerate(value):
+                                L.append( new_param(name+'['+str(i)+']',l) )
+                        return L
+        elif isinstance(value,tuple):
+                #handle as lists, but ignores numeric list and tables (vectors or matrices)
+                L=[]
+                for i,l in enumerate(value):
+                        L.append( new_param(name+'['+str(i)+']',l) )
+                return L
+        elif isinstance(value,dict):
+                D={}
+                for k in value.keys():
+                        D[k]=new_param(name+'['+str(k)+']',value[k])
+                return D
+        else:
+                term,termString=_retrieve_matrix(value,None)
+                return AffinExp({},constant=term[:],size=term.size,string=name)
+
+def available_solvers():
+        """Lists all available solvers"""
+        lst=[]
+        try:
+                import cvxopt as co
+                lst.append('cvxopt')
+                del co
+        except ImportError:
+                pass
+        try:
+                import smcp as sm
+                lst.append('smcp')
+                del sm
+        except ImportError:
+                pass
+        try:
+                import mosek as mo
+                lst.append('mosek')
+                del mo
+        except ImportError:
+                pass
+        try:
+                import cplex as cp
+                lst.append('cplex')
+                del cp
+        except ImportError:
+                pass
+        try:
+                import zibopt as zo
+                lst.append('zibopt')
+                del zo
+        except ImportError:
+                pass
+        return lst

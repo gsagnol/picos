@@ -13,12 +13,12 @@ We now generate the data that we will use in this tutorial.
 
   >>> pairs = [(0,2), (1,4), (1,3), (3,2), (0,4),(2,4)]        #a list of pairs
   >>> A = []
-  >>> b = [ [0 ,2 ,0 ,3 ],                               #a list of 5 lists, each of length 4
+  >>> b = ( [0 ,2 ,0 ,3 ],                               #a tuple of 5 lists, each of length 4
   ...       [1 ,1 ,0 ,5 ],
   ...       [-1,0 ,2 ,4 ],
   ...       [0 ,0 ,-2,-1],
   ...       [1 ,1 ,0 ,0 ]
-  ...     ]
+  ...     )
   >>> for i in range(5):
   ...     A.append(cvx.matrix(range(i-3,i+5),(2,4)))     #A is a list of 2x4 matrices
   >>> D={'Peter': 12,
@@ -39,7 +39,12 @@ Variables
 We will now create the variables of our optimization problem. This is done
 by calling the method :func:`add_variable() <picos.Problem.add_variable>`.
 This function adds an instance of the class :class:`Variable <picos.Variable>`
-in the dictionary ``prob.variables``.
+in the dictionary ``prob.variables``, and returns a reference
+to the freshly added variable.
+As we will next see, we
+can use
+this :class:`Variable <picos.Variable>`
+to form affine and quadratic expressions.
 
   >>> t = prob.add_variable('t',1) #a scalar
   >>> x = prob.add_variable('x',4) #a column vector
@@ -54,57 +59,27 @@ in the dictionary ``prob.variables``.
 Now, if we try to display a variable, here is what we get:
 
   >>> w[2,4]
-  # (1 x 1)-affine expression: w[(2, 4)] #
+  # variable w[(2, 4)]:(1 x 1),binary #
   >>> Y
-  # (2 x 4)-affine expression: Y #
+  # variable Y:(2 x 4),continuous #
 
-So, as you see, the variables returned by the function :func:`add_variable() <picos.Problem.add_variable>`
-are not your actual problem variables,
-but affine expressions. For example, what is stored in ``t`` is not an instance
-of the class :class:`Variable <picos.Variable>`, but the :class:`AffinExp <picos.AffinExp>`
-representing the affine expression :math:`1 \times t + 0`.
-If you really want to access the  :class:`Variable <picos.Variable>` instance
-where ``t`` is stored,
-then you could do something like
-
-  >>> print t.variable
-  <variable t:(1 x 1),continuous>
-
-This works because ``t`` is a simple affine expression representing
-a variable of the optimization problem, and the getter of the property
-``variable`` is able to return the desired :class:`Variable <picos.Variable>` instance.
-Note however that the property ``variable`` cannot be used with *non-simple*
-affine expressions:
-
-   >>> (2*t+1).variable
-   Traceback (most recent call last):
-       ...   
-   ValueError: get_variable can only be called on a simple Expression representing a variable
-
-Similarly, if you want to access a property of a
-:class:`Variable <picos.Variable>` instance,
-such as its ``name``, ``vtype`` or ``value``,
-then you can do it directly by using the corresponding property of
-the class :class:`AffinExp <picos.AffinExp>`.
-This will work when the affine expression represents 
-a simple variable ``X``. (By *simple* we mean that the affine expression
-is of the form :math:`I \times X + O`, where :math:`I` (resp. :math:`O`)
-is the identity matrix (resp. zero matrix) of the appropriate size.  
-This is the case for the affine expressions returned by the function :func:`add_variable() <picos.Problem.add_variable>`. )
-For example,
+Also note the use of the
+attributes ``name``, ``value``, and ``vtype``:
 
   >>> w[2,4].vtype
   'binary'
   >>> x.vtype
   'continuous'
   >>> x.vtype='integer'
-  >>> x.variable.vtype
-  'integer'
+  >>> x
+  # variable x:(4 x 1),integer #
   >>> Z[1].value = A[0].T
   >>> Z[0].is_valued()
   False
   >>> Z[1].is_valued()
   True
+  >>> Z[2].name
+  'Z[2]'
 
 ==================
 Affine Expressions
@@ -123,12 +98,12 @@ you can form the sum of two variables by writing:
 The transposition of an affine expression is done by appending ``.T``:
 
   >>> x
-  # (4 x 1)-affine expression: x #
+  # variable x:(4 x 1),integer #
   >>> x.T
   # (1 x 4)-affine expression: x.T #
 
-Parameters are constant affine expressions
-------------------------------------------
+Parameters as constant affine expressions
+-----------------------------------------
 
 It is also possible to form affine expressions by using parameters
 stored in data structures such as a ``list`` or a :func:`cvxopt matrix <cvxopt:cvxopt.matrix>`
@@ -148,12 +123,12 @@ operators always try to convert the data into matrices of the appropriate size.
 
 If you want to have better-looking string representations of your affine expressions,
 you will need to convert the parameters into constant affine expressions. This can be done
-thanks to the function :func:`new_param() <picos.Problem.new_param>`:
+thanks to the function :func:`new_param() <picos.tools.new_param>`:
 
-  >>> A = prob.new_param('A',A)              #this creates a list of constant affine expressions [A[0],...,A[4]]
-  >>> b = prob.new_param('b',b)              #this creates a list of constant affine expressions [b[0],...,b[4]]
-  >>> D = prob.new_param('D',D)              #this creates a dictionary of constant AffExpr, indexed by 'Peter', 'Bob', ...
-  >>> alpha = prob.new_param('alpha',12)     #a scalar parameter
+  >>> A = pic.new_param('A',A)              #this creates a list of constant affine expressions [A[0],...,A[4]]
+  >>> b = pic.new_param('b',b)              #this creates a list of constant affine expressions [b[0],...,b[4]]
+  >>> D = pic.new_param('D',D)              #this creates a dictionary of constant AffExpr, indexed by 'Peter', 'Bob', ...
+  >>> alpha = pic.new_param('alpha',12)     #a scalar parameter
   
   >>> alpha
   # (1 x 1)-affine expression: alpha #
@@ -178,8 +153,8 @@ and **__str__** produce the same result, a string of the form ``'# (size)-affine
 Note that the constant affine expressions, as ``b[0]`` in the above example,
 are always *valued*.
 To assign a value to a non-constant :class:`AffinExp <picos.AffinExp>`,
-you must set the ``value`` property of every :class:`Variable <picos.Variable>`
-involved in the affine expression. 
+you must set the :attr:`value <picos.Expression.value>` property of
+every variable involved in the affine expression.
 
 
   >>> x_minus_1 = x - 1
@@ -198,6 +173,23 @@ involved in the affine expression.
   [ 1.00e+00]
   [-2.00e+00]
   <BLANKLINE>
+
+We also point out that :func:`new_param() <picos.tools.new_param>`
+converts lists into vectors and lists of lists into matrices (given
+in row major order).
+In contrast, tuples are converted into list of affine expressions:
+
+   >>> pic.new_param('vect',[1,2,3])                        # [1,2,3] is converted into a vector of dimension 3
+   # (3 x 1)-affine expression: vect #
+   >>> pic.new_param('mat',[[1,2,3],[4,5,6]])               # [[1,2,3],[4,5,6]] is converted into a (2x3)-matrix
+   # (2 x 3)-affine expression: mat #
+   >>> pic.new_param('list_of_scalars',(1,2,3))             # (1,2,3) is converted into a list of 3 scalar parameters #doctest: +NORMALIZE_WHITESPACE
+   [# (1 x 1)-affine expression: list_of_scalars[0] #,
+    # (1 x 1)-affine expression: list_of_scalars[1] #,
+    # (1 x 1)-affine expression: list_of_scalars[2] #]
+   >>> pic.new_param('list_of_vectors',([1,2,3],[4,5,6]))   # ([1,2,3],[4,5,6]) is converted into a list of 2 vector parameters #doctest: +NORMALIZE_WHITESPACE
+   [# (3 x 1)-affine expression: list_of_vectors[0] #,
+    # (3 x 1)-affine expression: list_of_vectors[1] #]
 
 Overloaded operators
 --------------------
@@ -299,7 +291,7 @@ and the second argument should be a scalar expression:
     >>> prob.set_objective('max',( A[0] | Y )-t)
     >>> print prob  #doctest: +NORMALIZE_WHITESPACE
     ---------------------
-    optimization problem:
+    optimization problem (MIP):
     59 variables, 0 affine constraints
     <BLANKLINE>
     w   : dict of 6 variables, (1, 1), binary
@@ -395,7 +387,7 @@ Constraints can be added in the problem with the function
   ...      prob.add_constraint(Z[i]==Z[i-1]+Y.T)
   >>> print prob        #doctest: +NORMALIZE_WHITESPACE
   ---------------------
-  optimization problem:
+  optimization problem (MIP):
   59 variables, 32 affine constraints
   <BLANKLINE>
   w   : dict of 6 variables, (1, 1), binary
@@ -430,7 +422,7 @@ which works similarly as the function :func:`sum() <picos.tools.sum>`.
     >>> prob.add_list_of_constraints([Z[i]==Z[i-1]+Y.T for i in range(1,5)],'i','1...4') #the same list of constraints as above
     >>> print prob    #doctest: +NORMALIZE_WHITESPACE
     ---------------------
-    optimization problem:
+    optimization problem (MIP):
     59 variables, 40 affine constraints
     <BLANKLINE>
     w   : dict of 6 variables, (1, 1), binary
@@ -544,7 +536,7 @@ of its lower triangular elements only.
     >>> sdp.add_constraint(X >> 0)
     >>> print sdp   #doctest: +NORMALIZE_WHITESPACE
     ---------------------
-    optimization problem:
+    optimization problem (SDP):
     10 variables, 0 affine constraints, 10 vars in a SD cone
     <BLANKLINE>
     X   : (4, 4), symmetric
@@ -576,11 +568,12 @@ parameters with their default values, see the doc of the function
 :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`.
 
 Once a problem has been solved, the optimal values of the variables are
-accessible with the ``value`` property. Depending on the solver, you
+accessible with the :attr:`value<picos.Expression.value>` property.
+Depending on the solver, you
 can also obtain the slack and the optimal dual variables
-of the constraints thanks to the methods
-:func:`dual() <picos.Constraint.dual>` and
-:func:`slack() <picos.Constraint.slack>` of the class
+of the constraints thanks to the properties
+:attr:`dual<picos.Constraint.dual>` and
+:attr:`slack<picos.Constraint.slack>` of the class
 :class:`Constraint <picos.Constraint>`.
 Below is a simple example, to solve the linear programm:
 
@@ -609,7 +602,7 @@ More examples can be found :ref:`here <examples>`.
 .. testcode::
 
    P = pic.Problem()
-   A = P.new_param('A', cvx.matrix([[1,1],[0,1]]) )
+   A = pic.new_param('A', cvx.matrix([[1,1],[0,1]]) )
    x = P.add_variable('x',2)
    P.add_constraint(x[0]>x[1])
    P.add_constraint(A*x<[3,4])
@@ -639,18 +632,18 @@ More examples can be found :ref:`here <examples>`.
    print 'The dual of the constraint'
    print c0
    print 'is:'
-   print c0.dual()
+   print c0.dual
    print 'And its slack is:'
-   print c0.slack()
+   print c0.slack
    print
 
    c1=P.get_constraint(1)
    print 'The dual of the constraint'
    print c1
    print 'is:'
-   print c1.dual()
+   print c1.dual
    print 'And its slack is:'
-   print c1.slack()  
+   print c1.slack
 
 .. testoutput::
     :options: +NORMALIZE_WHITESPACE

@@ -12,7 +12,8 @@ __all__=['Expression',
         'Norm',
         'QuadExp',
         'GeneralFun',
-        'LogSumExp'
+        'LogSumExp',
+        'Variable'
         ]
        
 #----------------------------------
@@ -20,25 +21,68 @@ __all__=['Expression',
 #----------------------------------
                 
 class Expression(object):
-        """the parent class of AffinExp, Norm, LogSumExp, QuadExp, GeneralFun"""
-        def __init__(self,string,variables):
+        """The parent class of :class:`AffinExp<picos.AffinExp>`
+        (which is the parent class of :class:`Variable<picos.Variable>`),
+        :class:`Norm<picos.Norm>`,
+        :class:`LogSumExp<picos.LogSumExp>`,
+        :class:`QuadExp<picos.QuadExp>`, and
+        :class:`GeneralFun<picos.GeneralFun>`.
+        """ 
+
+        def __init__(self,string):
                 self.string=string
-                if variables is None:
-                        raise Exception('unexpected case')
-                self.variables=variables
+                """String representation of the expression"""
+
+
                 
         def eval(self):
                 pass
         
         def set_value(self,value):
-                raise ValueError('set_value can only be called on a simple Expression representing a variable')
+                raise ValueError('set_value can only be called on a Variable')
                 
         def del_simple_var_value(self):
-                raise ValueError('del_simple_var_value can only be called on a simple Expression representing a variable')
+                raise ValueError('del_simple_var_value can only be called on a Variable')
                                 
         value = property(eval,set_value,del_simple_var_value,"value of the affine expression")
+        """value of the expression. The value of an expression is
+           defined in the following three situations:
+                   
+                     * The expression is **constant**.
+                     * The user has assigned a value to each variable
+                       involved in the expression.
+                       (This can be done by setting the ``value`` property
+                       of the instances of the class
+                       :class:`Variable<picos.Variable>`
+                       or by using the function
+                       :func:`set_var_value()<picos.Problem.set_var_value>`
+                       of the class
+                       :class:`Problem<picos.Problem>`.)
+                     * The expression involves variables of a problem
+                       that has already been solved, so that the variables
+                       are set at their optimal values.
+        
+        **Example**
+        
+        >>> import picos as pic
+        >>> prob=pic.Problem()
+        >>> x=prob.add_variable('x',2)
+        >>> x.is_valued()
+        False
+        >>> print abs(x)
+        # norm of a (2 x 1)- expression: ||x|| #
+        >>> x.value=[3,4]
+        >>> abs(x).is_valued()
+        True
+        >>> print abs(x)        #now that x is valued, it is the value of the expression which is printed
+        5.0
+        """
+        
         
         def is_valued(self):
+                """Does the expression have a value ? 
+                Returns true if all variables involved
+                in the expression are not ``None``."""
                 try:
                         val=self.value
                         return not(val is None)
@@ -49,38 +93,52 @@ class Expression(object):
 #----------------------------------
 
 class AffinExp(Expression):
-        """a class for defining vectorial (or matrix) affine expressions
-        *The dictionary 'factors' stores, for each variable, a
-        tuple (fact,string), where 'string' is a representation of the
-        linear combination, and 'fact' is the factor by which the variable
-        it is multiplied, (if the variable is a matrix, then the factor
-        is with respect to the column-vectorization of the variable).
-        The factor is stored as a cvx matrix or cvx spmatrix.
-        For example (if x is a vector variable and X is a matrix variable): 
-                _the product A*x is stored as a pair 'x':A
-                _the product A*X is stored as a pair 'X':blkdiag(A,...,A)
-                        where the bloc diagonal matrix has a block
-                        corresponding to each column of X
-                _the scalar product <A,X> is stored as 'X':A[:].T
-                        where A[:] is the colum-vectorization of A
-        *Similarly, the 'constant' attribute stores a tuple
-                ( <vectorized constant>,string )
-                If the constant is 0, then 'constant' can be (None,'0')
+        """A class for defining vectorial (or matrix) affine expressions.
+        It derives from :class:`Expression<picos.Expression>`.
+        
+        **Overloaded operators**
+        
+                :``+``: sum            (with an affine or quadratic expression)
+                :``-``: substraction   (with an affine or quadratic expression) or unitary minus
+                :``*``: multiplication (by another affine expression or a scalar)
+                :``/``: division       (by a scalar)
+                :``|``: scalar product (with another affine expression)
+                :``[.]``: slice of an affine expression
+                :``abs()``: Euclidean norm (Frobenius norm for matrices)
+                :``**``: exponentiation (works with arbitrary powers for constant
+                           affine expressions, and only with the exponent 2
+                           if the affine expression involves some variables)
+                :``&``: horizontal concatenation (with another affine expression)
+                :``//``: vertical concatenation (with another affine expression)
+                :``<``: less **or equal** (than an affine or quadratic expression)
+                :``>``: greater **or equal** (than an affine or quadratic expression)
+                :``==``: equals (to another affine expression)
+                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality)
+                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality)
         """
         
         def __init__(self,factors=None,constant=None,
                         size=(1,1),
-                        string='0',
-                        variables=None
+                        string='0'
                         ):
                 if factors is None:
                         factors={}
-                Expression.__init__(self,string,variables)
+                Expression.__init__(self,string)
                 self.factors=factors
+                """
+                dictionary storing the matrix of coefficients of the linear
+                part of the affine expressions. The matrices of coefficients
+                are always stored with respect to vectorized variables (for the
+                case of matrix variables), and are indexed by instances
+                of the class :class:`Variable<picos.Variable>`.
+                """
                 self.constant=constant
+                """constant of the affine expression,
+                stored as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
+                """
                 self.size=size
+                """size of the affine expression"""
                 #self.string=string
-                #self.variables=variables
                 
         def __str__(self):
                 if self.is_valued():
@@ -95,7 +153,14 @@ class AffinExp(Expression):
                 affstr+=' #'
                 return affstr
                         
-                
+        def copy(self):
+                import copy
+                facopy={}
+                for f,m in self.factors.iteritems(): #copy matrices but not the variables (keys of the dict)
+                        facopy[f]=copy.deepcopy(m)
+        
+                conscopy=copy.deepcopy(self.constant)
+                return AffinExp(facopy,conscopy,self.size,self.string)
 
         def affstring(self):
                 return self.string
@@ -105,154 +170,50 @@ class AffinExp(Expression):
                         val=cvx.spmatrix([],[],[],(self.size[0]*self.size[1],1))
                 else:
                         val=self.constant
-                #for k in self.factors.keys():
-                        #if MATH_PROG_PROBLEMS['current'] is None:
-                                #raise Exception(k+' is not valued')                    
-                        #if not MATH_PROG_PROBLEMS['current'].variables[k].value is None:
-                                #val=val+self.factors[k]*MATH_PROG_PROBLEMS['current'].variables[k].value[:]
-                        #else:
-                                #raise Exception(k+' is not valued')
-                for k in self.factors.keys():
-                        if k not in self.variables:
-                                raise Exception(k+' is an unknown variable')
+
+                for k in self.factors:
                         if ind is None:
-                                if not self.variables[k].value is None:
-                                        val=val+self.factors[k]*self.variables[k].value[:]
+                                if not k.value is None:
+                                        val=val+self.factors[k]*k.value[:]
                                 else:
                                         raise Exception(k+' is not valued')
                         else:
-                                if ind in self.variables[k].value_alt:
-                                        val=val+self.factors[k]*self.variables[k].value_alt[ind][:]
+                                if ind in k.value_alt:
+                                        val=val+self.factors[k]*k.value_alt[ind][:]
                                 else:
                                         raise Exception(k+' does not have a value for the index '+str(ind))
                 return cvx.matrix(val,self.size)
                 
         def set_value(self,value):
-                #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('set_value can only be called on a simple Expression representing a variable')
-                                
-                valuemat,valueString = _retrieve_matrix(value,var.size)
-                if valuemat.size != var.size:
-                        raise Exception('should be of size {0}'.format(var.size))
-                if var.vtype == 'symmetric':
-                        valuemat=svec(valuemat)
-                var.value = valuemat
-
+                raise ValueError('set_value can only be called on a Variable')
+                
         def del_simple_var_value(self):
-               #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('del_simple_var_value can only be called on a simple Expression representing a variable')
-                
-                var.value = None
-                       
+                raise ValueError('del_simple_var_value can only be called on a Variable')
+        
         value = property(eval,set_value,del_simple_var_value,"value of the affine expression")
-        
-        def get_type(self):
-               #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('get_type can only be called on a simple Expression representing a variable')
-                
-                return var.vtype
-                
-        def set_type(self,value):
-               #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('set_type can only be called on a simple Expression representing a variable')
-                
-                var.vtype = value
-                
-        def del_type(self):
-                raise AttributeError('attribute type cannot be deleted')
-        
-        vtype = property(get_type,set_type,del_type,'type for an expression representing a simple variable')
-        
-        def get_name(self):
-               #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('get_name can only be called on a simple Expression representing a variable')
-                
-                return var.name
-                
-        def set_name(self,value):
-                raise AttributeError('attribute name is not writable')
-                
-        def del_name(self):
-                raise AttributeError('attribute name is not writable')
-                
-        name = property(get_name,set_name,del_name,'name of the simple variable represented by the expression')
-        
-        def get_variable(self):
-                #TODOC
-                var = self.get_simple_variable()
-                if var is None:
-                        raise ValueError('get_variable can only be called on a simple Expression representing a variable')
-                return var
-                
-        def set_variable(self,value):
-                raise AttributeError('attribute variable is not writable')
-                
-        def del_variable(self):
-                raise AttributeError('attribute variable is not writable')
-                
-        variable = property(get_variable,set_variable,del_variable,'Variable instance of the simple variable represented by the affine expression')                
+
+           
         
         def is_valued(self, ind = None):
                 
-                for k in self.factors.keys():
-                        if k not in self.variables:
-                                raise Exception(k+' is an unknown variable')
-                        if ind is None:
-                                if self.variables[k].value is None:
-                                        return False
-                        else:
-                                if ind  not in self.variables[k].value_alt:
-                                        return False
+                try:
+                        for k in self.factors:
+                                if ind is None:
+                                        if k.value is None:
+                                                return False
+                                else:
+                                        if ind  not in k.value_alt:
+                                                return False
+                except:
+                        return False
 
                 #Yes, you can call eval(ind) without any problem.
                 return True
                 
                 
         
-        def get_simple_variable(self):
-                #TODOC
-                #returns None or the simple variable
-                
-                #is there exactly one factor
-                if len(self.factors) != 1:
-                        return None
-                
-                #is there a nozero constant ?
-                if not(self.constant is None):
-                        if max(abs(self.constant)) != 0:
-                                return None
-                
-                #is the factor equal to the identity matrix ?        
-                mm=self.factors.values()[0] #should be identity matrix
-                name=self.factors.keys()[0]
-                if name not in self.variables:
-                        raise Exception('unexpected variable name')
-                vtype=self.variables[name].vtype
-                size=self.variables[name].size
-                idmat=_svecm1_identity(vtype,size)
-                #test if mm==idmat
-                mlist=sorted(zip(mm.I,mm.J,mm.V))
-                idlist=sorted(zip(idmat.I,idmat.J,idmat.V))
-                if (mlist!=idlist):
-                        return None
-                        
-                #We have a simple variable
-                return self.variables[name]
-                
-                
-                
-        
         def is0(self):
+                """is the expression equal to 0 ?"""
                 if bool(self.constant):
                         return False
                 for f in self.factors:
@@ -271,15 +232,15 @@ class AffinExp(Expression):
                 return True
 
         def isconstant(self):
+                """is the expression constant (no variable involved) ?"""
                 for f in self.factors:
                         if bool(self.factors[f]):
                                 return False
                 return True
 
         def transpose(self):
-                """Transposition"""
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                        self.string,variables=self.variables)
+                selfcopy=self.copy()
+                
                 for k in selfcopy.factors:
                         bsize=selfcopy.size[0]
                         bsize2=selfcopy.size[1]
@@ -315,10 +276,12 @@ class AffinExp(Expression):
                 raise AttributeError("attribute 'T' of 'AffinExp' is not writable")
         
         T = property(transpose,setT,delT,"transposition")
+        """Transposition"""
 
         def __rmul__(self,fact):
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                        self.string,variables=self.variables)
+                selfcopy=self.copy()
+                
+                
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=fact.eval(),fact.string
@@ -361,7 +324,7 @@ class AffinExp(Expression):
 
         
         def __mul__(self,fact):
-                #product of 2 affine expressions
+                """product of 2 affine expressions"""
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=fact.eval(),fact.string           
@@ -369,7 +332,7 @@ class AffinExp(Expression):
                                 return fact.__rmul__(self)
                         elif self.size[0]==1 and fact.size[1]==1 and self.size[1]==fact.size[0]:
                                 #quadratic expression
-                                linpart=AffinExp({},constant=None,size=(1,1),variables=self.variables)
+                                linpart=AffinExp({},constant=None,size=(1,1))
                                 if not self.constant is None:
                                         linpart=linpart+self.constant.T*fact
                                 if not fact.constant is None:
@@ -379,18 +342,18 @@ class AffinExp(Expression):
                                 """if not ( self.constant is None or fact.constant is None):
                                         linpart.constant=self.constant.T*fact.constant
                                 if not fact.constant is None:                           
-                                        for k in self.factors.keys():
+                                        for k in self.factors:
                                                 linpart.factors[k]=fact.constant.T*self.factors[k]
                                 if not self.constant is None:
-                                        for k in fact.factors.keys():
-                                                if k in linpart.factors.keys():
+                                        for k in fact.factors:
+                                                if k in linpart.factors:
                                                         linpart.factors[k]+=self.constant.T*fact.factors[k]
                                                 else:
                                                         linpart.factors[k]=self.constant.T*fact.factors[k]
                                 """
                                 quadpart={}
-                                for i in self.factors.keys():
-                                        for j in fact.factors.keys():
+                                for i in self.factors:
+                                        for j in fact.factors:
                                                 quadpart[i,j]=self.factors[i].T*fact.factors[j]
                                 stleft=self.affstring()
                                 stright=fact.affstring()
@@ -400,9 +363,9 @@ class AffinExp(Expression):
                                 if ('+' in stright) or ('-' in stright):
                                         stright='( '+stright+' )'                               
                                 if self.size[1]==1:
-                                        return QuadExp(quadpart,linpart,stleft+'*'+stright,LR=(self,fact),variables=self.variables)
+                                        return QuadExp(quadpart,linpart,stleft+'*'+stright,LR=(self,fact))
                                 else:
-                                        return QuadExp(quadpart,linpart,stleft+'*'+stright,variables=self.variables)
+                                        return QuadExp(quadpart,linpart,stleft+'*'+stright)
                         else:
                                 raise Exception('not implemented')
                 elif isinstance(fact,QuadExp):
@@ -413,8 +376,8 @@ class AffinExp(Expression):
                                 fac,facString=_retrieve_matrix(fact,None)
                         else: #normal matrix multiplication, we expect a size        
                                 fac,facString=_retrieve_matrix(fact,self.size[1])
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                self.string,variables=self.variables)
+                selfcopy=self.copy()
+                
                 if fac.size==(1,1) and selfcopy.size[1]<>1:
                         fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[1])
                 if self.size==(1,1) and fac.size[0]<>1:
@@ -440,8 +403,8 @@ class AffinExp(Expression):
                 return prod
         
         def __or__(self,fact):#scalar product
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                        self.string,variables=self.variables)
+                selfcopy=self.copy()
+                
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=fact.eval(),fact.string
@@ -476,8 +439,7 @@ class AffinExp(Expression):
                 return selfcopy
 
         def __ror__(self,fact):
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                        self.string,variables=self.variables)
+                selfcopy=self.copy()
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=fact.eval(),fact.string
@@ -510,8 +472,8 @@ class AffinExp(Expression):
 
         
         def __add__(self,term):
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                        self.string,variables=self.variables)
+                selfcopy=self.copy()
+                
                 if isinstance(term,AffinExp):
                         if term.size==(1,1) and self.size<>(1,1):
                                 oldstring=term.string
@@ -524,8 +486,8 @@ class AffinExp(Expression):
                                 return (selfone+term)
                         if term.size<>selfcopy.size:
                                 raise Exception('incompatible dimension in the sum')
-                        for k in term.factors.keys():
-                                if k in selfcopy.factors.keys():
+                        for k in term.factors:
+                                if k in selfcopy.factors:
                                         newfac=selfcopy.factors[k]+term.factors[k]
                                         selfcopy.factors[k]=newfac
                                 else:
@@ -557,11 +519,11 @@ class AffinExp(Expression):
                 elif isinstance(term,QuadExp):
                         if self.size<>(1,1):
                                 raise Exception('LHS must be scalar')
-                        expQE=QuadExp({},self,self.affstring(),variables=self.variables)
+                        expQE=QuadExp({},self,self.affstring())
                         return expQE+term
                 else: #constant term
                         term,termString=_retrieve_matrix(term,selfcopy.size)
-                        return self+AffinExp({},constant=term[:],size=term.size,string=termString,variables=self.variables)
+                        return self+AffinExp({},constant=term[:],size=term.size,string=termString)
 
         def __radd__(self,term):
                 return self.__add__(term)
@@ -593,7 +555,7 @@ class AffinExp(Expression):
                         return self+(-term)
                 else: #constant term
                         term,termString=_retrieve_matrix(term,self.size)
-                        return self-AffinExp({},constant=term[:],size=term.size,string=termString,variables=self.variables)
+                        return self-AffinExp({},constant=term[:],size=term.size,string=termString)
 
         def __rsub__(self,term):
                 return term+(-self)
@@ -616,17 +578,15 @@ class AffinExp(Expression):
                         return division
                 else : #constant term
                         divi,diviString=_retrieve_matrix(divisor,(1,1))
-                        return self/AffinExp({},constant=divi[:],size=(1,1),string=diviString,variables=self.variables)
+                        return self/AffinExp({},constant=divi[:],size=(1,1),string=diviString)
 
         def __rdiv__(self,divider):
                 divi,diviString=_retrieve_matrix(divider,None)
-                return AffinExp({},constant=divi[:],size=divi.size,string=diviString,variables=self.variables)/self
+                return AffinExp({},constant=divi[:],size=divi.size,string=diviString)/self
                                                 
 
         def __getitem__(self,index):
-                #TODO check negative indices
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                self.string,variables=self.variables)
+                selfcopy=self.copy()
                 def slicestr(sli):
                         #single element
                         if not (sli.start is None or sli.stop is None):
@@ -653,7 +613,7 @@ class AffinExp(Expression):
                 if isinstance(index,slice):
                         idx=index.indices(self.size[0]*self.size[1])
                         rangeT=range(idx[0],idx[1],idx[2])
-                        for k in selfcopy.factors.keys():
+                        for k in selfcopy.factors:
                                 selfcopy.factors[k]=selfcopy.factors[k][rangeT,:]
                         if not selfcopy.constant is None:
                                 selfcopy.constant=selfcopy.constant[rangeT]
@@ -675,7 +635,7 @@ class AffinExp(Expression):
                                         rangei_translated.append(
                                                 vi+(j*self.size[0]))
                                 rangeT.extend(rangei_translated)
-                        for k in selfcopy.factors.keys():
+                        for k in selfcopy.factors:
                                 selfcopy.factors[k]=selfcopy.factors[k][rangeT,:]
                         if not selfcopy.constant is None:       
                                 selfcopy.constant=selfcopy.constant[rangeT]
@@ -715,7 +675,7 @@ class AffinExp(Expression):
                                 and (not exp.LR is None) and (not exp.LR[1] is None)
                         ):
                                 cst=AffinExp( factors={},constant=cvx.matrix(np.sqrt(self.eval()),(1,1)),
-                                        size=(1,1),string=self.string,variables=self.variables)
+                                        size=(1,1),string=self.string)
                                 return (Norm(cst)**2)<exp
                         elif self.size==(1,1):
                                 return (-exp)<(-self)
@@ -723,7 +683,7 @@ class AffinExp(Expression):
                                 raise Exception('not implemented')
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
-                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString,variables=self.variables)
+                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
                         return Constraint('lin<',None,self,exp2)
 
         def __gt__(self,exp):
@@ -742,7 +702,7 @@ class AffinExp(Expression):
                         return exp<self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
-                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString,variables=self.variables)
+                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
                         return Constraint('lin>',None,self,exp2)
 
         def __eq__(self,exp):
@@ -759,7 +719,7 @@ class AffinExp(Expression):
                         return Constraint('lin=',None,self,exp)
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
-                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString,variables=self.variables)
+                        exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
                         return Constraint('lin=',None,self,exp2)
 
         def __abs__(self):
@@ -767,15 +727,20 @@ class AffinExp(Expression):
 
         def __pow__(self,exponent):
                 if (self.size==(1,1) and self.isconstant()):
-                        return AffinExp(factors={},constant=self.eval()[0]**exponent,
-                                size=(1,1),string='('+self.string+')**2',variables=self.variables)
+                        if (isinstance(exponent,AffinExp) and exponent.isconstant()):
+                                exponent = exponent.value[0]
+                        if isinstance(exponent,int) or isinstance(exponent,float):
+                                return AffinExp(factors={},constant=self.eval()[0]**exponent,
+                                        size=(1,1),string='('+self.string+')**{0}'.format(exponent))
+                        else:
+                                raise Exception('type of exponent not handled')
                 if (exponent<>2 or self.size<>(1,1)):
                         raise Exception('not implemented')
                 Q=QuadExp({},
-                        AffinExp(variables=self.variables),
-                        None,None,variables=self.variables)
+                        AffinExp(),
+                        None,None)
                 qq = self *self
-                Q.quad= qq.quad.copy()
+                Q.quad= qq.quad
                 Q.LR=(self,None)
                 if ('*' in self.affstring()) or ('+' in self.affstring()) or (
                         '-' in self.affstring()) or ('/' in self.affstring()):
@@ -787,10 +752,9 @@ class AffinExp(Expression):
         def diag(self,dim):
                 if self.size<>(1,1):
                         raise Exception('not implemented')
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,
-                                self.string,variables=self.variables)
+                selfcopy=self.copy()
                 idx=cvx.spdiag([1.]*dim)[:].I
-                for k in self.factors.keys():
+                for k in self.factors:
                         selfcopy.factors[k]=cvx.spmatrix([],[],[],(dim**2,self.factors[k].size[1]))
                         for i in idx:
                                 selfcopy.factors[k][i,:]=self.factors[k]
@@ -804,15 +768,15 @@ class AffinExp(Expression):
 
         def __and__(self,exp):
                 """horizontal concatenation"""
-                selfcopy=AffinExp(self.factors.copy(),self.constant,self.size,self.string,variables=self.variables)
+                selfcopy=self.copy()
                 if isinstance(exp,AffinExp):
                         if exp.size[0]<>selfcopy.size[0]:
                                 raise Exception('incompatible size for concatenation')
                         for k in list(set(exp.factors.keys()).union(set(selfcopy.factors.keys()))):
-                                if (k in selfcopy.factors.keys()) and (k in exp.factors.keys()):
+                                if (k in selfcopy.factors) and (k in exp.factors):
                                         newfac=cvx.sparse([[selfcopy.factors[k],exp.factors[k]]])
                                         selfcopy.factors[k]=newfac
-                                elif k in exp.factors.keys():
+                                elif k in exp.factors:
                                         s1=selfcopy.size[0]*selfcopy.size[1]
                                         s2=exp.factors[k].size[1]
                                         newfac=cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),
@@ -849,12 +813,12 @@ class AffinExp(Expression):
                         return selfcopy
                 else:
                         Exp,ExpString=_retrieve_matrix(exp,self.size[0])
-                        exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                        exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                         return (self & exp2)
 
         def __rand__(self,exp):
                 Exp,ExpString=_retrieve_matrix(exp,self.size[0])
-                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                 return (exp2 & self)
                         
         def __floordiv__(self,exp):
@@ -872,15 +836,16 @@ class AffinExp(Expression):
                         return concat
                 else:
                         Exp,ExpString=_retrieve_matrix(exp,self.size[1])
-                        exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                        exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                         return (self // exp2)
 
         def __rfloordiv__(self,exp):
                 Exp,ExpString=_retrieve_matrix(exp,self.size[1])
-                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                 return (exp2 // self)
 
         def apply_function(self,fun):
+                """TODOC"""
                 return GeneralFun(fun,self,fun())
         
         def __lshift__(self,exp):
@@ -891,7 +856,7 @@ class AffinExp(Expression):
                 else:
                        n=self.size[0]
                        Exp,ExpString=_retrieve_matrix(exp,(n,n))
-                       exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                       exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                        return (self << exp2)
                        
         def __rshift__(self,exp):
@@ -902,7 +867,7 @@ class AffinExp(Expression):
                 else:
                        n=self.size[0]
                        Exp,ExpString=_retrieve_matrix(exp,(n,n))
-                       exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString,variables=self.variables)
+                       exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                        return (self >> exp2)
 
 #---------------------------------------------
@@ -910,9 +875,19 @@ class AffinExp(Expression):
 #---------------------------------------------
 
 class Norm(Expression):
+        """
+        Euclidean (or Frobenius) norm of an Affine Expression.
+        This class derives from :class:`Expression<picos.Expression>`.
+        
+        **Overloaded operators**
+        
+                :``**``: exponentiation (only implemented when the exponent is 2)
+                :``<``: less **or equal** (than a scalar affine expression)
+        """
         def __init__(self,exp):
-                Expression.__init__(self,'||'+exp.string+'||',exp.variables)
+                Expression.__init__(self,'||'+exp.string+'||')
                 self.exp=exp
+                """The affine expression of which we take the norm"""
         def __repr__(self):
                 normstr='# norm of a ({0} x {1})- expression: ||'.format(self.exp.size[0],
                                                                 self.exp.size[1])
@@ -932,58 +907,23 @@ class Norm(Expression):
                 vec=self.exp.eval(ind)
                 return np.linalg.norm(vec)
              
-             
-        value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the Norm expression")
-        """
-        sets a variable to the given value. This can be useful to check
-        the value of a complicated :class:`Expression <picos.Expression>`, or to use
-        a solver with a *hot start* option.
         
-        :param name: name of the variable to which the value will be given
-        :type name: str.
-        :param value: The value for the variable. The function will try to
-                        parse this variable as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`
-                        of the desired size by using
-                        the function :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`
-                        
-        **Example**
-        
-        >>> prob=pic.Problem()
-        >>> x=prob.add_variable('x',2)
-        >>> prob.set_var_value('x',[3,4])
-        >>> abs(x)**2
-        #quadratic expression: ||x||**2 #
-        >>> (abs(x)**2).eval()
-        25.0
-        >>> 
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
 
-        .. Todo::
-        Check if doc displayed. Ajouter option hotstart
-        """
                 
         def __pow__(self,exponent):
                 if (exponent<>2):
                         raise Exception('not implemented')
-                if self.exp.isconstant():
-                        Qnorm=QuadExp({},
-                                AffinExp(factors={},constant=self.exp.eval(),size=(1,1),string='  ',variables=self.variables),
-                                string='  ',
-                                variables=self.variables)
-                else:
-                        Qnorm=QuadExp({},
-                        AffinExp(variables=self.variables),
-                        None,None,
-                        variables=self.variables)
-                        #Qnorm=(self.exp.T)*(self.exp)
+                
                 qq = (self.exp.T)*(self.exp)
                 if isinstance(qq,AffinExp):
-                        qq=QuadExp({},qq,qq.string,variables={})
-                Qnorm.quad = qq.quad.copy()
-                Qnorm.LR=(self.exp,None)
-                #if self.exp.size<>(1,1):
-                Qnorm.string='||'+self.exp.affstring()+'||**2'
-                #else:
-                #       Qnorm.string='('+self.exp.affstring()+')**2'
+                        qq=QuadExp({},qq,qq.string)
+                Qnorm=QuadExp(qq.quad,
+                              qq.aff,
+                              '||'+self.exp.affstring()+'||**2',
+                              LR=(self.exp,None)
+                              )
+                
                 return Qnorm
 
         def __lt__(self,exp):
@@ -1000,19 +940,31 @@ class Norm(Expression):
                                 return cons
                 else:#constant          
                         term,termString=_retrieve_matrix(exp,(1,1))
-                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString,variables=self.variables)
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self<exp1
 
 class LogSumExp(Expression):
+        """Log-Sum-Exp applied to an affine expression.
+           If the affine expression ``z`` is of size :math:`N`,
+           with elements :math:`z_1, z_2, \ldots, z_N`,
+           then LogSumExp(z) represents the expression
+           :math:`\log ( \sum_{i=1}^n e^{z_i} )`.
+           This class derives from :class:`Expression<picos.Expression>`.
+        
+        
+        **Overloaded operator**
+        
+                :``<``: less **or equal** than (the rhs **must be 0**, for geometrical programming)
+                
+        """
         def __init__(self,exp):
                 
                 if not( isinstance(exp,AffinExp)):
                         term,termString=_retrieve_matrix(exp,None)
                         exp=AffinExp(factors={},constant=term,
-                                        size=term.size,string=termString,
-                                        variables={})
+                                        size=term.size,string=termString)
                                
-                Expression.__init__(self,'LSE['+exp.string+']',exp.variables)
+                Expression.__init__(self,'LSE['+exp.string+']')
                 self.Exp=exp
         
         def __str__(self):
@@ -1036,27 +988,46 @@ class LogSumExp(Expression):
         value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the logsumexp expression")
 
         def __lt__(self,exp):
-                if exp<>0:
-                        raise Exception('lhs must be 0')
+                if exp<>0 and not(isinstance(exp,AffinExp) and exp.is0()):
+                        raise Exception('rhs must be 0')
                 else:
                         return Constraint('lse',None,self.Exp,0)
 
 class QuadExp(Expression):
         """
-        quad are the quadratic factors,
-        aff is the affine part of the expression,
-        string is a string,
-        and LR stores a factorization of the expression for norms (||x||**2 -> LR=(x,None))
-                                                                and product of scalar expressions)
-                                                                
-        .. Todo:: quad expression of dimension>1                                                        
+        Quadratic expression.
+        This class derives from :class:`Expression<picos.Expression>`.
+        
+        **Overloaded operators**
+        
+                :``+``: addition (with an affine or a quadratic expression)
+                :``-``: substraction (with an affine or a quadratic expression) or unitary minus
+                :``*``: multiplication (by a scalar or a constant affine expression)
+                :``<``: less **or equal** than (another quadratic or affine expression).
+                :``>``: greater **or equal** than (another quadratic or affine expression).
+                                                 
+        .. Todo:: division by a scalar, quad expression of dimension>1                                                        
         """
-        def __init__(self,quad,aff,string,LR=None,variables=None):
-                Expression.__init__(self,string,variables)
+        def __init__(self,quad,aff,string,LR=None):
+                Expression.__init__(self,string)
                 self.quad=quad
+                """dictionary of quadratic forms,
+                stored as matrices representing bilinear forms
+                with respect to two vectorized variables, 
+                and indexed by tuples of 
+                instances of the class :class:`Variable<picos.Variable>`.
+                """
                 self.aff=aff
-                #self.string=string
+                """affine expression representing the affine part of the quadratic expression""" 
                 self.LR=LR
+                """stores a factorization of the quadratic expression, if the
+                   expression was entered in a factorized form. We have:
+                   
+                     * ``LR=None`` when no factorization is known
+                     * ``LR=(aff,None)`` when the expression is equal to ``||aff||**2``
+                     * ``LR=(aff1,aff2)`` when the expression is equal to ``aff1*aff2``.
+                """
+               
 
         def __str__(self):
                 if self.is_valued():
@@ -1067,49 +1038,65 @@ class QuadExp(Expression):
         def __repr__(self):
                 return '#quadratic expression: '+self.string+' #'
 
-        def eval(self, ind=None):
-                if not self.aff is None:
-                        val=self.aff.eval(ind)
+        def copy(self):
+                import copy
+                qdcopy={}
+                for ij,m in self.quad.iteritems():
+                        qdcopy[ij]=copy.deepcopy(m)
+
+                if self.aff is None:
+                        affcopy=None
                 else:
-                        val=cvx.matrix(0.,(1,1))
+                        affcopy=self.aff.copy()
+                       
+                if self.LR is None:
+                        lrcopy=None
+                else:
+                        if self.LR[1] is None:
+                                lrcopy=(self.LR[0].copy(),None)
+                        else:
+                                lrcopy=(self.LR[0].copy(),self.LR[1].copy())
+                return QuadExp(qdcopy,affcopy,self.string,lrcopy)
+                        
+                
+        def eval(self, ind=None):
                 if not self.LR is None:
                         ex1=self.LR[0].eval(ind)
                         if self.LR[1] is None:
-                                val+=(ex1.T*ex1)
+                                val=(ex1.T*ex1)
                         else:
                                 if self.LR[0].size!=(1,1) or self.LR[1].size!=(1,1):
                                         raise Exception('QuadExp of size (1,1) only are implemented')
                                 else:
                                         ex2=self.LR[1].eval(ind)
-                                        val+=(ex1*ex2)
-                                
-                                
-                elif not self.quad is None:
-                        for i,j in self.quad:
-                                if not i in self.variables:
-                                        raise Exception(i+' is unknown')
-                                if not j in self.variables:
-                                        raise Exception(j+' is unknown')
-                                if ind is None:
-                                        if self.variables[i].value is None:
-                                                raise Exception(i+' is not valued')
-                                        if self.variables[j].value is None:
-                                                raise Exception(j+' is not valued')
-                                        xi=self.variables[i].value[:]
-                                        xj=self.variables[j].value[:]
-                                else:
-                                        if ind not in self.variables[i].value_alt:
-                                                raise Exception(i+' does not have a value for the index '+str(ind))
-                                        if ind not in self.variables[j].value_alt:
-                                                raise Exception(j+' does not have a value for the index '+str(ind))
-                                        xi=self.variables[i].value_alt[ind][:]
-                                        xj=self.variables[j].value_alt[ind][:]
-                                val=val+xi.T*self.quad[i,j]*xj
+                                        val=(ex1*ex2)
 
+                else:
+                        if not self.aff is None:
+                                val=self.aff.eval(ind)
+                        else:
+                                val=cvx.matrix(0.,(1,1))
+                                
+                        for i,j in self.quad:
+                                if ind is None:
+                                        if i.value is None:
+                                                raise Exception(i+' is not valued')
+                                        if j.value is None:
+                                                raise Exception(j+' is not valued')
+                                        xi=i.value[:]
+                                        xj=j.value[:]
+                                else:
+                                        if ind not in i.value_alt:
+                                                raise Exception(i+' does not have a value for the index '+str(ind))
+                                        if ind not in j.value_alt:
+                                                raise Exception(j+' does not have a value for the index '+str(ind))
+                                        xi=i.value_alt[ind][:]
+                                        xj=j.value_alt[ind][:]
+                                val=val+xi.T*self.quad[i,j]*xj
                 
-                return val[0]
+                return val
        
-        value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the affine expression")
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
        
         def nnz(self):
                 nz=0
@@ -1118,14 +1105,13 @@ class QuadExp(Expression):
                 return nz
 
         #OVERLOADS:
-        #division par un scalaire
+        #TODO division par un scalaire
 
         def __mul__(self,fact):
                 if isinstance(fact,AffinExp):
                         if fact.isconstant() and fact.size==(1,1):
-                                import copy
-                                selfcopy=QuadExp(copy.deepcopy(self.quad),copy.deepcopy(self.aff),self.string,variables=self.variables)
-                                for ij in self.quad:
+                                selfcopy=self.copy()
+                                for ij in selfcopy.quad:
                                         selfcopy.quad[ij]=fact.eval()[0]*selfcopy.quad[ij]
                                 selfcopy.aff=fact*selfcopy.aff
                                 selfcopy.string=fact.affstring()+'*('+self.string+')'
@@ -1141,14 +1127,13 @@ class QuadExp(Expression):
                                 raise Exception('not implemented')
                 else: #constant term
                         fact,factString=_retrieve_matrix(fact,(1,1))
-                        return self*AffinExp({},constant=fact[:],size=fact.size,string=factString,variables=self.variables)
+                        return self*AffinExp({},constant=fact[:],size=fact.size,string=factString)
 
         def __add__(self,term):
                 if isinstance(term,QuadExp):
-                        import copy
-                        selfcopy=QuadExp(copy.deepcopy(self.quad),copy.deepcopy(self.aff),self.string,variables=self.variables)
+                        selfcopy=self.copy()
                         for ij in self.quad:
-                                if ij in term.quad.keys():
+                                if ij in term.quad:
                                         selfcopy.quad[ij]=selfcopy.quad[ij]+term.quad[ij]
                         for ij in term.quad:
                                 if not (ij in self.quad):
@@ -1173,11 +1158,11 @@ class QuadExp(Expression):
                 elif isinstance(term,AffinExp):
                         if term.size<>(1,1):
                                 raise Exception('RHS must be scalar')
-                        expQE=QuadExp({},term,term.affstring(),variables=self.variables)
+                        expQE=QuadExp({},term,term.affstring())
                         return self+expQE
                 else:
                         term,termString=_retrieve_matrix(term,(1,1))
-                        expAE=AffinExp(factors={},constant=term,size=term.size,string=termString,variables=self.variables)
+                        expAE=AffinExp(factors={},constant=term,size=term.size,string=termString)
                         return self+expAE
 
         def __rmul__(self,fact):
@@ -1224,12 +1209,12 @@ class QuadExp(Expression):
                 if isinstance(exp,AffinExp):
                         if exp.size<>(1,1):
                                 raise Exception('RHS must be scalar')
-                        exp2=AffinExp(factors={},constant=cvx.matrix(1.,(1,1)),size=(1,1),string='1',variables=self.variables)
-                        expQE=QuadExp({},exp,exp.affstring(),LR=(exp,exp2),variables=self.variables)
+                        exp2=AffinExp(factors={},constant=cvx.matrix(1.,(1,1)),size=(1,1),string='1')
+                        expQE=QuadExp({},exp,exp.affstring(),LR=(exp,exp2))
                         return self<expQE
                 else:
                         term,termString=_retrieve_matrix(exp,(1,1))
-                        expAE=AffinExp(factors={},constant=term,size=(1,1),string=termString,variables=self.variables)
+                        expAE=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self<expAE
 
         def __gt__(self,exp):
@@ -1242,26 +1227,39 @@ class QuadExp(Expression):
                                 raise Exception('RHS must be scalar')
                         if exp.isconstant():
                                 cst=AffinExp( factors={},constant=cvx.matrix(np.sqrt(exp.eval()),(1,1)),
-                                        size=(1,1),string=exp.string,variables=self.variables)
+                                        size=(1,1),string=exp.string)
                                 return (Norm(cst)**2)<self
                         else:
                                 return (-self)<(-exp)
                 else:
                         term,termString=_retrieve_matrix(exp,(1,1))
-                        expAE=AffinExp(factors={},constant=term,size=(1,1),string=termString,variables=self.variables)
+                        expAE=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>expAE
                                 
 
 class GeneralFun(Expression):
-        """a class storing a general scalar function,
-                applied to an affine expression"""
+        """A class storing a scalar function,
+           applied to an affine expression.
+           It derives from :class:`Expression<picos.Expression>`.
+        """
         def __init__(self,fun,Exp,funstring):
-                Expression.__init__(self,self.funstring+'( '+Exp.string+')',
-                                        Exp.variables)
+                Expression.__init__(self,self.funstring+'( '+Exp.string+')')
                 self.fun=fun
+                r"""The function ``f`` applied to the affine expression.
+                This function must take in argument a
+                :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>` ``X``.
+                Moreover, the call ``fx,grad,hess=f(X)``
+                must return the function value :math:`f(X)` in ``fx``,
+                the gradient :math:`\nabla f(X)` in the
+                :func:`cvxopt matrix <cvxopt:cvxopt.matrix>` ``grad``,
+                and the Hessian :math:`\nabla^2 f(X)` in the
+                :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>` ``hess``.
+                """
                 self.Exp=Exp
+                """The affine expression to which the function is applied"""
                 self.funstring=funstring
-                self.string=self.funstring+'( '+self.Exp.affstring()+' )'
+                """a string representation of the function name"""
+                #self.string=self.funstring+'( '+self.Exp.affstring()+' )'
 
         def __repr__(self):
                 return '# general function '+self.string+' #'
@@ -1277,4 +1275,114 @@ class GeneralFun(Expression):
                 o,g,h=self.fun(val)
                 return o
                 
-        value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the affine expression")
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+
+class Variable(AffinExp):
+        """This class stores a variable. It
+        derives from :class:`AffinExp<picos.AffinExp>`.
+        """
+        
+        def __init__(self,name,
+                          size,
+                          Id,
+                          startIndex,
+                          vtype = 'continuous'):
+                
+                ##attributes of the parent class (AffinExp)
+                idmat=_svecm1_identity(vtype,size)
+                AffinExp.__init__(self,factors={self:idmat},
+                                       constant=None,
+                                       size=size,
+                                       string=name
+                                       )
+                
+                self.name=name
+                """The name of the variable (str)"""
+
+                self.Id=Id
+                """An integer index"""
+                self.vtype=vtype
+                """one of the following strings:
+                
+                     * 'continuous' (continuous variable)
+                     * 'binary'     (binary 0/1 variable)
+                     * 'integer'    (integer variable)
+                     * 'symmetric'  (symmetric matrix variable)
+                     * 'semicont'   (semicontinuous variable 
+                                    [can take the value 0 or any 
+                                    other admissible value])
+                     * 'semiint'    (semi integer variable 
+                                     [can take the value 0 or any
+                                     other integer admissible value])
+                """
+                self.startIndex=startIndex
+                """starting position in the global vector of all variables"""
+                
+                self.endIndex=None
+                """end position in the global vector of all variables"""
+                
+                
+                if vtype=='symmetric':
+                        self.endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
+                else:
+                        self.endIndex=startIndex+size[0]*size[1] #end position +1
+                
+                self._value=None
+
+                self.value_alt = {} #alternative values for solution pools
+                #TODOC
+                
+
+                
+                
+        def __str__(self):
+                if self.is_valued():
+                        return str(self.value)
+                else:
+                        return repr(self)
+                        
+        def __repr__(self):
+                return '# variable {0}:({1} x {2}),{3} #'.format(
+                        self.name,self.size[0],self.size[1],self.vtype)
+                        
+                        
+        def eval(self, ind = None):
+                if ind is None:
+                        if self._value is None:
+                                raise Exception(self.name+' is not valued')
+                        else:
+                                return cvx.matrix(self._value)
+                else:
+                        if ind in self.value_alt:
+                                return cvx.matrix(self.value_alt[ind])
+                        else:
+                                raise Exception(self.name+' does not have a value for the index '+str(ind))
+    
+        
+        def set_value(self,value):
+                #TODOC
+                                              
+                valuemat,valueString = _retrieve_matrix(value,self.size)
+                if valuemat.size != self.size:
+                        raise Exception('should be of size {0}'.format(self.size))
+                if self.vtype == 'symmetric':
+                        valuemat=svec(valuemat)
+                self._value = valuemat
+
+        def del_var_value(self):
+                var._value = None
+                       
+        value = property(eval,set_value,del_var_value,"value of the affine expression")
+        """value of the variable. The value of a variable is
+                defined in the following two situations:
+                
+                * The user has assigned a value to the variable,
+                  by using either the present ``value`` attribute,
+                  or the function
+                  :func:`set_var_value()<picos.Problem.set_var_value>` of the class
+                  :class:`Problem<picos.Problem>`.
+                
+                * The problem involving the variable has been solved,
+                  and the ``value`` attribute stores the optimal value
+                  of this variable.
+        """
