@@ -407,11 +407,11 @@ class AffinExp(Expression):
                 
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
-                                fac,facString=fact.eval(),fact.string
+                                fac,facString=fact.constant,fact.string
                         elif self.isconstant():
                                 return fact.__ror__(self)       
                         else:
-                                dotp = self.T*fact
+                                dotp = self[:].T*fact[:]
                                 dotp.string='〈 '+self.string+' | '+fact.string+' 〉'
                                 return dotp
                                 #raise Exception('not implemented')
@@ -621,9 +621,15 @@ class AffinExp(Expression):
                         indstr=slicestr(index)
                 elif isinstance(index,tuple):
                         if isinstance(index[0],int):
-                                index=(slice(index[0],index[0]+1,None),index[1])
+                                if index[0]==-1:
+                                        index=(slice(index[0],None,None),index[1])
+                                else:
+                                        index=(slice(index[0],index[0]+1,None),index[1])
                         if isinstance(index[1],int):
-                                index=(index[0],slice(index[1],index[1]+1,None))
+                                if index[1]==-1:
+                                        index=(index[0],slice(index[1],None,None))
+                                else:
+                                        index=(index[0],slice(index[1],index[1]+1,None))
                         idx0=index[0].indices(self.size[0])
                         idx1=index[1].indices(self.size[1])
                         rangei=range(idx0[0],idx0[1],idx0[2])
