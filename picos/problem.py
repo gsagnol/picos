@@ -1022,10 +1022,10 @@ class Problem:
                 newcons={}
                 for constrKey,constr in self.constraints.iteritems():
                         if icone == 0: #first conic constraint
-                                nocons=self.add_variable(
-                                        '__nocons__',1)
-                                newcons['nocons']=(
-                                        nocons>0)
+                                noconstant=self.add_variable(
+                                        '__noconstant__',1)
+                                newcons['noconstant']=(
+                                        noconstant>0)
                         if constr.typeOfConstraint=='SOcone':
                                 tmplhs.append(self.add_variable(
                                         '__tmplhs[{0}]__'.format(icone),
@@ -1034,10 +1034,16 @@ class Problem:
                                 tmprhs.append(self.add_variable(
                                         '__tmprhs[{0}]__'.format(icone),
                                         1))
+                                #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
+                                                                if constr.Exp1[i].isconstant() else 0
+                                                                for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
+                                                                constr.Exp1.size)
+                                #lhs and rhs of the cone constraint
                                 newcons['tmp_lhs_{0}'.format(icone)]=(
-                                                constr.Exp1+nocons == tmplhs[icone])
+                                                constr.Exp1+v_cons*noconstant == tmplhs[icone])
                                 newcons['tmp_rhs_{0}'.format(icone)]=(
-                                                constr.Exp2+nocons == tmprhs[icone])
+                                                constr.Exp2-noconstant == tmprhs[icone])
                                 #conic constraints
                                 newcons['tmp_conesign_{0}'.format(icone)]=(
                                                 tmprhs[icone]>0)
@@ -1052,10 +1058,17 @@ class Problem:
                                 tmprhs.append(self.add_variable(
                                         '__tmprhs[{0}]__'.format(icone),
                                         1))
+                                #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                expcat = ((2*constr.Exp1[:] // (constr.Exp2-constr.Exp3))
+                                v_cons = cvx.matrix( [np.sign(expcat.constant[i])
+                                                                if expcat[i].isconstant() else 0
+                                                                for i in range(expcat.size[0]*expcat.size[1])],
+                                                                expcat.size)
+                                #lhs and rhs of the cone constraint
                                 newcons['tmp_lhs_{0}'.format(icone)]=(
-                                       (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) == tmplhs[icone])
+                                       (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
                                 newcons['tmp_rhs_{0}'.format(icone)]=(
-                                        constr.Exp2+constr.Exp3 == tmprhs[icone])
+                                        constr.Exp2+constr.Exp3 - noconstant == tmprhs[icone])
                                 #conic constraints
                                 newcons['tmp_conesign_{0}'.format(icone)]=(
                                                 tmprhs[icone]>0)
@@ -1338,8 +1351,8 @@ class Problem:
                         self.remove_variable(v.name)
                 for v in tmprhs:
                         self.remove_variable(v.name)                       
-                if 'nocons' in newcons:
-                        self.remove_variable(nocons.name)
+                if 'noconstant' in newcons:
+                        self.remove_variable(noconstant.name)
                 
                 return c, self
 
@@ -2391,15 +2404,23 @@ class Problem:
                                                 pos_cplex += dim
                                                 duals.append(cvx.matrix(dual_values))
                                                 
-                                        elif constr.typeOfConstraint[2:] == 'cone':
-                                                #TODO check pour SOCONE et do RScone (et variable noconstant in make_cplex)
-                                                #import pdb;pdb.set_trace()
+                                        elif constr.typeOfConstraint == 'SOcone':
                                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
                                                 dual_cols = range(pos_conevar,pos_conevar+szcons+1)
                                                 dual_values = c.solution.get_reduced_costs(dual_cols)
-                                                duals.append(-cvx.matrix([dual_values[-1]]+dual_values[:-1]))
+                                                duals.append(np.sign(dual_values[-1]) * cvx.matrix(
+                                                                [dual_values[-1]]+dual_values[:-1]))
                                                 pos_conevar += szcons+1
-                                                
+                                        
+                                        elif constr.typeOfConstraint == 'RScone':
+                                                #TODO check pour RScone
+                                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                                dual_cols = range(pos_conevar,pos_conevar+szcons+2)
+                                                dual_values = c.solution.get_reduced_costs(dual_cols)
+                                                duals.append(np.sign(dual_values[-1]) * cvx.matrix(
+                                                                [dual_values[-1]]+dual_values[:-1]))
+                                                pos_conevar += szcons+2
+                                        
                                         else:
                                                 if self.options['verbose']>0:
                                                         print 'duals for this type of constraint not supported yet'
