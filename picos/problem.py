@@ -1053,28 +1053,30 @@ class Problem:
                         if constr.typeOfConstraint=='RScone':
                                 tmplhs.append(self.add_variable(
                                         '__tmplhs[{0}]__'.format(icone),
-                                        constr.Exp1.size[0]*constr.Exp1.size[1]
+                                        (constr.Exp1.size[0]*constr.Exp1.size[1])+1
                                         ))
                                 tmprhs.append(self.add_variable(
                                         '__tmprhs[{0}]__'.format(icone),
                                         1))
                                 #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
-                                expcat = ((2*constr.Exp1[:] // (constr.Exp2-constr.Exp3))
+                                expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
                                 v_cons = cvx.matrix( [np.sign(expcat.constant[i])
                                                                 if expcat[i].isconstant() else 0
                                                                 for i in range(expcat.size[0]*expcat.size[1])],
                                                                 expcat.size)
+                                
                                 #lhs and rhs of the cone constraint
                                 newcons['tmp_lhs_{0}'.format(icone)]=(
-                                       (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
+                                (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
                                 newcons['tmp_rhs_{0}'.format(icone)]=(
                                         constr.Exp2+constr.Exp3 - noconstant == tmprhs[icone])
                                 #conic constraints
                                 newcons['tmp_conesign_{0}'.format(icone)]=(
                                                 tmprhs[icone]>0)
                                 newcons['tmp_conequad_{0}'.format(icone)]=(
-                                     -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
+                                -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
                                 icone+=1
+                                
                 
                 
                 if self.options['verbose']>1:
