@@ -3,3 +3,9 @@
 ********
 Examples
 ********
+
+.. toctree::
+   :maxdepth: 3
+
+   optdes.rst
+

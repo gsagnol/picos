@@ -11,7 +11,7 @@ PICOS: A Python Interface for Conic Optimization Solvers
 **PICOS Documentation contents**
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    intro
    tuto

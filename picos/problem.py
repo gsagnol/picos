@@ -250,7 +250,7 @@ class Problem:
                 >>> prob.set_var_value('x',[3,4])
                 >>> abs(x)**2
                 #quadratic expression: ||x||**2 #
-                >>> print (abs(x)**2).value
+                >>> print (abs(x)**2)
                 25.0
                 """
                 ind = None
@@ -391,6 +391,8 @@ class Problem:
                         self.options['feastol']=val
                         self.options['abstol']=val
                         self.options['reltol']=val*10
+                if key=='verbose' and isinstance(val,bool):
+                        self.options['verbose']=int(val)
 
         
         def update_options(self, **options):
@@ -1020,62 +1022,62 @@ class Problem:
                 tmprhs=[]
                 icone =0
                 newcons={}
-                for constrKey,constr in self.constraints.iteritems():
-                        if icone == 0: #first conic constraint
-                                noconstant=self.add_variable(
-                                        '__noconstant__',1)
-                                newcons['noconstant']=(
-                                        noconstant>0)
-                        if constr.typeOfConstraint=='SOcone':
-                                tmplhs.append(self.add_variable(
-                                        '__tmplhs[{0}]__'.format(icone),
-                                        constr.Exp1.size[0]*constr.Exp1.size[1]
-                                        ))
-                                tmprhs.append(self.add_variable(
-                                        '__tmprhs[{0}]__'.format(icone),
-                                        1))
-                                #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
-                                v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
-                                                                if constr.Exp1[i].isconstant() else 0
-                                                                for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
-                                                                constr.Exp1.size)
-                                #lhs and rhs of the cone constraint
-                                newcons['tmp_lhs_{0}'.format(icone)]=(
-                                                constr.Exp1+v_cons*noconstant == tmplhs[icone])
-                                newcons['tmp_rhs_{0}'.format(icone)]=(
-                                                constr.Exp2-noconstant == tmprhs[icone])
-                                #conic constraints
-                                newcons['tmp_conesign_{0}'.format(icone)]=(
-                                                tmprhs[icone]>0)
-                                newcons['tmp_conequad_{0}'.format(icone)]=(
-                                     -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
-                                icone+=1
-                        if constr.typeOfConstraint=='RScone':
-                                tmplhs.append(self.add_variable(
-                                        '__tmplhs[{0}]__'.format(icone),
-                                        (constr.Exp1.size[0]*constr.Exp1.size[1])+1
-                                        ))
-                                tmprhs.append(self.add_variable(
-                                        '__tmprhs[{0}]__'.format(icone),
-                                        1))
-                                #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
-                                expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
-                                v_cons = cvx.matrix( [np.sign(expcat.constant[i])
-                                                                if expcat[i].isconstant() else 0
-                                                                for i in range(expcat.size[0]*expcat.size[1])],
-                                                                expcat.size)
-                                
-                                #lhs and rhs of the cone constraint
-                                newcons['tmp_lhs_{0}'.format(icone)]=(
-                                (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
-                                newcons['tmp_rhs_{0}'.format(icone)]=(
-                                        constr.Exp2+constr.Exp3 - noconstant == tmprhs[icone])
-                                #conic constraints
-                                newcons['tmp_conesign_{0}'.format(icone)]=(
-                                                tmprhs[icone]>0)
-                                newcons['tmp_conequad_{0}'.format(icone)]=(
-                                -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
-                                icone+=1
+                if self.numberConeConstraints > 0 :
+                        for constrKey,constr in self.constraints.iteritems():
+                                if icone == 0: #first conic constraint
+                                        noconstant=self.add_variable(
+                                                '__noconstant__',1)
+                                        newcons['noconstant']=(
+                                                noconstant>0)
+                                if constr.typeOfConstraint=='SOcone':
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(icone),
+                                                constr.Exp1.size))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(icone),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
+                                                                        if constr.Exp1[i].isconstant() else 0
+                                                                        for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
+                                                                        constr.Exp1.size)
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(icone)]=(
+                                                        constr.Exp1+v_cons*noconstant == tmplhs[icone])
+                                        newcons['tmp_rhs_{0}'.format(icone)]=(
+                                                        constr.Exp2-noconstant == tmprhs[icone])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(icone)]=(
+                                                        tmprhs[icone]>0)
+                                        newcons['tmp_conequad_{0}'.format(icone)]=(
+                                        -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
+                                        icone+=1
+                                if constr.typeOfConstraint=='RScone':
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(icone),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1
+                                                ))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(icone),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
+                                        v_cons = cvx.matrix( [np.sign(expcat.constant[i])
+                                                                        if expcat[i].isconstant() else 0
+                                                                        for i in range(expcat.size[0]*expcat.size[1])],
+                                                                        expcat.size)
+                                        
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(icone)]=(
+                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
+                                        newcons['tmp_rhs_{0}'.format(icone)]=(
+                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[icone])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(icone)]=(
+                                                        tmprhs[icone]>0)
+                                        newcons['tmp_conequad_{0}'.format(icone)]=(
+                                        -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
+                                        icone+=1
                                 
                 
                 
@@ -1984,6 +1986,17 @@ class Problem:
                 cvx.solvers.options['feastol']=self.options['feastol']
                 cvx.solvers.options['reltol']=self.options['reltol']
                 cvx.solvers.options['show_progress']=bool(self.options['verbose']>0)
+                try:
+                        import smcp.solvers
+                        smcp.solvers.options['maxiters']=self.options['maxit']
+                        smcp.solvers.options['abstol']=self.options['abstol']
+                        smcp.solvers.options['feastol']=self.options['feastol']
+                        smcp.solvers.options['reltol']=self.options['reltol']
+                        smcp.solvers.options['show_progress']=bool(self.options['verbose']>0)
+                except:
+                        #smcp is not available
+                        pass
+                
                 if self.options['solver'].upper()=='CVXOPT':
                         currentsolver=None
                 elif self.options['solver']=='cvxopt-mosek':
@@ -2099,7 +2112,8 @@ class Problem:
                 status=sol['status']
                 solv=currentsolver
                 if solv is None: solv='cvxopt'
-                print solv+' status: '+status
+                if self.options['verbose']>0:
+                        print solv+' status: '+status
                                 
                 #----------------------#
                 # retrieve the primals #
@@ -2273,8 +2287,9 @@ class Problem:
                         raise ValueError('a cplex instance should have been created before')
                 
                 
-                #TODO : settings parameters
-                
+                #TODO : setting parameters
+                c.parameters.barrier.display.set(min(2,self.options['verbose']))
+                c.parameters.simplex.display.set(min(2,self.options['verbose']))
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
@@ -2921,7 +2936,8 @@ class Problem:
         
         type=property(what_type,set_type,del_type)
         """Type of Optimization Problem ('LP', 'MIP', 'SOCP', 'QCQP',...)"""
-        #TODO example in the tuto ?                                        
+        #TODO example in the tuto ?  
+        #TODO option with default solvers order
 
         def solver_selection(self):
                 """Selects an appropriate solver for this problem

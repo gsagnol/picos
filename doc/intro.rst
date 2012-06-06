@@ -12,6 +12,7 @@ very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_ under
 The main motivation for PICOS is to have the possibility to
 enter an optimization problem as a *high level model*,
 and to be able to solve it with several *different solvers*.
+Multidimensional and matrix variables are handled in a natural fashion.
 This is very useful to quickly implement some models and
 test their validity on simple examples.
 Furthermore, with PICOS you can take advantage of the
@@ -44,7 +45,7 @@ such that
 ---------------------
 >>> sol = prob.solve(solver='zibopt',verbose=0)
 >>> print x                                #optimal value of x #doctest: +NORMALIZE_WHITESPACE
-[ 5.00e+00]
+5.0
 
 
 Currently, PICOS can handle the following class of
@@ -109,7 +110,7 @@ the problem to solve is:
                         \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times r}}}{\mbox{minimize}}
                       & \sum_{i=1}^s \mu_i\\
    &\mbox{subject to} & \sum_{i=1}^s A_i Z_i = K\\
-   &                  & \forall i=[s],\ \Vert Z_i \Vert_F \leq \mu_i,
+   &                  & \forall i \in [s],\ \Vert Z_i \Vert_F \leq \mu_i,
    \end{eqnarray*}
    \end{center}
 

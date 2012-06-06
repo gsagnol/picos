@@ -142,7 +142,10 @@ class AffinExp(Expression):
                 
         def __str__(self):
                 if self.is_valued():
-                        return str(self.eval())
+                        if self.size==(1,1):
+                                return str(self.value[0])
+                        else:
+                                return str(self.value)
                 else:
                         return repr(self)
 
@@ -904,14 +907,14 @@ class Norm(Expression):
         
         def __str__(self):
                 if self.is_valued():
-                        return str(self.eval())
+                        return str(self.value[0])
                 else:
                         return repr(self)
                 
                 
         def eval(self, ind=None):
                 vec=self.exp.eval(ind)
-                return np.linalg.norm(vec)
+                return cvx.matrix(np.linalg.norm(vec),(1,1))
              
         
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
@@ -975,7 +978,7 @@ class LogSumExp(Expression):
         
         def __str__(self):
                 if self.is_valued():
-                        return str(self.value)
+                        return str(self.value[0])
                 else:
                         return repr(self)
                 
@@ -989,7 +992,9 @@ class LogSumExp(Expression):
                 return 'LSE['+self.Exp.affstring()+']'
 
         def eval(self, ind=None):
-                return np.log(np.sum(np.exp(self.Exp.eval(ind))))
+                return cvx.matrix(np.log(np.sum(np.exp(self.Exp.eval(ind)))),
+                                  (1,1)
+                                  )
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the logsumexp expression")
 
@@ -1037,7 +1042,7 @@ class QuadExp(Expression):
 
         def __str__(self):
                 if self.is_valued():
-                        return str(self.value)
+                        return str(self.value[0])
                 else:
                         return repr(self)
 
@@ -1100,7 +1105,7 @@ class QuadExp(Expression):
                                         xj=j.value_alt[ind][:]
                                 val=val+xi.T*self.quad[i,j]*xj
                 
-                return val
+                return cvx.matrix(val,(1,1))
        
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
        
@@ -1272,14 +1277,14 @@ class GeneralFun(Expression):
          
         def __str__(self):
                 if self.is_valued():
-                        return str(self.value)
+                        return str(self.value[0])
                 else:
                         return repr(self)
 
         def eval(self,ind=None):
                 val=self.Exp.eval(ind)
                 o,g,h=self.fun(val)
-                return o
+                return cvx.matrix(o,(1,1))
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
 
@@ -1343,7 +1348,10 @@ class Variable(AffinExp):
                 
         def __str__(self):
                 if self.is_valued():
-                        return str(self.value)
+                        if self.size==(1,1):
+                                return str(self.value[0])
+                        else:
+                                return str(self.value)
                 else:
                         return repr(self)
                         
@@ -1369,10 +1377,10 @@ class Variable(AffinExp):
                 #TODOC
                                               
                 valuemat,valueString = _retrieve_matrix(value,self.size)
+                if self.vtype == 'symmetric':
+                        valuemat=svecm1(valuemat)
                 if valuemat.size != self.size:
                         raise Exception('should be of size {0}'.format(self.size))
-                if self.vtype == 'symmetric':
-                        valuemat=svec(valuemat)
                 self._value = valuemat
 
         def del_var_value(self):
