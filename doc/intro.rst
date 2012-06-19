@@ -12,7 +12,8 @@ very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_ under
 The main motivation for PICOS is to have the possibility to
 enter an optimization problem as a *high level model*,
 and to be able to solve it with several *different solvers*.
-Multidimensional and matrix variables are handled in a natural fashion.
+Multidimensional and matrix variables are handled in a natural fashion,
+which makes it painless to formulate a SDP or a SOCP.
 This is very useful to quickly implement some models and
 test their validity on simple examples.
 Furthermore, with PICOS you can take advantage of the
@@ -43,8 +44,8 @@ x   : (1, 1), integer
 such that
   x < 5.2
 ---------------------
->>> sol = prob.solve(solver='zibopt',verbose=0)
->>> print x                                #optimal value of x #doctest: +NORMALIZE_WHITESPACE
+>>> sol = prob.solve(solver='zibopt',verbose=0)  #solve using the ZIB optimization suite
+>>> print x                                      #optimal value of x #doctest: +NORMALIZE_WHITESPACE
 5.0
 
 
@@ -57,13 +58,12 @@ interfaced solvers can be found :ref:`here <solvers>`.
   * Convex Quadratically constrained Quadratic Programming (**convex QCQP**)
   * Second Order Cone Programming (**SOCP**)
   * Semidefinite Programming (**SDP**)
+  * General Quadratically constrained Quadratic Programming (**QCQP**)
+  * Mixed Integer Quadratic Programming (**MIQP**)
 
-.. * General Quadratically constrained Quadratic Programming (**QCQP**) (TODO ??)
-.. * Mixed Integer Quadratic Programming (**MIQP**) (TODO ??)
 
-
-There exists a number of similar projects, so we list below their
-main differences with PICOS:
+There exists a number of similar projects, so we provide a (non-exhausive) list
+below, explaining their main differences with PICOS:
 
   * `CVXPY <http://www.stanford.edu/~ttinoco/cvxpy/>`_:
     
@@ -77,19 +77,35 @@ main differences with PICOS:
     This python package also provides an interface to the integer programming solver `scip <http://zibopt.zib.de/>`_,
     as well as satisfiability (**SAT**) and constraint programming solvers (**CP**). 
 
+  * `OpenOpt <http://openopt.org/Welcome>`_:
+    
+    This is probably the most complete
+    optimization suite written in python, handling a lot of problem types
+    and interfacing many opensource and commercial solvers. However,
+    the user has to transform every optimization problem into
+    a canonical form himself, and this is what we want to avoid with PICOS.
+
   * `puLP <http://packages.python.org/PuLP/>`_:
     
     A user-friendly interface to a bunch of **LP** and **MIP** solvers.
+
+  * `PYOMO <https://software.sandia.gov/trac/coopr/wiki/Pyomo>`_:
+
+    A modelling language for optimization problems, *a la* AMPL.
+
+  * `pyOpt <http://www.pyopt.org/index.html>`_:
+
+    A user-friendly package to formulate and solve general nonlinear constrained
+    optimization problems. Several open-source and commercial solvers are interfaced.
 
   * `python-zibopt <http://code.google.com/p/python-zibopt/>`_:
 
     This is a user-friendly interface to the `ZIB optimization suite <http://zibopt.zib.de/>`_
     for solving mixed integer programs (**MIP**). PICOS
     provides an interface to this interface.
+  
 
-  .. Todo::
-        
-        pyomo and openopt
+
 
 First Example
 =============
@@ -187,7 +203,7 @@ This generates the output:
 
     ---------------------
     optimization problem (SOCP):
-    15 variables, 6 affine constraints, 12 vars in a SO cone
+    15 variables, 6 affine constraints, 15 vars in 3 SO cones
     
     mu  : (3, 1), continuous
     Z   : list of 3 variables, different sizes, continuous
@@ -227,12 +243,26 @@ the solver can handle via PICOS. Note however
 that the solvers listed below might have other
 features that are *not handled by PICOS*.
 
-  * `cvxopt <http://abel.ee.ucla.edu/cvxopt/>`_ (LP, convex QCQP, SOCP, SDP)
+  * `cvxopt <http://abel.ee.ucla.edu/cvxopt/>`_ (LP, SOCP, SDP, GP)
   * `smcp <http://abel.ee.ucla.edu/smcp/>`_ (LP, SOCP, SDP)
-  * `mosek <http://www.mosek.com>`_ (LP, MIP, SOCP, convex QCQP)
-  * `cplex <http://www.ibm.com/software/integration/optimization/cplex-optimizer/>`_ (LP, MIP)
-  * `soplex <http://soplex.zib.de/>`_ (LP)
-  * `scip <http://scip.zib.de/>`_ (MIP, MIQP)
+  * `mosek <http://www.mosek.com>`_ (LP, MIP, (MI)SOCP, convex QCQP, MIQP)
+  * `cplex <http://www.ibm.com/software/integration/optimization/cplex-optimizer/>`_ (LP, MIP, (MI)SOCP, convex QCQP, MIQP)
+  * `zibopt <http://zibopt.zib.de/>`_ (`soplex <http://soplex.zib.de/>`_ + 
+    `scip <http://scip.zib.de/>`_ : LP, MIP, MIQP, general QCQP).
+
+
+To use one of these solver, make sure that the python interface to this solver is correctly
+installed and linked in your ``PYTHONPATH`` variable. The sites of the solvers
+give instructions to do this, except for *zibopt*, for which you must install
+a separate interface: `python-zibopt <http://code.google.com/p/python-zibopt/>`_.
+To check your installation, you can simply verify that
+``import cvxopt`` (resp. ``smcp``, ``mosek``, ``cplex``, ``zibopt``) does
+not raise an ``ImportError``. The command
+
+>>> import picos;picos.tools.available_solvers() #doctest: +SKIP
+
+returns the list of correctly installed solvers.
+
 
 
 .. _requirements:
@@ -240,5 +270,16 @@ features that are *not handled by PICOS*.
 Requirements
 ============
 
+PICOS has two dependencies: `numpy <http://numpy.scipy.org/>`_ 
+and
+`cvxopt <http://abel.ee.ucla.edu/cvxopt/>`_. (cvxopt is needed even if you
+do not use the cvxopt solvers, because picos relies on the
+:func:`sparse matrices <cvxopt:cvxopt.spmatrix>` defined in cvxopt.)
+
+In addition, you must install separately the python interfaces to each :ref:`solver <solvers>`
+you want to use.
+
 Installation
 ============
+
+TODO

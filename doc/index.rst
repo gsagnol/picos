@@ -18,7 +18,7 @@ PICOS: A Python Interface for Conic Optimization Solvers
    examples
    api
 
-This is something about PICOS.
+TODO: This is something about PICOS.
 
 Indices and tables
 ==================

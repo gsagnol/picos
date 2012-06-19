@@ -2,7 +2,6 @@
 import cvxopt as cvx
 import numpy as np
 import sys
-from progress_bar import ProgressBar
 
 from .tools import *
 
@@ -140,7 +139,11 @@ class Constraint:
                         #       else:
                         #               retstr='('+self.Exp1.affstring()+')**2'
                         if self.Exp1.size==(1,1) and self.Exp1.isconstant():
-                                retstr=self.Exp1.affstring() # warning: no square to simplfy
+                                retstr=self.Exp1.affstring()
+                                if retstr[-5:]=='**0.5':
+                                        retstr=retstr[:-5]
+                                else:
+                                        retstr+='**2'
                         else:
                                 retstr= '||'+ self.Exp1.affstring()+'||^2'
                         if (self.Exp2.is1() and self.Exp3.is1()):

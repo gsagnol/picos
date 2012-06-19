@@ -39,9 +39,3 @@ LogSumExp
 
 .. autoclass:: picos.LogSumExp
     :members:
-
-GeneralFun
-==========
-
-.. autoclass:: picos.GeneralFun
-    :members:

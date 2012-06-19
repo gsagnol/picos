@@ -1,8 +1,7 @@
 # coding: utf-8
 import cvxopt as cvx
 import numpy as np
-import sys
-from progress_bar import ProgressBar
+import sys, os
 
 
 __all__=['_retrieve_matrix',
@@ -15,7 +14,11 @@ __all__=['_retrieve_matrix',
         'sum',
         'diag',
         'new_param',
-        'available_solvers'
+        'available_solvers',
+        'offset_in_lil',
+        'diag_vect',
+        '_quad2norm',
+        'ProgressBar'
 ]
 
 
@@ -285,9 +288,11 @@ def put_indices_on_frames(frames,indices):
                 
 
 def eval_dict(dict_of_variables):
-        """TODOC:
-        evaluates all the variables in the dictionary
-        and returns the same dictionary, but evaluated"""
+        """
+        if ``dict_of_variables`` is a dictionary
+        mapping variable names (strings) to :class:`variables <picos.Variable>`,
+        this function returns the dictionary ``names -> variable values``. 
+        """
         for k in dict_of_variables:
                 dict_of_variables[k] = dict_of_variables[k].eval()
                 if dict_of_variables[k].size == (1,1):
@@ -352,11 +357,20 @@ def lse(exp):
         from .expression import LogSumExp
         return LogSumExp(exp)
 
-def diag(exp,dim):
+def diag(exp,dim=1):
         r"""
-        if ``exp`` is a scalar affine expression,
-        ``diag(exp)`` returns a diagonal matrix of size ``dim`` :math:`\times` ``dim``,
-        wiith the diagonal elements equal to ``exp``.
+        if ``exp`` is an affine expression of size (n,m),
+        ``diag(exp,dim)`` returns a diagonal matrix of size ``dim*n*m`` :math:`\times` ``dim*n*m``,
+        with ``dim`` copies of the vectorized expression ``exp[:]`` on the diagonal.
+        
+        In particular:
+        
+          * when ``exp`` is scalar, ``diag(exp,n)`` returns a diagonal
+            matrix of size :math:`n \times n`, with all diagonal elements equal to ``exp``.
+          
+          * when ``exp`` is a vector of size :math:`n`, ``diag(exp)`` returns the diagonal
+            matrix of size :math:`n \times n` with the vector ``exp`` on the diagonal
+        
         
         **Example**
         
@@ -365,26 +379,63 @@ def diag(exp,dim):
         >>> x=prob.add_variable('x',1)
         >>> y=prob.add_variable('y',1)
         >>> pic.tools.diag(x-y,4)
-        # (4 x 4)-affine expression: diag(x -y) #
+        # (4 x 4)-affine expression: Diag(x -y) #
+        >>> pic.tools.diag(x//y)
+        # (2 x 2)-affine expression: Diag([x;y]) #
         
         """
         from .expression import AffinExp
-        if exp.size<>(1,1):
-                raise Exception('not implemented')
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        (n,m)=exp.size
         expcopy=AffinExp(exp.factors.copy(),exp.constant,exp.size,
                         exp.string)
-        idx=cvx.spdiag([1.]*dim)[:].I
+        idx=cvx.spdiag([1.]*dim*n*m)[:].I
         for k in exp.factors.keys():
-                expcopy.factors[k]=cvx.spmatrix([],[],[],(dim**2,exp.factors[k].size[1]))
-                for i in idx:
-                        expcopy.factors[k][i,:]=exp.factors[k]
-        expcopy.constant=cvx.matrix(0.,(dim**2,1))
+                #ensure it's sparse
+                mat=cvx.sparse(expcopy.factors[k])
+                I,J,V=list(mat.I),list(mat.J),list(mat.V)
+                newI=[]
+                for d in range(dim):
+                        for i in I:
+                                newI.append(idx[i+n*m*d])
+                expcopy.factors[k]=cvx.spmatrix(V*dim,newI,J*dim,((dim*n*m)**2,exp.factors[k].size[1]))
+        expcopy.constant=cvx.matrix(0.,((dim*n*m)**2,1))
         if not exp.constant is None:           
-                for i in idx:
-                        expcopy.constant[i]=exp.constant[0]
-        expcopy.size=(dim,dim)
-        expcopy.string='diag('+expcopy.string+')'
-        return expcopy        
+                for k,i in enumerate(idx):
+                        expcopy.constant[i]=exp.constant[k%(n*m)]
+        expcopy.size=(dim*n*m,dim*n*m)
+        expcopy.string='Diag('+exp.string+')'
+        return expcopy
+
+def diag_vect(exp):
+        """
+        Returns the vector with the diagonal elements of the matrix expression ``exp``
+        
+        **Example**
+        
+        >>> import picos as pic
+        >>> prob=pic.Problem()
+        >>> X=prob.add_variable('X',(3,3))
+        >>> pic.tools.diag_vect(X)
+        # (3 x 1)-affine expression: diag(X) #
+        
+        """
+        from .expression import AffinExp
+        (n,m)=exp.size
+        n=min(n,m)
+        idx=cvx.spdiag([1.]*n)[:].I
+        expcopy=AffinExp(exp.factors.copy(),exp.constant,exp.size,
+                        exp.string)
+        proj=cvx.spmatrix([1.]*n,range(n),idx,(n,exp.size[0]*exp.size[1]))
+        for k in exp.factors.keys():
+                expcopy.factors[k] = proj * expcopy.factors[k]
+        if not exp.constant is None:
+                expcopy.constant = proj * expcopy.constant
+        expcopy.size=(n,1)
+        expcopy.string='diag('+exp.string+')'
+        return expcopy
         
 def _retrieve_matrix(mat,exSize=None):
         """
@@ -396,8 +447,6 @@ def _retrieve_matrix(mat,exSize=None):
         .. WARNING:: If there is a conflit between the size of **mat** and
                      the expected size **exsize**, the function might still
                      return something without raising an error !
-        
-        .. todo:: Better Exception handling
         
         :param mat: The value to be converted into a cvx.spmatrix.
                     The function will try to parse this variable and
@@ -600,6 +649,10 @@ def _retrieve_matrix(mat,exSize=None):
                 retmat*=alpha
         else:
                 raise NameError('unexpected mat variable')
+        
+        #make sure it's sparse
+        retmat=cvx.sparse(retmat)
+        
         #look for a more appropriate string...
         if retstr is None:
                 retstr='[ {0} x {1} MAT ]'.format(retmat.size[0],retmat.size[1])
@@ -610,14 +663,15 @@ def _retrieve_matrix(mat,exSize=None):
                         retstr='|0|'
         elif retmat.size==(1,1):
                 retstr=str(retmat[0])
-        elif max(retmat+0.)==min(retmat+0.): #|1| (+0. to avoid sparse evaluation)
+        elif (len(retmat.V) == retmat.size[0]*retmat.size[1]) and (
+              max(retmat.V)==min(retmat.V)): #|alpha|
                 if retmat[0]==0:
                         retstr='|0|'
                 elif retmat[0]==1:
                         retstr='|1|'
                 else:
                         retstr='|'+str(retmat[0])+'|'
-        elif cvx.sparse(retmat).I.size[0]==1: #e_x
+        elif retmat.I.size[0]==1: #e_x
                 spm=cvx.sparse(retmat)
                 i=spm.I[0]
                 j=spm.J[0]
@@ -631,7 +685,7 @@ def _retrieve_matrix(mat,exSize=None):
         #(1,1) matrix but not appropriate size
         if retmat.size==(1,1) and (exSize not in [(1,1),1,None]):
                 return _retrieve_matrix(retmat[0],exSize)
-        return cvx.sparse(retmat),retstr
+        return retmat,retstr
 
 def svec(mat):
         """
@@ -720,7 +774,7 @@ def _svecm1_identity(vtype,size):
         return idmat
         
 def new_param(name,value):
-        """TODOC again
+        """
         Declare a parameter for the problem, that will be stored
         as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
         It is possible to give a list or a dictionary of parameters.
@@ -753,6 +807,7 @@ def new_param(name,value):
         # (2 x 1)-affine expression: [ 2 x 3 MAT ]*x + |17.4| #
         >>> #(in the string above, |17.4| represents the 2-dim vector [17.4,17.4])
         >>> B=pic.new_param('B',B)
+        >>> #now that B is a param, we have a nicer display:
         >>> B['matrix']*x+B['foo']
         # (2 x 1)-affine expression: B[matrix]*x + |B[foo]| #
         """
@@ -824,3 +879,219 @@ def available_solvers():
         except ImportError:
                 pass
         return lst
+        
+def offset_in_lil(lil,offset,lower):
+        """
+        substract the ``offset`` from all elements of the
+        (recursive) list of lists ``lil``
+        which are larger than ``lower``.
+        """
+        for i,l in enumerate(lil):
+                if isinstance(l,int):
+                      if l>lower:
+                              lil[i]-=offset
+                elif isinstance(l,list):
+                        lil[i]=offset_in_lil(l,offset,lower)
+                else:
+                        raise Exception('elements of lil must be int or list')
+        return lil
+                               
+def _quad2norm(qd):
+        """
+        transform the list of bilinear terms qd
+        in an equivalent squared norm
+        (x.T Q x) -> ||Q**0.5 x||**2
+        """
+        #find all variables
+        qdvars=[]
+        for xy in qd:
+                p1=(xy[0].startIndex,xy[0])
+                p2=(xy[1].startIndex,xy[1])
+                if p1 not in qdvars:
+                        qdvars.append(p1)
+                if p2 not in qdvars:
+                        qdvars.append(p2)
+        #sort by start indices
+        qdvars=sorted(qdvars)
+        qdvars=[v for (i,v) in qdvars]
+        offsets={}
+        ofs=0
+        for v in qdvars:
+                offsets[v]=ofs
+                ofs+=v.size[0]*v.size[1]
+               
+        #construct quadratic matrix
+        Q = cvx.spmatrix([],[],[],(ofs,ofs))
+        I,J,V=[],[],[]
+        for (xi,xj),Qij in qd.iteritems():
+                oi=offsets[xi]
+                oj=offsets[xj]
+                Qtmp=cvx.spmatrix(Qij.V,Qij.I+oi,Qij.J+oj,(ofs,ofs))
+                Q+=0.5*(Qtmp+Qtmp.T)
+        #cholesky factorization V.T*V=Q
+        #remove zero rows and cols
+        nz=set(Q.I)
+        P=cvx.spmatrix(1.,range(len(nz)),list(nz),(len(nz),ofs))
+        Qp=P*Q*P.T
+        try:
+                import cvxopt.cholmod
+                F=cvxopt.cholmod.symbolic(Qp)
+                cvxopt.cholmod.numeric(Qp,F)
+                Z=cvxopt.cholmod.spsolve(F,Qp,7)
+                V=cvxopt.cholmod.spsolve(F,Z,4)
+                V=V*P
+        except ArithmeticError:#singular, we must work on the dense matrix
+                import cvxopt.lapack
+                sig=cvx.matrix(0.,(len(nz),1))
+                U=cvx.matrix(0.,(len(nz),len(nz)))
+                cvxopt.lapack.gesvd(cvx.matrix(Qp),sig,jobu='A',U=U)
+                V=cvx.spdiag(sig**0.5)*U.T
+                V=cvx.sparse(V)*P
+        allvars=qdvars[0]
+        for v in qdvars[1:]:
+                if v.size[1]==1:
+                        allvars=allvars//v
+                else:
+                        allvars=allvars//v[:]
+        return abs(V*allvars)**2
+        
+        
+        
+                
+                
+                
+                
+
+
+
+# A Python Library to create a Progress Bar.
+# Copyright (C) 2008  BJ Dierkes <wdierkes@5dollarwhitebox.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# This class is an improvement from the original found at:
+#
+#   http://code.activestate.com/recipes/168639/
+#
+ 
+class ProgressBar:
+        def __init__(self, min_value = 0, max_value = 100, width=None,**kwargs):
+                self.char = kwargs.get('char', '#')
+                self.mode = kwargs.get('mode', 'dynamic') # fixed or dynamic
+                if not self.mode in ['fixed', 'dynamic']:
+                        self.mode = 'fixed'
+        
+                self.bar = ''
+                self.min = min_value
+                self.max = max_value
+                self.span = max_value - min_value
+                if width is None:
+                        width=self.getTerminalSize()[1]-10
+                self.width = width
+                self.amount = 0       # When amount == max, we are 100% done 
+                self.update_amount(0) 
+        
+        
+        def increment_amount(self, add_amount = 1):
+                """
+                Increment self.amount by 'add_ammount' or default to incrementing
+                by 1, and then rebuild the bar string. 
+                """
+                new_amount = self.amount + add_amount
+                if new_amount < self.min: new_amount = self.min
+                if new_amount > self.max: new_amount = self.max
+                self.amount = new_amount
+                self.build_bar()
+        
+        
+        def update_amount(self, new_amount = None):
+                """
+                Update self.amount with 'new_amount', and then rebuild the bar 
+                string.
+                """
+                if not new_amount: new_amount = self.amount
+                if new_amount < self.min: new_amount = self.min
+                if new_amount > self.max: new_amount = self.max
+                self.amount = new_amount
+                self.build_bar()
+        
+        def get_amount(self):
+                return self.amount
+
+        def build_bar(self):
+                """
+                Figure new percent complete, and rebuild the bar string base on 
+                self.amount.
+                """
+                diff = float(self.amount - self.min)
+                percent_done = int(round((diff / float(self.span)) * 100.0))
+        
+                # figure the proper number of 'character' make up the bar 
+                all_full = self.width - 2
+                num_hashes = int(round((percent_done * all_full) / 100))
+        
+                if self.mode == 'dynamic':
+                        # build a progress bar with self.char (to create a dynamic bar
+                        # where the percent string moves along with the bar progress.
+                        self.bar = self.char * num_hashes
+                else:
+                        # build a progress bar with self.char and spaces (to create a 
+                        # fixe bar (the percent string doesn't move)
+                        self.bar = self.char * num_hashes + ' ' * (all_full-num_hashes)
+        
+                percent_str = str(percent_done) + "%"
+                self.bar = '[ ' + self.bar + ' ] ' + percent_str
+        
+        
+        def __str__(self):
+                return str(self.bar)
+                
+                
+        def getTerminalSize(self):
+                """
+                returns (lines:int, cols:int)
+                """
+                import os, struct
+                def ioctl_GWINSZ(fd):
+                        import fcntl, termios
+                        return struct.unpack("hh", fcntl.ioctl(fd, termios.TIOCGWINSZ, "1234"))
+                # try stdin, stdout, stderr
+                for fd in (0, 1, 2):
+                        try:
+                                return ioctl_GWINSZ(fd)
+                        except:
+                                pass
+                # try os.ctermid()
+                try:
+                        fd = os.open(os.ctermid(), os.O_RDONLY)
+                        try:
+                                return ioctl_GWINSZ(fd)
+                        finally:
+                                os.close(fd)
+                except:
+                        pass
+                # try `stty size`
+                try:
+                        return tuple(int(x) for x in os.popen("stty size", "r").read().split())
+                except:
+                        pass
+                # try environment variables
+                try:
+                        return tuple(int(os.getenv(var)) for var in ("LINES", "COLUMNS"))
+                except:
+                        pass
+                # i give up. return default.
+                return (25, 80)
+                

@@ -9,7 +9,7 @@ First of all, let us import the PICOS module and cvxopt
   >>> import picos as pic
   >>> import cvxopt as cvx
 
-We now generate the data that we will use in this tutorial.
+We now generate some arbitrary data, that we will use in this tutorial.
 
   >>> pairs = [(0,2), (1,4), (1,3), (3,2), (0,4),(2,4)]        #a list of pairs
   >>> A = []
@@ -64,7 +64,8 @@ Now, if we try to display a variable, here is what we get:
   # variable Y:(2 x 4),continuous #
 
 Also note the use of the
-attributes ``name``, ``value``, and ``vtype``:
+attributes :attr:`name <picos.Variable.name>`, :attr:`value <picos.Variable.value>`,
+:attr:`size <picos.Variable.size>`, and :attr:`vtype <picos.Variable.vtype>`:
 
   >>> w[2,4].vtype
   'binary'
@@ -73,6 +74,8 @@ attributes ``name``, ``value``, and ``vtype``:
   >>> x.vtype='integer'
   >>> x
   # variable x:(4 x 1),integer #
+  >>> x.size
+  (4, 1)
   >>> Z[1].value = A[0].T
   >>> Z[0].is_valued()
   False
@@ -89,7 +92,9 @@ We will now use our variables to create some affine expressions,
 which are stored as instance of the class :class:`AffinExp <picos.AffinExp>`,
 and will be the
 core to define an optimization problem. Most python operators have been overloaded
-to work with instances of :class:`AffinExp <picos.AffinExp>`. For example,
+to work with instances of :class:`AffinExp <picos.AffinExp>`
+(a list of available overloaded operators can be found in the
+doc of :class:`AffinExp <picos.AffinExp>`). For example,
 you can form the sum of two variables by writing:
 
   >>> Z[0]+Z[3]
@@ -459,8 +464,8 @@ Quadratic inequalities are entered in the following way:
 
   >>> t**2 > 2*t - alpha + x[1]*x[2]
   #Quadratic constraint -t**2 + 2.0*t -alpha + x[1]*x[2] < 0 #
-  >>> (t & alpha) * A[1] * x + (x +2 | Z[1][:,1]) < - 3*(1|Y)-alpha
-  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(-3.0*〈 |1| | Y 〉 -alpha) < 0 #
+  >>> (t & alpha) * A[1] * x + (x +2 | Z[1][:,1]) < 3*(1|Y)-alpha
+  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
 
 Note that PICOS does not check the convexity of convex constraints.
 It is the solver which will raise an Exception if it does not support
@@ -537,7 +542,7 @@ of its lower triangular elements only.
     >>> print sdp   #doctest: +NORMALIZE_WHITESPACE
     ---------------------
     optimization problem (SDP):
-    10 variables, 0 affine constraints, 10 vars in a SD cone
+    10 variables, 0 affine constraints, 10 vars in 1 SD cones
     <BLANKLINE>
     X   : (4, 4), symmetric
     <BLANKLINE>
@@ -568,13 +573,24 @@ parameters with their default values, see the doc of the function
 :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`.
 
 Once a problem has been solved, the optimal values of the variables are
-accessible with the :attr:`value<picos.Expression.value>` property.
+accessible with the :attr:`value <picos.Expression.value>` property.
 Depending on the solver, you
 can also obtain the slack and the optimal dual variables
 of the constraints thanks to the properties
 :attr:`dual<picos.Constraint.dual>` and
 :attr:`slack<picos.Constraint.slack>` of the class
 :class:`Constraint <picos.Constraint>`.
+
+The class :class:`Problem <picos.Constraint>` also has
+two interesting properties: :attr:`type <picos.Problem.type>`, which
+indicates the class of the optimization problem ('LP', 'SOCP', 'MIP', 'SDP',...),
+and :attr:`status <picos.Problem.status>`, which indicates if the
+problem has been solved (the default is ``'unsolved'``; after a call to
+:func:`solve() <picos.Problem.solve>` this property can take the value of any
+code returned by a solver, such as ``'optimal'``, ``'unbounded'``, ``'near-optimal'``,
+``'primal infeasible'``, ``'unknown'``, ...).
+
+
 Below is a simple example, to solve the linear programm:
 
 .. math::
@@ -608,7 +624,13 @@ More examples can be found :ref:`here <examples>`.
    P.add_constraint(A*x<[3,4])
    objective = 0.5 * x[0] + x[1]
    P.set_objective('max', objective)
-   sol = P.solve(solver='cvxopt',verbose=False)
+   
+   #display the problem and solve it
+   print P
+   print 'type:   '+P.type
+   print 'status: '+P.status
+   P.solve(solver='cvxopt',verbose=False)
+   print 'status: '+P.status
    
    #--------------------#
    #  objective value   #
@@ -647,6 +669,21 @@ More examples can be found :ref:`here <examples>`.
 
 .. testoutput::
     :options: +NORMALIZE_WHITESPACE
+
+    ---------------------
+    optimization problem  (LP):
+    2 variables, 3 affine constraints
+
+    x   : (2, 1), continuous
+
+        maximize 0.5*x[0] + x[1]
+    such that
+      x[0] > x[1]
+      A*x < [ 2 x 1 MAT ]
+    ---------------------
+    type:   LP
+    status: unsolved
+    status: optimal
 
     the optimal value of this problem is:
     3.00000001966

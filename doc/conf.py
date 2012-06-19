@@ -33,7 +33,10 @@ extensions = ['sphinx.ext.autodoc',
 	      'sphinx.ext.intersphinx',
 	      'sphinx.ext.todo',
 	      'sphinx.ext.doctest',
-	      'sphinx.ext.pngmath']
+	      'sphinx.ext.pngmath',
+	      'matplotlib.sphinxext.only_directives',
+              'matplotlib.sphinxext.plot_directive',
+              ]
 intersphinx_cache_limit = 10     # days to keep the cached inventories
 intersphinx_mapping = {
             'sphinx': ('http://sphinx.pocoo.org',  None),

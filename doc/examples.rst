@@ -8,4 +8,5 @@ Examples
    :maxdepth: 3
 
    optdes.rst
+   graphs.rst
 

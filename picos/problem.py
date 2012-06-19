@@ -2,7 +2,6 @@
 import cvxopt as cvx
 import numpy as np
 import sys
-from progress_bar import ProgressBar
 
 from .tools import *
 from .expression import *
@@ -24,8 +23,8 @@ class Problem:
         
         def __init__(self,**options):
                 self.objective = ('find',None) #feasibility problem only
-                self.constraints = {}
-                """dictionary of constraints indexed by identifiers"""
+                self.constraints = []
+                """list of all constraints"""
                 self.variables = {}
                 """dictionary of variables indexed by variable names"""
                 self.countVar=0
@@ -42,6 +41,8 @@ class Problem:
                 """number of SOC constraints"""
                 self.numberLSEConstraints=0
                 """number of LogSumExp constraints (+1 if the objective is a LogSumExp)"""
+                self.numberLSEVars=0
+                """number of vars in LogSumExp expressions"""
                 self.numberQuadConstraints=0
                 """number of quadratic constraints (+1 if the objective is quadratic)"""
                 self.numberQuadNNZ=0
@@ -77,15 +78,13 @@ class Problem:
                 self.update_options(**options)
 
                 self.number_solutions=0
-                #TODOC ?
-                
+                                
                 self.longestkey=0 #for a nice display of constraints
                 self.varIndices=[]
                 
                 self.status='unsolved'
                 """status returned by the solver. The default when
                    a new problem is created is 'unsolved'.
-                   TODOC mettre un exemple dans le tuto
                 """
                 
 
@@ -94,15 +93,16 @@ class Problem:
                 probstr+='optimization problem  ({0}):\n'.format(self.type)
                 probstr+='{0} variables, {1} affine constraints'.format(
                                 self.numberOfVars,self.numberAffConstraints)
+                                
                 if self.numberConeVars>0:
-                        probstr+=', {0} vars in a SO cone'.format(
-                                self.numberConeVars)
+                        probstr+=', {0} vars in {1} SO cones'.format(
+                                self.numberConeVars,self.numberConeConstraints)
                 if self.numberLSEConstraints>0:
-                        probstr+=', {0} vars in a LOG-SUM-EXP'.format(
-                                self.numberLSEConstraints)
+                        probstr+=', {0} vars in {1} LOG-SUM-EXP'.format(
+                                self.numberLSEVars,self.numberLSEConstraints)
                 if self.numberSDPConstraints>0:
-                        probstr+=', {0} vars in a SD cone'.format(
-                                self.numberSDPVars)
+                        probstr+=', {0} vars in {1} SD cones'.format(
+                                self.numberSDPVars,self.numberSDPConstraints)
                 probstr+='\n'
 
                 printedlis=[]
@@ -170,7 +170,7 @@ class Problem:
 
         def remove_all_constraints(self):
                 """
-                Remove all constraints from the problem
+                Removes all constraints from the problem
                 """
                 self.numberConeConstraints = 0
                 self.numberAffConstraints = 0
@@ -182,13 +182,16 @@ class Problem:
                 self.numberConeVars=0
                 self.numberSDPVars=0
                 self.countCons=0
-                self.constraints = {}
+                self.constraints = []
                 self.numberQuadNNZ=0
+                self.numberLSEVars = 0
                 if self.objective[0] is not 'find':
                         if self.objective[1] is not None:
                                 expr=self.objective[1]
                                 if isinstance(expr,QuadExp):
                                         self.numberQuadNNZ=expr.nnz()
+                                if isinstance(expr,LogSumExp):
+                                        self.numberLSEVars=expr.Exp.size[0]*expr.Exp.size[1]
 
         
         def obj_value(self):
@@ -219,7 +222,8 @@ class Problem:
                         or isinstance(expr,QuadExp) or isinstance(expr,GeneralFun)):
                         raise Exception('unsupported objective')
                 if isinstance(expr,LogSumExp):
-                        self.numberLSEConstraints+=expr.Exp.size[0]*expr.Exp.size[1]
+                        self.numberLSEVars+=expr.Exp.size[0]*expr.Exp.size[1]
+                        self.numberLSEConstraints+=1
                 if isinstance(expr,QuadExp):
                         self.numberQuadConstraints+=1
                         self.numberQuadNNZ+=expr.nnz()
@@ -314,38 +318,78 @@ class Problem:
                 """set all the options to their default.
                 The following options are available:
                 
-                * tol=1e-7 : optimality tolerance for the solver
-                * feastol=1e-7 : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
-                * abstol=1e-7 : absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
-                * reltol=1e-6 : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
-                * maxit=50 : maximum number of iterations
-                * verbose=1 : verbosity level
-                * solver=None : currently the available solvers are 'cvxopt','cplex','mosek','smcp','zibopt'.
-                  ``None`` means that you let picos select a solver for you.
-                * step_sqp=1 : 'first step length for the sequential quadratic programming procedure'
-                * harmonic_steps=True : step at the ith step of the sqp procedure is step_sqp/i]
-                * onlyChangeObjective'=False : useful when we want to recompute the solution of a
-                  problem but with a different objective function. If set to *True* and a new
-                  objective function has been passed to the solver, the constraints
-                  of the problem will not be parsed next time :func:`solve` is called (this can lead
-                  to a huge gain of time).
-                * noduals=False : if True, do not retrieve the dual variables
-                * nbsol=None (solver default) : maximum number of computed
-                  solutions in the solution pool.
-                * timelimit =None (infinity) : time limit for the solver
-                * acceptableGap =None (0%) : If the time limit is reached, consider the solution as
-                  acceptable if the gap is less than this value.
-                * treemomory = None (solver default) : size of the buffer for the branch and bound tree,
-                  in Megabytes.
-                * gaplim = None (0%) : returns a solution as soon as this gap is reached.
-                * pool_gap = None (0%) : keeps only the solution
-                  within this gap in the pool
-                                 
-                                 
-                .. Warning:: Not all options are handled by all solvers yet.
+                * General options common to all solvers:
                 
-                .. Todo:: Organize above options
-                          Ajouter option hotstart
+                  * ``verbose = 1`` : verbosity level [0(quiet)|1|2(loud)]
+                  
+                  * ``solver = None`` : currently the available solvers are
+                    ``'cvxopt'``, ``'cplex'``, ``'mosek'``, ``'smcp'``, ``'zibopt'``.
+                    The default
+                    ``None`` means that you let picos select a suitable solver for you.
+                  
+                  * ``tol = 1e-7`` : Relative gap termination tolerance
+                    for interior-point optimizers (feasibility and complementary slackness).
+                  
+                  * ``maxit = 400`` : maximum number of iterations (for simplex or interior-point optimizers)
+                  
+                  * ``lp_root_method = None`` : algorithm used to solve continuous LP
+                    problems, including the root relaxation of mixed integer problems.
+                    The default ``None`` selects automatically an algorithm.
+                    If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
+                    will use a primal simplex (resp. dual simplex, interior-point) algorithm.
+                    *This option currently works only with cplex and mosek*.
+                    
+                  * ``lp_node_method = None`` : algorithm used to solve subproblems
+                    at nodes of the branching trees of mixed integer programs.
+                    The default ``None`` selects automatically an algorithm.
+                    If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
+                    will use a primal simplex (resp. dual simplex, interior-point) algorithm.
+                    *This option currently works only with cplex and mosek*.
+                  
+                  * ``timelimit = None`` : time limit for the solver, in seconds. The default
+                    ``None`` means no time limit.
+                    *This option is currently ignored by cvxopt and smcp*.
+                
+                  * ``treememory = None``  : size of the buffer for the branch and bound tree,
+                    in Megabytes. 
+                    *This option currently works only with cplex*.
+                    
+                  * ``gaplim = 1e-4`` : For mixed integer problems,
+                    the solver returns a solution as soon as this value for the gap is reached
+                    (relative gap between the primal and the dual bound).
+                    
+                
+                  * ``onlyChangeObjective = False`` : set this option to **True** if you have already
+                    solved the problem, and want to recompute the solution with a different
+                    objective funtion or different parameter settings. This way, the constraints
+                    of the problem will not be parsed by picos next time :func:`solve` is called
+                    (this can lead to a huge gain of time).
+                    
+                  * ``noduals = False`` : if ``True``, do not try to retrieve the dual variables.
+
+                  * ``nbsol = None`` : maximum number of feasible solution nodes visited
+                    when solving a mixed integer problem.
+                                    
+                * Specific options available for cvxopt/smcp:
+                
+                  * ``feastol = 1e-7`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  
+                  * ``abstol = 1e-7`` : absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  
+                  * ``reltol = 1e-6`` : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  
+                * Specific oprions available for cplex:
+                  
+                  * ``acceptable_gap_at_timelimit = None`` : If the the time limit is reached,
+                    the optimization process is aborted only if the current gap is less
+                    than this value. The default value ``None`` means that we
+                    interrupt the computation regardless of the achieved gap.
+                   
+                .. Warning:: Some other options may be available for certain solvers,
+                             but they are not (yet) interfaced with picos.
+                
+                .. Todo:: Organize above options (dire quels solvers si restrictions)
+
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
                 #interface the feasible starting point solver):
@@ -365,10 +409,13 @@ class Problem:
                                  'smcp_feas'      :False,
                                  'nbsol'          :None,
                                  'timelimit'      :None,
-                                 'acceptablegap'  :None,
+                                 'acceptable_gap_at_timelimit'  :None,
                                  'treememory'     :None,
                                  'gaplim'         :None,
-                                 'pool_gap'       :None
+                                 'pool_gap'       :None,
+                                 'pool_size'      :None,
+                                 'lp_root_method' :None,
+                                 'lp_node_method' :None,
                                  }
                                  
                                  
@@ -404,6 +451,14 @@ class Problem:
                 
                 for k in options.keys():
                         self.set_option(k,options[k])
+                #erase 'tol' information if more specific options are provided
+                if 'feastol' in options:
+                        self.set_option('feastol',options['feastol'])
+                if 'abstol' in options:
+                        self.set_option('abstol',options['abstol'])
+                if 'reltol' in options:
+                        self.set_option('reltol',options['reltol'])
+                        
                 
         def _eliminate_useless_variables(self):
                 """
@@ -427,7 +482,9 @@ class Problem:
                                         for ij in self.constraints[cons].Exp1.quad:
                                                 if var in ij:
                                                         found=True
-                                #TODO manque case LSE ?
+                                elif isinstance(self.constraints[cons].Exp1,LogSumExp):
+                                        if var in self.constraints[cons].Exp1.Exp.factors:
+                                                found=True
                         if not self.objective[1] is None:
                                 if isinstance(self.objective[1],AffinExp):
                                         if var in self.objective[1].factors:
@@ -454,19 +511,16 @@ class Problem:
 
         def add_variable(self,name,size=1, vtype = 'continuous' ):
                 """
-                TEST
-                """
-                """
                 adds a variable in the problem,
-                and returns an :class:`AffinExp <picos.AffinExp>` representing this variable.
+                and returns the corresponding instance of the :class:`Variable <picos.Variable>`.
 
                 For example,
                 
                 >>> prob=pic.Problem()
                 >>> x=prob.add_variable('x',3)
                 >>> x
-                # (3 x 1)-affine expression: x #
-                
+                # variable x:(3 x 1),continuous #
+                                
                 :param name: The name of the variable.
                 :type name: str.
                 :param size: The size of the variable.
@@ -478,12 +532,15 @@ class Problem:
                 
                 :type size: int or tuple.
                 :param vtype: variable :attr:`type <picos.Variable.vtype>`. 
-                              Can be : 'continuous', 'binary', 'integer',
-                              'symmetric', 'semicont', or 'semiint'
+                              Can be:
+                                * ``'continuous'`` (default),
+                                * ``'binary'``: 0/1 variable
+                                * ``'integer'``: integer valued variable
+                                * ``'symmetric'``: symmetric matrix
+                                * ``'semicont'``: 0 or continuous variable satisfying its bounds
+                                * ``'semiint'``: 0 or integer variable satisfying its bounds
                 :type vtype: str.
-                :returns: An instance of the class :class:`AffinExp <picos.AffinExp>`:
-                          Affine expression representing the created variable.
-                
+                :returns: An instance of the class :class:`Variable <picos.Variable>`.
                 """
 
                 if name in self.variables:
@@ -575,16 +632,19 @@ class Problem:
                 cons.key=key
                 if not key is None:
                         self.longestkey=max(self.longestkey,len(key))
-                self.constraints[self.countCons]=cons
+                self.constraints.append(cons)
                 self.consNumbering.append(self.countCons)
                 self.countCons+=1
                 if cons.typeOfConstraint[:3]=='lin':
                         self.numberAffConstraints+=(cons.Exp1.size[0]*cons.Exp1.size[1])
                 elif cons.typeOfConstraint[2:]=='cone':
-                        self.numberConeVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                        self.numberConeVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])+1
                         self.numberConeConstraints+=1
+                        if cons.typeOfConstraint[:2]=='RS':
+                                self.numberConeVars+=1
                 elif cons.typeOfConstraint=='lse':
-                        self.numberLSEConstraints+=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                        self.numberLSEVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                        self.numberLSEConstraints+=1
                 elif cons.typeOfConstraint=='quad':
                         self.numberQuadConstraints+=1
                         self.numberQuadNNZ+=cons.Exp1.nnz()
@@ -660,7 +720,7 @@ class Problem:
                 >>> print prob #doctest: +NORMALIZE_WHITESPACE
                 ---------------------
                 optimization problem (SOCP):
-                24 variables, 9 affine constraints, 9 vars in a SO cone
+                24 variables, 9 affine constraints, 12 vars in 3 SO cones
                 <BLANKLINE>
                 x   : list of 5 variables, (2, 1), continuous
                 w   : dict of 3 variables, (3, 1), continuous
@@ -802,20 +862,23 @@ class Problem:
                 returns a constraint of the problem.
                 
                 :param ind: There are two ways to index a constraint.
-                
-                               * if ind is an ``int`` *n*, then the nth constraint (starting from 0)
+                            
+                               * if ``ind`` is an *int* :math:`n`, then the nth constraint (starting from 0)
                                  will be returned, where all the constraints are counted
                                  in the order where they were passed to the problem.
-                                 
-                               * if ind is a ``tuple`` *(k,i)*, then the ith constraint
+                               
+                               * if ``ind`` is a *tuple* :math:`(k,i)`, then the ith constraint
                                  from the kth group of constraints is returned
                                  (starting from 0). By            
                                  *group of constraints*, it is meant a single constraint
                                  or a list of constraints added together with the
                                  function :func:`add_list_of_constraints() <picos.Problem.add_list_of_constraints>`.
+                               
+                               * if ``ind`` is a tuple of length 1 :math:`(k,)`,
+                                 then the list of constraints of the kth group is returned.
                 
                 :type ind: int or tuple.
-                
+            
                 **Example:**
                 
                 >>> import picos as pic
@@ -847,6 +910,12 @@ class Problem:
                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #
                 >>> prob.get_constraint((1,))                           #unique constraint of the 2d 'group'
                 # (5x1)-affine constraint: y > |0| #
+                >>> prob.get_constraint((0,))                           #list of constraints of the 1st group #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[1] 〉 < y[1] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[4] 〉 < y[4] #]
                 >>> prob.get_constraint(5)                              #6th constraint
                 # (5x1)-affine constraint: y > |0| #
                 
@@ -854,7 +923,11 @@ class Problem:
                 indtuple=ind
                 if isinstance(indtuple,int):
                         return self.constraints[indtuple]
-                lsind=self.consNumbering                
+                lsind=self.consNumbering            
+                if not( isinstance(indtuple,tuple) or isinstance(indtuple,list)) or (
+                                len(indtuple)==0):
+                        raise Exception('ind must be an int or a nonempty tuple')
+                
                 for k in indtuple:
                         if not isinstance(lsind,list):
                                 if k==0:
@@ -865,8 +938,150 @@ class Problem:
                                 raise Exception('index is too large')
                         lsind=lsind[k]
                 if isinstance(lsind,list):
-                                raise Exception('too few indices')
+                                return [self.constraints[i] for i in lsind]
                 return self.constraints[lsind]
+                
+        
+        def remove_constraint(self,ind):
+                """
+                Deletes a constraint or a list of constraints of the problem.
+                
+                :param ind: The indexing of constraints works as in the
+                            function :func:`get_constraint() <picos.Problem.get_constraint>`:
+                            
+                                * if ``ind`` is an integer :math:`n`, the nth constraint
+                                  (numbered from 0) is deleted
+                                
+                                * if ``ind`` is a *tuple* :math:`(k,i)`, then the ith constraint
+                                  from the kth group of constraints is deleted
+                                  (starting from 0). By            
+                                  *group of constraints*, it is meant a single constraint
+                                  or a list of constraints added together with the
+                                  function :func:`add_list_of_constraints() <picos.Problem.add_list_of_constraints>`.
+                                
+                                * if ``ind`` is a tuple of length 1 :math:`(k,)`,
+                                  then the whole kth group of constraints is deleted.
+                
+                :type ind: int or tuple.
+                
+                **Example:**
+                
+                >>> import picos as pic
+                >>> import cvxopt as cvx
+                >>> prob=pic.Problem()
+                >>> x=[prob.add_variable('x[{0}]'.format(i),2) for i in range(4)]
+                >>> y=prob.add_variable('y',4)
+                >>> prob.add_list_of_constraints(
+                ... [(1|x[i])<y[i] for i in range(4)], 'i', '[5]')
+                >>> prob.add_constraint(y>0)
+                >>> prob.add_list_of_constraints(
+                ... [x[i]<2 for i in range(3)], 'i', '[3]')
+                >>> prob.add_constraint(x[3]<1)
+                >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[1] 〉 < y[1] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (4x1)-affine constraint: y > |0| #,
+                 # (2x1)-affine constraint: x[0] < |2.0| #,
+                 # (2x1)-affine constraint: x[1] < |2.0| #,
+                 # (2x1)-affine constraint: x[2] < |2.0| #,
+                 # (2x1)-affine constraint: x[3] < |1| #]
+                >>> prob.remove_constraint(1)                           #2d constraint (numbered from 0) deleted
+                >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #, 
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (4x1)-affine constraint: y > |0| #,
+                 # (2x1)-affine constraint: x[0] < |2.0| #,
+                 # (2x1)-affine constraint: x[1] < |2.0| #,
+                 # (2x1)-affine constraint: x[2] < |2.0| #,
+                 # (2x1)-affine constraint: x[3] < |1| #]
+                >>> prob.remove_constraint((1,))                        #2d 'group' of constraint deleted, i.e. the single constraint y>|0|
+                >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (2x1)-affine constraint: x[0] < |2.0| #,
+                 # (2x1)-affine constraint: x[1] < |2.0| #,
+                 # (2x1)-affine constraint: x[2] < |2.0| #,
+                 # (2x1)-affine constraint: x[3] < |1| #]
+                >>> prob.remove_constraint((2,))                        #3d 'group' of constraint deleted, (originally the 4th group, i.e. x[3]<|1|)
+                >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (2x1)-affine constraint: x[0] < |2.0| #,
+                 # (2x1)-affine constraint: x[1] < |2.0| #,
+                 # (2x1)-affine constraint: x[2] < |2.0| #]
+                >>> prob.remove_constraint((1,1))                       #2d constraint of the 2d group (originally the 3rd group), i.e. x[1]<|2|
+                >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
+                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
+                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                 # (2x1)-affine constraint: x[0] < |2.0| #,
+                 # (2x1)-affine constraint: x[2] < |2.0| #]
+
+                
+                """
+                if isinstance(ind,int):
+                        del self.constraints[ind]
+                        self.countCons -=1
+                        if ind in self.consNumbering: #single added constraint
+                                self.consNumbering.remove(ind)
+                                start=ind
+                                self.consNumbering=offset_in_lil(self.consNumbering,1,ind)
+                        else: #a constraint within a group of constraints
+                                for i,l in enumerate(self.consNumbering):
+                                        if isinstance(l,list) and ind in l:
+                                                start=l[0]
+                                                self.consNumbering[i].remove(ind)
+                                self.consNumbering=offset_in_lil(self.consNumbering,1,ind)
+                                goc=self.groupsOfConstraints[start]
+                                self.groupsOfConstraints[start] = [ goc[0]-1,
+                                                                goc[1]+'{-1cons}',
+                                                                goc[2]]
+                        #offset in subsequent goc
+                        for stidx in self.groupsOfConstraints:
+                                if stidx>start:
+                                        goc=self.groupsOfConstraints[stidx]
+                                        del self.groupsOfConstraints[stidx]
+                                        goc[0]=goc[0]-1
+                                        self.groupsOfConstraints[stidx-1] = goc
+                        return
+
+                indtuple=ind
+                lsind=self.consNumbering                
+                for k in indtuple:
+                        if not isinstance(lsind,list):
+                                if k==0:
+                                        break
+                                else:
+                                        raise Exception('too many indices')
+                        if k>=len(lsind):
+                                raise Exception('index is too large')
+                        lsind=lsind[k]
+                #now, lsind must be the index or list of indices to remove
+                if isinstance(lsind,list) and lsind in self.consNumbering: #a list of constraints
+                        for ind in lsind:
+                                del self.constraints[ind]
+                        self.countCons -= len(lsind)
+                        self.consNumbering.remove(lsind)
+                        start=lsind[0]
+                        self.consNumbering=offset_in_lil(self.consNumbering,len(lsind),start)
+                        #offset in subsequent goc
+                        del self.groupsOfConstraints[start]
+                        for stidx in self.groupsOfConstraints:
+                                if stidx>start:
+                                        goc=self.groupsOfConstraints[stidx]
+                                        del self.groupsOfConstraints[stidx]
+                                        goc[0]=goc[0]-len(lsind)
+                                        self.groupsOfConstraints[stidx-len(lsind)] = goc
+                elif isinstance(lsind,int):
+                        self.remove_constraint(lsind)
+                else:
+                        raise Exception('lsind does not coincide with a single constraint or a group of constraints')
+                        
                 
         def _eval_all(self):
                 """
@@ -968,38 +1183,36 @@ class Problem:
                 """
                 Defines the variables cplex_Instance and cplexvar,
                 used by the cplex solver.
-                
-                TODO: SOCP
                 """
                 try:
                         import cplex
                 except:
                         Exception('cplex library not found')
                 
+                
+                #only change the objective coefficients
+                if self.options['onlyChangeObjective']:
+                        if self.cplex_Instance is None:
+                                raise Exception('option is only available when cplex_Instance has been defined before')
+                        newobj=self.objective[1]
+                        #redefine cplex_Instance
+                        coefs=[]
+                        for s,v in self.variables.iteritems():
+                                if v in newobj.factors:
+                                        fac=newobj.factors[v]
+                                        if not isinstance(fac,cvx.matrix):
+                                                fac=cvx.matrix(fac)
+                                        sv=v.startIndex
+                                        for jj,vv in enumerate(fac):
+                                                coefs.append((jj+sv,vv))
+                                else:
+                                        for i in xrange(v.startIndex,v.endIndex):
+                                                coefs.append((i,0))
+                        self.cplex_Instance.objective.set_linear(coefs)
+                        return
+                
                 c = cplex.Cplex()
                 import itertools
-                
-                if not self.options['timelimit'] is None:
-                        import timelimitcallback
-                        import time
-                        timelim_cb = c.register_callback(timelimitcallback.TimeLimitCallback)
-                        timelim_cb.starttime = time.time()
-                        timelim_cb.timelimit = self.options['timelimit']
-                        if not self.options['acceptablegap'] is None:
-                                timelim_cb.acceptablegap =self.options['acceptableGap']
-                        else:
-                                timelim_cb.acceptablegap = 100
-                        timelim_cb.aborted = 0
-                        #c.parameters.tuning.timelimit.set(self.options['timelimit']) #DOES NOT WORK LIKE THIS ?
-                if not self.options['treememory'] is None:
-                        c.parameters.mip.limits.treememory.set(self.options['treememory'])
-                if not self.options['gaplim'] is None:
-                        c.parameters.mip.tolerances.mipgap.set(self.options['gaplim'])
-                if not self.options['nbsol'] is None:
-                        c.parameters.mip.limits.solutions.set(self.options['nbsol'])
-                if not self.options['pool_gap'] is None:
-                        c.parameters.mip.pool.relgap.set(self.options['pool_gap'])
-                
                 
                 sense_opt = self.objective[0]
                 if sense_opt == 'max':
@@ -1023,13 +1236,21 @@ class Problem:
                 icone =0
                 newcons={}
                 if self.numberConeConstraints > 0 :
-                        for constrKey,constr in self.constraints.iteritems():
-                                if icone == 0: #first conic constraint
-                                        noconstant=self.add_variable(
-                                                '__noconstant__',1)
-                                        newcons['noconstant']=(
-                                                noconstant>0)
+                        for constrKey,constr in enumerate(self.constraints):
+                                if constr.typeOfConstraint[2:]=='cone':
+                                        if icone == 0: #first conic constraint
+                                                if '__noconstant__' in self.variables:
+                                                        noconstant=self.get_variable('__noconstant__')
+                                                else:
+                                                        noconstant=self.add_variable(
+                                                                '__noconstant__',1)
+                                                newcons['noconstant']=(
+                                                        noconstant>0)
                                 if constr.typeOfConstraint=='SOcone':
+                                        if '__tmplhs[{0}]__'.format(icone) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(icone))
+                                        if '__tmprhs[{0}]__'.format(icone) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(icone))
                                         tmplhs.append(self.add_variable(
                                                 '__tmplhs[{0}]__'.format(icone),
                                                 constr.Exp1.size))
@@ -1053,6 +1274,10 @@ class Problem:
                                         -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
                                         icone+=1
                                 if constr.typeOfConstraint=='RScone':
+                                        if '__tmplhs[{0}]__'.format(icone) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(icone))
+                                        if '__tmprhs[{0}]__'.format(icone) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(icone))
                                         tmplhs.append(self.add_variable(
                                                 '__tmplhs[{0}]__'.format(icone),
                                                 (constr.Exp1.size[0]*constr.Exp1.size[1])+1
@@ -1083,7 +1308,7 @@ class Problem:
                 
                 if self.options['verbose']>1:
                         limitbar=self.numberOfVars
-                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                         if self.options['verbose']>0:
                                 print('Creating variables...')
@@ -1160,7 +1385,7 @@ class Problem:
                         limitbar= (self.numberAffConstraints +
                                    self.numberQuadConstraints +
                                    len(newcons))
-                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                 
                 rows=[]
@@ -1175,8 +1400,14 @@ class Problem:
                 
                 boundcons={} #dictionary of i,j,b,v for bound constraints
                 
-                allcons = list(self.constraints.iteritems()) + list(
-                               newcons.iteritems())
+                
+                #join all constraints
+                def join_iter(it1,it2):
+                        for i in it1: yield i
+                        for i in it2: yield i
+                        
+                allcons = join_iter(enumerate(self.constraints),
+                                    newcons.iteritems())
                 
                 irow=0
                 for constrKey,constr in allcons:
@@ -1249,6 +1480,15 @@ class Problem:
                                                 vals.extend([v for j,v in jv])
                                                 rhs.append(r)
                                                 irow+=1
+                                                
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->                                                
                         
                         elif constr.typeOfConstraint == 'quad':
                                 #quad part
@@ -1287,6 +1527,16 @@ class Problem:
                                 ql+= [l_exp]
                                 qq+= [q_exp]
                                 qc+= [qcs]
+                                
+                                if self.options['verbose']>1:
+                                        #<--display progress
+                                        prog.increment_amount()
+                                        if oldprog != str(prog):
+                                                print prog, "\r",
+                                                sys.stdout.flush()
+                                                oldprog=str(prog)
+                                        #-->
+                                
                         elif constr.typeOfConstraint[2:] == 'cone':
                                 pass  #will be handled in the newcons dictionary
                                 
@@ -1294,20 +1544,8 @@ class Problem:
                                 raise Exception('type of constraint not handled (yet ?) for cplex:{0}'.format(
                                         constr.typeOfConstraint))
                                 
-                        
-                        if self.options['verbose']>1:
-                                #<--display progress
-                                prog.increment_amount()
-                                if oldprog != str(prog):
-                                        print prog, "\r",
-                                        sys.stdout.flush()
-                                        oldprog=str(prog)
-                                #-->
-                        
-                        
-                        
-         
-                        
+                      
+
                 if self.options['verbose']>1:
                         prog.update_amount(limitbar)
                         print prog, "\r",
@@ -1334,9 +1572,9 @@ class Problem:
                         c.set_problem_type(c.problem_type.LP)
                 elif tp == 'MIP':
                         c.set_problem_type(c.problem_type.MILP)
-                elif tp in ('QCQP','SOCP'):
+                elif tp in ('QCQP','SOCP','Mixed (SOCP+quad)'):
                         c.set_problem_type(c.problem_type.QCP)
-                elif tp in ('MIQCP','MISOCP'):
+                elif tp in ('MIQCP','MISOCP','Mixed (MISOCP+quad)'):
                         c.set_problem_type(c.problem_type.MIQCP)
                 elif tp == 'QP':
                         c.set_problem_type(c.problem_type.QP)
@@ -1344,6 +1582,8 @@ class Problem:
                         c.set_problem_type(c.problem_type.MIQP)
                 else:
                         raise Exception('unhandled type of problem')
+                
+                
                 
                 self.cplex_Instance = c
                 if self.options['verbose']>0:
@@ -1357,11 +1597,9 @@ class Problem:
                         self.remove_variable(v.name)                       
                 if 'noconstant' in newcons:
                         self.remove_variable(noconstant.name)
-                
-                return c, self
 
                 
-        def _make_cvxopt_instance(self,aff_part_of_quad=True):
+        def _make_cvxopt_instance(self,aff_part_of_quad=True,cone_as_quad=False):
                 """
                 defines the variables in self.cvxoptVars, used by the cvxopt solver
                 """
@@ -1412,11 +1650,11 @@ class Problem:
 
                 if self.options['verbose']>1:
                         limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
-                        prog = ProgressBar(0,limitbar, 77, mode='fixed')
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                 
                 #constraints                
-                for k in self.constraints.keys():
+                for k in range(len(self.constraints)):
                         #linear constraints                        
                         if self.constraints[k].typeOfConstraint[:3]=='lin':
                                 sense=self.constraints[k].typeOfConstraint[3]
@@ -1434,16 +1672,28 @@ class Problem:
                                 else:
                                         raise NameError('unexpected case')
                         elif self.constraints[k].typeOfConstraint=='SOcone':
-                                (A,b)=self._makeGandh(self.constraints[k].Exp1)
-                                (c,d)=self._makeGandh(self.constraints[k].Exp2)
-                                self.cvxoptVars['Gq'].append(cvx.sparse([-c,-A]))
-                                self.cvxoptVars['hq'].append(cvx.matrix([d,b]))
+                                if not(cone_as_quad):
+                                        (A,b)=self._makeGandh(self.constraints[k].Exp1)
+                                        (c,d)=self._makeGandh(self.constraints[k].Exp2)
+                                        self.cvxoptVars['Gq'].append(cvx.sparse([-c,-A]))
+                                        self.cvxoptVars['hq'].append(cvx.matrix([d,b]))
+                                else:
+                                        self.cvxoptVars['quadcons'].append(
+                                                (k,self.cvxoptVars['Gl'].size[0]))
+                                        if aff_part_of_quad:
+                                                raise Exception('cone_as_quad + aff_part_of_quad')
                         elif self.constraints[k].typeOfConstraint=='RScone':
-                                (A,b)=self._makeGandh(self.constraints[k].Exp1)
-                                (c1,d1)=self._makeGandh(self.constraints[k].Exp2)
-                                (c2,d2)=self._makeGandh(self.constraints[k].Exp3)
-                                self.cvxoptVars['Gq'].append(cvx.sparse([-c1-c2,-2*A,c2-c1]))
-                                self.cvxoptVars['hq'].append(cvx.matrix([d1+d2,2*b,d1-d2]))
+                                if not(cone_as_quad):
+                                        (A,b)=self._makeGandh(self.constraints[k].Exp1)
+                                        (c1,d1)=self._makeGandh(self.constraints[k].Exp2)
+                                        (c2,d2)=self._makeGandh(self.constraints[k].Exp3)
+                                        self.cvxoptVars['Gq'].append(cvx.sparse([-c1-c2,-2*A,c2-c1]))
+                                        self.cvxoptVars['hq'].append(cvx.matrix([d1+d2,2*b,d1-d2]))
+                                else:
+                                        self.cvxoptVars['quadcons'].append(
+                                                (k,self.cvxoptVars['Gl'].size[0]))
+                                        if aff_part_of_quad:
+                                                raise Exception('cone_as_quad + aff_part_of_quad')
                         elif self.constraints[k].typeOfConstraint=='lse':
                                 (F,g)=self._makeGandh(self.constraints[k].Exp1)
                                 self.cvxoptVars['F']=cvx.sparse([self.cvxoptVars['F'],F])
@@ -1515,7 +1765,7 @@ class Problem:
                 if self.options['onlyChangeObjective']:
                         if self.msk_task is None:
                                 raise Exception('option is only available when msk_task has been defined before')
-                        newobj=self.options['onlyChangeObjective']
+                        newobj=self.objective[1]
                         (cobj,constantInObjective)=self._makeGandh(newobj)
                         self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
                         
@@ -1539,7 +1789,10 @@ class Problem:
                                 
                 #patch for quadratic problems with a single var
                 if self.numberOfVars==1 and self.numberQuadConstraints>0:
-                        ptch=self.add_variable('_ptch_',1)
+                        if '_ptch_' not in self.variables:
+                                ptch=self.add_variable('_ptch_',1)
+                        else:
+                                ptch=self.get_variable('_ptch_')
                         self.add_constraint( ptch>0 )                                
                                 
                                 
@@ -1748,8 +2001,6 @@ class Problem:
                 """
                 Defines the variables scip_solver, scip_vars and scip_obj,
                 used by the zibopt solver.
-                
-                .. TODO:: Some quadratic problems do not pass. Ask Ryan after reinstallation
                 """
                 try:
                         from zibopt import scip
@@ -1758,10 +2009,10 @@ class Problem:
                 
                 scip_solver = scip.solver(quiet=not(self.options['verbose']))
                 
-                self._make_cvxopt_instance(aff_part_of_quad=False)
+                self._make_cvxopt_instance(aff_part_of_quad=False,cone_as_quad=True)
                 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
-                        raise Exception('SDP, SOCP, or GP constraints are not implemented in mosek')
+                        raise Exception('SDP, SOCP, or GP constraints are not implemented in zibopt')
                                 
                 #max handled directly by scip
                 if self.objective[0]=='max':
@@ -1782,15 +2033,19 @@ class Problem:
                                         raise Exception('this vtype is not handled by scip: '+str(vtype))
                 
                 x=[]
+                INFINITYZO = 1e10
                 for i in range(self.cvxoptVars['A'].size[1]):
                     if not(self.cvxoptVars['c'] is None):
                         x.append(scip_solver.variable(types[i],
-                                lower=-INFINITY,
+                                lower=-INFINITYZO,
+                                upper=INFINITYZO,
                                 coefficient=self.cvxoptVars['c'][i])
                             )
                     else:
                         x.append(scip_solver.variable(types[i],
-                                lower=-INFINITY))
+                                lower=-INFINITYZO,
+                                upper=INFINITYZO
+                                ))
                 
                 #equalities
                 Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
@@ -1830,16 +2085,39 @@ class Problem:
                                 exp+= term[1]*x[term[0]]
                         scip_solver += exp <= self.cvxoptVars['hl'][i]
 
+                
                 ###
-                #quadratic constraints
+                #quadratic constraints (including SOC constraints)
                 for (k,iaff) in self.cvxoptVars['quadcons']:
                         subI=[]
                         subJ=[]
                         subV=[]
                         if k=='_obj':
+                                x.append(scip_solver.variable(
+                                        zib_types['continuous'],
+                                        lower=-INFINITYZO,
+                                        upper=INFINITYZO
+                                        ))
                                 qexpr=self.objective[1]
                         else:
-                                qexpr=self.constraints[k].Exp1
+                                if self.constraints[k].typeOfConstraint=='quad':
+                                        qexpr=self.constraints[k].Exp1
+                                if self.constraints[k].typeOfConstraint=='SOcone':
+                                        qexpr=(self.constraints[k].Exp1|self.constraints[k].Exp1)-(
+                                                self.constraints[k].Exp2*self.constraints[k].Exp2)
+                                        (e2x,e2c)=self._makeGandh(self.constraints[k].Exp2)
+                                        exp=e2c[0]
+                                        for j,v in zip(e2x.J,e2x.V):
+                                                exp+=v*x[j]
+                                        scip_solver += exp >=0
+                                if self.constraints[k].typeOfConstraint=='RScone':
+                                        qexpr=(self.constraints[k].Exp1|self.constraints[k].Exp1)-(
+                                                self.constraints[k].Exp2*self.constraints[k].Exp3)
+                                        (e2x,e2c)=self._makeGandh(self.constraints[k].Exp2)
+                                        exp=e2c[0]
+                                        for j,v in zip(e2x.J,e2x.V):
+                                                exp+=v*x[j]
+                                        scip_solver += exp >=0
 
                         qd=0
                         for i,j in qexpr.quad:
@@ -1862,7 +2140,11 @@ class Problem:
                                         qd+=qexpr.aff.constant[0]
                         
                         if k=='_obj':
-                                self.scip_obj = qd
+                                if self.objective[0]=='max':
+                                        scip_solver += (x[-1]-qd) <= 0
+                                else:
+                                        scip_solver += (qd-x[-1]) <= 0
+                                self.scip_obj = x[-1]
                         else:
                                 scip_solver += qd <= 0
                 ###
@@ -1908,6 +2190,7 @@ class Problem:
                 self.update_options(**options)
                 if self.options['solver'] is None:
                         self.solver_selection()
+                        
 
                 #self._eliminate_useless_variables()
 
@@ -1922,7 +2205,7 @@ class Problem:
 
                         primals,duals,obj,sol=self._cvxopt_solve()
                         
-                # For cplex (only LP and MIP implemented)
+                # For cplex
                 elif (self.options['solver']=='cplex'):
                         
                         primals,duals,obj,sol=self._cplex_solve()
@@ -1940,8 +2223,7 @@ class Problem:
 
                 else:
                         raise Exception('unknown solver')                       
-                        #TODO:Other solvers (GUROBI, ...)
-                
+                                        
                 for k in primals.keys():
                         if not primals[k] is None:
                                 self.set_var_value(k,primals[k],optimalvar=True)
@@ -1961,8 +2243,6 @@ class Problem:
         def _cvxopt_solve(self):
                 """
                 Solves a problem with the cvxopt solver.
-                
-                .. Todo:: * handle quadratic problems
                 """
                 
                 #--------------------#
@@ -2006,9 +2286,10 @@ class Problem:
                 #-------------------------------#
                 #  runs the appropriate solver  #
                 #-------------------------------#
-                if  self.numberQuadConstraints>0:#QCQP
+                if  self.numberQuadConstraints>0:#(QC)QP
                         probtype='QCQP'
-                        raise Exception('CVXOPT with Quadratic constraints is not handled')
+                        raise Exception('Please convert the quadratic constraints as cone constraints '+
+                                                'with the function convert_quad_to_socp().')
                 elif self.numberLSEConstraints>0:#GP
                         if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
                                 raise Exception('cone constraints + LSE not implemented')
@@ -2168,7 +2449,7 @@ class Problem:
                                         indy=dims['l']-2*nbeq
                                         ykey='z'
 
-                                for k in self.constraints.keys():
+                                for k in range(len(self.constraints)):
                                         #Equality
                                         if self.constraints[k].typeOfConstraint=='lin=':
                                                 if not (sol[ykey] is None):
@@ -2267,19 +2548,19 @@ class Problem:
                 
                 solt={'cvxopt_sol':sol,'status':status}
                 return (primals,duals,obj,solt)
-                
-
+ 
+        
         def  _cplex_solve(self):
                 """
                 Solves a problem with the cvxopt solver.
                 
                 .. Todo::  * set solver settings
-                           * handle SOCP ?
-                           * dual of quadratics ?
+                           
                 """
                 #----------------------------#
                 #  create the cplex instance #
                 #----------------------------#
+                import cplex
                 self._make_cplex_instance()
                 c = self.cplex_Instance
                 
@@ -2288,13 +2569,70 @@ class Problem:
                 
                 
                 #TODO : setting parameters
+                if not self.options['timelimit'] is None:
+                        import cplex_callbacks
+                        import time
+                        timelim_cb = c.register_callback(cplex_callbacks.TimeLimitCallback)
+                        timelim_cb.starttime = time.time()
+                        timelim_cb.timelimit = self.options['timelimit']
+                        if not self.options['acceptable_gap_at_timelimit'] is None:
+                                timelim_cb.acceptablegap =100*self.options['acceptable_gap_at_timelimit']
+                        else:
+                                timelim_cb.acceptablegap = None
+                        timelim_cb.aborted = 0
+                        #c.parameters.tuning.timelimit.set(self.options['timelimit']) #DOES NOT WORK LIKE THIS ?
+                if not self.options['treememory'] is None:
+                        c.parameters.mip.limits.treememory.set(self.options['treememory'])
+                if not self.options['gaplim'] is None:
+                        c.parameters.mip.tolerances.mipgap.set(self.options['gaplim'])
+                #pool of solutions
+                if not self.options['pool_size'] is None:
+                        c.parameters.mip.limits.solutions.set(self.options['pool_size'])
+                if not self.options['pool_gap'] is None:
+                        c.parameters.mip.pool.relgap.set(self.options['pool_gap'])
+                #verbosity
                 c.parameters.barrier.display.set(min(2,self.options['verbose']))
                 c.parameters.simplex.display.set(min(2,self.options['verbose']))
+                if self.options['verbose']==0:
+                        c.parameters.mip.display.set(0)
+                        
+                #convergence tolerance
+                c.parameters.barrier.qcpconvergetol.set(self.options['tol'])
+                c.parameters.barrier.convergetol.set(self.options['tol'])
+                
+                #iterations limit
+                c.parameters.barrier.limits.iteration.set(self.options['maxit'])
+                c.parameters.simplex.limits.iterations.set(self.options['maxit'])
+                
+                #lpmethod
+                if not self.options['lp_root_method'] is None:
+                        if self.options['lp_root_method']=='psimplex':
+                                c.parameters.lpmethod.set(1)
+                        elif self.options['lp_root_method']=='dsimplex':
+                                c.parameters.lpmethod.set(2)
+                        elif self.options['lp_root_method']=='interior':
+                                c.parameters.lpmethod.set(4)
+                        else:
+                                raise Exception('unexpected value for lp_root_method')
+                if not self.options['lp_node_method'] is None:
+                        if self.options['lp_node_method']=='psimplex':
+                                c.parameters.mip.strategy.subalgorithm.set(1)
+                        elif self.options['lp_node_method']=='dsimplex':
+                                c.parameters.mip.strategy.subalgorithm.set(2)
+                        elif self.options['lp_node_method']=='interior':
+                                c.parameters.mip.strategy.subalgorithm.set(4)
+                        else:
+                                raise Exception('unexpected value for lp_node_method')
+
+                if not self.options['nbsol'] is None:
+                        c.parameters.mip.limits.nodes.set(self.options['nbsol'])
+                
+                
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
               
-                if not self.options['nbsol'] is None:
+                if not self.options['pool_size'] is None:
                         try:
                                 c.populate_solution_pool()
                         except:
@@ -2302,8 +2640,11 @@ class Problem:
                 else:
                         try:
                                 c.solve()
-                        except:
-                                print "Exception raised during solve"
+                        except cplex.exceptions.CplexSolverError as ex:
+                                if ex.args[2] == 5002:
+                                        raise Exception('Error raised during solve. Problem is nonconvex')
+                                else:
+                                        print "Exception raised during solve"
                                 
         
                 self.cplex_Instance = c
@@ -2329,7 +2670,7 @@ class Problem:
                                         objvals.append((c.solution.pool.get_objective_value(i),i))
                                 indsols=[]
                                 rev=(self.objective[0]=='max')
-                                for ob,ind in sorted(objvals,reverse=rev)[:self.options['nbsol']]:
+                                for ob,ind in sorted(objvals,reverse=rev)[:self.options['pool_size']]:
                                         indsols.append(ind)
                         
                         primals = {}
@@ -2377,7 +2718,7 @@ class Problem:
                                 #>0 and <0
                                 pos_conevar = self.numberOfVars+1 #plus 1 for the __noconstant__ variable 
                                 seen_bounded_vars = []
-                                for k,constr in self.constraints.iteritems():
+                                for k,constr in enumerate(self.constraints):
                                         if constr.typeOfConstraint[:3] == 'lin':
                                                 dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                                                 dim = dim - len(self.cplex_boundcons[k])
@@ -2391,7 +2732,7 @@ class Problem:
                                                         if ((b=='=') or (xj == b)) and (j not in seen_bounded_vars):
                                                                 #does j appear in another equality constraint ?
                                                                 if b!='=':
-                                                                       boundsj=[b0 for k0 in self.constraints
+                                                                       boundsj=[b0 for k0 in range(len(self.constraints))
                                                                                        for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
                                                                                        if j0==j]
                                                                        if '=' in boundsj:
@@ -2430,7 +2771,6 @@ class Problem:
                                                 pos_conevar += szcons+1
                                         
                                         elif constr.typeOfConstraint == 'RScone':
-                                                #TODO check pour RScone
                                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
                                                 dual_cols = range(pos_conevar,pos_conevar+szcons+2)
                                                 dual_values = c.solution.get_reduced_costs(dual_cols)
@@ -2460,8 +2800,7 @@ class Problem:
                 Solves the problem with mosek
                 
                 .. Todo:: * Solver settings
-                          * Dual vars for QP
-                          * Direct handling of rotated cones
+                          * Dans dual() et tuto, expliquer pour RS cones
                 """
                 #----------------------------#
                 #  create the mosek instance #
@@ -2470,13 +2809,86 @@ class Problem:
                 self._make_mosek_instance()
                 task=self.msk_task
 
-                #TODO : settings parameters
+                #TODO : test timelimit, automatic optionmosek
+                #---------------------#
+                #  setting parameters #
+                #---------------------# 
                 
+                #tolerance (conic + LP interior points)
+                task.putdouparam(mosek.dparam.intpnt_tol_dfeas,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_tol_pfeas,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_tol_mu_red,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_tol_rel_gap,self.options['tol'])
+                
+                task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_co_tol_pfeas,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_co_tol_mu_red,self.options['tol'])
+                task.putdouparam(mosek.dparam.intpnt_co_tol_rel_gap,self.options['tol'])
+                
+                #tolerance (interior points)
+                task.putdouparam(mosek.dparam.mio_tol_rel_gap,self.options['gaplim'])
+                
+                
+                #maxiters
+                task.putintparam(mosek.iparam.intpnt_max_iterations,self.options['maxit'])
+                task.putintparam(mosek.iparam.sim_max_iterations,self.options['maxit'])
+                
+                #lpmethod
+                if not self.options['lp_node_method'] is None:
+                        if self.options['lp_node_method']=='interior':
+                                task.putintparam(mosek.iparam.mio_node_optimizer,mosek.optimizertype.intpnt)
+                        elif self.options['lp_node_method']=='psimplex':
+                                task.putintparam(mosek.iparam.mio_node_optimizer,mosek.optimizertype.primal_simplex)
+                        elif self.options['lp_node_method']=='dsimplex':
+                                task.putintparam(mosek.iparam.mio_node_optimizer,mosek.optimizertype.dual_simplex)
+                        else:
+                                raise Exception('unexpected value for option lp_node_method')
+                if not self.options['lp_root_method'] is None:
+                        if self.options['lp_root_method']=='interior':
+                                task.putintparam(mosek.iparam.mio_root_optimizer,mosek.optimizertype.intpnt)
+                                if self.type=='LP':
+                                        task.putintparam(mosek.iparam.optimizer,mosek.optimizertype.intpnt)
+                        elif self.options['lp_root_method']=='psimplex':
+                                task.putintparam(mosek.iparam.mio_root_optimizer,mosek.optimizertype.primal_simplex)
+                                if self.type=='LP':
+                                        task.putintparam(mosek.iparam.optimizer,mosek.optimizertype.primal_simplex)
+                        elif self.options['lp_root_method']=='dsimplex':
+                                task.putintparam(mosek.iparam.mio_root_optimizer,mosek.optimizertype.dual_simplex)
+                                if self.type=='LP':
+                                        task.putintparam(mosek.iparam.optimizer,mosek.optimizertype.dual_simplex)
+                        else:
+                                raise Exception('unexpected value for option lp_root_method')
+                
+                if not self.options['timelimit'] is None:
+                        task.putdouparam(mosek.dparam.mio_max_time,self.options['timelimit'])
+                        task.putdouparam(mosek.dparam.optimizer_max_time,self.options['timelimit'])
+                        #task.putdouparam(mosek.dparam.mio_max_time_aprx_opt,self.options['timelimit'])
+                else:
+                        task.putdouparam(mosek.dparam.mio_max_time,-1.0)
+                        task.putdouparam(mosek.dparam.optimizer_max_time,-1.0)
+                        #task.putdouparam(mosek.dparam.mio_max_time_aprx_opt,-1.0)
+                
+                if not self.options['nbsol'] is None:
+                        task.putintparam(mosek.iparam.mio_max_num_solutions,self.options['nbsol'])
                 #--------------------#
                 #  call the solver   #
                 #--------------------# 
                 #optimize
-                task.optimize()
+                try:
+                        task.optimize()
+                except mosek.Error as ex:
+                        #catch non-convexity exception
+                        if str(ex)=='(0) ' and self.numberQuadConstraints>0:
+                                raise Exception('Error raised during solve. Problem nonconvex ?')
+                        if str(ex).startswith('(1550)') and (
+                           self.type in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)')):
+                                raise Exception('Please convert the problem as an socp '+
+                                                'with the function convert_quad_to_socp().')
+                        else:
+                                import pdb;pdb.set_trace()
+                                print "Error raised during solve"
+                                
+                                
                 
                 # Print a summary containing information
                 # about the solution for debugging purposes
@@ -2485,7 +2897,11 @@ class Problem:
                 solsta = []
 
                 if self.is_continuous():
-                        soltype=mosek.soltype.itr
+                        if not(self.options['lp_root_method'] is None) and (
+                          self.options['lp_root_method'].endswith('simplex')):
+                                soltype=mosek.soltype.bas
+                        else:
+                                soltype=mosek.soltype.itr
                         intg=False
                 else:
                         soltype=mosek.soltype.itg
@@ -2561,7 +2977,7 @@ class Problem:
                                 seen_bounded_vars = []
                                 
                                 #now we parse the constraints
-                                for k in self.constraints.keys():
+                                for k in range(len(self.constraints)):
                                         #conic constraint
                                         if self.constraints[k].typeOfConstraint[2:]=='cone':
                                                 szcone=self.cvxoptVars['Gq'][idcone].size[0]
@@ -2690,13 +3106,43 @@ class Problem:
                 """
                 Solves the problem with the zib optimization suite
                 
-                .. Todo:: * dual variables ?
-                          * solver parameters
+                .. Todo:: * solver parameters
                 """
                 #-----------------------------#
                 #  create the zibopt instance #
                 #-----------------------------#
-                self._make_zibopt()
+                if self.options['onlyChangeObjective']:
+                        if self.scip_solver is None:
+                                raise Exception('option is only available when scip_solver has been defined before')
+                        #define scip_obj
+                        newobj=self.objective[1]
+                        x=self.scip_vars
+                        ob=0
+                        
+                        if isinstance(newobj,QuadExp):
+                                for i,j in newobj.quad:
+                                        si,ei=i.startIndex,i.endIndex
+                                        sj,ej=j.startIndex,j.endIndex
+                                        Qij=newobj.quad[i,j]
+                                        if not isinstance(Qij,cvx.spmatrix):
+                                                Qij=cvx.sparse(Qij)
+                                        for ii,jj,vv in zip(Qij.I,Qij.J,Qij.V):
+                                                ob+=vv*x[ii+si]*x[jj+sj]
+                                newobj=newobj.aff
+                                        
+                        if not(newobj is None):
+                                for v,fac in newobj.factors.iteritems():
+                                        if not isinstance(fac,cvx.spmatrix):
+                                                fac=cvx.sparse(fac)
+                                        sv=v.startIndex
+                                        for jj,vv in zip(fac.J,fac.V):
+                                                ob+=vv*x[jj+sv]
+                                if not(newobj.constant is None):
+                                        ob+=newobj.constant[0]
+                        self.scip_obj = ob
+                        
+                else:
+                        self._make_zibopt()
                 
                 timelimit=10000000.
                 gaplim=0.
@@ -2705,10 +3151,8 @@ class Problem:
                         timelimit=self.options['timelimit']
                 if not self.options['gaplim'] is None:        
                         gaplim=self.options['gaplim']
-                
-                #if fact, nbsol is a limit on the number of feasible nodes visited
-                #if not self.options['nbsol'] is None:
-                #        nbsol=self.options['nbsol']
+                if not self.options['nbsol'] is None:
+                        nbsol=self.options['nbsol']
                 
                 #--------------------#
                 #  call the solver   #
@@ -2892,17 +3336,17 @@ class Problem:
                                 elif self.numberQuadConstraints == 0:
                                         return 'ConeP'
                                 else:
-                                        return 'SDP + quadratic constraint (not handled -- need to reformulate)'
+                                        return 'Mixed (SDP+quad)'
                         #SOCP
                         if self.numberConeConstraints > 0:
                                 if self.numberQuadConstraints == 0:
                                         return 'SOCP'
                                 else:
-                                        return 'SOCP + quadratic constraint (not handled -- need to reformulate)'
+                                        return 'Mixed (SOCP+quad)'
 
                         #quadratic problem
                         if self.numberQuadConstraints>0:
-                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints.values()]):
+                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints]):
                                         return 'QCQP'
                                 else:
                                         return 'QP'
@@ -2919,9 +3363,9 @@ class Problem:
                                 if self.numberQuadConstraints == 0:
                                         return 'MISOCP'
                                 else:
-                                        return 'integer SOCP + QP (not handled)'
+                                        return 'Mixed (MISOCP+quad)'
                         if self.numberQuadConstraints>0:
-                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints.values()]):
+                                if any([cs.typeOfConstraint=='quad' for cs in self.constraints]):
                                         return 'MIQCP'
                                 else:
                                         return 'MIQP'
@@ -2936,9 +3380,8 @@ class Problem:
         
         type=property(what_type,set_type,del_type)
         """Type of Optimization Problem ('LP', 'MIP', 'SOCP', 'QCQP',...)"""
-        #TODO example in the tuto ?  
-        #TODO option with default solvers order
-
+        
+        
         def solver_selection(self):
                 """Selects an appropriate solver for this problem
                 and sets the option ``'solver'``.
@@ -2946,24 +3389,22 @@ class Problem:
                 tp=self.type
                 if tp == 'LP':
                         order=['cplex','mosek','zibopt','cvxopt','smcp']
-                elif tp == 'QCQP': #add cplex,zibopt ?
-                        order=['mosek','zibopt','cvxopt']
+                elif tp in ('QCQP,QP'):
+                        order=['cplex','mosek','zibopt']
                 elif tp == 'SOCP':
-                        order=['mosek','cvxopt','smcp']
+                        order=['mosek','cplex','cvxopt','smcp']
                 elif tp == 'SDP':
                         order=['cvxopt','smcp']
-                elif tp == 'ConeP': #add cplex ?
+                elif tp == 'ConeP':
                         order=['cvxopt','smcp']
-                elif tp == 'GP': #add cplex ?
+                elif tp == 'GP':
                         order=['cvxopt']
                 elif tp == 'general-obj':
-                        order=['mosek','zibopt','cvxopt']
-                elif tp == 'MIP':
+                        order=['cplex','mosek','zibopt','cvxopt']
+                elif tp in ('MIP','MIQCP','MISOCP','MIQP'):
                         order=['cplex','mosek','zibopt']
-                elif tp == 'MIQCP': #add cplex,zibopt ?
-                        order=['mosek']
-                elif tp == 'MISOCP':
-                        order=['mosek']
+                elif tp in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)'):
+                        order=['cplex']
                 else:
                         raise Exception('no solver available for problem of type {0}'.format(tp))
                 avs=available_solvers()
@@ -2971,8 +3412,573 @@ class Problem:
                         if sol in avs:
                                 self.set_option('solver',sol)
                                 return
+                #mosek can solve this as an socp
+                if tp=='Mixed (MISOCP+quad)' and 'mosek' in avs:
+                        raise Exception('You should first transform the problem into an socp '+
+                                        'with the function convert_quad_to_socp() '+
+                                        'and then solve the problem with mosek.')
+                        
+                #cvxopt can solve this as an socp
+                if tp in ('Mixed (SOCP+quad)','Mixed (SDP+quad)','QCQP','QP'):
+                        raise Exception('No solver available in this form. '+
+                                        'You should first transform the problem into an socp '+
+                                        'with the function convert_quad_to_socp().')
                 #not found
                 raise Exception('no solver available for problem of type {0}'.format(tp))
+                
+                
+        def write_to_file(self,filename,writer='picos'):
+                """
+                This function writes the problem to a file.
+                
+                :param filename: The name of the file where the problem will be saved. The
+                                 extension of the file (if provided) indicates the format
+                                 of the export:
+                                 
+                                        * ``'.lp'``: `LP format <http://docs.mosek.com/6.0/pyapi/node022.html>`_
+                                          . This format handles only linear constraints, unless the writer ``'cplex'``
+                                          is used, and the file is saved in the extended
+                                          `cplex LP format <http://pic.dhe.ibm.com/infocenter/cplexzos/v12r4/index.jsp?topic=%2Fcom.ibm.cplex.zos.help%2Fhomepages%2Freffileformatscplex.html>`_
+                                          
+                                        * ``'.mps'``: `MPS format <http://docs.mosek.com/6.0/pyapi/node021.html>`_
+                                          (recquires mosek or cplex).
+                                          
+                                        * ``'.opf'``: `OPF format <http://docs.mosek.com/6.0/pyapi/node023.html>`_
+                                          (recquires mosek).
+
+                                        * ``'.dat-s'``: `sparse SDPA format <http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa>`_
+                                          This format is suitable to save semidefinite programs (SDP).
+                                        
+                :type filename: str.
+                :param writer: The default writer is ``picos``, which has its own *LP* and
+                               *sparse SDPA* write functions. If cplex or mosek is installed,
+                               the user can pass the option ``writer=cplex`` or
+                               ``writer=mosek``, and the write function of this solver
+                               will be used.                               
+                :type writer: str.
+                """
+                if self.numberLSEConstraints:
+                        raise Exception('gp are not supported')
+                if not(self.objective[1] is None) and isinstance(self.objective[1],GeneralFun):
+                        raise Exception('general-obj are not supported')       
+                
+                #automatic extension recognition
+                if not(filename[-4:] in ('.mps','.opf') or
+                       filename[-3:]=='.lp' or
+                       filename[-6:]=='.dat-s' or
+                       filename[-7:]=='.dat-sx'):
+                        if writer=='mosek':
+                                if (self.numberSDPConstraints >0):
+                                        raise Exception('no sdp with mosek')
+                                if (self.numberConeConstraints + 
+                                    self.numberQuadConstraints) ==0:
+                                        filename+='.lp'
+                                else:
+                                        filename+='.mps'
+                        elif writer=='cplex':
+                                if (self.numberSDPConstraints >0):
+                                        raise Exception('no sdp with cplex')
+                                else:
+                                        filename+='.lp'
+                        elif writer=='picos':
+                                if (self.numberQuadConstraints >0):
+                                        raise Exception('no quad constraints in sdpa format.'+
+                                                ' Try to convert to socp with the function convert_quad_to_socp().')
+                                if (self.numberConeConstraints + 
+                                    self.numberSDPConstraints) ==0:
+                                        filename+='.lp'
+                                else:
+                                        filename+='.dat-s'
+                        else:
+                                raise Exception('unexpected writer')
+
+                #writer selection [obsolete, since we now give picos as default]
+                if writer is None:
+                        avs=available_solvers()
+                        if filename[-4:]=='.mps':
+                                if 'mosek' in avs:
+                                        writer='mosek'
+                                else:
+                                        raise Exception('no mps writer available')
+                        elif filename[-4:]=='.opf':
+                                if 'mosek' in avs:
+                                        writer='mosek'
+                                else:
+                                        raise Exception('no opf writer available')
+                        elif filename[-3:]=='.lp':
+                                if not(self.cplex_Instance is None):
+                                        writer='cplex'
+                                elif not(self.msk_task is None) and (self.numberConeConstraints + 
+                                                                self.numberQuadConstraints) ==0:
+                                        writer='mosek'
+                                elif 'cplex' in avs:
+                                        writer='cplex'
+                                elif 'mosek' in avs and (self.numberConeConstraints + 
+                                                                self.numberQuadConstraints) ==0:
+                                        writer='mosek'
+                                else:
+                                        writer='picos'
+                        elif filename[-6:]=='.dat-s':
+                                writer='picos'
+                        elif filename[-7:]=='.dat-sx':
+                                writer='picos'
+                        else:
+                                raise Exception('unexpected file extension')
+                
+                  
+                if writer == 'cplex':
+                        if self.cplex_Instance is None:
+                                self._make_cplex_instance()
+                        self.cplex_Instance.write(filename)
+                elif writer == 'mosek':
+                        if self.msk_task is None:
+                                self._make_mosek_instance()
+                        self.msk_task.writedata(filename)
+                elif writer == 'picos':
+                        if filename[-3:]=='.lp':
+                                self._write_lp(filename)
+                        elif filename[-6:]=='.dat-s':
+                                self._write_sdpa(filename)
+                        elif filename[-7:]=='.dat-sx':
+                                self._write_sdpa(filename,True)
+                        else:
+                                raise Exception('unexpected file extension')
+                else:
+                        raise Exception('unknown writer')
+        
+
+        def _write_lp(self,filename):
+                """
+                writes problem in  lp format
+                """
+                #add extension
+                if filename[-3:]!='.lp':
+                        filename+='.lp'
+                #check lp compatibility
+                if (self.numberConeConstraints + 
+                    self.numberQuadConstraints +
+                    self.numberLSEConstraints  +
+                    self.numberSDPConstraints) > 0:
+                        raise Exception('the picos LP writer only accepts (MI)LP')
+                #open file
+                f = open(filename,'w')
+                f.write("\\* file "+filename+" generated by picos*\\\n")
+                #cvxoptVars
+                if not any(self.cvxoptVars.values()):
+                        self._make_cvxopt_instance()
+                #variable names
+                varnames={}
+                for name,v in self.variables.iteritems():
+                        j=0
+                        k=0
+                        for i in xrange(v.startIndex,v.endIndex):
+                                if v.size==(1,1):
+                                        varnames[i]=name
+                                elif v.size[1]==1:
+                                        varnames[i]=name+'('+str(j)+')'
+                                        j+=1
+                                else:
+                                        varnames[i]=name+'('+str(j)+','+str(k)+')'
+                                        j+=1
+                                        if j==v.size[0]:
+                                                k+=1
+                                                j=0
+                                varnames[i]=varnames[i].replace('[','(')
+                                varnames[i]=varnames[i].replace(']',')')
+                #affexpr writer
+                def affexp_writer(name,indices,coefs):
+                        s=''
+                        s+=name
+                        s+=' : '
+                        start=True
+                        for (i,v) in zip(indices,coefs):
+                                if v>0 and not(start):
+                                        s+='+ '
+                                s+="%.12g" % v
+                                s+=' '
+                                s+=varnames[i]
+                                #not the first term anymore
+                                start = False
+                        if not(indices):
+                                s+='0.0 '
+                                s+=varnames[0]
+                        return s
+                
+                print 'writing problem in '+filename+'...'
+                
+                #objective
+                if self.objective[0]=='max':
+                        f.write("Maximize\n")
+                        #max handled directly
+                        self.cvxoptVars['c']=-self.cvxoptVars['c']
+                else:
+                        f.write("Minimize\n")
+                I=cvx.sparse(self.cvxoptVars['c']).I
+                V=cvx.sparse(self.cvxoptVars['c']).V
+                f.write(affexp_writer('obj',I,V))
+                f.write('\n')
+                
+                f.write("Subject To\n")
+                bounds={}
+                #equality constraints:
+                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
+                ijvs=sorted(zip(Ai,Aj,Av))
+                del Ai,Aj,Av
+                itojv={}
+                lasti=-1
+                for (i,j,v) in ijvs:
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
+                ieq=0
+                for i,jv in itojv.iteritems():
+                        J=[jvk[0] for jvk in jv]
+                        V=[jvk[1] for jvk in jv]
+                        if len(J)==1:
+                                #fixed variable
+                                b=self.cvxoptVars['b'][i]/V[0]
+                                bounds[J[0]]=(b,b)
+                        else:
+                                #affine equality
+                                b=self.cvxoptVars['b'][i]
+                                f.write(affexp_writer('eq'+str(ieq),J,V))
+                                f.write(' = ')
+                                f.write("%.12g" % b)
+                                f.write('\n')
+                                ieq+=1
+                
+                
+                #inequality constraints:
+                Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
+                ijvs=sorted(zip(Gli,Glj,Glv))
+                del Gli,Glj,Glv
+                itojv={}
+                lasti=-1
+                for (i,j,v) in ijvs:
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
+                iaff=0
+                for i,jv in itojv.iteritems():
+                        J=[jvk[0] for jvk in jv]
+                        V=[jvk[1] for jvk in jv]
+                        if len(J)==1 and (not (i in [t[1] for t in self.cvxoptVars['quadcons']])):
+                                #bounded variable
+                                if J[0] in bounds:
+                                        bl,bu=bounds[J[0]]
+                                else:
+                                        bl,bu=-INFINITY,INFINITY
+                                b=self.cvxoptVars['hl'][i]/V[0]
+                                if V[0]>0:
+                                        #less than
+                                        bu=min(b,bu)
+                                if V[0]<0:
+                                        #greater than
+                                        bl=max(b,bl)
+                                bounds[J[0]]=(bl,bu)
+                        else:
+                                #affine inequality
+                                b=self.cvxoptVars['hl'][i]
+                                f.write(affexp_writer('in'+str(iaff),J,V))
+                                f.write(' <= ')
+                                f.write("%.12g" % b)
+                                f.write('\n')
+                                iaff+=1
+
+                #bounds
+                f.write("Bounds\n")
+                for i in xrange(self.numberOfVars):
+                        if i in bounds:
+                                bl,bu=bounds[i]
+                        else:
+                                bl,bu=-INFINITY,INFINITY
+                        if bl == -INFINITY and bu == INFINITY:
+                                f.write(varnames[i]+' free')
+                        elif bl == bu:
+                                f.write(varnames[i]+(" = %.12g" % bl))
+                        elif bl < bu:
+                                if bl == -INFINITY:
+                                        f.write('-inf <= ')
+                                else:
+                                        f.write("%.12g" % bl)
+                                        f.write(' <= ')
+                                f.write(varnames[i])
+                                if bu == INFINITY:
+                                        f.write('<= +inf')
+                                else:
+                                        f.write(' <= ')
+                                        f.write("%.12g" % bu)
+                        f.write('\n')
+
+                #general integers
+                f.write("Generals\n")
+                for name,v in self.variables.iteritems():
+                        if v.vtype=='integer':
+                                for i in xrange(v.startIndex,v.endIndex):
+                                        f.write(varnames[i]+'\n')
+                        if v.vtype=='semiint' or v.vtype=='semicont':
+                                raise Exception('semiint and semicont variables not handled by this LP writer')
+                #binary variables
+                f.write("Binaries\n")
+                for name,v in self.variables.iteritems():
+                        if v.vtype=='binary':
+                                for i in xrange(v.startIndex,v.endIndex):
+                                        f.write(varnames[i]+'\n')
+                print 'done.'
+                f.close()
+
+        
+        def _write_sdpa(self,filename,extended=False):
+                """
+                write a problem to sdpa format
+                """
+                
+                #--------------------#
+                # makes the instance #
+                #--------------------#
+                if not any(self.cvxoptVars.values()):
+                        self._make_cvxopt_instance()
+                
+                
+                dims={}
+                dims['s']=[int(np.sqrt(Gsi.size[0])) for Gsi in self.cvxoptVars['Gs']]
+                dims['l']=self.cvxoptVars['Gl'].size[0]
+                dims['q']=[Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+                G=self.cvxoptVars['Gl']
+                h=self.cvxoptVars['hl']
+                
+                # handle the equalities as 2 ineq for smcp
+                if self.cvxoptVars['A'].size[0]>0:
+                        G=cvx.sparse([G,self.cvxoptVars['A']]) 
+                        G=cvx.sparse([G,-self.cvxoptVars['A']])
+                        h=cvx.matrix([h,self.cvxoptVars['b']])
+                        h=cvx.matrix([h,-self.cvxoptVars['b']])
+                        dims['l']+=(2*self.cvxoptVars['A'].size[0])
+
+                for i in range(len(dims['q'])):
+                        G=cvx.sparse([G,self.cvxoptVars['Gq'][i]])
+                        h=cvx.matrix([h,self.cvxoptVars['hq'][i]])
+
+                                        
+                for i in range(len(dims['s'])):
+                        G=cvx.sparse([G,self.cvxoptVars['Gs'][i]])
+                        h=cvx.matrix([h,self.cvxoptVars['hs'][i]])
+
+                #Remove the lines in A and b corresponding to 0==0        
+                JP=list(set(self.cvxoptVars['A'].I))
+                IP=range(len(JP))
+                VP=[1]*len(JP)
+                
+                idx_0eq0 = [i for i in range(self.cvxoptVars['A'].size[0]) if i not in JP]
+                
+                #is there a constraint of the form 0==a(a not 0) ?
+                if any([b for (i,b) in enumerate(self.cvxoptVars['b']) if i not in JP]):
+                        raise Exception('infeasible constraint of the form 0=a')
+                
+                P=cvx.spmatrix(VP,IP,JP,(len(IP),self.cvxoptVars['A'].size[0]))
+                self.cvxoptVars['A']=P*self.cvxoptVars['A']
+                self.cvxoptVars['b']=P*self.cvxoptVars['b']
+                c = self.cvxoptVars['c']
+                
+                #-----------------------------------------------------------#
+                # make A,B,and blockstruct.                                 #
+                # This code is a modification of the conelp function in smcp#
+                #-----------------------------------------------------------#
+                from cvxopt import matrix,sparse,spdiag,spmatrix
+                
+                Nl = dims['l']
+                Nq = dims['q']
+                Ns = dims['s']
+                if not Nl: Nl = 0
+
+                nblocks = Nl + len(Nq) + len(Ns)
+
+                P_n = Nl+sum(Nq)+sum(Ns)
+                P_m = G.size[1]
+
+                P_A = {}
+                P_b = -c
+                P_blockstruct = []
+                if Nl: P_blockstruct.append(-Nl)
+                if extended:
+                        for i in Nq: P_blockstruct.append(i*1j)
+                else:
+                        for i in Nq: P_blockstruct.append(i)
+                for i in Ns: P_blockstruct.append(i)
+
+                def tril(X): #lower triangular part
+                        I=[]
+                        J=[]
+                        V=[]
+                        for i,j,v in zip(X.I,X.J,X.V):
+                                if j<=i:
+                                        I.append(i)
+                                        J.append(j)
+                                        V.append(v)
+                        return cvx.spmatrix(V,I,J,X.size)
+                                                
+                def ind2sub(n,ind): #transform index in col major order into
+                                    #a pair of matrix indices
+                        I=[]
+                        J=[]
+                        for i in ind:
+                                I.append(i%n)
+                                J.append(i//n)
+                        return I,J
+                        
+                
+                
+                for k in range(P_m+1):
+                        if not k==0:
+                                v = sparse(G[:,k-1])
+                        else:
+                                v = +sparse(h)
+                        B = []
+
+                        ptr = 0
+                        # lin. constraints
+                        if Nl:
+                                u = v[:Nl]
+                                I = u.I
+                                B.append(spmatrix(u.V,I,I,(Nl,Nl)))
+                                ptr += Nl
+
+                        # SOC constraints
+                        for i in xrange(len(Nq)):
+                                nq = Nq[i]
+                                u0 = v[ptr]
+                                u1 = v[ptr+1:ptr+nq]
+                                tmp = spmatrix(u1.V,[nq-1 for j in xrange(len(u1))],u1.I,(nq,nq))
+                                if not u0 == 0.0:
+                                        tmp += spmatrix(u0,xrange(nq),xrange(nq),(nq,nq)) 
+                                B.append(tmp)
+                                ptr += Nq[i]
+
+                        # SDP constraints
+                        for i in xrange(len(Ns)):
+                                ns = Ns[i]
+                                u = v[ptr:ptr+ns**2]
+                                I,J = ind2sub(ns,u.I)
+                                tmp = tril(spmatrix(u.V,I,J,(ns,ns)))
+                                B.append(tmp)
+                                ptr += ns**2
+
+                        #Ai = spdiag(B)
+                        #P_A[:,k] = Ai[:]
+                        P_A[k]=B
+
+                
+                
+                #write data
+                                
+                #add extension
+                if extended:
+                        if filename[-7:]!='.dat-sx':
+                                filename+='.dat-sx'
+                else:
+                        if filename[-6:]!='.dat-s':
+                                filename+='.dat-s'
+                #check lp compatibility
+                if (self.numberQuadConstraints +
+                    self.numberLSEConstraints) > 0:
+                        raise Exception('Problem should not have quad or gp constraints. '+
+                         'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
+                #open file
+                f = open(filename,'w')
+                f.write('"file '+filename+' generated by picos"\n')
+                print 'writing problem in '+filename+'...'
+                f.write(str(self.numberOfVars)+' = number of vars\n')
+                f.write(str(len(P_blockstruct))+' = number of blocs\n')
+                #bloc structure
+                f.write(str(P_blockstruct).replace('[','(').replace(']',')'))
+                f.write(' = BlocStructure\n')
+                #c vector (objective)
+                f.write(str(list(-P_b)).replace('[','{').replace(']','}'))
+                f.write('\n')
+                #coefs
+                from itertools import izip
+                for k,Ak in P_A.iteritems():
+                        for b,B in enumerate(Ak):
+                                for i,j,v in izip(B.I,B.J,B.V):
+                                        f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
+                                                  k,b+1,i+1,j+1,-v))
+                
+                #binaries an integers in extended format
+                if extended:
+                        #general integers
+                        f.write("Generals\n")
+                        for name,v in self.variables.iteritems():
+                                if v.vtype=='integer':
+                                        for i in xrange(v.startIndex,v.endIndex):
+                                                f.write(str(i+1)+'\n')
+                                if v.vtype=='semiint' or v.vtype=='semicont':
+                                        raise Exception('semiint and semicont variables not handled by this LP writer')
+                        #binary variables
+                        f.write("Binaries\n")
+                        for name,v in self.variables.iteritems():
+                                if v.vtype=='binary':
+                                        for i in xrange(v.startIndex,v.endIndex):
+                                                f.write(str(i+1)+'\n')
+                
+                print 'done.'
+                f.close()
+                
+                
+        def convert_quad_to_socp(self):
+                for i,c in enumerate(self.constraints):
+                        if c.typeOfConstraint=='quad':
+                                qd=c.Exp1.quad
+                                sqnorm=_quad2norm(qd)
+                                self.constraints[i]=sqnorm<-c.Exp1.aff
+                                self.numberQuadConstraints-=1
+                                self.numberConeConstraints+=1
+                                szcone=sqnorm.LR[0].size
+                                self.numberConeVars+=(szcone[0]*szcone[1])+2
+                if isinstance(self.objective[1],QuadExp):
+                        if '_obj_' not in self.variables:
+                                obj=self.add_variable('_obj_',1)
+                        else:
+                                obj=self.get_variable('_obj_')
+                        if self.objective[0]=='min':
+                                qd=self.objective[1].quad
+                                aff=self.objective[1].aff
+                                sqnorm=_quad2norm(qd)
+                                self.add_constraint(sqnorm<obj-aff)
+                                self.set_objective('min',obj)
+                        else:
+                                qd=(-self.objective[1]).quad
+                                aff=self.objective[1].aff
+                                sqnorm=_quad2norm(qd)
+                                self.add_constraint(sqnorm<aff-obj)
+                                self.set_objective('max',obj)
+                        self.numberQuadConstraints-=1
+                if self.numberQuadConstraints>0:
+                        raise Exception('there should not be any quadratics left')
+                self.numberQuadNNZ=0
+                #reset solver instances
+                self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
+                                'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
+                                'F':None,'g':None, 'quadcons': None}
+                
+                self.gurobi_Instance = None
+                self.grbvar = {}
+                
+                self.cplex_Instance = None
+                self.cplex_boundcons = None
+                
+                self.msk_env=None
+                self.msk_task=None
+
+                self.scip_solver = None
+                self.scip_vars = None
+                self.scip_obj = None
+               
+                                
+                            
                 
 #----------------------------------------
 #                 Obsolete functions
