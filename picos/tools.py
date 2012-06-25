@@ -1,4 +1,31 @@
 # coding: utf-8
+
+#-------------------------------------------------------------------
+#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Copyright (C) 2012  Guillaume Sagnol
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#For any information, please contact:
+#Guillaume Sagnol
+#sagnol@zib.de
+#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
+#Takustrasse 7
+#D-14195 Berlin-Dahlem
+#Germany 
+#-------------------------------------------------------------------
+
 import cvxopt as cvx
 import numpy as np
 import sys, os
@@ -18,7 +45,9 @@ __all__=['_retrieve_matrix',
         'offset_in_lil',
         'diag_vect',
         '_quad2norm',
-        'ProgressBar'
+        '_copy_exp_to_new_vars',
+        'ProgressBar',
+        'QuadAsSocpError'
 ]
 
 
@@ -956,8 +985,35 @@ def _quad2norm(qd):
         return abs(V*allvars)**2
         
         
-        
-                
+def _copy_exp_to_new_vars(exp,cvars):
+        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun
+        import copy
+        ex2=copy.deepcopy(exp)
+        if isinstance(exp,Variable):
+                return cvars[exp.name]
+        if isinstance(exp,AffinExp):
+                for f in ex2.factors.keys():
+                        mat=ex2.factors[f]
+                        ex2.factors[cvars[f.name]]=mat
+                        del ex2.factors[f]
+                return ex2
+        elif isinstance(exp,Norm):
+                ex2.exp=_copy_exp_to_new_vars(ex2.exp,cvars)
+                return ex2
+        elif isinstance(exp,LogSumExp) or isinstance (exp,GeneralFun):
+                ex2.Exp=_copy_exp_to_new_vars(ex2.Exp,cvars)
+                return ex2
+        elif isinstance(exp,QuadExp): 
+                ex2.aff=_copy_exp_to_new_vars(ex2.aff,cvars)
+                for (f,g) in ex2.quad.keys():
+                        mat=ex2.quad[(f,g)]
+                        ex2.quad[(cvars[f.name],cvars[g.name])]=mat
+                        del ex2.quad[(f,g)]
+                return ex2
+        elif exp is None:
+                return None
+        else:
+                raise Exception('unknown type of expression')
                 
                 
                 
@@ -1095,3 +1151,11 @@ class ProgressBar:
                 # i give up. return default.
                 return (25, 80)
                 
+class QuadAsSocpError(Exception):
+        """
+        Exception raised when the problem can not be solved
+        in the current form, because quad constraints are not handled.
+        User should try to convert the quads as socp.
+        """
+        def __init__(self,msg):
+                self.msg=msg

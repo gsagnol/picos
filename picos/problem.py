@@ -1,4 +1,31 @@
 # coding: utf-8
+
+#-------------------------------------------------------------------
+#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Copyright (C) 2012  Guillaume Sagnol
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#For any information, please contact:
+#Guillaume Sagnol
+#sagnol@zib.de
+#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
+#Takustrasse 7
+#D-14195 Berlin-Dahlem
+#Germany 
+#-------------------------------------------------------------------
+
 import cvxopt as cvx
 import numpy as np
 import sys
@@ -216,6 +243,9 @@ class Problem:
                              or maximized. This parameter will be ignored
                              if ``typ=='find'``.
                 """
+                if typ=='find':
+                        self.objective=(typ,expr)
+                        return
                 if (isinstance(expr,AffinExp) and expr.size<>(1,1)):
                         raise Exception('objective should be scalar')
                 if not (isinstance(expr,AffinExp) or isinstance(expr,LogSumExp)
@@ -251,7 +281,7 @@ class Problem:
                 
                 >>> prob=pic.Problem()
                 >>> x=prob.add_variable('x',2)
-                >>> prob.set_var_value('x',[3,4])
+                >>> prob.set_var_value('x',[3,4])  #this is in fact equivalent to x.value=[3,4]
                 >>> abs(x)**2
                 #quadratic expression: ||x||**2 #
                 >>> print (abs(x)**2)
@@ -327,10 +357,12 @@ class Problem:
                     The default
                     ``None`` means that you let picos select a suitable solver for you.
                   
-                  * ``tol = 1e-7`` : Relative gap termination tolerance
+                  * ``tol = 1e-8`` : Relative gap termination tolerance
                     for interior-point optimizers (feasibility and complementary slackness).
                   
-                  * ``maxit = 400`` : maximum number of iterations (for simplex or interior-point optimizers)
+                  * ``maxit = None`` : maximum number of iterations
+                    (for simplex or interior-point optimizers).
+                    *This option is currently ignored by zibopt*.
                   
                   * ``lp_root_method = None`` : algorithm used to solve continuous LP
                     problems, including the root relaxation of mixed integer problems.
@@ -359,10 +391,11 @@ class Problem:
                     (relative gap between the primal and the dual bound).
                     
                 
-                  * ``onlyChangeObjective = False`` : set this option to **True** if you have already
+                  * ``onlyChangeObjective = False`` : set this option to ``True`` if you have already
                     solved the problem, and want to recompute the solution with a different
                     objective funtion or different parameter settings. This way, the constraints
-                    of the problem will not be parsed by picos next time :func:`solve` is called
+                    of the problem will not be parsed by picos next
+                    time :func:`solve() <picos.Problem.solve>` is called
                     (this can lead to a huge gain of time).
                     
                   * ``noduals = False`` : if ``True``, do not try to retrieve the dual variables.
@@ -372,34 +405,53 @@ class Problem:
                                     
                 * Specific options available for cvxopt/smcp:
                 
-                  * ``feastol = 1e-7`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  * ``feastol = None`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                    If ``feastol`` has the default value ``None``,
+                    then the value of the option ``tol`` is used.
                   
-                  * ``abstol = 1e-7`` : absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  * ``abstol = None`` : absolute tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                    If ``abstol`` has the default value ``None``,
+                    then the value of the option ``tol`` is used.
                   
-                  * ``reltol = 1e-6`` : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                  * ``reltol = None`` : relative tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
+                    If ``reltol`` has the default value ``None``,
+                    then the value of the option ``tol``, multiplied by ``10``, is used.
                   
-                * Specific oprions available for cplex:
-                  
+                * Specific options available for cplex:
+                
+                  * ``cplex_params = {}`` : a dictionary of
+                    `cplex parameters <http://pic.dhe.ibm.com/infocenter/cosinfoc/v12r2/index.jsp?topic=%2Filog.odms.cplex.help%2FContent%2FOptimization%2FDocumentation%2FCPLEX%2F_pubskel%2FCPLEX934.html>`_
+                    to be set before the cplex
+                    optimizer is called. For example,
+                    ``cplex_params={'mip.limits.cutpasses' : 5}``
+                    will limit the number of cutting plane passes when solving the root node
+                    to ``5``.
+                    
                   * ``acceptable_gap_at_timelimit = None`` : If the the time limit is reached,
                     the optimization process is aborted only if the current gap is less
                     than this value. The default value ``None`` means that we
                     interrupt the computation regardless of the achieved gap.
-                   
-                .. Warning:: Some other options may be available for certain solvers,
-                             but they are not (yet) interfaced with picos.
+                  
+                * Specific options available for mosek:
                 
-                .. Todo:: Organize above options (dire quels solvers si restrictions)
-
+                  * ``mosek_params = {}`` : a dictionary of
+                    `mosek parameters <http://docs.mosek.com/6.0/pyapi/node017.html>`_
+                    to be set before the mosek
+                    optimizer is called. For example,
+                    ``mosek_params={'simplex_abs_tol_piv' : 1e-4}``
+                    sets the absolute pivot tolerance of the
+                    simplex optimizer to ``1e-4``.
+                
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
                 #interface the feasible starting point solver):
                 #
                 #* 'smcp_feas'=False [if True, use the feasible start solver with SMCP]
-                default_options={'tol'            :1e-7,
-                                 'feastol'        :1e-7,
-                                 'abstol'         :1e-7,
-                                 'reltol'         :1e-6,
-                                 'maxit'          :50,
+                default_options={'tol'            :1e-8,
+                                 'feastol'        :None,
+                                 'abstol'         :None,
+                                 'reltol'         :None,
+                                 'maxit'          :None,
                                  'verbose'        :1,
                                  'solver'         :None,
                                  'step_sqp'       :1,
@@ -411,11 +463,13 @@ class Problem:
                                  'timelimit'      :None,
                                  'acceptable_gap_at_timelimit'  :None,
                                  'treememory'     :None,
-                                 'gaplim'         :None,
+                                 'gaplim'         :1e-4,
                                  'pool_gap'       :None,
                                  'pool_size'      :None,
                                  'lp_root_method' :None,
                                  'lp_node_method' :None,
+                                 'cplex_params'   :{},
+                                 'mosek_params'   :{},
                                  }
                                  
                                  
@@ -434,10 +488,6 @@ class Problem:
                 if key not in self.options:
                         raise AttributeError('unkown option key :'+str(key))
                 self.options[key]=val
-                if key=='tol':
-                        self.options['feastol']=val
-                        self.options['abstol']=val
-                        self.options['reltol']=val*10
                 if key=='verbose' and isinstance(val,bool):
                         self.options['verbose']=int(val)
 
@@ -451,14 +501,7 @@ class Problem:
                 
                 for k in options.keys():
                         self.set_option(k,options[k])
-                #erase 'tol' information if more specific options are provided
-                if 'feastol' in options:
-                        self.set_option('feastol',options['feastol'])
-                if 'abstol' in options:
-                        self.set_option('abstol',options['abstol'])
-                if 'reltol' in options:
-                        self.set_option('reltol',options['reltol'])
-                        
+                                        
                 
         def _eliminate_useless_variables(self):
                 """
@@ -513,7 +556,7 @@ class Problem:
                 """
                 adds a variable in the problem,
                 and returns the corresponding instance of the :class:`Variable <picos.Variable>`.
-
+                
                 For example,
                 
                 >>> prob=pic.Problem()
@@ -525,20 +568,28 @@ class Problem:
                 :type name: str.
                 :param size: The size of the variable.
                              
-                             Can be either
+                             Can be either:
                              
                                 * an ``int`` *n* , in which case the variable is a **vector of dimension n**
+                                
                                 * or a ``tuple`` *(n,m)*, and the variable is a **n x m-matrix**.
                 
                 :type size: int or tuple.
                 :param vtype: variable :attr:`type <picos.Variable.vtype>`. 
                               Can be:
+                              
                                 * ``'continuous'`` (default),
+                                
                                 * ``'binary'``: 0/1 variable
+                                
                                 * ``'integer'``: integer valued variable
+                                
                                 * ``'symmetric'``: symmetric matrix
+                                
                                 * ``'semicont'``: 0 or continuous variable satisfying its bounds
+                                
                                 * ``'semiint'``: 0 or integer variable satisfying its bounds
+                
                 :type vtype: str.
                 :returns: An instance of the class :class:`Variable <picos.Variable>`.
                 """
@@ -621,11 +672,31 @@ class Problem:
                         ind+=self.variables[nam].size[0]*self.variables[nam].size[1]
                         self.variables[nam].endIndex=ind
 
+        def copy(self):
+                """creates a copy of the problem."""
+                import copy
+                cop=Problem()
+                cvars={}
+                for var,v in self.variables.iteritems():
+                        cvars[v.name]=cop.add_variable(v.name,v.size,v.vtype)
+                for c in self.constraints:
+                        c2=copy.deepcopy(c)
+                        c2.Exp1=_copy_exp_to_new_vars(c2.Exp1,cvars)
+                        c2.Exp2=_copy_exp_to_new_vars(c2.Exp2,cvars)
+                        c2.Exp3=_copy_exp_to_new_vars(c2.Exp3,cvars)
+                        cop.add_constraint(c2,c2.key)
+                obj=_copy_exp_to_new_vars(self.objective[1],cvars)
+                cop.set_objective(self.objective[0],obj)
+                
+                cop.consNumbering=copy.deepcopy(self.consNumbering)
+                cop.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
+                return cop
+                
         def add_constraint(self,cons, key=None):
                 """Adds a constraint in the problem.
-                
+            f    
                 :param cons: The constraint to be added.
-                :type cons: :class:`Constraint<picos.Constraint>``
+                :type cons: :class:`Constraint <picos.Constraint>`
                 :param key: Optional parameter to describe the constraint with a key string.
                 :type key: str.
                 """
@@ -1093,6 +1164,36 @@ class Problem:
                         xx=cvx.matrix([xx,self.variables[v].value[:]])
                 return xx
 
+                
+        def check_current_value_feasibility(self):
+                if not(self.options['feastol'] is None):
+                        tol = 10*self.options['feastol']
+                else:
+                        tol = 10*self.options['tol']
+                for cs in self.constraints:
+                        sl=cs.slack
+                        if not(isinstance(sl,cvx.matrix) or isinstance(sl,cvx.spmatrix)):
+                                sl=cvx.matrix(sl)
+                        if cs.typeOfConstraint.startswith('sdp'):
+                                #check symmetry
+                                if min(sl-sl.T)<-tol:
+                                        return False
+                                if min(sl.T-sl)<-tol:
+                                        return False
+                                #check positive semidefiniteness
+                                if isinstance(sl,cvx.spmatrix):
+                                        sl=cvx.matrix(sl)
+                                sl=np.array(sl)
+                                eg=np.linalg.eigvalsh(sl)
+                                if min(eg)<-tol:
+                                        return False
+                        else:
+                                if min(sl)<-tol:
+                                        return False
+                #so OK, it's feasible
+                return True
+                                
+                
         """
         ----------------------------------------------------------------
         --                BUILD THE VARIABLES FOR A SOLVER            --
@@ -1817,13 +1918,18 @@ class Problem:
                 task.append(mosek.accmode.var,NUMVAR)
 
                 #specifies the integer variables
+                binaries=[]
                 for k in self.variables:
                         if self.variables[k].vtype=='binary':
-                                raise Exception('not implemented yet')
+                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
+                                        task.putvartype(i,mosek.variabletype.type_int)
+                                        binaries.append(i)
                         elif self.variables[k].vtype=='integer':
                                 for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
                                         task.putvartype(i,mosek.variabletype.type_int)
-
+                        elif self.variables[k].vtype!='continuous':
+                                raise Exception('vtype not handled (yet) with mosek')
+                                        
                 for j in range(NUMVAR):
                         # Set the linear term c_j in the objective.
                         if j< self.numberOfVars:
@@ -1835,6 +1941,10 @@ class Problem:
                         #make the variable free
                         task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
 
+                for i in binaries:
+                        #0/1 bound
+                        task.putbound(mosek.accmode.var,i,mosek.boundkey.ra,0.,1.)
+                        
                 #equality constraints:
                 Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
                 ijvs=sorted(zip(Ai,Aj,Av))
@@ -2170,8 +2280,8 @@ class Problem:
                 Once the problem has been solved, the optimal variables
                 can be obtained thanks to the property :attr:`value <picos.Expression.value>`
                 of the class :class:`Expression<picos.Expression>`.
-                The optimal dual variables can be accessed by the method
-                :func:`picos.Constraint.dual` of the class
+                The optimal dual variables can be accessed by the property
+                :attr:`dual <picos.Constraint.dual>` of the class
                 :class:`Constraint<picos.Constraint>`.
                 
                 :keyword options: A list of options to update before
@@ -2261,17 +2371,29 @@ class Problem:
                 #  sets the options  #
                 #--------------------#
                 import cvxopt.solvers
-                cvx.solvers.options['maxiters']=self.options['maxit']
-                cvx.solvers.options['abstol']=self.options['abstol']
-                cvx.solvers.options['feastol']=self.options['feastol']
-                cvx.solvers.options['reltol']=self.options['reltol']
+                abstol=self.options['abstol']
+                if abstol is None:
+                        abstol = self.options['tol']
+                reltol=self.options['reltol']
+                if reltol is None:
+                        reltol = 10* self.options['tol']
+                feastol=self.options['feastol']
+                if feastol is None:
+                        feastol = self.options['tol']
+                maxit=self.options['maxit']
+                if maxit is None:
+                        maxit=999999
+                cvx.solvers.options['maxiters']=maxit
+                cvx.solvers.options['abstol']=abstol
+                cvx.solvers.options['feastol']=feastol
+                cvx.solvers.options['reltol']=reltol
                 cvx.solvers.options['show_progress']=bool(self.options['verbose']>0)
                 try:
                         import smcp.solvers
-                        smcp.solvers.options['maxiters']=self.options['maxit']
-                        smcp.solvers.options['abstol']=self.options['abstol']
-                        smcp.solvers.options['feastol']=self.options['feastol']
-                        smcp.solvers.options['reltol']=self.options['reltol']
+                        smcp.solvers.options['maxiters']=maxit
+                        smcp.solvers.options['abstol']=abstol
+                        smcp.solvers.options['feastol']=feastol
+                        smcp.solvers.options['reltol']=reltol
                         smcp.solvers.options['show_progress']=bool(self.options['verbose']>0)
                 except:
                         #smcp is not available
@@ -2288,7 +2410,7 @@ class Problem:
                 #-------------------------------#
                 if  self.numberQuadConstraints>0:#(QC)QP
                         probtype='QCQP'
-                        raise Exception('Please convert the quadratic constraints as cone constraints '+
+                        raise QuadAsSocpError('Please convert the quadratic constraints as cone constraints '+
                                                 'with the function convert_quad_to_socp().')
                 elif self.numberLSEConstraints>0:#GP
                         if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
@@ -2479,10 +2601,14 @@ class Problem:
                                                 if not (sol[zqkey] is None):
                                                         if probtype=='ConeLP':
                                                                 consSz=np.product(self.constraints[k].Exp1.size)+1
+                                                                if self.constraints[k].typeOfConstraint[:2]=='RS':
+                                                                        consSz+=1
                                                                 duals.append(sol[zqkey][indzq:indzq+consSz])
+                                                                duals[-1][1:]=-duals[-1][1:]
                                                                 indzq+=consSz
                                                         else:
                                                                 duals.append(sol[zqkey][indzq])
+                                                                duals[-1][1:]=-duals[-1][1:]
                                                                 indzq+=1
                                                 else:
                                                         printnodual=True
@@ -2491,11 +2617,13 @@ class Problem:
                                         elif self.constraints[k].typeOfConstraint[:3]=='sdp':
                                                 if not (sol[zskey] is None):
                                                         if probtype=='ConeLP':
-                                                                consSz=np.product(self.constraints[k].Exp1.size)
-                                                                duals.append(sol[zskey][indzs:indzs+consSz])
+                                                                matsz=self.constraints[k].Exp1.size[0]
+                                                                consSz=matsz*matsz
+                                                                duals.append(cvx.matrix(sol[zskey][indzs:indzs+consSz],(matsz,matsz)))
                                                                 indzs+=consSz
                                                         else:
-                                                                duals.append(sol[zskey][indzs])
+                                                                matsz=self.constraints[k].Exp1.size[0]
+                                                                duals.append(cvx.matrix(sol[zskey][indzs],(matsz,matsz)))
                                                                 indzs+=1
                                                 else:
                                                         printnodual=True
@@ -2553,9 +2681,6 @@ class Problem:
         def  _cplex_solve(self):
                 """
                 Solves a problem with the cvxopt solver.
-                
-                .. Todo::  * set solver settings
-                           
                 """
                 #----------------------------#
                 #  create the cplex instance #
@@ -2568,7 +2693,6 @@ class Problem:
                         raise ValueError('a cplex instance should have been created before')
                 
                 
-                #TODO : setting parameters
                 if not self.options['timelimit'] is None:
                         import cplex_callbacks
                         import time
@@ -2595,14 +2719,16 @@ class Problem:
                 c.parameters.simplex.display.set(min(2,self.options['verbose']))
                 if self.options['verbose']==0:
                         c.parameters.mip.display.set(0)
-                        
+                     
                 #convergence tolerance
                 c.parameters.barrier.qcpconvergetol.set(self.options['tol'])
                 c.parameters.barrier.convergetol.set(self.options['tol'])
                 
                 #iterations limit
-                c.parameters.barrier.limits.iteration.set(self.options['maxit'])
-                c.parameters.simplex.limits.iterations.set(self.options['maxit'])
+                if not(self.options['maxit'] is None):
+                        
+                        c.parameters.barrier.limits.iteration.set(self.options['maxit'])
+                        c.parameters.simplex.limits.iterations.set(self.options['maxit'])
                 
                 #lpmethod
                 if not self.options['lp_root_method'] is None:
@@ -2625,9 +2751,24 @@ class Problem:
                                 raise Exception('unexpected value for lp_node_method')
 
                 if not self.options['nbsol'] is None:
-                        c.parameters.mip.limits.nodes.set(self.options['nbsol'])
+                        c.parameters.mip.limits.solutions.set(self.options['nbsol'])
+                        #variant with a call back (count the incumbents)
+                        #import cplex_callbacks
+                        #nbsol_cb = c.register_callback(cplex_callbacks.nbIncCallback)
+                        #nbsol_cb.aborted = 0
+                        #nbsol_cb.cursol = 0
+                        #nbsol_cb.nbsol = self.options['nbsol']
                 
                 
+                
+                #other cplex parameters
+                for par,val in self.options['cplex_params'].iteritems():
+                        try:
+                                cplexpar=eval('c.parameters.'+par)
+                                cplexpar.set(val)
+                        except AttributeError:
+                                raise Exception('unknown cplex param')
+                        
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
@@ -2766,16 +2907,20 @@ class Problem:
                                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
                                                 dual_cols = range(pos_conevar,pos_conevar+szcons+1)
                                                 dual_values = c.solution.get_reduced_costs(dual_cols)
-                                                duals.append(np.sign(dual_values[-1]) * cvx.matrix(
-                                                                [dual_values[-1]]+dual_values[:-1]))
+                                                #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
+                                                               # [dual_values[-1]]+dual_values[:-1]))
+                                                duals.append(cvx.matrix(
+                                                                [-dual_values[-1]]+dual_values[:-1]))
                                                 pos_conevar += szcons+1
                                         
                                         elif constr.typeOfConstraint == 'RScone':
                                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
                                                 dual_cols = range(pos_conevar,pos_conevar+szcons+2)
                                                 dual_values = c.solution.get_reduced_costs(dual_cols)
-                                                duals.append(np.sign(dual_values[-1]) * cvx.matrix(
-                                                                [dual_values[-1]]+dual_values[:-1]))
+                                                #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
+                                                #                [dual_values[-1]]+dual_values[:-1]))
+                                                duals.append(cvx.matrix(
+                                                                [-dual_values[-1]]+dual_values[:-1]))
                                                 pos_conevar += szcons+2
                                         
                                         else:
@@ -2798,9 +2943,6 @@ class Problem:
         def _mosek_solve(self):
                 """
                 Solves the problem with mosek
-                
-                .. Todo:: * Solver settings
-                          * Dans dual() et tuto, expliquer pour RS cones
                 """
                 #----------------------------#
                 #  create the mosek instance #
@@ -2809,7 +2951,6 @@ class Problem:
                 self._make_mosek_instance()
                 task=self.msk_task
 
-                #TODO : test timelimit, automatic optionmosek
                 #---------------------#
                 #  setting parameters #
                 #---------------------# 
@@ -2830,8 +2971,9 @@ class Problem:
                 
                 
                 #maxiters
-                task.putintparam(mosek.iparam.intpnt_max_iterations,self.options['maxit'])
-                task.putintparam(mosek.iparam.sim_max_iterations,self.options['maxit'])
+                if not(self.options['maxit'] is None):
+                        task.putintparam(mosek.iparam.intpnt_max_iterations,self.options['maxit'])
+                        task.putintparam(mosek.iparam.sim_max_iterations,self.options['maxit'])
                 
                 #lpmethod
                 if not self.options['lp_node_method'] is None:
@@ -2870,6 +3012,19 @@ class Problem:
                 
                 if not self.options['nbsol'] is None:
                         task.putintparam(mosek.iparam.mio_max_num_solutions,self.options['nbsol'])
+                
+                for par,val in self.options['mosek_params'].iteritems():
+                        try:
+                                mskpar=eval('mosek.iparam.'+par)
+                                task.putintparam(mskpar,val)
+                        except AttributeError:
+                                try:
+                                        mskpar=eval('mosek.dparam.'+par)
+                                        task.putdouparam(mskpar,val)
+                                except AttributeError:
+                                        raise Exception('unknown mosek parameter')
+                                
+                
                 #--------------------#
                 #  call the solver   #
                 #--------------------# 
@@ -2882,7 +3037,7 @@ class Problem:
                                 raise Exception('Error raised during solve. Problem nonconvex ?')
                         if str(ex).startswith('(1550)') and (
                            self.type in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)')):
-                                raise Exception('Please convert the problem as an socp '+
+                                raise QuadAsSocpError('Please convert the problem as an socp '+
                                                 'with the function convert_quad_to_socp().')
                         else:
                                 import pdb;pdb.set_trace()
@@ -2985,6 +3140,7 @@ class Problem:
                                                 task.getsolutionslice(soltype,mosek.solitem.snx,
                                                                 idvarcone,idvarcone+szcone,v)
                                                 duals.append(cvx.matrix(v))
+                                                duals[-1][0]=-duals[-1][0]
                                                 idvarcone+=szcone
                                                 idcone+=1
                                         elif self.constraints[k].typeOfConstraint=='lin=':
@@ -3105,8 +3261,6 @@ class Problem:
         def _zibopt_solve(self):
                 """
                 Solves the problem with the zib optimization suite
-                
-                .. Todo:: * solver parameters
                 """
                 #-----------------------------#
                 #  create the zibopt instance #
@@ -3405,6 +3559,8 @@ class Problem:
                         order=['cplex','mosek','zibopt']
                 elif tp in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)'):
                         order=['cplex']
+                elif tp == 'Mixed (SDP+quad)':
+                        order=[]
                 else:
                         raise Exception('no solver available for problem of type {0}'.format(tp))
                 avs=available_solvers()
@@ -3414,13 +3570,13 @@ class Problem:
                                 return
                 #mosek can solve this as an socp
                 if tp=='Mixed (MISOCP+quad)' and 'mosek' in avs:
-                        raise Exception('You should first transform the problem into an socp '+
+                        raise QuadAsSocpError('You should first transform the problem into an socp '+
                                         'with the function convert_quad_to_socp() '+
                                         'and then solve the problem with mosek.')
                         
                 #cvxopt can solve this as an socp
                 if tp in ('Mixed (SOCP+quad)','Mixed (SDP+quad)','QCQP','QP'):
-                        raise Exception('No solver available in this form. '+
+                        raise QuadAsSocpError('No solver available in this form. '+
                                         'You should first transform the problem into an socp '+
                                         'with the function convert_quad_to_socp().')
                 #not found
@@ -3482,7 +3638,7 @@ class Problem:
                                         filename+='.lp'
                         elif writer=='picos':
                                 if (self.numberQuadConstraints >0):
-                                        raise Exception('no quad constraints in sdpa format.'+
+                                        raise QuadAsSocpError('no quad constraints in sdpa format.'+
                                                 ' Try to convert to socp with the function convert_quad_to_socp().')
                                 if (self.numberConeConstraints + 
                                     self.numberSDPConstraints) ==0:
@@ -3885,7 +4041,7 @@ class Problem:
                 #check lp compatibility
                 if (self.numberQuadConstraints +
                     self.numberLSEConstraints) > 0:
-                        raise Exception('Problem should not have quad or gp constraints. '+
+                        raise QuadAsSocpError('Problem should not have quad or gp constraints. '+
                          'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
                 #open file
                 f = open(filename,'w')

@@ -640,14 +640,14 @@ and to provide one additional example in this doc:
         ---------------------
 
         The optimal deign is:
-        [ 6.03e-08]
-        [ 8.74e-08]
-        [ 6.18e-07]
-        [ 1.10e-07]
+        [...]
+        [...]
+        [...]
+        [...]
         [ 1.28e-01]
-        [ 3.25e-07]
+        [...]
         [ 8.72e-01]
-        [ 3.76e-07]
+        [...]
 
         and the optimal positive semidefinite matrix X is
         [ 5.92e-03  8.98e-03  2.82e-03 -3.48e-02 -1.43e-02]

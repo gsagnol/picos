@@ -4,7 +4,7 @@
 #
 
 import cplex
-from cplex.callbacks import MIPInfoCallback
+from cplex.callbacks import MIPInfoCallback, IncumbentCallback, BranchCallback
 import time
 
 class TimeLimitCallback(MIPInfoCallback):
@@ -19,3 +19,23 @@ class TimeLimitCallback(MIPInfoCallback):
                       gap, "%, quitting."
                 self.aborted = 1
                 self.abort()
+                
+class nbIncCallback(IncumbentCallback):
+        
+        def __call__(self):
+                if not self.aborted:
+                        self.cursol+=1
+                if self.cursol == self.nbsol:
+                        self.aborted=1
+                        self.abort()
+
+class nbSolCallback(BranchCallback):
+        
+        def __call__(self):
+                if not self.aborted:
+                        if self.is_integer_feasible():
+                                self.cursol+=1
+                if self.cursol == self.nbsol:
+                        self.aborted=1
+                        self.abort()
+                        

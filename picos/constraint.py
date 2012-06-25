@@ -1,4 +1,31 @@
 # coding: utf-8
+
+#-------------------------------------------------------------------
+#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Copyright (C) 2012  Guillaume Sagnol
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#For any information, please contact:
+#Guillaume Sagnol
+#sagnol@zib.de
+#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
+#Takustrasse 7
+#D-14195 Berlin-Dahlem
+#Germany 
+#-------------------------------------------------------------------
+
 import cvxopt as cvx
 import numpy as np
 import sys
@@ -197,7 +224,7 @@ class Constraint:
                         constr+=self.constring()
                 return constr
 
-        def set_dualVar(self,value):
+        def set_dualVar(self,value):                
                 self.dualVariable=value
         
         def dual_var(self):
@@ -207,12 +234,29 @@ class Constraint:
                 self.dualVariable=None
                 
         dual=property(dual_var,set_dualVar,del_dual)
-        """Value of the dual variable associated to this constraint"""
+        """
+        Value of the dual variable associated to this constraint
+        
+        .. Warning::
+        
+           For second order cone constraints of the form :math:`\Vert \mathbf{x} \Vert \leq t`,
+           where :math:`\mathbf{x}` is a vector of dimension :math:`n`,
+           the dual variable is a vector of dimension :math:`n+1` of the form
+           :math:`[\lambda; \mathbf{z}]`, where the :math:`n-` dimensional vector
+           :math:`\mathbf{z}` satisfies :math:`\Vert \mathbf{z} \Vert \leq \lambda`.
+           
+           Since *rotated* second order cone constraints of the form
+           :math:`\Vert \mathbf{x} \Vert^2 \leq t u,\ t \geq 0`,
+           are handled as the equivalent ice-cream constraint
+           :math:`\Vert [2 \mathbf{x}; t-u ] \Vert \leq t+u`,
+           the dual is given with respect to this reformulated, standard SOC constraint.
+           
+        """
 
         def slack_var(self):
                 """returns the slack of the constraint
                 (For an inequality of the type ``lhs<rhs``,
-                the slack is ``rhs-lhs``, and for ``lhs<rhs``
+                the slack is ``rhs-lhs``, and for ``lhs>rhs``
                 the slack is ``lhs-rhs``)."""
                 if self.typeOfConstraint[3]=='<':
                         return self.Exp2.eval()-self.Exp1.eval()
@@ -227,7 +271,7 @@ class Constraint:
                 elif self.typeOfConstraint=='lse':
                         return -lse(self.Exp1).eval()
                 elif self.typeOfConstraint=='quad':
-                        return -(Exp1.eval())
+                        return -(self.Exp1.eval())
 
         def set_slack(self,value):
                 raise AttributeError('slack is not writable')

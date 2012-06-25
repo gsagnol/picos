@@ -686,7 +686,7 @@ More examples can be found :ref:`here <examples>`.
     status: optimal
 
     the optimal value of this problem is:
-    3.00000001966
+    3.0000000002
     The solution of the problem is:
     [ 2.00e+00]
     [ 2.00e+00]
@@ -698,15 +698,15 @@ More examples can be found :ref:`here <examples>`.
     [ 2.50e-01]
 
     And its slack is:
-    [ 1.83e-07]
+    [ 1.83e-09]
 
 
     The dual of the constraint
     # (2x1)-affine constraint : A*x < [ 2 x 1 MAT ] #
     is:
-    [ 4.56e-08]
+    [ 4.56e-10]
     [ 7.50e-01]
 
     And its slack is:
     [ 1.00e+00]
-    [-8.71e-08]
+    [-8.71e-10]

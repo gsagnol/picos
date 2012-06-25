@@ -14,8 +14,10 @@ enter an optimization problem as a *high level model*,
 and to be able to solve it with several *different solvers*.
 Multidimensional and matrix variables are handled in a natural fashion,
 which makes it painless to formulate a SDP or a SOCP.
-This is very useful to quickly implement some models and
+This is very useful for educational purposes,
+and to quickly implement some models and
 test their validity on simple examples.
+
 Furthermore, with PICOS you can take advantage of the
 python programming language to read and write data,
 construct a list of constraints by using python list comprehensions,
@@ -199,15 +201,15 @@ Frobenius norm of
 This generates the output:
 
 .. testoutput::
-   :options: +NORMALIZE_WHITESPACE
-
-    ---------------------
-    optimization problem (SOCP):
-    15 variables, 6 affine constraints, 15 vars in 3 SO cones
+    :options: +NORMALIZE_WHITESPACE
     
+    ---------------------
+    optimization problem  (SOCP):
+    15 variables, 6 affine constraints, 15 vars in 3 SO cones
+
     mu  : (3, 1), continuous
     Z   : list of 3 variables, different sizes, continuous
-    
+
         minimize 〈 |1| | mu 〉
     such that
       Σ_{i in [s]} A[i]*Z[i] = K
@@ -224,11 +226,12 @@ This generates the output:
     # (3x2)-affine constraint : Σ_{i in [s]} A[i]*Z[i] = K #
     is :
     [-3.41e-01]
-    [ 9.17e-02]
+    [ 9.16e-02]
     [-1.88e-01]
     [-3.52e-01]
     [ 2.32e-01]
     [ 2.59e-01]
+
 
 
 
