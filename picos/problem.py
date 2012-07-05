@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -130,6 +130,9 @@ class Problem:
                 if self.numberSDPConstraints>0:
                         probstr+=', {0} vars in {1} SD cones'.format(
                                 self.numberSDPVars,self.numberSDPConstraints)
+                if self.numberQuadConstraints>0:
+                        probstr+=', {0} nnz  in {1} quad constraints'.format(
+                                self.numberQuadNNZ,self.numberQuadConstraints)
                 probstr+='\n'
 
                 printedlis=[]
@@ -297,13 +300,14 @@ class Problem:
                 valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
                 if valuemat.size<>self.variables[name].size:
                         raise Exception('should be of size {0}'.format(self.variables[name].size))
-                if self.variables[name].vtype=='symmetric':
-                        valuemat=svec(valuemat)
                 if ind is None:
+                        #svectorization for symmetric is done by the value property
                         self.variables[name].value=valuemat
                         if optimalvar:
                                 self.number_solutions=max(self.number_solutions,1)
                 else:
+                        if self.variables[name].vtype=='symmetric':
+                                valuemat=svec(valuemat)        
                         self.variables[name].value_alt[ind]=valuemat
                         if optimalvar:
                                 self.number_solutions=max(self.number_solutions,ind+1)
@@ -403,6 +407,9 @@ class Problem:
                   * ``nbsol = None`` : maximum number of feasible solution nodes visited
                     when solving a mixed integer problem.
                                     
+                  * ``convert_quad_to_socp_if_needed = True`` : Do we convert the convex quadratics to
+                    second order cone constraints when the solver does not handle them directly ?
+                                    
                 * Specific options available for cvxopt/smcp:
                 
                   * ``feastol = None`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
@@ -470,6 +477,7 @@ class Problem:
                                  'lp_node_method' :None,
                                  'cplex_params'   :{},
                                  'mosek_params'   :{},
+                                 'convert_quad_to_socp_if_needed' : True,
                                  }
                                  
                                  
@@ -677,7 +685,7 @@ class Problem:
                 import copy
                 cop=Problem()
                 cvars={}
-                for var,v in self.variables.iteritems():
+                for (iv,v) in sorted([(v.startIndex,v) for v in self.variables.values()]):
                         cvars[v.name]=cop.add_variable(v.name,v.size,v.vtype)
                 for c in self.constraints:
                         c2=copy.deepcopy(c)
@@ -1165,11 +1173,20 @@ class Problem:
                 return xx
 
                 
-        def check_current_value_feasibility(self):
-                if not(self.options['feastol'] is None):
-                        tol = 10*self.options['feastol']
-                else:
-                        tol = 10*self.options['tol']
+        def check_current_value_feasibility(self,tol=1e-5):
+                """
+                returns ``True`` if the
+                current value of the variabless
+                is a feasible solution, up to the
+                tolerance ``tol``. If ``tol`` is set to ``None``,
+                the option parameter ``options['tol']`` is used instead.
+                The integer feasibility is checked with a tolerance of 1e-3.
+                """
+                if tol is None:
+                        if not(self.options['feastol'] is None):
+                                tol = self.options['feastol']
+                        else:
+                                tol = self.options['tol']
                 for cs in self.constraints:
                         sl=cs.slack
                         if not(isinstance(sl,cvx.matrix) or isinstance(sl,cvx.spmatrix)):
@@ -1190,6 +1207,15 @@ class Problem:
                         else:
                                 if min(sl)<-tol:
                                         return False
+                #integer feasibility
+                if not(self.is_continuous()):
+                        for vnam,v in self.variables.iteritems():
+                                if v.vtype in ('binary','integer'):
+                                        sl=v.value
+                                        dsl=[min(s-int(s),int(s)+1-s) for s in sl]
+                                        if max(dsl)>1e-3:
+                                                return False
+                                
                 #so OK, it's feasible
                 return True
                                 
@@ -2219,7 +2245,8 @@ class Problem:
                                         exp=e2c[0]
                                         for j,v in zip(e2x.J,e2x.V):
                                                 exp+=v*x[j]
-                                        scip_solver += exp >=0
+                                        if e2x:
+                                                scip_solver += exp >=0
                                 if self.constraints[k].typeOfConstraint=='RScone':
                                         qexpr=(self.constraints[k].Exp1|self.constraints[k].Exp1)-(
                                                 self.constraints[k].Exp2*self.constraints[k].Exp3)
@@ -2227,7 +2254,8 @@ class Problem:
                                         exp=e2c[0]
                                         for j,v in zip(e2x.J,e2x.V):
                                                 exp+=v*x[j]
-                                        scip_solver += exp >=0
+                                        if e2x:
+                                                scip_solver += exp >=0
 
                         qd=0
                         for i,j in qexpr.quad:
@@ -2307,32 +2335,49 @@ class Problem:
                 if isinstance(self.objective[1],GeneralFun):
                         return self._sqpsolve(options)
                 
-                #WARNING: Bug with cvxopt-mosek ?
-                if (self.options['solver']=='CVXOPT' #obolete name, use lower case
-                    or self.options['solver']=='cvxopt-mosek'
-                    or self.options['solver']=='smcp'
-                    or self.options['solver']=='cvxopt'):
-
-                        primals,duals,obj,sol=self._cvxopt_solve()
-                        
-                # For cplex
-                elif (self.options['solver']=='cplex'):
-                        
-                        primals,duals,obj,sol=self._cplex_solve()
-
-                # for mosek
-                elif (self.options['solver']=='MSK' #obsolete value, use lower case
-                        or self.options['solver']=='mosek'):
-                        
-                        primals,duals,obj,sol=self._mosek_solve()
-
                 
-                elif (self.options['solver']=='zibopt'):
-                        
-                        primals,duals,obj,sol=self._zibopt_solve()
+                try:
+                        #WARNING: Bug with cvxopt-mosek ?
+                        if (self.options['solver']=='CVXOPT' #obolete name, use lower case
+                        or self.options['solver']=='cvxopt-mosek'
+                        or self.options['solver']=='smcp'
+                        or self.options['solver']=='cvxopt'):
 
-                else:
-                        raise Exception('unknown solver')                       
+                                primals,duals,obj,sol=self._cvxopt_solve()
+                                
+                        # For cplex
+                        elif (self.options['solver']=='cplex'):
+                                
+                                primals,duals,obj,sol=self._cplex_solve()
+
+                        # for mosek
+                        elif (self.options['solver']=='MSK' #obsolete value, use lower case
+                                or self.options['solver']=='mosek'):
+                                
+                                primals,duals,obj,sol=self._mosek_solve()
+
+                        
+                        elif (self.options['solver'] in ('zibopt','scip')):
+                                
+                                primals,duals,obj,sol=self._zibopt_solve()
+
+                        else:
+                                raise Exception('unknown solver')
+                except QuadAsSocpError:
+                        if self.options['convert_quad_to_socp_if_needed']:
+                                pcop=self.copy()
+                                pcop.convert_quad_to_socp()
+                                sol=pcop.solve()
+                                self.status=sol['status']
+                                for vname,v in self.variables.iteritems():
+                                        v.value=pcop.get_variable(vname).value
+                                for i,cs in enumerate(self.constraints):
+                                        dui=pcop.constraints[i].dual
+                                        if not(dui is None):
+                                                cs.set_dualVar(dui)
+                                return sol
+                        else:
+                                raise
                                         
                 for k in primals.keys():
                         if not primals[k] is None:
@@ -2355,6 +2400,21 @@ class Problem:
                 Solves a problem with the cvxopt solver.
                 """
                 
+                #-----------------------------#
+                # Can we solve this problem ? #
+                #-----------------------------#
+                
+                if self.type in ('unknown type','MISOCP','MIQCP','MIQP','MIP','Mixed (MISOCP+quad)') and (
+                                self.options['solver']=='cvxopt'):
+                        raise NotAppropriateSolverError("'cvxopt' cannot solve problems of type {0}".format(self.type))
+
+                elif self.type in ('unknown type','GP','MISOCP','MIQCP','MIQP','MIP','Mixed (MISOCP+quad)') and (
+                                self.options['solver']=='smcp'):
+                        raise NotAppropriateSolverError("'smcp' cannot solve problems of type {0}".format(self.type))                        
+                        
+                elif self.type in ('Mixed (SDP+quad)','Mixed (SOCP+quad)','QCQP','QP'):
+                        raise QuadAsSocpError('Please convert the quadratic constraints as cone constraints '+
+                                                'with the function convert_quad_to_socp().')
                 #--------------------#
                 # makes the instance #
                 #--------------------#
@@ -2408,13 +2468,8 @@ class Problem:
                 #-------------------------------#
                 #  runs the appropriate solver  #
                 #-------------------------------#
-                if  self.numberQuadConstraints>0:#(QC)QP
-                        probtype='QCQP'
-                        raise QuadAsSocpError('Please convert the quadratic constraints as cone constraints '+
-                                                'with the function convert_quad_to_socp().')
-                elif self.numberLSEConstraints>0:#GP
-                        if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs'])>0:
-                                raise Exception('cone constraints + LSE not implemented')
+                
+                if self.numberLSEConstraints>0:#GP
                         probtype='GP'
                         if self.options['verbose']>0:
                                 print '-----------------------------------'
@@ -2534,15 +2589,10 @@ class Problem:
                                 
                                 primals[var.name]=cvx.matrix(varvect, var.size)
                 except Exception as ex:
-                        import warnings
-                        warnings.warn('error while retrieving primals')
                         primals = {}
                         if self.options['verbose']>0:
-                                print('##################################')
-                                print('WARNING: Primal Solution Not Found')
-                                print('##################################')
+                                print "\033[1;31m*** Primal Solution not found\033[0m"
                                                
-
                 #--------------------#
                 # retrieve the duals #
                 #--------------------#
@@ -2550,7 +2600,6 @@ class Problem:
                 if 'noduals' in self.options and self.options['noduals']:
                         pass
                 else:
-                        
                         try:
                                 printnodual=False
                                 (indy,indzl,indzq,indznl,indzs)=(0,0,0,0,0)
@@ -2565,22 +2614,22 @@ class Problem:
                                         zqkey='z'
                                         zskey='z'
                                         indzs=dims['l']+sum(dims['q'])
-                                ykey='y'
+                                
                                 if currentsolver=='smcp':
-                                        nbeq=self.cvxoptVars['A'].size[0]
-                                        indy=dims['l']-2*nbeq
-                                        ykey='z'
-
+                                        ieq=self.cvxoptVars['Gl'].size[0]
+                                        neq=(dims['l']-ieq)/2
+                                        soleq=sol['z'][ieq:ieq+neq]
+                                        soleq-=sol['z'][ieq+neq:ieq+2*neq]
+                                else:
+                                        soleq=sol['y']
+                                
                                 for k in range(len(self.constraints)):
                                         #Equality
                                         if self.constraints[k].typeOfConstraint=='lin=':
-                                                if not (sol[ykey] is None):
+                                                if not (soleq is None):
                                                         consSz=np.product(self.constraints[k].Exp1.size)
-                                                        duals.append((P.T*sol[ykey])[indy:indy+consSz])
+                                                        duals.append((P.T*soleq)[indy:indy+consSz])
                                                         indy+=consSz
-                                                        if currentsolver=='smcp':
-                                                                dualm=sol[ykey][indy-consSz+nbeq:indy+nbeq]
-                                                                duals[-1]-=dualm
                                                 else:
                                                         printnodual=True
                                                         duals.append(None)
@@ -2588,10 +2637,7 @@ class Problem:
                                         elif self.constraints[k].typeOfConstraint[:3]=='lin':
                                                 if not (sol[zkey] is None):
                                                         consSz=np.product(self.constraints[k].Exp1.size)
-                                                        if self.constraints[k].typeOfConstraint[3]=='<':
-                                                                duals.append(sol[zkey][indzl:indzl+consSz])
-                                                        else:
-                                                                duals.append(sol[zkey][indzl:indzl+consSz])
+                                                        duals.append(sol[zkey][indzl:indzl+consSz])
                                                         indzl+=consSz
                                                 else:
                                                         printnodual=True
@@ -2641,18 +2687,13 @@ class Problem:
                                                 raise Exception('constraint cannot be handled')
                                         
                                 if printnodual and self.options['verbose']>0:
-                                        print('################################')
-                                        print('WARNING: Dual Solution Not Found')
-                                        print('################################')
+                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                
                         
                         except Exception as ex:
-                                import warnings
-                                warnings.warn('error while retrieving duals')
                                 duals = []
                                 if self.options['verbose']>0:
-                                        print('################################')
-                                        print('WARNING: Dual Solution Not Found')
-                                        print('################################')
+                                        print "\033[1;31m*** Dual Solution not found\033[0m"
                 
                 #-----------------#
                 # objective value #
@@ -2682,6 +2723,15 @@ class Problem:
                 """
                 Solves a problem with the cvxopt solver.
                 """
+
+                #-------------------------------#
+                #  can we solve it with cplex ? #
+                #-------------------------------#
+                
+                if self.type in ('unknown type','GP','SDP','ConeP','Mixed (SDP+quad)'):
+                        raise NotAppropriateSolverError("'cplex' cannot solve problems of type {0}".format(self.type))
+                
+                
                 #----------------------------#
                 #  create the cplex instance #
                 #----------------------------#
@@ -2783,7 +2833,7 @@ class Problem:
                                 c.solve()
                         except cplex.exceptions.CplexSolverError as ex:
                                 if ex.args[2] == 5002:
-                                        raise Exception('Error raised during solve. Problem is nonconvex')
+                                        raise NonConvexError('Error raised during solve. Problem is nonconvex')
                                 else:
                                         print "Exception raised during solve"
                                 
@@ -2840,9 +2890,8 @@ class Problem:
                         primals = {}
                         obj = None
                         if self.options['verbose']>0:
-                                print('##################################')
-                                print('WARNING: Primal Solution Not Found')
-                                print('##################################')
+                                print "\033[1;31m*** Primal Solution not found\033[0m"
+
                         
                 #--------------------#
                 # retrieve the duals #
@@ -2868,6 +2917,8 @@ class Problem:
                                                         dual_values = []
                                                 else:
                                                         dual_values = c.solution.get_dual_values(dual_lines)
+                                                if constr.typeOfConstraint[3]=='>':
+                                                        dual_values=[-dvl for dvl in dual_values]
                                                 for (i,j,b,v) in self.cplex_boundcons[k]:
                                                         xj = c.solution.get_values(j)
                                                         if ((b=='=') or (xj == b)) and (j not in seen_bounded_vars):
@@ -2929,9 +2980,8 @@ class Problem:
                                                 duals.append(None)
 
                         except Exception as ex:
-                                import warnings
-                                warnings.warn('error while retrieving duals')
-                                duals = []
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Dual Solution not found\033[0m"
                 #-----------------#
                 # return statement#
                 #-----------------#             
@@ -2944,6 +2994,18 @@ class Problem:
                 """
                 Solves the problem with mosek
                 """
+                
+                #-------------------------------#
+                #  Can we solve it with mosek ? #
+                #-------------------------------#
+                if self.type in ('unknown type','GP','SDP','ConeP','Mixed (SDP+quad)'):
+                        raise NotAppropriateSolverError("'mosek' cannot solve problems of type {0}".format(self.type))
+                
+                elif self.type in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)','MIQCP','MIQP'):
+                        raise QuadAsSocpError('Please convert the quadratic constraints as cone constraints '+
+                                                'with the function convert_quad_to_socp().')
+
+                
                 #----------------------------#
                 #  create the mosek instance #
                 #----------------------------#
@@ -3028,19 +3090,15 @@ class Problem:
                 #--------------------#
                 #  call the solver   #
                 #--------------------# 
+                
                 #optimize
                 try:
                         task.optimize()
                 except mosek.Error as ex:
                         #catch non-convexity exception
                         if str(ex)=='(0) ' and self.numberQuadConstraints>0:
-                                raise Exception('Error raised during solve. Problem nonconvex ?')
-                        if str(ex).startswith('(1550)') and (
-                           self.type in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)')):
-                                raise QuadAsSocpError('Please convert the problem as an socp '+
-                                                'with the function convert_quad_to_socp().')
+                                raise NonConvexError('Error raised during solve. Problem nonconvex ?')
                         else:
-                                import pdb;pdb.set_trace()
                                 print "Error raised during solve"
                                 
                                 
@@ -3087,12 +3145,8 @@ class Problem:
                 except Exception as ex:
                         primals={}
                         obj=None
-                        import warnings
-                        warnings.warn('error while retrieving the primals')
                         if self.options['verbose']>0:
-                                print('##################################')
-                                print('WARNING: Primal Solution Not Found')
-                                print('##################################')
+                                print "\033[1;31m*** Primal Solution not found\033[0m"
 
                 #--------------------#
                 # retrieve the duals #
@@ -3242,8 +3296,8 @@ class Problem:
                                                                 print('dual for this constraint is not handled yet')
                                                         duals.append(None)
                         except Exception as ex:
-                                import warnings
-                                warnings.warn('error while retrieving the duals')
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Dual Solution not found\033[0m"
                                 duals = []
                 #-----------------#
                 # return statement#
@@ -3262,6 +3316,14 @@ class Problem:
                 """
                 Solves the problem with the zib optimization suite
                 """
+                
+                #-------------------------------#
+                #  Can we solve it with zibopt? #
+                #-------------------------------#
+                if self.type in ('unknown type','GP','SDP','ConeP','Mixed (SDP+quad)'):
+                        raise NotAppropriateSolverError("'zibopt' cannot solve problems of type {0}".format(self.type))
+                
+                
                 #-----------------------------#
                 #  create the zibopt instance #
                 #-----------------------------#
@@ -3299,11 +3361,11 @@ class Problem:
                         self._make_zibopt()
                 
                 timelimit=10000000.
-                gaplim=0.
+                gaplim=self.options['tol']
                 nbsol=-1
                 if not self.options['timelimit'] is None:
                         timelimit=self.options['timelimit']
-                if not self.options['gaplim'] is None:        
+                if not(self.options['gaplim'] is None or self.is_continuous()):
                         gaplim=self.options['gaplim']
                 if not self.options['nbsol'] is None:
                         nbsol=self.options['nbsol']
@@ -3362,12 +3424,8 @@ class Problem:
                 except Exception as ex:
                         primals={}
                         obj = None
-                        import warnings
-                        warnings.warn('error while retrieving the primals')
                         if self.options['verbose']>0:
-                                print('##################################')
-                                print('WARNING: Primal Solution Not Found')
-                                print('##################################')
+                                print "\033[1;31m*** Primal Solution not found\033[0m"
 
                 #----------------------#
                 # retrieve the duals #
@@ -3525,7 +3583,6 @@ class Problem:
                                         return 'MIQP'
                         return 'MIP' #(or simply IP)
                         
-                        
         def set_type(self,value):
                 raise AttributeError('type is not writable')
         
@@ -3544,9 +3601,9 @@ class Problem:
                 if tp == 'LP':
                         order=['cplex','mosek','zibopt','cvxopt','smcp']
                 elif tp in ('QCQP,QP'):
-                        order=['cplex','mosek','zibopt']
+                        order=['cplex','mosek','cvxopt','zibopt']
                 elif tp == 'SOCP':
-                        order=['mosek','cplex','cvxopt','smcp']
+                        order=['mosek','cplex','cvxopt','smcp','zibopt']
                 elif tp == 'SDP':
                         order=['cvxopt','smcp']
                 elif tp == 'ConeP':
@@ -3554,13 +3611,15 @@ class Problem:
                 elif tp == 'GP':
                         order=['cvxopt']
                 elif tp == 'general-obj':
-                        order=['cplex','mosek','zibopt','cvxopt']
+                        order=['cplex','mosek','zibopt','cvxopt','smcp']
                 elif tp in ('MIP','MIQCP','MISOCP','MIQP'):
                         order=['cplex','mosek','zibopt']
-                elif tp in ('Mixed (SOCP+quad)','Mixed (MISOCP+quad)'):
-                        order=['cplex']
+                elif tp == 'Mixed (SOCP+quad)':
+                        order=['mosek','cplex','cvxopt','smcp']
+                elif tp =='Mixed (MISOCP+quad)':
+                        order=['cplex','mosek']
                 elif tp == 'Mixed (SDP+quad)':
-                        order=[]
+                        order=['cvxopt','smcp']
                 else:
                         raise Exception('no solver available for problem of type {0}'.format(tp))
                 avs=available_solvers()
@@ -3568,19 +3627,8 @@ class Problem:
                         if sol in avs:
                                 self.set_option('solver',sol)
                                 return
-                #mosek can solve this as an socp
-                if tp=='Mixed (MISOCP+quad)' and 'mosek' in avs:
-                        raise QuadAsSocpError('You should first transform the problem into an socp '+
-                                        'with the function convert_quad_to_socp() '+
-                                        'and then solve the problem with mosek.')
-                        
-                #cvxopt can solve this as an socp
-                if tp in ('Mixed (SOCP+quad)','Mixed (SDP+quad)','QCQP','QP'):
-                        raise QuadAsSocpError('No solver available in this form. '+
-                                        'You should first transform the problem into an socp '+
-                                        'with the function convert_quad_to_socp().')
                 #not found
-                raise Exception('no solver available for problem of type {0}'.format(tp))
+                raise NotAppropriateSolverError('no solver available for problem of type {0}'.format(tp))
                 
                 
         def write_to_file(self,filename,writer='picos'):
@@ -3603,7 +3651,8 @@ class Problem:
                                           (recquires mosek).
 
                                         * ``'.dat-s'``: `sparse SDPA format <http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa>`_
-                                          This format is suitable to save semidefinite programs (SDP).
+                                          This format is suitable to save semidefinite programs (SDP). SOC constraints are
+                                          stored as semidefinite constraints with an *arrow pattern*.
                                         
                 :type filename: str.
                 :param writer: The default writer is ``picos``, which has its own *LP* and
@@ -3638,8 +3687,14 @@ class Problem:
                                         filename+='.lp'
                         elif writer=='picos':
                                 if (self.numberQuadConstraints >0):
-                                        raise QuadAsSocpError('no quad constraints in sdpa format.'+
-                                                ' Try to convert to socp with the function convert_quad_to_socp().')
+                                        if self.options['convert_quad_to_socp_if_needed']:
+                                                pcop=self.copy()
+                                                pcop.convert_quad_to_socp()
+                                                pcop.write_to_file(filename,writer)
+                                                return
+                                        else:
+                                                raise QuadAsSocpError('no quad constraints in sdpa format.'+
+                                                  ' Try to convert to socp with the function convert_quad_to_socp().')
                                 if (self.numberConeConstraints + 
                                     self.numberSDPConstraints) ==0:
                                         filename+='.lp'
@@ -3702,7 +3757,6 @@ class Problem:
                 else:
                         raise Exception('unknown writer')
         
-
         def _write_lp(self,filename):
                 """
                 writes problem in  lp format
@@ -3755,7 +3809,7 @@ class Problem:
                                 s+=varnames[i]
                                 #not the first term anymore
                                 start = False
-                        if not(indices):
+                        if not(coefs):
                                 s+='0.0 '
                                 s+=varnames[0]
                         return s
@@ -3771,6 +3825,7 @@ class Problem:
                         f.write("Minimize\n")
                 I=cvx.sparse(self.cvxoptVars['c']).I
                 V=cvx.sparse(self.cvxoptVars['c']).V
+                
                 f.write(affexp_writer('obj',I,V))
                 f.write('\n')
                 
@@ -3884,6 +3939,7 @@ class Problem:
                         if v.vtype=='binary':
                                 for i in xrange(v.startIndex,v.endIndex):
                                         f.write(varnames[i]+'\n')
+                f.write("End\n")
                 print 'done.'
                 f.close()
 
@@ -4041,8 +4097,14 @@ class Problem:
                 #check lp compatibility
                 if (self.numberQuadConstraints +
                     self.numberLSEConstraints) > 0:
-                        raise QuadAsSocpError('Problem should not have quad or gp constraints. '+
-                         'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
+                        if self.options['convert_quad_to_socp_if_needed']:
+                                pcop=self.copy()
+                                pcop.convert_quad_to_socp()
+                                pcop._write_sdpa(filename,extended)
+                                return
+                        else:
+                                raise QuadAsSocpError('Problem should not have quad or gp constraints. '+
+                                        'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
                 #open file
                 f = open(filename,'w')
                 f.write('"file '+filename+' generated by picos"\n')
@@ -4085,6 +4147,8 @@ class Problem:
                 
                 
         def convert_quad_to_socp(self):
+                if self.options['verbose']>0:
+                        print 'reformulating quads as socp...'
                 for i,c in enumerate(self.constraints):
                         if c.typeOfConstraint=='quad':
                                 qd=c.Exp1.quad
@@ -4132,7 +4196,8 @@ class Problem:
                 self.scip_solver = None
                 self.scip_vars = None
                 self.scip_obj = None
-               
+                if self.options['verbose']>0:
+                        print 'done.'
                                 
                             
                 

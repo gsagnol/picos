@@ -76,7 +76,7 @@ below, explaining their main differences with PICOS:
 
   * `Numberjack <http://numberjack.ucc.ie/home>`_:
 
-    This python package also provides an interface to the integer programming solver `scip <http://zibopt.zib.de/>`_,
+    This python package also provides an interface to the integer programming solver `scip <http://scip.zib.de/>`_,
     as well as satisfiability (**SAT**) and constraint programming solvers (**CP**). 
 
   * `OpenOpt <http://openopt.org/Welcome>`_:
@@ -114,6 +114,7 @@ First Example
 
 We give below a simple example of the use of PICOS, to solve
 an SOCP which arises in *optimal experimental design*.
+More examples can be found :ref:`here <examples>`.
 Given some observation matrices :math:`A_1,\ldots,A_s`,
 with :math:`A_i \in \mathbb{R}^{m \times l_i}`,
 and a coefficient matrix :math:`K \in \mathbb{R}^{m \times r}`,
@@ -285,4 +286,60 @@ you want to use.
 Installation
 ============
 
-TODO
+After having :ref:`downloaded <download>` the latest version of picos,
+and extracted it in the directory of your choice,
+you can install it by typing the following line as root in a terminal:
+
+.. code-block:: guess
+        
+        $ python setup.py install
+
+If you do not have administrator rights, you can also do a local
+installation of picos with the *prefix scheme*. For example:
+
+.. code-block:: guess
+        
+        $ python setup.py install --prefix ~/python
+
+and make sure that ``$HOME'/python/lib/python2.x/site-packages/'``
+is in your ``PYTHONPATH`` variable.
+
+To test your installation, you can run the test file:
+
+.. code-block:: guess
+        
+        $ python picos/test_picos.py
+
+This will generate a table with a list of results
+for each available solver and class of optimization problems.
+
+License
+=======
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Author and contributors
+=======================
+
+        * Author: Sphinx initial author and current primary developer is:
+                
+                  `Guillaume Sagnol <http://www.zib.de/sagnol>`_, <sagnol( a t )zib.de>
+
+        * Contributors: People who contributed to Sphinx and their contributions
+          (in no particular order) are:
+
+                        * Bertrand Omont
+
+                        * `Elmar Swarat <http://www.zib.de/swarat>`_
+          

@@ -21,9 +21,8 @@ and the noise vectors :math:`\epsilon_i` are i.i.d. with a unit variance.
 Several optimization criterions exist, leading to different SDP, SOCP and LP
 formulations.
 As such, optimal experimental design problens are natural examples for problems
-in conic optimization.
-For a review of the different formulations,
-see `this article <http://arxiv.org/abs/0912.5467>`_.
+in conic optimization. For a review of the different formulations
+and more references, see :ref:`[1] <optdes_refs>`.
 
 The code below initializes the data used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
@@ -69,7 +68,7 @@ It should be run prior to any of the codes presented in this page.
 c-optimality, multi-response: SOCP
 ==================================
 
-We compute the c-optimal design (c=[1,2,3,4,5])
+We compute the c-optimal design (``c=[1,2,3,4,5]``)
 for the observation matrices ``A[i].T`` from the variable ``A`` defined above.
 The results below suggest that we should allocate 12.8% of the
 experimental effort on experiment #5, and 87.2% on experiment #7.
@@ -974,3 +973,14 @@ and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
         [ 1.19e-01]
         [ 9.02e-02]
         [ 2.25e-01]
+
+
+.. _optdes_refs:
+
+References
+==========
+
+        1. "`Computing Optimal Designs of multiresponse Experiments reduces to
+           Second-Order Cone Programming <http://arxiv.org/abs/0912.5467>`_", G. Sagnol,
+           *Journal of Statistical Planning and Inference*,
+           141(5), p. *1684-1708*, 2011.

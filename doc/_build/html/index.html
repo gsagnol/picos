@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 0.1 documentation</title>
+    <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 0.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1',
+        VERSION:     '0.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="picos 0.1 documentation" href="#" />
+    <link rel="top" title="picos 0.1.0 documentation" href="#" />
     <link rel="next" title="Introduction" href="intro.html" /> 
   </head>
   <body>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="intro.html" title="Introduction"
              accesskey="N">next</a> |</li>
-        <li><a href="#">picos 0.1 documentation</a> &raquo;</li> 
+        <li><a href="#">PICOS</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,6 +53,13 @@
   <div class="section" id="picos-a-python-interface-for-conic-optimization-solvers">
 <h1>PICOS: A Python Interface for Conic Optimization Solvers<a class="headerlink" href="#picos-a-python-interface-for-conic-optimization-solvers" title="Permalink to this headline">¶</a></h1>
 <p id="contents"><strong>PICOS Documentation contents</strong></p>
+<p>Welcome to the documentation of PICOS.
+The latest version can be downloaded <a class="reference internal" href="download.html#download"><em>here</em></a>,
+and can be installed by following <a class="reference internal" href="intro.html#requirements"><em>these instructions</em></a>.
+This documentation contains a <a class="reference internal" href="tuto.html#tuto"><em>tutorial</em></a> and some <a class="reference internal" href="examples.html#examples"><em>examples</em></a>,
+which should already be enough for a quick start with PICOS. To go deeper,
+have a look at the <a class="reference internal" href="api.html#api"><em>picos reference</em></a>, which provides information
+on every function of PICOS.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
@@ -60,6 +67,8 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a><ul>
@@ -68,6 +77,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression">Norm of an affine Expression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tuto.html#quadratic-expressions">Quadratic Expressions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tuto.html#constraints">Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file">Write a Problem to a file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tuto.html#solve-a-problem">Solve a Problem</a></li>
 </ul>
 </li>
@@ -83,9 +93,9 @@
 <li class="toctree-l2"><a class="reference internal" href="constraint.html">Constraint</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
 </ul>
 </div>
-<p>TODO: This is something about PICOS.</p>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -102,7 +112,16 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
+<h3><a href="#">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+</ul>
+
+  <h3><a href="#">Contents of this page</a></h3>
   <ul>
 <li><a class="reference internal" href="#">PICOS: A Python Interface for Conic Optimization Solvers</a><ul>
 </ul>
@@ -118,6 +137,12 @@
     <li><a href="_sources/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
+
+  <h3><a href="download.html">Download</a></h3>
+  <ul class="this-page-menu">
+    <li><a href="dist/PICOS-0.1.0.tar.gz">Latest Version (0.1.0)</a></li>
+  </ul>
+
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -147,7 +172,7 @@
         <li class="right" >
           <a href="intro.html" title="Introduction"
              >next</a> |</li>
-        <li><a href="#">picos 0.1 documentation</a> &raquo;</li> 
+        <li><a href="#">PICOS</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

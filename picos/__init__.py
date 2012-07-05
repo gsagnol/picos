@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,6 @@
 from problem import *
 from expression import *
 from constraint import *
-from tools import sum,lse,new_param,QuadAsSocpError
+from tools import sum,lse,new_param,QuadAsSocpError,NotAppropriateSolverError,NonConvexError
 
 __all__=['tools','constraint','expression','problem']

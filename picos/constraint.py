@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -237,20 +237,8 @@ class Constraint:
         """
         Value of the dual variable associated to this constraint
         
-        .. Warning::
-        
-           For second order cone constraints of the form :math:`\Vert \mathbf{x} \Vert \leq t`,
-           where :math:`\mathbf{x}` is a vector of dimension :math:`n`,
-           the dual variable is a vector of dimension :math:`n+1` of the form
-           :math:`[\lambda; \mathbf{z}]`, where the :math:`n-` dimensional vector
-           :math:`\mathbf{z}` satisfies :math:`\Vert \mathbf{z} \Vert \leq \lambda`.
-           
-           Since *rotated* second order cone constraints of the form
-           :math:`\Vert \mathbf{x} \Vert^2 \leq t u,\ t \geq 0`,
-           are handled as the equivalent ice-cream constraint
-           :math:`\Vert [2 \mathbf{x}; t-u ] \Vert \leq t+u`,
-           the dual is given with respect to this reformulated, standard SOC constraint.
-           
+        See the :ref:`note on dual variables <noteduals>` in the tutorial
+        for more information.
         """
 
         def slack_var(self):
@@ -258,7 +246,10 @@ class Constraint:
                 (For an inequality of the type ``lhs<rhs``,
                 the slack is ``rhs-lhs``, and for ``lhs>rhs``
                 the slack is ``lhs-rhs``)."""
-                if self.typeOfConstraint[3]=='<':
+                if self.typeOfConstraint=='lse':
+                        from .tools import lse
+                        return -lse(self.Exp1).eval()
+                elif self.typeOfConstraint[3]=='<':
                         return self.Exp2.eval()-self.Exp1.eval()
                 elif self.typeOfConstraint[3]=='>':
                         return self.Exp1.eval()-self.Exp2.eval()
@@ -268,8 +259,6 @@ class Constraint:
                         return self.Exp2.eval()-(abs(self.Exp1)).eval()
                 elif self.typeOfConstraint=='RScone':
                         return self.Exp2.eval()[0]*self.Exp3.eval()[0]-(abs(self.Exp1)**2).eval()
-                elif self.typeOfConstraint=='lse':
-                        return -lse(self.Exp1).eval()
                 elif self.typeOfConstraint=='quad':
                         return -(self.Exp1.eval())
 

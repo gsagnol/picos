@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -121,12 +121,13 @@ class Expression(object):
 #----------------------------------
 
 class AffinExp(Expression):
-        """A class for defining vectorial (or matrix) affine expressions.
+        u"""A class for defining vectorial (or matrix) affine expressions.
         It derives from :class:`Expression<picos.Expression>`.
         
         **Overloaded operators**
         
                 :``+``: sum            (with an affine or quadratic expression)
+                :``+=``: in-place sum  (with an affine or quadratic expression)
                 :``-``: substraction   (with an affine or quadratic expression) or unitary minus
                 :``*``: multiplication (by another affine expression or a scalar)
                 :``/``: division       (by a scalar)
@@ -141,8 +142,27 @@ class AffinExp(Expression):
                 :``<``: less **or equal** (than an affine or quadratic expression)
                 :``>``: greater **or equal** (than an affine or quadratic expression)
                 :``==``: is equal (to another affine expression)
-                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality)
-                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality)
+                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality ⪳)
+                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality ⪴)
+                
+        .. Warning::
+                
+                We recall here the implicit assumptions that are made
+                when using relation operator overloads, in the following
+                two situations:
+                
+                        * the rotated second order cone constraint
+                          ``abs(exp1)**2 < exp2 * exp3`` implicitely
+                          assumes that the scalar expression ``exp2`` (and hence ``exp3``)
+                          **is nonnegative**.
+                          
+                        * the linear matrix inequality ``exp1 >> exp2`` only tells picos
+                          that the symmetric matrix whose lower triangular elements
+                          are those of ``exp1-exp2`` is positive semidefinite. The
+                          matrix ``exp1-exp2`` **is not constrained to be symmetric**.
+                          Hence, you should manually add the constraint 
+                          ``exp1-exp2 == (exp1-exp2).T`` if it is not clear from the data
+                          that this matrix is symmetric.
                 
         """
         
@@ -518,9 +538,16 @@ class AffinExp(Expression):
                         selfcopy.string='〈 '+facString+' | '+selfcopy.string+' 〉'
                 return selfcopy
 
-        
         def __add__(self,term):
                 selfcopy=self.copy()
+                selfcopy+=term
+                return selfcopy
+                        
+        def __radd__(self,term):
+                return self.__add__(term)
+        
+        #inplace sum
+        def __iadd__(self,term):
                 if isinstance(term,AffinExp):
                         if term.size==(1,1) and self.size<>(1,1):
                                 oldstring=term.string
@@ -530,51 +557,54 @@ class AffinExp(Expression):
                                 oldstring=self.string
                                 selfone=cvx.matrix(1.,term.size)*self.diag(term.size[1])
                                 selfone.string='|'+oldstring+'|'
-                                return (selfone+term)
-                        if term.size<>selfcopy.size:
+                                selfone+=term
+                                return selfone
+                        if term.size<>self.size:
                                 raise Exception('incompatible dimension in the sum')
                         for k in term.factors:
-                                if k in selfcopy.factors:
-                                        newfac=selfcopy.factors[k]+term.factors[k]
-                                        selfcopy.factors[k]=newfac
+                                if k in self.factors:
+                                        self.factors[k]+=term.factors[k]
                                 else:
-                                        selfcopy.factors[k]=term.factors[k]
-                        if selfcopy.constant is None and term.constant is None:
+                                        self.factors[k]=term.factors[k]
+                        if self.constant is None and term.constant is None:
                                 pass
                         else:
-                                newCons=cvx.spmatrix([],[],[],selfcopy.size)[:]
-                                if not selfcopy.constant is None:
-                                        newCons=newCons+selfcopy.constant
+                                newCons=cvx.matrix(0.,self.size)[:]
+                                if self.constant is None:
+                                        self.constant=newCons
                                 if not term.constant is None:
-                                        newCons=newCons+term.constant
-                                selfcopy.constant=newCons
+                                        if (isinstance(self.constant,cvx.spmatrix)
+                                          and isinstance(term.constant,cvx.matrix)):
+                                                  #inplace op not defined
+                                                  self.constant=cvx.matrix(self.constant)
+                                        self.constant+=term.constant
+                                
                         if term.affstring() not in ['0','','|0|','0.0','|0.0|']:
                                 if term.string[0]=='-':
                                         import re                                       
                                         if ('+' not in term.string[1:]) and (
                                                 '-' not in term.string[1:]):
-                                                selfcopy.string=selfcopy.string+' '+term.affstring()
+                                                self.string+=' '+term.affstring()
                                         elif (term.string[1]=='(') and (
                                                  re.search('.*\)((\[.*\])|(.T))*$',term.string) ):                                                              #a group in a (...)
-                                                selfcopy.string=selfcopy.string+' '+term.affstring()
+                                                self.string+=' '+term.affstring()
                                         else:
-                                                selfcopy.string=selfcopy.string+' + ('+ \
+                                                self.string+=' + ('+ \
                                                                 term.affstring()+')'
                                 else:
-                                        selfcopy.string+=' + '+term.affstring()
-                        return selfcopy
+                                        self.string+=' + '+term.affstring()
+                        return self
                 elif isinstance(term,QuadExp):
                         if self.size<>(1,1):
                                 raise Exception('LHS must be scalar')
-                        expQE=QuadExp({},self,self.affstring())
-                        return expQE+term
+                        self=QuadExp({},self,self.affstring())
+                        self+=term
+                        return self
                 else: #constant term
-                        term,termString=_retrieve_matrix(term,selfcopy.size)
-                        return self+AffinExp({},constant=term[:],size=term.size,string=termString)
-
-        def __radd__(self,term):
-                return self.__add__(term)
-
+                        term,termString=_retrieve_matrix(term,self.size)
+                        self+=AffinExp({},constant=term[:],size=term.size,string=termString)
+                        return self
+                        
         def __neg__(self):
                 selfneg=(-1)*self               
                 if self.string<>'':
@@ -632,9 +662,7 @@ class AffinExp(Expression):
                 divi,diviString=_retrieve_matrix(divider,None)
                 return AffinExp({},constant=divi[:],size=divi.size,string=diviString)/self
                                                 
-
         def __getitem__(self,index):
-                selfcopy=self.copy()
                 def indexstr(idx):
                         if isinstance(idx,int):
                                 return str(idx)
@@ -683,11 +711,14 @@ class AffinExp(Expression):
                 if isinstance(index,slice):
                         idx=index.indices(self.size[0]*self.size[1])
                         rangeT=range(idx[0],idx[1],idx[2])
-                        for k in selfcopy.factors:
-                                selfcopy.factors[k]=selfcopy.factors[k][rangeT,:]
-                        if not selfcopy.constant is None:
-                                selfcopy.constant=selfcopy.constant[rangeT]
-                        selfcopy.size=(len(rangeT),1)
+                        newfacs={}
+                        for k in self.factors:
+                                newfacs[k]=self.factors[k][rangeT,:]
+                        if not self.constant is None:
+                                newcons=self.constant[rangeT]
+                        else:
+                                newcons=None
+                        newsize=(len(rangeT),1)
                         indstr=slicestr(index)
                 elif isinstance(index,tuple):
                         if isinstance(index[0],Expression):
@@ -721,21 +752,24 @@ class AffinExp(Expression):
                                         rangei_translated.append(
                                                 vi+(j*self.size[0]))
                                 rangeT.extend(rangei_translated)
-                        for k in selfcopy.factors:
-                                selfcopy.factors[k]=selfcopy.factors[k][rangeT,:]
-                        if not selfcopy.constant is None:       
-                                selfcopy.constant=selfcopy.constant[rangeT]
-                        selfcopy.size=(len(rangei),len(rangej))
+                        newfacs={}
+                        for k in self.factors:
+                                newfacs[k]=self.factors[k][rangeT,:]
+                        if not self.constant is None:       
+                                newcons=self.constant[rangeT]
+                        else:
+                                newcons=None
+                        newsize=(len(rangei),len(rangej))
                         indstr=slicestr(index[0])+','+slicestr(index[1])
-                if ('*' in selfcopy.affstring()) or ('+' in selfcopy.affstring()) or (
-                        '-' in selfcopy.affstring()) or ('/' in selfcopy.affstring()):
-                        selfcopy.string='( '+selfcopy.string+' )['+indstr+']'
+                if ('*' in self.affstring()) or ('+' in self.affstring()) or (
+                        '-' in self.affstring()) or ('/' in self.affstring()):
+                        newstr='( '+self.string+' )['+indstr+']'
                 else:
-                        selfcopy.string=selfcopy.string+'['+indstr+']'
+                        newstr=self.string+'['+indstr+']'
                 #check size
-                if selfcopy.size[0] == 0 or selfcopy.size[1] == 0:
+                if self.size[0] == 0 or self.size[1] == 0:
                         raise AttributeError('slice of zero-dimension')
-                return selfcopy
+                return AffinExp(newfacs,newcons,newsize,newstr)
                 
         def __setitem__(self, key, value):
                 raise AttributeError('slices of an expression are not writable')
@@ -1237,41 +1271,48 @@ class QuadExp(Expression):
                         return self/AffinExp({},constant=divi[:],size=(1,1),string=diviString)                   
                         
         def __add__(self,term):
+                selfcopy=self.copy()
+                selfcopy+=term
+                return selfcopy
+
+        #inplace sum
+        def __iadd__(self,term):
                 if isinstance(term,QuadExp):
-                        selfcopy=self.copy()
                         for ij in self.quad:
                                 if ij in term.quad:
-                                        selfcopy.quad[ij]=selfcopy.quad[ij]+term.quad[ij]
+                                        self.quad[ij]+=term.quad[ij]
                         for ij in term.quad:
                                 if not (ij in self.quad):
-                                        selfcopy.quad[ij]=term.quad[ij]
-                        selfcopy.aff=selfcopy.aff+term.aff
-                        selfcopy.LR=None
+                                        self.quad[ij]=term.quad[ij]
+                        self.aff+=term.aff
+                        self.LR=None
                         if term.string not in ['0','']:
                                 if term.string[0]=='-':
                                         import re                                       
                                         if ('+' not in term.string[1:]) and (
                                                 '-' not in term.string[1:]):
-                                                selfcopy.string=selfcopy.string+' '+term.string
+                                                self.string+=' '+term.string
                                         elif (term.string[1]=='(') and (
                                                  re.search('.*\)((\[.*\])|(.T))*$',term.string) ):                                                              #a group in a (...)
-                                                selfcopy.string=selfcopy.string+' '+term.string
+                                                self.string+=' '+term.string
                                         else:
-                                                selfcopy.string=selfcopy.string+' + ('+ \
+                                                self.string+=' + ('+ \
                                                                 term.string+')'
                                 else:
-                                        selfcopy.string+=' + '+term.string
-                        return selfcopy
+                                        self.string+=' + '+term.string
+                        return self
                 elif isinstance(term,AffinExp):
                         if term.size<>(1,1):
                                 raise Exception('RHS must be scalar')
                         expQE=QuadExp({},term,term.affstring())
-                        return self+expQE
+                        self+=expQE
+                        return self
                 else:
                         term,termString=_retrieve_matrix(term,(1,1))
                         expAE=AffinExp(factors={},constant=term,size=term.size,string=termString)
-                        return self+expAE
-
+                        self+expAE
+                        return self
+                        
         def __rmul__(self,fact):
                 return self*fact
 
@@ -1468,20 +1509,26 @@ class Variable(AffinExp):
                         if self._value is None:
                                 raise Exception(self.name+' is not valued')
                         else:
-                                return cvx.matrix(self._value)
+                                if self.vtype=='symmetric':
+                                        return cvx.matrix(svecm1(self._value))
+                                else:
+                                        return cvx.matrix(self._value)
                 else:
                         if ind in self.value_alt:
-                                return cvx.matrix(self.value_alt[ind])
+                                if self.vtype=='symmetric':
+                                        return cvx.matrix(svecm1(self.value_alt[ind]))
+                                else:
+                                        return cvx.matrix(self.value_alt[ind])
                         else:
                                 raise Exception(self.name+' does not have a value for the index '+str(ind))
     
         
         def set_value(self,value):
                 valuemat,valueString = _retrieve_matrix(value,self.size)
-                if self.vtype == 'symmetric':
-                        valuemat=svecm1(valuemat)
                 if valuemat.size != self.size:
                         raise Exception('should be of size {0}'.format(self.size))
+                if self.vtype == 'symmetric':
+                        valuemat=svec(valuemat)
                 self._value = valuemat
 
         def del_var_value(self):

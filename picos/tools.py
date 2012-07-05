@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,6 @@ import cvxopt as cvx
 import numpy as np
 import sys, os
 
-
 __all__=['_retrieve_matrix',
         '_svecm1_identity',
         'eval_dict',
@@ -47,7 +46,9 @@ __all__=['_retrieve_matrix',
         '_quad2norm',
         '_copy_exp_to_new_vars',
         'ProgressBar',
-        'QuadAsSocpError'
+        'QuadAsSocpError',
+        'NotAppropriateSolverError',
+        'NonConvexError'
 ]
 
 
@@ -105,8 +106,15 @@ def sum(lst,it=None,indices=None):
         # (1 x 1)-affine expression: Σ_{ij in IJ} x[foo][ij] #
         
         """
-        import __builtin__
-        affSum=__builtin__.sum(lst)
+        from .expression import Expression
+        if len(lst)==0:
+                return 0
+        if not(all([isinstance(exi,Expression) for exi in lst])):
+                import __builtin__
+                return __builtin__.sum(lst)
+        affSum=new_param('',cvx.matrix(0.,lst[0].size))
+        for lsti in lst:
+                affSum+=lsti
         if not it is None:
                 sumstr='_'
                 if  not indices is None:
@@ -969,11 +977,15 @@ def _quad2norm(qd):
                 Z=cvxopt.cholmod.spsolve(F,Qp,7)
                 V=cvxopt.cholmod.spsolve(F,Z,4)
                 V=V*P
-        except ArithmeticError:#singular, we must work on the dense matrix
+        except ArithmeticError:#Singular or Non-convex, we must work on the dense matrix
                 import cvxopt.lapack
-                sig=cvx.matrix(0.,(len(nz),1))
+                sig=cvx.matrix(0.,(len(nz),1),tc='z')
                 U=cvx.matrix(0.,(len(nz),len(nz)))
-                cvxopt.lapack.gesvd(cvx.matrix(Qp),sig,jobu='A',U=U)
+                cvxopt.lapack.gees(cvx.matrix(Qp),sig,U)
+                sig=sig.real()
+                if min(sig)<-1e-7:
+                        raise NonConvexError('I cannot convert non-convex quads to socp')
+                for i in range(len(sig)): sig[i]=max(sig[i],0)
                 V=cvx.spdiag(sig**0.5)*U.T
                 V=cvx.sparse(V)*P
         allvars=qdvars[0]
@@ -1159,3 +1171,28 @@ class QuadAsSocpError(Exception):
         """
         def __init__(self,msg):
                 self.msg=msg
+                
+        def __str__(self): return self.msg
+        def __repr__(self): return "QuadAsSocpError('"+self.msg+"')"
+
+class NotAppropriateSolverError(Exception):
+        """
+        Exception raised when trying to solve a problem with
+        a solver which cannot handle it
+        """
+        def __init__(self,msg):
+                self.msg=msg
+                
+        def __str__(self): return self.msg
+        def __repr__(self): return "NotAppropriateSolverError('"+self.msg+"')"
+
+class NonConvexError(Exception):
+        """
+        Exception raised when non-convex quadratic constraints
+        are passed to a solver which cannot handle them.
+        """
+        def __init__(self,msg):
+                self.msg=msg 
+                
+        def __str__(self): return self.msg
+        def __repr__(self): return "NonConvexError('"+self.msg+"')"

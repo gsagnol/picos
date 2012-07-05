@@ -10,6 +10,14 @@ PICOS: A Python Interface for Conic Optimization Solvers
 
 **PICOS Documentation contents**
 
+Welcome to the documentation of PICOS.
+The latest version can be downloaded :ref:`here <download>`,
+and can be installed by following :ref:`these instructions <requirements>`.
+This documentation contains a :ref:`tutorial <tuto>` and some :ref:`examples <examples>`,
+which should already be enough for a quick start with PICOS. To go deeper,
+have a look at the :ref:`picos reference <api>`, which provides information
+on every function of PICOS.
+
 .. toctree::
    :maxdepth: 2
 
@@ -17,8 +25,7 @@ PICOS: A Python Interface for Conic Optimization Solvers
    tuto
    examples
    api
-
-TODO: This is something about PICOS.
+   download
 
 Indices and tables
 ==================
