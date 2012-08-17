@@ -264,7 +264,14 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
-
+def setup(app):
+     from sphinx.util.texescape import tex_replacements
+     tex_replacements.append((u'≽',u'\\(\\succeq\\)'))
+     tex_replacements.append((u'⪴',u'\\(\\succeq\\)'))
+     tex_replacements.append((u'⪳',u'\\(\\preceq\\)'))
+     tex_replacements.append((u'≤',u'\\(\\leq\\)'))
+     tex_replacements.append((u'≥',u'\\(\\geq\\)'))
+     
 #copying files
 import os
 print 'copying pyplots files...'
