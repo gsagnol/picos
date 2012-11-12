@@ -663,25 +663,25 @@ of experiments is given, and the goal is to find the optimal number of times
 :math:`n_i \in \mathbb{N}` that the experiment #i should be performed, 
 with :math:`\sum_i n_i =N`.
 
-After a change of variable in the SOCP formulation of A-optimality,
-we can express this exact optimal design problem as a MISOCP:
+In an alternative SOCP formulation of A-optimality,
+we may constrain the design variable to be integer, which results in a MISOCP:
 
 .. math::
    :nowrap:   
 
    \begin{center}
    \begin{eqnarray*}
-   &\underset{\substack{t \in \mathbb{R}\\
+   &\underset{\substack{\mathbf{t} \in \mathbb{R}^s\\
                         \mathbf{n} \in \mathbb{N}^s\\
-                        \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{maximize}}
-                      & t\\
-   &\mbox{subject to} & \sum_{i=1}^s A_i Z_i = t I\\
-   &                  & \forall i \in [s],\ \Vert Z_i \Vert_F \leq n_i,\\
+                        \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
+                      & \sum_{i=1}^s t_i\\
+   &\mbox{subject to} & \sum_{i=1}^s A_i Z_i = I\\
+   &                  & \forall i \in [s],\ \Vert Z_i \Vert_F^2 \leq n_i t_i,\\
    &                  & \sum_{i=1}^s n_i = N.
    \end{eqnarray*}
    \end{center}
 
-The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,1,3,3,5]`:
+The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
 
 .. testcode::
 
@@ -696,11 +696,11 @@ The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,1,3,3,5]`:
         I =pic.new_param('I',cvx.spmatrix([1]*m,range(m),range(m),(m,m))) #identity matrix
         Z=[prob_exact_A.add_variable('Z['+str(i)+']',AA[i].T.size) for i in range(s)]
         n=prob_exact_A.add_variable('n',s, vtype='integer')
-        t=prob_exact_A.add_variable('t',1)
+        t=prob_exact_A.add_variable('t',s)
 
         #define the constraints and objective function
         prob_exact_A.add_list_of_constraints(
-                [abs(Z[i])<n[i] for i in range(s)], #constraints
+                [abs(Z[i])**2<n[i]*t[i] for i in range(s)], #constraints
                 'i', #index
                 '[s]' #set to which the index belongs
                 )
@@ -710,10 +710,10 @@ The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,1,3,3,5]`:
                 'i', #index
                 '[s]' #set to which the index belongs
                 )  
-                == t*I )
+                == I )
                 
         prob_exact_A.add_constraint( 1|n < N )
-        prob_exact_A.set_objective('max',t)
+        prob_exact_A.set_objective('min',1|t)
 
         #solve the problem and display the optimal design
         print prob_exact_A
@@ -722,27 +722,27 @@ The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,1,3,3,5]`:
         
 .. testoutput::
         :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
-        
+
         ---------------------
         optimization problem  (MISOCP):
-        129 variables, 26 affine constraints, 128 vars in 8 SO cones
+        136 variables, 26 affine constraints, 136 vars in 8 SO cones
 
-        Z   : list of 8 variables, (3, 5), continuous
-        n   : (8, 1), integer
-        t   : (1, 1), continuous
+        Z       : list of 8 variables, (3, 5), continuous
+        n       : (8, 1), integer
+        t       : (8, 1), continuous
 
-                maximize t
+                minimize 〈 |1| | t 〉
         such that
-        ||Z[i]|| < n[i] for all i in [s]
-        Σ_{i in [s]} A[i]*Z[i] = t*I
+        ||Z[i]||^2 < ( n[i])( t[i]) for all i in [s]
+        Σ_{i in [s]} A[i]*Z[i] = I
         〈 |1| | n 〉 < N
         ---------------------
         [...]
         [...]
         [ 5.00e+00]
         [ 3.00e+00]
-        [ 1.00e+00]
-        [ 3.00e+00]
+        [ 2.00e+00]
+        [ 2.00e+00]
         [ 3.00e+00]
         [ 5.00e+00]
 

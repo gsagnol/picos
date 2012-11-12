@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.1dev : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.1 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -222,6 +222,8 @@ class AffinExp(Expression):
                         val=cvx.spmatrix([],[],[],(self.size[0]*self.size[1],1))
                 else:
                         val=self.constant
+                if self.is0():
+                        return cvx.matrix(val,self.size)
 
                 for k in self.factors:
                         if ind is None:
@@ -436,7 +438,7 @@ class AffinExp(Expression):
                         else:
                                 raise Exception('not implemented')
                 elif isinstance(fact,QuadExp):
-                        return QuadExp*fact
+                        return fact*self
                 #product with a constant
                 else:
                         if self.size==(1,1): #scalar mult. of the constant

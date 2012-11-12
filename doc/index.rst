@@ -26,7 +26,7 @@ on every function of PICOS.
    examples
    api
    download
-
+   
 Indices and tables
 ==================
 
