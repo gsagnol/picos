@@ -1321,7 +1321,6 @@ class Problem:
                 except:
                         Exception('cplex library not found')
                 
-                
                 #only change the objective coefficients
                 if self.options['onlyChangeObjective']:
                         if self.cplex_Instance is None:
@@ -1373,7 +1372,14 @@ class Problem:
                 #create new variable and quad constraints to handle socp
                 tmplhs=[]
                 tmprhs=[]
-                icone =0 #TODO find the number of cones previously handled ! + pb avec __noconstant__
+                icone =0
+                if only_update:
+                        offset_cone = len([na for na in c.variables.get_names() if '__tmprhs' in na])
+                        offset_supvars = c.variables.get_num() - self.numberOfVars -1
+                else:
+                        offset_cone = 0
+                        offset_supvars = 0
+                #WWORK AROUND: if there was already socs, pas faire onlyupdate
                 newcons={}
                 newvars=[]
                 if self.numberConeConstraints > 0 :
@@ -1386,22 +1392,22 @@ class Problem:
                                                         noconstant=self.add_variable(
                                                                 '__noconstant__',1)
                                                         newvars.append(('__noconstant__',1))
-                                                newcons['noconstant']=(
-                                                        noconstant>0)
+                                                newcons['noconstant']=(noconstant>0)
+                                                #no variable shift -> same noconstant var as before
                                 if constr.typeOfConstraint=='SOcone':
-                                        if '__tmplhs[{0}]__'.format(icone) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(icone))
-                                        if '__tmprhs[{0}]__'.format(icone) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(icone))
+                                        if '__tmplhs[{0}]__'.format(icone+offset_cone) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(icone+offset_cone))
+                                        if '__tmprhs[{0}]__'.format(icone+offset_cone) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(icone+offset_cone))
                                         tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(icone),
+                                                '__tmplhs[{0}]__'.format(icone+offset_cone),
                                                 constr.Exp1.size))
                                         tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(icone),
+                                                '__tmprhs[{0}]__'.format(icone+offset_cone),
                                                 1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(icone),
+                                        newvars.append(('__tmplhs[{0}]__'.format(icone+offset_cone),
                                                 constr.Exp1.size[0]*constr.Exp1.size[1]))
-                                        newvars.append(('__tmprhs[{0}]__'.format(icone),
+                                        newvars.append(('__tmprhs[{0}]__'.format(icone+offset_cone),
                                                 1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
@@ -1409,31 +1415,31 @@ class Problem:
                                                                         for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
                                                                         constr.Exp1.size)
                                         #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(icone)]=(
-                                                        constr.Exp1+v_cons*noconstant == tmplhs[icone])
-                                        newcons['tmp_rhs_{0}'.format(icone)]=(
-                                                        constr.Exp2-noconstant == tmprhs[icone])
+                                        newcons['tmp_lhs_{0}'.format(icone+offset_cone)]=(
+                                                        constr.Exp1+v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(icone+offset_cone)]=(
+                                                        constr.Exp2-noconstant == tmprhs[-1])
                                         #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(icone)]=(
-                                                        tmprhs[icone]>0)
-                                        newcons['tmp_conequad_{0}'.format(icone)]=(
-                                        -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
+                                        newcons['tmp_conesign_{0}'.format(icone+offset_cone)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(icone+offset_cone)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
                                         icone+=1
                                 if constr.typeOfConstraint=='RScone':
-                                        if '__tmplhs[{0}]__'.format(icone) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(icone))
-                                        if '__tmprhs[{0}]__'.format(icone) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(icone))
+                                        if '__tmplhs[{0}]__'.format(icone+offset_cone) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(icone+offset_cone))
+                                        if '__tmprhs[{0}]__'.format(icone+offset_cone) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(icone+offset_cone))
                                         tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(icone),
+                                                '__tmplhs[{0}]__'.format(icone+offset_cone),
                                                 (constr.Exp1.size[0]*constr.Exp1.size[1])+1
                                                 ))
                                         tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(icone),
+                                                '__tmprhs[{0}]__'.format(icone+offset_cone),
                                                 1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(icone),
+                                        newvars.append(('__tmplhs[{0}]__'.format(icone+offset_cone),
                                                 (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
-                                        newvars.append(('__tmprhs[{0}]__'.format(icone),
+                                        newvars.append(('__tmprhs[{0}]__'.format(icone+offset_cone),
                                                 1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
@@ -1443,17 +1449,20 @@ class Problem:
                                                                         expcat.size)
                                         
                                         #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(icone)]=(
-                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[icone])
-                                        newcons['tmp_rhs_{0}'.format(icone)]=(
-                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[icone])
+                                        newcons['tmp_lhs_{0}'.format(icone+offset_cone)]=(
+                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(icone+offset_cone)]=(
+                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[-1])
                                         #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(icone)]=(
-                                                        tmprhs[icone]>0)
-                                        newcons['tmp_conequad_{0}'.format(icone)]=(
-                                        -tmprhs[icone]**2+(tmplhs[icone]|tmplhs[icone])<0)
+                                        newcons['tmp_conesign_{0}'.format(icone+offset_cone)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(icone+offset_cone)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
                                         icone+=1
-                                
+                        #variable shift
+                        for tv in tmprhs+tmplhs:
+                                tv.startIndex+=offset_supvars
+                                tv.endIndex+=offset_supvars
                 
                 
                 if (self.options['verbose']>1) and (not only_update):
@@ -1663,6 +1672,10 @@ class Problem:
                                                 #-->                                                
                         
                         elif constr.typeOfConstraint == 'quad':
+                                if isinstance(constrKey,int):
+                                        offsetkey=self.last_updated_constraint+constrKey
+                                else:
+                                        offsetkey=constrKey
                                 #quad part
                                 qind1,qind2,qval=[],[],[]
                                 qd=constr.Exp1.quad
@@ -1710,7 +1723,9 @@ class Problem:
                                         #-->
                                 
                         elif constr.typeOfConstraint[2:] == 'cone':
-                                pass  #will be handled in the newcons dictionary
+                                offsetkey=self.last_updated_constraint+constrKey
+                                boundcons[offsetkey]=[]
+                                #will be handled in the newcons dictionary
                                 
                         else:
                                 raise Exception('type of constraint not handled (yet ?) for cplex:{0}'.format(
@@ -1730,7 +1745,7 @@ class Problem:
                         c.variables.add(obj = obj, names = colnames,types=types)
                         c.variables.set_lower_bounds(zip(range(len(lb)),lb))
                         c.variables.set_upper_bounds(zip(range(len(ub)),ub))
-                        import pdb;pdb.set_trace()
+                        #import pdb;pdb.set_trace()
                 else:
                         c.variables.add(obj = obj, ub = ub, lb=lb, names = colnames,types=types)
                         if len(quad_terms)>0:
@@ -2976,7 +2991,7 @@ class Problem:
                                                         dual_values=[-dvl for dvl in dual_values]
                                                 for (i,j,b,v) in self.cplex_boundcons[k]:
                                                         xj = c.solution.get_values(j)
-                                                        if ((b=='=') or (xj == b)) and (j not in seen_bounded_vars):
+                                                        if ((b=='=') or abs(xj-b)<1e-7) and (j not in seen_bounded_vars):
                                                                 #does j appear in another equality constraint ?
                                                                 if b!='=':
                                                                        boundsj=[b0 for k0 in range(len(self.constraints))
