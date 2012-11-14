@@ -98,6 +98,8 @@ class Problem:
                 self.groupsOfConstraints = {}
                 self.listOfVars = {}
                 self.consNumbering=[]
+                #next constraint to consider in a makeXXX_instance
+                self.last_updated_constraint=0 #next constraint to consider in a makeXXX_instance
                 
                 self.options = {}
                 if options is None: options={}
@@ -215,6 +217,7 @@ class Problem:
                 self.constraints = []
                 self.numberQuadNNZ=0
                 self.numberLSEVars = 0
+                self.last_updated_constraint = 0
                 if self.objective[0] is not 'find':
                         if self.objective[1] is not None:
                                 expr=self.objective[1]
@@ -1106,6 +1109,8 @@ class Problem:
                 if isinstance(ind,int):
                         del self.constraints[ind]
                         self.countCons -=1
+                        if self.last_updated_constraint > 0:
+                                self.last_updated_constraint-=1
                         if ind in self.consNumbering: #single added constraint
                                 self.consNumbering.remove(ind)
                                 start=ind
@@ -1338,8 +1343,16 @@ class Problem:
                         self.cplex_Instance.objective.set_linear(coefs)
                         return
                 
-                c = cplex.Cplex()
                 import itertools
+                
+                if (self.last_updated_constraint == 0 or
+                    self.cplex_Instance is None):
+                        c = cplex.Cplex()
+                        self.last_updated_constraint = 0
+                        only_update = False
+                else:
+                        c = self.cplex_Instance
+                        only_update = True
                 
                 sense_opt = self.objective[0]
                 if sense_opt == 'max':
@@ -1360,10 +1373,11 @@ class Problem:
                 #create new variable and quad constraints to handle socp
                 tmplhs=[]
                 tmprhs=[]
-                icone =0
+                icone =0 #TODO find the number of cones previously handled ! + pb avec __noconstant__
                 newcons={}
+                newvars=[]
                 if self.numberConeConstraints > 0 :
-                        for constrKey,constr in enumerate(self.constraints):
+                        for constrKey,constr in enumerate(self.constraints[self.last_updated_constraint:]):
                                 if constr.typeOfConstraint[2:]=='cone':
                                         if icone == 0: #first conic constraint
                                                 if '__noconstant__' in self.variables:
@@ -1371,6 +1385,7 @@ class Problem:
                                                 else:
                                                         noconstant=self.add_variable(
                                                                 '__noconstant__',1)
+                                                        newvars.append(('__noconstant__',1))
                                                 newcons['noconstant']=(
                                                         noconstant>0)
                                 if constr.typeOfConstraint=='SOcone':
@@ -1383,6 +1398,10 @@ class Problem:
                                                 constr.Exp1.size))
                                         tmprhs.append(self.add_variable(
                                                 '__tmprhs[{0}]__'.format(icone),
+                                                1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(icone),
+                                                constr.Exp1.size[0]*constr.Exp1.size[1]))
+                                        newvars.append(('__tmprhs[{0}]__'.format(icone),
                                                 1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
@@ -1412,6 +1431,10 @@ class Problem:
                                         tmprhs.append(self.add_variable(
                                                 '__tmprhs[{0}]__'.format(icone),
                                                 1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(icone),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
+                                        newvars.append(('__tmprhs[{0}]__'.format(icone),
+                                                1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
                                         v_cons = cvx.matrix( [np.sign(expcat.constant[i])
@@ -1433,7 +1456,7 @@ class Problem:
                                 
                 
                 
-                if self.options['verbose']>1:
+                if (self.options['verbose']>1) and (not only_update):
                         limitbar=self.numberOfVars
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
@@ -1442,64 +1465,78 @@ class Problem:
                                 print
                 
                 #variables
+                if only_update:
+                        supvars=sum([nv[1] for nv in newvars])
+                        colnames=['']*supvars
+                        obj=[0]*supvars
+                        types=['C']*supvars
+                        #ub and lb contain the bounds for the old AND new variables
+                        ub=c.variables.get_upper_bounds()+([cplex.infinity]*supvars)
+                        lb=c.variables.get_lower_bounds()+([-cplex.infinity]*supvars)
+                        
+                        j=0
+                        for kvar,sz in newvars:
+                                for kj in range(sz):
+                                        colnames[j]=kvar+'_'+str(kj)
+                                        j+=1
+                else:
+                        colnames=['']*self.numberOfVars
+                        obj=[0]*self.numberOfVars
+                        types=['C']*self.numberOfVars
+                        
+                        #specify bounds later, in constraints
+                        ub=[cplex.infinity]*self.numberOfVars
+                        lb=[-cplex.infinity]*self.numberOfVars
+                        
+                        if self.objective[1] is None:
+                                objective = {}
+                        elif isinstance(self.objective[1],QuadExp):
+                                objective = self.objective[1].aff.factors
+                        elif isinstance(self.objective[1],AffinExp):
+                                objective = self.objective[1].factors
+                        
+                        for kvar,variable in self.variables.iteritems():
+                                sj=variable.startIndex
+                                if objective.has_key(variable):
+                                        vectorObjective = objective[variable]
+                                else:
+                                        vectorObjective = [0]*(variable.size[0]*variable.size[1])
+                                for k in range(variable.size[0]*variable.size[1]):
+                                        colnames[sj+k]=kvar+'_'+str(k)
+                                        obj[sj+k]=vectorObjective[k]
+                                        types[sj+k]=cplex_type[variable.vtype]
+                                        
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->
+                        
+                        if self.options['verbose']>1:
+                                prog.update_amount(limitbar)
+                                print prog, "\r",
+                                print
                 
-                colnames=['']*self.numberOfVars
-                obj=[0]*self.numberOfVars
-                types=['C']*self.numberOfVars
                 
-                #specify bounds later, in constraints
-                ub=[cplex.infinity]*self.numberOfVars
-                lb=[-cplex.infinity]*self.numberOfVars
-                
-                if self.objective[1] is None:
-                        objective = {}
-                elif isinstance(self.objective[1],QuadExp):
-                        objective = self.objective[1].aff.factors
-                elif isinstance(self.objective[1],AffinExp):
-                        objective = self.objective[1].factors
-                
-                for kvar,variable in self.variables.iteritems():
-                        sj=variable.startIndex
-                        if objective.has_key(variable):
-                                vectorObjective = objective[variable]
-                        else:
-                                vectorObjective = [0]*(variable.size[0]*variable.size[1])
-                        for k in range(variable.size[0]*variable.size[1]):
-                                colnames[sj+k]=kvar+'_'+str(k)
-                                obj[sj+k]=vectorObjective[k]
-                                types[sj+k]=cplex_type[variable.vtype]
-                                
-                                if self.options['verbose']>1:
-                                        #<--display progress
-                                        prog.increment_amount()
-                                        if oldprog != str(prog):
-                                                print prog, "\r",
-                                                sys.stdout.flush()
-                                                oldprog=str(prog)
-                                        #-->
-                
-                if self.options['verbose']>1:
-                        prog.update_amount(limitbar)
-                        print prog, "\r",
-                        print
-                
-                
-                #quad part of the objective
-                quad_terms = []
-                if isinstance(self.objective[1],QuadExp):
-                        qd=self.objective[1].quad
-                        for i,j in qd:
-                                fact=qd[i,j]
-                                si=i.startIndex
-                                sj=j.startIndex
-                                if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
-                                        if si<sj:
-                                                fact+=qd[j,i].T
-                                        elif si>sj:
-                                                fact=cvx.sparse([0])
-                                        elif si==sj:
-                                                pass
-                                quad_terms += zip(fact.I+si,fact.J+sj,2*fact.V)
+                        #quad part of the objective
+                        quad_terms = []
+                        if isinstance(self.objective[1],QuadExp):
+                                qd=self.objective[1].quad
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        quad_terms += zip(fact.I+si,fact.J+sj,2*fact.V)
 
                 #constraints
                 
@@ -1511,7 +1548,8 @@ class Problem:
                 if self.options['verbose']>1:
                         limitbar= (self.numberAffConstraints +
                                    self.numberQuadConstraints +
-                                   len(newcons))
+                                   len(newcons) -
+                                   self.last_updated_constraint)
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                 
@@ -1525,7 +1563,10 @@ class Problem:
                 qq=[]
                 qc=[]
                 
-                boundcons={} #dictionary of i,j,b,v for bound constraints
+                if only_update:
+                        boundcons=self.cplex_boundcons
+                else:
+                        boundcons={} #dictionary of i,j,b,v for bound constraints
                 
                 
                 #join all constraints
@@ -1533,7 +1574,7 @@ class Problem:
                         for i in it1: yield i
                         for i in it2: yield i
                         
-                allcons = join_iter(enumerate(self.constraints),
+                allcons = join_iter(enumerate(self.constraints[self.last_updated_constraint:]),
                                     newcons.iteritems())
                 
                 irow=0
@@ -1541,7 +1582,11 @@ class Problem:
                        
                         if constr.typeOfConstraint[:3] == 'lin':
                                 #init of boundcons[key]
-                                boundcons[constrKey]=[]
+                                if isinstance(constrKey,int):
+                                        offsetkey=self.last_updated_constraint+constrKey
+                                else:
+                                        offsetkey=constrKey
+                                boundcons[offsetkey]=[]
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
@@ -1593,7 +1638,7 @@ class Problem:
                                                                         ub[j]=b
                                                 if constr.typeOfConstraint[3]=='=': 
                                                         b='='
-                                                boundcons[constrKey].append((i,j,b,v))
+                                                boundcons[offsetkey].append((i,j,b,v))
                                         else:
                                                 if constr.typeOfConstraint[:4] == 'lin<':
                                                         senses += "L" # lower
@@ -1681,9 +1726,18 @@ class Problem:
                 if self.options['verbose']>0:
                         print
                         print('Passing to cplex...')
-                c.variables.add(obj = obj, ub = ub, lb=lb, names = colnames,types=types)
-                if len(quad_terms)>0:
-                        c.objective.set_quadratic_coefficients(quad_terms)
+                if only_update:
+                        c.variables.add(obj = obj, names = colnames,types=types)
+                        c.variables.set_lower_bounds(zip(range(len(lb)),lb))
+                        c.variables.set_upper_bounds(zip(range(len(ub)),ub))
+                        import pdb;pdb.set_trace()
+                else:
+                        c.variables.add(obj = obj, ub = ub, lb=lb, names = colnames,types=types)
+                        if len(quad_terms)>0:
+                                c.objective.set_quadratic_coefficients(quad_terms)
+                
+                offset=c.linear_constraints.get_num()
+                rows=[r+offset for r in rows]
                 c.linear_constraints.add(rhs = rhs, senses = senses)
                 if len(rows)>0:
                         c.linear_constraints.set_coefficients(zip(rows, cols, vals))
@@ -1709,7 +1763,6 @@ class Problem:
                         c.set_problem_type(c.problem_type.MIQP)
                 else:
                         raise Exception('unhandled type of problem')
-                
                 
                 
                 self.cplex_Instance = c
@@ -2427,6 +2480,7 @@ class Problem:
                         self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
                 else:
                         self._make_cvxopt_instance()
+                self.last_updated_constraint=self.countCons
                 #--------------------#        
                 #  sets the options  #
                 #--------------------#
@@ -2737,6 +2791,7 @@ class Problem:
                 #----------------------------#
                 import cplex
                 self._make_cplex_instance()
+                self.last_updated_constraint=self.countCons
                 c = self.cplex_Instance
                 
                 if c is None:
@@ -3011,6 +3066,7 @@ class Problem:
                 #----------------------------#
                 import mosek
                 self._make_mosek_instance()
+                self.last_updated_constraint=self.countCons
                 task=self.msk_task
 
                 #---------------------#
@@ -3359,6 +3415,7 @@ class Problem:
                         
                 else:
                         self._make_zibopt()
+                        self.last_updated_constraint=self.countCons
                 
                 timelimit=10000000.
                 gaplim=self.options['tol']
