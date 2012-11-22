@@ -330,11 +330,12 @@ def eval_dict(dict_of_variables):
         mapping variable names (strings) to :class:`variables <picos.Variable>`,
         this function returns the dictionary ``names -> variable values``. 
         """
+        valued_dict={}
         for k in dict_of_variables:
-                dict_of_variables[k] = dict_of_variables[k].eval()
-                if dict_of_variables[k].size == (1,1):
-                        dict_of_variables[k] = dict_of_variables[k][0]
-        return dict_of_variables
+                valued_dict[k] = dict_of_variables[k].eval()
+                if valued_dict[k].size == (1,1):
+                        valued_dict[k] = valued_dict[k][0]
+        return valued_dict
 
 
 
