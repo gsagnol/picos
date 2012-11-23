@@ -705,7 +705,7 @@ class Problem:
                 
         def add_constraint(self,cons, key=None):
                 """Adds a constraint in the problem.
-            f    
+                
                 :param cons: The constraint to be added.
                 :type cons: :class:`Constraint <picos.Constraint>`
                 :param key: Optional parameter to describe the constraint with a key string.
@@ -733,6 +733,7 @@ class Problem:
                 elif cons.typeOfConstraint[:3]=='sdp':
                         self.numberSDPConstraints+=1
                         self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                return cons
                 
 
         def add_list_of_constraints(self,lst,it=None,indices=None,key=None):
@@ -856,6 +857,7 @@ class Problem:
                         except Exception as ex:
                                 strlis='['+str(len(lst))+' constraints (first: '+lst[0].constring()+')]\n'
                 self.groupsOfConstraints[firstCons]=[lastCons,strlis,key]
+                return lst
          
 
         def get_valued_variable(self,name):
