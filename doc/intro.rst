@@ -332,11 +332,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Author and contributors
 =======================
 
-        * Author: Sphinx initial author and current primary developer is:
+        * Author: Picos initial author and current primary developer is:
                 
                   `Guillaume Sagnol <http://www.zib.de/sagnol>`_, <sagnol( a t )zib.de>
 
-        * Contributors: People who contributed to Sphinx and their contributions
+        * Contributors: People who contributed to Picos and their contributions
           (in no particular order) are:
 
                         * Bertrand Omont

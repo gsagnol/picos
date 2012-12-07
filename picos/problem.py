@@ -360,7 +360,7 @@ class Problem:
                   * ``verbose = 1`` : verbosity level [0(quiet)|1|2(loud)]
                   
                   * ``solver = None`` : currently the available solvers are
-                    ``'cvxopt'``, ``'cplex'``, ``'mosek'``, ``'smcp'``, ``'zibopt'``.
+                    ``'cvxopt'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``, ``'smcp'``, ``'zibopt'``.
                     The default
                     ``None`` means that you let picos select a suitable solver for you.
                   
@@ -376,14 +376,14 @@ class Problem:
                     The default ``None`` selects automatically an algorithm.
                     If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
                     will use a primal simplex (resp. dual simplex, interior-point) algorithm.
-                    *This option currently works only with cplex and mosek*.
+                    *This option currently works only with cplex, mosek and gurobi*.
                     
                   * ``lp_node_method = None`` : algorithm used to solve subproblems
                     at nodes of the branching trees of mixed integer programs.
                     The default ``None`` selects automatically an algorithm.
                     If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
                     will use a primal simplex (resp. dual simplex, interior-point) algorithm.
-                    *This option currently works only with cplex and mosek*.
+                    *This option currently works only with cplex, mosek and gurobi*.
                   
                   * ``timelimit = None`` : time limit for the solver, in seconds. The default
                     ``None`` means no time limit.
@@ -391,7 +391,7 @@ class Problem:
                 
                   * ``treememory = None``  : size of the buffer for the branch and bound tree,
                     in Megabytes. 
-                    *This option currently works only with cplex*.
+                    *This option currently works only with cplex and gurobi TODOcheck*.
                     
                   * ``gaplim = 1e-4`` : For mixed integer problems,
                     the solver returns a solution as soon as this value for the gap is reached
@@ -404,6 +404,9 @@ class Problem:
                     of the problem will not be parsed by picos next
                     time :func:`solve() <picos.Problem.solve>` is called
                     (this can lead to a huge gain of time).
+                    
+                  * ``noprimals = False`` : if ``True``, do not copy the optimal variable values in the
+                    attribute ``value`` of the problem variables.
                     
                   * ``noduals = False`` : if ``True``, do not try to retrieve the dual variables.
 
@@ -451,6 +454,8 @@ class Problem:
                     ``mosek_params={'simplex_abs_tol_piv' : 1e-4}``
                     sets the absolute pivot tolerance of the
                     simplex optimizer to ``1e-4``.
+                    
+                * Specific options available for gurobi: #TODO
                 
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
@@ -467,6 +472,7 @@ class Problem:
                                  'step_sqp'       :1,
                                  'harmonic_steps' :1,
                                  'onlyChangeObjective':False,
+                                 'noprimals'      :False,
                                  'noduals'        :False,
                                  'smcp_feas'      :False,
                                  'nbsol'          :None,
@@ -480,6 +486,7 @@ class Problem:
                                  'lp_node_method' :None,
                                  'cplex_params'   :{},
                                  'mosek_params'   :{},
+                                 'gurobi_params'  :{},
                                  'convert_quad_to_socp_if_needed' : True,
                                  }
                                  
@@ -703,13 +710,16 @@ class Problem:
                 cop.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
                 return cop
                 
-        def add_constraint(self,cons, key=None):
+        def add_constraint(self,cons, key=None, ret=False):
                 """Adds a constraint in the problem.
                 
                 :param cons: The constraint to be added.
                 :type cons: :class:`Constraint <picos.Constraint>`
                 :param key: Optional parameter to describe the constraint with a key string.
                 :type key: str.
+                :param ret: Do you want the added constraint to be returned ?
+                            This can be useful to access the dual of this constraint.
+                :type ret: bool.
                 """
                 cons.key=key
                 if not key is None:
@@ -733,10 +743,11 @@ class Problem:
                 elif cons.typeOfConstraint[:3]=='sdp':
                         self.numberSDPConstraints+=1
                         self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
-                return cons
+                if ret:
+                        return cons
                 
 
-        def add_list_of_constraints(self,lst,it=None,indices=None,key=None):
+        def add_list_of_constraints(self,lst,it=None,indices=None,key=None,ret=False):
                 u"""adds a list of constraints in the problem.
                 This fonction can be used with python list comprehensions
                 (see the example below).
@@ -765,6 +776,9 @@ class Problem:
                 :type indices: str.
                 :param key: Optional parameter to describe the list of constraints with a key string.
                 :type key: str.
+                :param ret: Do you want the added list of constraints to be returned ?
+                            This can be useful to access the duals of these constraints.
+                :type ret: bool.
                                 
                 **Example:**
 
@@ -857,7 +871,8 @@ class Problem:
                         except Exception as ex:
                                 strlis='['+str(len(lst))+' constraints (first: '+lst[0].constring()+')]\n'
                 self.groupsOfConstraints[firstCons]=[lastCons,strlis,key]
-                return lst
+                if ret:
+                        return lst
          
 
         def get_valued_variable(self,name):
@@ -1233,78 +1248,420 @@ class Problem:
         ----------------------------------------------------------------
         """        
 
-        '''GUROBi does not work with our version of Python ? 
-        def makeGUROBI_Instance(self):
+        #GUROBI
+        def _make_gurobi_instance(self):
                 """
                 defines the variables gurobi_Instance and grbvar
                 """
-                self._set_as_current_problem()                
-                self.options['solver'] = 'GUROBI'
-                m = Model()
+                             
+                try:
+                        import gurobipy as grb
+                except:
+                        Exception('gurobipy not found')
                 
-                grb_type = {        'continuous' : GRB.CONTINUOUS, 
-                                'binary' : GRB.BINARY, 
-                                'integer' : GRB.INTEGER, 
-                                'semicont' : GRB.SEMICONT, 
-                                'semiint' : GRB.SEMIINT }
+                grb_type = {    'continuous' : grb.GRB.CONTINUOUS, 
+                                'binary' :     grb.GRB.BINARY, 
+                                'integer' :    grb.GRB.INTEGER, 
+                                'semicont' :   grb.GRB.SEMICONT, 
+                                'semiint' :    grb.GRB.SEMIINT }
                 
-                # variables
-                for kvar in self.variables.keys():
-                        variable = self.variables[kvar]
-                        # a vector
-                        objective = self.objective[1].factors
-                        if variable.size[1] == 1:
-                                # objective vector
-                                if kvar in objective.keys():
-                                        vectorObjective = objective[kvar][0]
-                                else:
-                                        vectorObjective = []
-                                        for i in range(variable.size[0]):
-                                                vectorObjective.append[0]
+                #TODO: onlyChangeObjective
+                
+                if (self.last_updated_constraint == 0 or
+                    self.gurobi_Instance is None):
+                        m = grb.Model()
+                        self.last_updated_constraint = 0
+                        only_update = False
+                else:
+                        m = self.gurobi_Instance
+                        only_update = True
+                
+                if self.objective[0] == 'max':
+                        m.ModelSense = grb.GRB.MAXIMIZE
+                else:
+                        m.ModelSense = grb.GRB.MINIMIZE
+                
+                self.options['solver'] = 'gurobi'
+                
+                
+                #create new variable and quad constraints to handle socp
+                tmplhs=[]
+                tmprhs=[]
+                icone =0
+                if only_update:
+                        offset_cone = len([1 for v in m.getVars() if '__tmprhs' in v.VarName])
+                        offset_supvars = m.NumVars - self.numberOfVars -1
+                else:
+                        offset_cone = 0
+                        offset_supvars = 0
+                
+                newcons={}
+                newvars=[]
+                if self.numberConeConstraints > 0 :
+                        for constrKey,constr in enumerate(self.constraints[self.last_updated_constraint:]):
+                                if constr.typeOfConstraint[2:]=='cone':
+                                        if icone == 0: #first conic constraint
+                                                if '__noconstant__' in self.variables:
+                                                        noconstant=self.get_variable('__noconstant__')
+                                                else:
+                                                        noconstant=self.add_variable(
+                                                                '__noconstant__',1)
+                                                        newvars.append(('__noconstant__',1))
+                                                newcons['noconstant']=(noconstant>0)
+                                                #no variable shift -> same noconstant var as before
+                                if constr.typeOfConstraint=='SOcone':
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey)) #constrKey replaced the icone+offset_cone of previous version
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(constrKey),
+                                                constr.Exp1.size))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
+                                                constr.Exp1.size[0]*constr.Exp1.size[1]))
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
+                                                                        if constr.Exp1[i].isconstant() else 0
+                                                                        for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
+                                                                        constr.Exp1.size)
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
+                                                        constr.Exp1+v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
+                                                        constr.Exp2-noconstant == tmprhs[-1])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
+                                        icone+=1
+                                if constr.typeOfConstraint=='RScone':
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(constrKey),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1
+                                                ))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
+                                        v_cons = cvx.matrix( [np.sign(expcat.constant[i])
+                                                                        if expcat[i].isconstant() else 0
+                                                                        for i in range(expcat.size[0]*expcat.size[1])],
+                                                                        expcat.size)
+                                        
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
+                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
+                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[-1])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
+                                        icone+=1
+                        #variable shift
+                        for tv in tmprhs+tmplhs:
+                                tv.startIndex+=offset_supvars
+                                tv.endIndex+=offset_supvars
+                
                                 
-                                for i in range(variable.size[0]):
-                                        #lb (optional): Lower bound for new variable.
-                                        #ub (optional): Upper bound for new variable.
-                                        #obj (optional): Objective coefficient for new variable.
-                                        #vtype (optional): Variable type for new variable (GRB.CONTINUOUS, GRB.BINARY, GRB.INTEGER, GRB.SEMICONT, or GRB.SEMIINT).
-                                        #name (optional): Name for new variable.
-                                        #column (optional): Column object that indicates the set of constraints in which the new variable participates, and the associated coefficients. 
-                                        newvar = m.addVar(obj = vectorObjective[i], vtype = grb_type[variable.vtype])
-                                        self.grbvar[kvar].append(n)
-                        # not a vector
+                #variables
+                
+                if (self.options['verbose']>1) and (not only_update):
+                        limitbar=self.numberOfVars
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
+                        oldprog = str(prog)
+                        print('Creating variables...')
+                        print
+                
+                if only_update:
+                        supvars=sum([nv[1] for nv in newvars])
+                        x=self.grbvar
+                        for kvar,sz in newvars:
+                                for kj in range(sz):
+                                        name = kvar+'_'+str(kj)
+                                        x.append( m.addVar(obj = 0.,
+                                                name = name,
+                                                vtype = grb_type['continuous'],
+                                                lb = -grb.GRB.INFINITY))
+                else:
+                        
+                        x=[]
+                        if self.objective[1] is None:
+                                objective = {}
+                        elif isinstance(self.objective[1],QuadExp):
+                                objective = self.objective[1].aff.factors
+                        elif isinstance(self.objective[1],AffinExp):
+                                objective = self.objective[1].factors
+                        
+                        for kvar,variable in self.variables.iteritems():
+                                sj=variable.startIndex
+                                if objective.has_key(variable):
+                                        vectorObjective = objective[variable]
+                                else:
+                                        vectorObjective = [0]*(variable.size[0]*variable.size[1])
+                                for k in range(variable.size[0]*variable.size[1]):
+                                        name=kvar+'_'+str(k)
+                                        x.append( m.addVar(obj = vectorObjective[k],
+                                                           name = name,
+                                                           vtype = grb_type[variable.vtype],
+                                                           lb = -grb.GRB.INFINITY))
+
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->
+                        
+                        if self.options['verbose']>1:
+                                prog.update_amount(limitbar)
+                                print prog, "\r",
+                                print
+                
+                
+                        #quad part of the objective
+                        if isinstance(self.objective[1],QuadExp):
+                                m.update()
+                                lpart = m.getObjective()
+                                qd=self.objective[1].quad
+                                qind1,qind2,qval=[],[],[]
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        namei=i.name
+                                        namej=j.name
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
+                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
+                                        qval.extend(fact.V)
+                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
+                                m.setObjective(q_exp+lpart)
+                                
+                m.update()
+                #constraints
+                
+                #progress bar
+                if self.options['verbose']>0:
+                        print
+                        print('adding constraints...')
+                        print 
+                if self.options['verbose']>1:
+                        limitbar= (self.numberAffConstraints) #+ TODO
+                                   #self.numberQuadConstraints +
+                                   #len(newcons) -
+                                   #self.last_updated_constraint)
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
+                        oldprog = str(prog)
+                
+                if only_update:
+                        boundcons=self.grb_boundcons
+                else:
+                        boundcons={} #dictionary of i,j,b,v for bound constraints
+                
+                #join all constraints
+                def join_iter(it1,it2):
+                        for i in it1: yield i
+                        for i in it2: yield i
+                        
+                allcons = join_iter(enumerate(self.constraints[self.last_updated_constraint:]),
+                                    newcons.iteritems())
+                
+                irow=0
+                for constrKey,constr in allcons:
+                        
+                        if constr.typeOfConstraint[:3] == 'lin':
+                                #init of boundcons[key]
+                                if isinstance(constrKey,int):
+                                        offsetkey=self.last_updated_constraint+constrKey
+                                else:
+                                        offsetkey=constrKey
+                                boundcons[offsetkey]=[]
+                                
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
+                                        if type(fact)!=cvx.base.spmatrix:
+                                                fact = cvx.sparse(fact)
+                                        ijv.extend(zip( fact.I,
+                                                [var.name+'_'+str(j) for j in fact.J],
+                                                fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
+                                
+                                #constant term
+                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                rhstmp = cvx.matrix(0.,(szcons,1))
+                                constant1 = constr.Exp1.constant #None or a 1*1 matrix
+                                constant2 = constr.Exp2.constant
+                                if not constant1 is None:
+                                        rhstmp = rhstmp-constant1
+                                if not constant2 is None:
+                                        rhstmp = rhstmp+constant2
+                                                                
+                                for i,jv in itojv.iteritems():
+                                        r=rhstmp[i]
+                                        if len(jv)==1:
+                                                #BOUND
+                                                name,v=jv[0]
+                                                xj=m.getVarByName(name)
+                                                b=r/float(v)
+                                                if v>0:
+                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
+                                                                if b<xj.ub:
+                                                                        xj.ub=b
+                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
+                                                                if b>xj.lb:
+                                                                        xj.lb=b
+                                                else:#v<0
+                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
+                                                                if b>xj.lb:
+                                                                        xj.lb=b
+                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
+                                                                if b<xj.ub:
+                                                                        xj.ub=b
+                                                if constr.typeOfConstraint[3]=='=': 
+                                                        b='='
+                                                boundcons[offsetkey].append((i,name,b,v))
+                                        else:
+                                                LEXP = grb.LinExpr(
+                                                        [v for j,v in jv],
+                                                        [m.getVarByName(name) for name,v in jv])
+                                                name='lin'+str(offsetkey)+'_'+str(i)
+                                                if constr.typeOfConstraint[:4] == 'lin<':
+                                                        m.addConstr(LEXP <= r,name=name)
+                                                elif constr.typeOfConstraint[:4] == 'lin>':
+                                                        m.addConstr(LEXP >= r,name=name)
+                                                elif constr.typeOfConstraint[:4] == 'lin=':
+                                                        m.addConstr(LEXP == r,name=name)
+                                                
+                                                irow+=1
+                                                
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->                                                
+                        
+                        
+                        elif constr.typeOfConstraint == 'quad':
+                                if isinstance(constrKey,int):
+                                        offsetkey=self.last_updated_constraint+constrKey
+                                else:
+                                        offsetkey=constrKey
+                                #quad part
+                                qind1,qind2,qval=[],[],[]
+                                qd=constr.Exp1.quad
+                                q_exp= 0.
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        namei=i.name
+                                        namej=j.name
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
+                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
+                                        qval.extend(fact.V)
+                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
+                                #lin part
+                                lind,lval=[],[]
+                                af=constr.Exp1.aff.factors
+                                for var in af:
+                                        name = var.name
+                                        lind.extend([name+'_'+str(k) for k in af[var].J])
+                                        lval.extend(af[var].V)
+                                l_exp=grb.LinExpr(
+                                        lval,
+                                        [m.getVarByName(name) for name in lind])
+                                #constant
+                                qcs=0.
+                                if not(constr.Exp1.aff.constant is None):
+                                        qcs = - constr.Exp1.aff.constant[0]
+                                m.addQConstr(q_exp + l_exp <= qcs )
+                                
+                                if self.options['verbose']>1:
+                                        #<--display progress
+                                        prog.increment_amount()
+                                        if oldprog != str(prog):
+                                                print prog, "\r",
+                                                sys.stdout.flush()
+                                                oldprog=str(prog)
+                                        #-->
+                                
+                        elif constr.typeOfConstraint[2:] == 'cone':
+                                offsetkey=self.last_updated_constraint+constrKey
+                                boundcons[offsetkey]=[]
+                                #will be handled in the newcons dictionary
+                                
                         else:
-                                raise ValueError("the variable is not a vector, not implemented yet")
+                                raise Exception('type of constraint not handled (yet ?) for cplex:{0}'.format(
+                                        constr.typeOfConstraint))
+                        
+                       
+
+                if self.options['verbose']>1:
+                        prog.update_amount(limitbar)
+                        print prog, "\r",
+                        print
+                        
                 m.update()
                 
-                for constr in self.constraints:
-                        if constr.typeOfConstraint == 'lin<':
-                                sense = GRB.LESS_EQUAL
-                        elif constr.typeOfConstraint == 'lin>':
-                                sense = GRB.GREATER_EQUAL
-                        elif constr.typeOfConstraint == 'lin=':
-                                sense = GRB.EQUAL
-                        else:
-                                raise ValueError('Impossible linear constraint')
-                        
-                        # decompose vector in i relations
-                        for i in range(constr.Exp1.size[0]):
-                                lhsvar = []
-                                lhsparam = []
-                                rhsvar = []
-                                rhsparam = []
-                                # left
-                                for kvar in constr.Exp1.factors.keys():
-                                        lhsvar.append(self.grbvar[kvar])
-                                        lhsparam.append(constr.Exp1.factors[kvar][i,:])
-                                # right
-                                for kvar in constr.Exp2.factors.keys():
-                                        rhsvar.append(self.grbvar[kvar])
-                                        rhsparam.append(constr.Exp1.factors[kvar][i,:])
-                                #adding the constraint
-                                lhs = LinExpr(lhsparam, lhsvar)
-                                rhs = LinExpr(rhsparam, rhsvar)
-                                m.addConstr(lhs, sense, rhs)
-        '''
+                if self.options['verbose']>0:
+                        print 'Gurobi instance created'
+                        print
+                self.gurobi_Instance=m
+                self.grbvar=x
+                self.grb_boundcons=boundcons
+                
+                #remove temporary variables for cone constraints
+                for v in tmplhs:
+                        self.remove_variable(v.name)
+                for v in tmprhs:
+                        self.remove_variable(v.name)                       
+                if 'noconstant' in newcons:
+                        self.remove_variable(noconstant.name)
                 
         def is_continuous(self):
                 """ Returns ``True`` if there are only continuous variables"""
@@ -1381,7 +1738,7 @@ class Problem:
                 else:
                         offset_cone = 0
                         offset_supvars = 0
-                #WWORK AROUND: if there was already socs, pas faire onlyupdate
+                
                 newcons={}
                 newvars=[]
                 if self.numberConeConstraints > 0 :
@@ -1397,19 +1754,19 @@ class Problem:
                                                 newcons['noconstant']=(noconstant>0)
                                                 #no variable shift -> same noconstant var as before
                                 if constr.typeOfConstraint=='SOcone':
-                                        if '__tmplhs[{0}]__'.format(icone+offset_cone) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(icone+offset_cone))
-                                        if '__tmprhs[{0}]__'.format(icone+offset_cone) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(icone+offset_cone))
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
                                         tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(icone+offset_cone),
+                                                '__tmplhs[{0}]__'.format(constrKey),
                                                 constr.Exp1.size))
                                         tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(icone+offset_cone),
+                                                '__tmprhs[{0}]__'.format(constrKey),
                                                 1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(icone+offset_cone),
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
                                                 constr.Exp1.size[0]*constr.Exp1.size[1]))
-                                        newvars.append(('__tmprhs[{0}]__'.format(icone+offset_cone),
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
                                                 1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
@@ -1417,31 +1774,31 @@ class Problem:
                                                                         for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
                                                                         constr.Exp1.size)
                                         #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
                                                         constr.Exp1+v_cons*noconstant == tmplhs[-1])
-                                        newcons['tmp_rhs_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
                                                         constr.Exp2-noconstant == tmprhs[-1])
                                         #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
                                                         tmprhs[-1]>0)
-                                        newcons['tmp_conequad_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
                                         -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
                                         icone+=1
                                 if constr.typeOfConstraint=='RScone':
-                                        if '__tmplhs[{0}]__'.format(icone+offset_cone) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(icone+offset_cone))
-                                        if '__tmprhs[{0}]__'.format(icone+offset_cone) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(icone+offset_cone))
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
                                         tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(icone+offset_cone),
+                                                '__tmplhs[{0}]__'.format(constrKey),
                                                 (constr.Exp1.size[0]*constr.Exp1.size[1])+1
                                                 ))
                                         tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(icone+offset_cone),
+                                                '__tmprhs[{0}]__'.format(constrKey),
                                                 1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(icone+offset_cone),
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
                                                 (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
-                                        newvars.append(('__tmprhs[{0}]__'.format(icone+offset_cone),
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
                                                 1))
                                         #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
                                         expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
@@ -1451,14 +1808,14 @@ class Problem:
                                                                         expcat.size)
                                         
                                         #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
                                         (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[-1])
-                                        newcons['tmp_rhs_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
                                                 constr.Exp2+constr.Exp3 - noconstant == tmprhs[-1])
                                         #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
                                                         tmprhs[-1]>0)
-                                        newcons['tmp_conequad_{0}'.format(icone+offset_cone)]=(
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
                                         -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
                                         icone+=1
                         #variable shift
@@ -1568,6 +1925,7 @@ class Problem:
                 cols=[]
                 vals=[]
                 rhs=[]
+                rownames=[]
                 senses= ''
                 
                 ql=[]
@@ -1663,6 +2021,7 @@ class Problem:
                                                 vals.extend([v for j,v in jv])
                                                 rhs.append(r)
                                                 irow+=1
+                                                rownames.append('lin'+str(offsetkey)+'_'+str(i))
                                                 
                                         if self.options['verbose']>1:
                                                 #<--display progress
@@ -1702,7 +2061,8 @@ class Problem:
                                 lind,lval=[],[]
                                 af=constr.Exp1.aff.factors
                                 for var in af:
-                                        lind.extend(af[var].J)
+                                        sj=var.startIndex
+                                        lind.extend(af[var].J + sj)
                                         lval.extend(af[var].V)
                                 l_exp=cplex.SparsePair(ind = lind, val = lval)
                                 
@@ -1755,7 +2115,7 @@ class Problem:
                 
                 offset=c.linear_constraints.get_num()
                 rows=[r+offset for r in rows]
-                c.linear_constraints.add(rhs = rhs, senses = senses)
+                c.linear_constraints.add(rhs = rhs, senses = senses,names=rownames)
                 if len(rows)>0:
                         c.linear_constraints.set_coefficients(zip(rows, cols, vals))
                 for lp,qp,qcs in zip(ql,qq,qc):
@@ -2426,11 +2786,15 @@ class Problem:
                                 
                                 primals,duals,obj,sol=self._mosek_solve()
 
-                        
+                        # for scip
                         elif (self.options['solver'] in ('zibopt','scip')):
                                 
                                 primals,duals,obj,sol=self._zibopt_solve()
 
+                        #for gurobi
+                        elif (self.options['solver']=='gurobi'):
+                                primals,duals,obj,sol=self._gurobi_solve()
+                                
                         else:
                                 raise Exception('unknown solver')
                 except QuadAsSocpError:
@@ -2448,10 +2812,13 @@ class Problem:
                                 return sol
                         else:
                                 raise
-                                        
-                for k in primals.keys():
-                        if not primals[k] is None:
-                                self.set_var_value(k,primals[k],optimalvar=True)
+                           
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        for k in primals.keys():
+                                if not primals[k] is None:
+                                        self.set_var_value(k,primals[k],optimalvar=True)
                                 
                 if 'noduals' in self.options and self.options['noduals']:
                         pass
@@ -2647,22 +3014,25 @@ class Problem:
                 #----------------------#
                 # retrieve the primals #
                 #----------------------#
-                
-                try:
-                        primals={}
-                        for var in self.variables.values():
-                                si=var.startIndex
-                                ei=var.endIndex
-                                varvect=sol['x'][si:ei]
-                                if var.vtype=='symmetric':
-                                        varvect=svecm1(varvect) #varvect was the svec
-                                                                #representation of X
+                primals={}
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        try:
                                 
-                                primals[var.name]=cvx.matrix(varvect, var.size)
-                except Exception as ex:
-                        primals = {}
-                        if self.options['verbose']>0:
-                                print "\033[1;31m*** Primal Solution not found\033[0m"
+                                for var in self.variables.values():
+                                        si=var.startIndex
+                                        ei=var.endIndex
+                                        varvect=sol['x'][si:ei]
+                                        if var.vtype=='symmetric':
+                                                varvect=svecm1(varvect) #varvect was the svec
+                                                                        #representation of X
+                                        
+                                        primals[var.name]=cvx.matrix(varvect, var.size)
+                        except Exception as ex:
+                                primals = {}
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Primal Solution not found\033[0m"
                                                
                 #--------------------#
                 # retrieve the duals #
@@ -2922,129 +3292,442 @@ class Problem:
                 #----------------------#
                 # retrieve the primals #
                 #----------------------#
-                
-                #primals
-                try:
-                        obj = c.solution.get_objective_value()
-                        numsol = c.solution.pool.get_num()
-                        if numsol>1:
-                                objvals=[]
-                                for i in range(numsol):
-                                        objvals.append((c.solution.pool.get_objective_value(i),i))
-                                indsols=[]
-                                rev=(self.objective[0]=='max')
-                                for ob,ind in sorted(objvals,reverse=rev)[:self.options['pool_size']]:
-                                        indsols.append(ind)
-                        
-                        primals = {}
-                        for var in self.variables.values():
-                                value = []
-                                sz_var = var.size[0]*var.size[1]
-                                for i in range(sz_var):
-                                        name = var.name + '_' + str(i)
-                                        value.append(c.solution.get_values(name))
-                                                
-                                primals[var.name] = cvx.matrix(value,var.size)
-                        
-                        if numsol>1:
-                                for ii,ind in enumerate(indsols):
-                                        for var in self.variables.values():
-                                                value = []
-                                                sz_var = var.size[0]*var.size[1]
-                                                for i in range(sz_var):
-                                                        name = var.name + '_' + str(i)
-                                                        value.append(c.solution.pool.get_values(ind,name))
-                                                
-                                                primals[(ii,var.name)] = cvx.matrix(value,var.size)
-                except Exception as ex:
-                        import warnings
-                        warnings.warn('error while retrieving primals')
-                        primals = {}
-                        obj = None
-                        if self.options['verbose']>0:
-                                print "\033[1;31m*** Primal Solution not found\033[0m"
+                primals = {}
+                obj = c.solution.get_objective_value()
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        #primals
+                        try:
+                                numsol = c.solution.pool.get_num()
+                                if numsol>1:
+                                        objvals=[]
+                                        for i in range(numsol):
+                                                objvals.append((c.solution.pool.get_objective_value(i),i))
+                                        indsols=[]
+                                        rev=(self.objective[0]=='max')
+                                        for ob,ind in sorted(objvals,reverse=rev)[:self.options['pool_size']]:
+                                                indsols.append(ind)
+                                
+                                for var in self.variables.values():
+                                        value = []
+                                        sz_var = var.size[0]*var.size[1]
+                                        for i in range(sz_var):
+                                                name = var.name + '_' + str(i)
+                                                value.append(c.solution.get_values(name))
+                                                        
+                                        primals[var.name] = cvx.matrix(value,var.size)
+                                
+                                if numsol>1:
+                                        for ii,ind in enumerate(indsols):
+                                                for var in self.variables.values():
+                                                        value = []
+                                                        sz_var = var.size[0]*var.size[1]
+                                                        for i in range(sz_var):
+                                                                name = var.name + '_' + str(i)
+                                                                value.append(c.solution.pool.get_values(ind,name))
+                                                        
+                                                        primals[(ii,var.name)] = cvx.matrix(value,var.size)
+                        except Exception as ex:
+                                import warnings
+                                warnings.warn('error while retrieving primals')
+                                primals = {}
+                                obj = None
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Primal Solution not found\033[0m"
 
                         
                 #--------------------#
                 # retrieve the duals #
                 #--------------------#
-                #import pdb;pdb.set_trace()
+                
                 duals = [] 
                 if not(self.isContinuous()) or (
                      'noduals' in self.options and self.options['noduals']):
                         pass
                 else:
                         try:
-                                pos_cplex = 0 #row position in the cplex linear constraints
-                                #basis_status = c.solution.basis.get_col_basis()
-                                #>0 and <0
-                                pos_conevar = self.numberOfVars+1 #plus 1 for the __noconstant__ variable 
+                                version = [int(v) for v in c.get_version().split('.')]
+                                #older versions
+                                if (version[0]<12) or (version[0]==12 and version[1]<4):
+                                        pos_cplex = 0 #row position in the cplex linear constraints
+                                        #basis_status = c.solution.basis.get_col_basis()
+                                        #>0 and <0
+                                        pos_conevar = self.numberOfVars+1 #plus 1 for the __noconstant__ variable 
+                                        seen_bounded_vars = []
+                                        for k,constr in enumerate(self.constraints):
+                                                if constr.typeOfConstraint[:3] == 'lin':
+                                                        dim = constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                        dim = dim - len(self.cplex_boundcons[k])
+                                                        dual_lines = range(pos_cplex, pos_cplex + dim)
+                                                        if len(dual_lines)==0:
+                                                                dual_values = []
+                                                        else:
+                                                                dual_values = c.solution.get_dual_values(dual_lines)
+                                                        if constr.typeOfConstraint[3]=='>':
+                                                                dual_values=[-dvl for dvl in dual_values]
+                                                        for (i,j,b,v) in self.cplex_boundcons[k]:
+                                                                xj = c.solution.get_values(j)
+                                                                if ((b=='=') or abs(xj-b)<1e-7) and (j not in seen_bounded_vars):
+                                                                        #does j appear in another equality constraint ?
+                                                                        if b!='=':
+                                                                                boundsj=[b0 for k0 in range(len(self.constraints))
+                                                                                        for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
+                                                                                        if j0==j]
+                                                                        if '=' in boundsj:
+                                                                                dual_values.insert(i,0.) #dual will be set later, only for the equality case
+                                                                                continue
+                                                                        else: #equality
+                                                                                seen_bounded_vars.append(j)
+                                                                                du=c.solution.get_reduced_costs(j)/v
+                                                                                dual_values.insert(i,du)
+                                                                                continue
+                                                                        #what kind of inequality ?
+                                                                        du=c.solution.get_reduced_costs(j)
+                                                                        if (((v>0 and constr.typeOfConstraint[3]=='<') or
+                                                                        (v<0 and constr.typeOfConstraint[3]=='>')) and
+                                                                        du>0):#upper bound
+                                                                                seen_bounded_vars.append(j)
+                                                                                dual_values.insert(i,du/abs(v))
+                                                                        elif (((v>0 and constr.typeOfConstraint[3]=='>') or
+                                                                        (v<0 and constr.typeOfConstraint[3]=='<')) and
+                                                                        du<0):#lower bound
+                                                                                seen_bounded_vars.append(j)
+                                                                                dual_values.insert(i,-du/abs(v))
+                                                                        else:
+                                                                                dual_values.insert(i,0.) #unactive constraint
+                                                                else:
+                                                                        dual_values.insert(i,0.)
+                                                        pos_cplex += dim
+                                                        duals.append(cvx.matrix(dual_values))
+                                                        
+                                                elif constr.typeOfConstraint == 'SOcone':
+                                                        szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                                        dual_cols = range(pos_conevar,pos_conevar+szcons+1)
+                                                        dual_values = c.solution.get_reduced_costs(dual_cols)
+                                                        #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
+                                                                # [dual_values[-1]]+dual_values[:-1]))
+                                                        duals.append(cvx.matrix(
+                                                                        [-dual_values[-1]]+dual_values[:-1]))
+                                                        pos_conevar += szcons+1
+                                                
+                                                elif constr.typeOfConstraint == 'RScone':
+                                                        szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                                        dual_cols = range(pos_conevar,pos_conevar+szcons+2)
+                                                        dual_values = c.solution.get_reduced_costs(dual_cols)
+                                                        #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
+                                                        #                [dual_values[-1]]+dual_values[:-1]))
+                                                        duals.append(cvx.matrix(
+                                                                        [-dual_values[-1]]+dual_values[:-1]))
+                                                        pos_conevar += szcons+2
+                                                
+                                                else:
+                                                        if self.options['verbose']>0:
+                                                                print 'duals for this type of constraint not supported yet'
+                                                        duals.append(None)
+                                #version >= 12.4
+                                else:
+                                        seen_bounded_vars = []
+                                        for k,constr in enumerate(self.constraints):
+                                                if constr.typeOfConstraint[:3] == 'lin':
+                                                        dim = constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                        dual_values=[None] * dim
+                                                        #rows with var bounds
+                                                        for (i,j,b,v) in self.cplex_boundcons[k]:
+                                                                xj = c.solution.get_values(j)
+                                                                if ((b=='=') or abs(xj-b)<1e-7) and (j not in seen_bounded_vars):
+                                                                        #does j appear in another equality constraint ?
+                                                                        if b!='=':
+                                                                                boundsj=[b0 for k0 in range(len(self.constraints))
+                                                                                        for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
+                                                                                        if j0==j]
+                                                                        if '=' in boundsj:
+                                                                                dual_values[i] = 0. #dual will be set later, only for the equality case
+                                                                                continue
+                                                                        else: #equality
+                                                                                seen_bounded_vars.append(j)
+                                                                                du=c.solution.get_reduced_costs(j)/v
+                                                                                dual_values[i] = du
+                                                                                continue
+                                                                        #what kind of inequality ?
+                                                                        du=c.solution.get_reduced_costs(j)
+                                                                        if (((v>0 and constr.typeOfConstraint[3]=='<') or
+                                                                        (v<0 and constr.typeOfConstraint[3]=='>')) and
+                                                                        du>0):#upper bound
+                                                                                seen_bounded_vars.append(j)
+                                                                                dual_values[i] = du/abs(v)
+                                                                        elif (((v>0 and constr.typeOfConstraint[3]=='>') or
+                                                                        (v<0 and constr.typeOfConstraint[3]=='<')) and
+                                                                        du<0):#lower bound
+                                                                                seen_bounded_vars.append(j)
+                                                                                dual_values[i] = -du/abs(v)
+                                                                        else:
+                                                                                dual_values[i] = 0. #unactive constraint
+                                                                else:
+                                                                        dual_values[i] = 0.
+                                                        #rows with other constraints
+                                                        for i in range(len(dual_values)):
+                                                                if dual_values[i] is None:
+                                                                        du = c.solution.get_dual_values(
+                                                                                'lin'+str(k)+'_'+str(i))
+                                                                        if constr.typeOfConstraint[3]=='>':
+                                                                                dual_values[i] = -du
+                                                                        else:
+                                                                                dual_values[i] = du
+                                                        duals.append(cvx.matrix(dual_values))
+                                                        
+                                                elif constr.typeOfConstraint == 'SOcone':
+                                                        dual_values=[]
+                                                        dual_values.append(
+                                                         c.solution.get_dual_values('lintmp_rhs_'+str(k)+'_0'))
+                                                        dim = constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                        for i in range(dim):
+                                                               dual_values.append(
+                                                            -c.solution.get_dual_values('lintmp_lhs_'+str(k)+'_'+str(i)))
+                                                        duals.append(cvx.matrix(dual_values))
+                                                
+                                                elif constr.typeOfConstraint == 'RScone':
+                                                        dual_values=[]
+                                                        dual_values.append(
+                                                        c.solution.get_dual_values('lintmp_rhs_'+str(k)+'_0'))
+                                                        dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                        for i in range(dim):
+                                                               dual_values.append(
+                                                            -c.solution.get_dual_values('lintmp_lhs_'+str(k)+'_'+str(i)))
+                                                        duals.append(cvx.matrix(dual_values))
+                                                
+                                                else:
+                                                        if self.options['verbose']>0:
+                                                                print 'duals for this type of constraint not supported yet'
+                                                        duals.append(None)
+                                                        
+                                                        
+                        except Exception as ex:
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                #-----------------#
+                # return statement#
+                #-----------------#             
+                
+                sol = {'cplex_solution':c.solution,'status':status}
+                return (primals,duals,obj,sol)
+                
+        def  _gurobi_solve(self):
+                """
+                Solves a problem with the cvxopt solver.
+                """
+
+                #--------------------------------#
+                #  can we solve it with gurobi ? #
+                #--------------------------------#
+                
+                if self.type in ('unknown type','GP','SDP','ConeP','Mixed (SDP+quad)'):
+                        raise NotAppropriateSolverError("'gurobi' cannot solve problems of type {0}".format(self.type))
+                #TODO qp,socp
+                
+                #----------------------------#
+                #  create the gurobi instance #
+                #----------------------------#
+                import gurobipy as grb
+                self._make_gurobi_instance()
+                self.last_updated_constraint=self.countCons
+                m = self.gurobi_Instance
+                
+                if m is None:
+                        raise ValueError('a gurobi instance should have been created before')
+                
+                #TODO options
+                if not self.options['timelimit'] is None:
+                        m.setParam('TimeLimit',self.options['timelimit'])
+                if not self.options['treememory'] is None:
+                        m.setParam('NodefileStart',self.options['treememory']/1024.)
+                if not self.options['gaplim'] is None:
+                        m.setParam('MIPGap',self.options['gaplim'])
+                        #m.setParam('MIPGapAbs',self.options['gaplim'])
+
+                #verbosity
+                if self.options['verbose']==0:
+                        m.setParam('OutputFlag',0)
+                       
+                #convergence tolerance
+                m.setParam('BarQCPConvTol',self.options['tol'])
+                m.setParam('BarConvTol',self.options['tol'])
+                m.setParam('OptimalityTol',self.options['tol'])
+                
+                #iterations limit
+                if not(self.options['maxit'] is None):
+                        m.setParam('BarIterLimit',self.options['maxit'])
+                        m.setParam('IterationLimit',self.options['maxit'])
+                #lpmethod
+                if not self.options['lp_root_method'] is None:
+                        if self.options['lp_root_method']=='psimplex':
+                                m.setParam('Method',0)
+                        elif self.options['lp_root_method']=='dsimplex':
+                                m.setParam('Method',1)
+                        elif self.options['lp_root_method']=='interior':
+                                m.setParam('Method',2)
+                        else:
+                                raise Exception('unexpected value for lp_root_method')
+                if not self.options['lp_node_method'] is None:
+                        if self.options['lp_node_method']=='psimplex':
+                                m.setParam('SiftMethod',0)
+                        elif self.options['lp_node_method']=='dsimplex':
+                                m.setParam('SiftMethod',1)
+                        elif self.options['lp_node_method']=='interior':
+                                m.setParam('SiftMethod',2)
+                        else:
+                                raise Exception('unexpected value for lp_node_method')
+
+                #number of feasible solutions found
+                if not self.options['nbsol'] is None:
+                        m.setParam('SolutionLimit',self.options['nbsol'])
+                
+                
+                #other gurobi parameters
+                for par,val in self.options['gurobi_params'].iteritems():
+                        m.setParam(par,val)
+                        
+                #QCPDuals
+                if not(self.isContinuous()) or (
+                     'noduals' in self.options and self.options['noduals']):
+                        m.setParam('QCPDual',0)
+                else:
+                        m.setParam('QCPDual',1)
+                #--------------------#
+                #  call the solver   #
+                #--------------------#                
+              
+                
+                try:
+                        m.optimize()
+                except Exception as ex:
+                        if str(ex).startswith('Objective Q not PSD'):
+                                raise NonConvexError('Error raised during solve. Problem is nonconvex')
+                        else:
+                                print "Exception raised during solve"
+                                
+        
+                self.gurobi_Instance = m
+                
+                status = None
+                for st in dir(grb.GRB.Status):
+                        if st[0]<>'_':
+                                if  m.status == eval('grb.GRB.'+st):
+                                        status = st
+                if status is None:
+                        import warnings
+                        warnings.warn('gurobi status not founs')
+                        status = m.status
+                        if self.options['verbose']>0:
+                                print "\033[1;31m*** gurobi status not found \033[0m"
+                
+                #----------------------#
+                # retrieve the primals #
+                #----------------------#
+                primals = {}
+                obj = m.getObjective().getValue()
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        #primals
+                        try:
+                                for var in self.variables.values():
+                                        value = []
+                                        sz_var = var.size[0]*var.size[1]
+                                        for i in range(sz_var):
+                                                name = var.name + '_' + str(i)
+                                                xi=m.getVarByName(name)
+                                                value.append(xi.X)
+                                                        
+                                        primals[var.name] = cvx.matrix(value,var.size)
+                                
+                        except Exception as ex:
+                                import warnings
+                                warnings.warn('error while retrieving primals')
+                                primals = {}
+                                obj = None
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+
+                        
+                #--------------------#
+                # retrieve the duals #
+                #--------------------#
+                
+                duals = [] 
+                if not(self.isContinuous()) or (
+                     'noduals' in self.options and self.options['noduals']):
+                        pass
+                else:
+                        try:
                                 seen_bounded_vars = []
                                 for k,constr in enumerate(self.constraints):
                                         if constr.typeOfConstraint[:3] == 'lin':
                                                 dim = constr.Exp1.size[0] * constr.Exp1.size[1]
-                                                dim = dim - len(self.cplex_boundcons[k])
-                                                dual_lines = range(pos_cplex, pos_cplex + dim)
-                                                if len(dual_lines)==0:
-                                                        dual_values = []
-                                                else:
-                                                        dual_values = c.solution.get_dual_values(dual_lines)
-                                                if constr.typeOfConstraint[3]=='>':
-                                                        dual_values=[-dvl for dvl in dual_values]
-                                                for (i,j,b,v) in self.cplex_boundcons[k]:
-                                                        xj = c.solution.get_values(j)
-                                                        if ((b=='=') or abs(xj-b)<1e-7) and (j not in seen_bounded_vars):
+                                                dual_values = [None] * dim
+                                                for (i,name,b,v) in self.grb_boundcons[k]:
+                                                        xj = self.gurobi_Instance.getVarByName(name).X
+                                                        if ((b=='=') or abs(xj-b)<1e-7) and (name not in seen_bounded_vars):
                                                                 #does j appear in another equality constraint ?
                                                                 if b!='=':
                                                                        boundsj=[b0 for k0 in range(len(self.constraints))
-                                                                                       for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
-                                                                                       if j0==j]
+                                                                                       for (i0,name0,b0,v0) in self.grb_boundcons[k0]
+                                                                                       if name0==name]
                                                                        if '=' in boundsj:
-                                                                               dual_values.insert(i,0.) #dual will be set later, only for the equality case
+                                                                               dual_values[i]=0. #dual will be set later, only for the equality case
                                                                                continue
                                                                 else: #equality
-                                                                        seen_bounded_vars.append(j)
-                                                                        du=c.solution.get_reduced_costs(j)/v
-                                                                        dual_values.insert(i,du)
+                                                                        seen_bounded_vars.append(name)
+                                                                        du=  self.gurobi_Instance.getVarByName(name).RC/v
+                                                                        dual_values[i]=du
                                                                         continue
                                                                 #what kind of inequality ?
-                                                                du=c.solution.get_reduced_costs(j)
+                                                                du=self.gurobi_Instance.getVarByName(name).RC
                                                                 if (((v>0 and constr.typeOfConstraint[3]=='<') or
                                                                     (v<0 and constr.typeOfConstraint[3]=='>')) and
                                                                     du>0):#upper bound
-                                                                        seen_bounded_vars.append(j)
-                                                                        dual_values.insert(i,du/abs(v))
+                                                                        seen_bounded_vars.append(name)
+                                                                        dual_values[i]=(du/abs(v))
                                                                 elif (((v>0 and constr.typeOfConstraint[3]=='>') or
                                                                      (v<0 and constr.typeOfConstraint[3]=='<')) and
                                                                      du<0):#lower bound
                                                                         seen_bounded_vars.append(j)
-                                                                        dual_values.insert(i,-du/abs(v))
+                                                                        dual_values[i]=(-du/abs(v))
                                                                 else:
-                                                                        dual_values.insert(i,0.) #unactive constraint
+                                                                        dual_values[i]=0. #unactive constraint
                                                         else:
-                                                                dual_values.insert(i,0.)
-                                                pos_cplex += dim
+                                                                dual_values[i]=0.
+                                                #rows with other constraints
+                                                for i in range(len(dual_values)):
+                                                        if dual_values[i] is None:
+                                                                du = m.getConstrByName(
+                                                                        'lin'+str(k)+'_'+str(i)).pi
+                                                                if constr.typeOfConstraint[3]=='>':
+                                                                        dual_values[i] = -du
+                                                                else:
+                                                                        dual_values[i] = du
+                                                        
                                                 duals.append(cvx.matrix(dual_values))
                                                 
                                         elif constr.typeOfConstraint == 'SOcone':
-                                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
-                                                dual_cols = range(pos_conevar,pos_conevar+szcons+1)
-                                                dual_values = c.solution.get_reduced_costs(dual_cols)
-                                                #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
-                                                               # [dual_values[-1]]+dual_values[:-1]))
-                                                duals.append(cvx.matrix(
-                                                                [-dual_values[-1]]+dual_values[:-1]))
-                                                pos_conevar += szcons+1
+                                                dual_values=[]
+                                                dual_values.append(
+                                                        m.getConstrByName('lintmp_rhs_'+str(k)+'_0').pi)
+                                                dim = constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                for i in range(dim):
+                                                        dual_values.append(
+                                                        -m.getConstrByName('lintmp_lhs_'+str(k)+'_'+str(i)).pi)
+                                                duals.append(cvx.matrix(dual_values))
                                         
                                         elif constr.typeOfConstraint == 'RScone':
-                                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
-                                                dual_cols = range(pos_conevar,pos_conevar+szcons+2)
-                                                dual_values = c.solution.get_reduced_costs(dual_cols)
-                                                #duals.append(int(np.sign(dual_values[-1])) * cvx.matrix(
-                                                #                [dual_values[-1]]+dual_values[:-1]))
-                                                duals.append(cvx.matrix(
-                                                                [-dual_values[-1]]+dual_values[:-1]))
-                                                pos_conevar += szcons+2
+                                                dual_values=[]
+                                                dual_values.append(
+                                                        m.getConstrByName('lintmp_rhs_'+str(k)+'_0').pi)
+                                                dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
+                                                for i in range(dim):
+                                                        dual_values.append(
+                                                        -m.getConstrByName('lintmp_lhs_'+str(k)+'_'+str(i)).pi)
+                                                duals.append(cvx.matrix(dual_values))
                                         
                                         else:
                                                 if self.options['verbose']>0:
@@ -3058,9 +3741,8 @@ class Problem:
                 # return statement#
                 #-----------------#             
                 
-                sol = {'cplex_solution':c.solution,'status':status}
+                sol = {'gurobi_model':m, 'status':status}
                 return (primals,duals,obj,sol)
-                
 
         def _mosek_solve(self):
                 """
@@ -3199,27 +3881,39 @@ class Problem:
                 # retrieve the primals #
                 #----------------------#
                 
-                #PRIMAL VARIABLES
-                primals={}
-                if self.options['verbose']>0:
-                        print 'Solution status is ' +repr(solsta)
-                status = repr(solsta)
+                #OBJ
                 try:
-                        # Output a solution
-                        xx = np.zeros(self.numberOfVars, float)
-                        task.getsolutionslice(soltype,
-                                mosek.solitem.xx, 0,self.numberOfVars, xx)
                         obj = task.getprimalobj(soltype)
-                        for var in self.variables.keys():
-                                si=self.variables[var].startIndex
-                                ei=self.variables[var].endIndex
-                                varvect=xx[si:ei]
-                                primals[var]=cvx.matrix(varvect, self.variables[var].size)
                 except Exception as ex:
-                        primals={}
                         obj=None
                         if self.options['verbose']>0:
                                 print "\033[1;31m*** Primal Solution not found\033[0m"
+
+                #PRIMAL VARIABLES
+                primals={}
+                
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        if self.options['verbose']>0:
+                                print 'Solution status is ' +repr(solsta)
+                        status = repr(solsta)
+                        try:
+                                # Output a solution
+                                xx = np.zeros(self.numberOfVars, float)
+                                task.getsolutionslice(soltype,
+                                        mosek.solitem.xx, 0,self.numberOfVars, xx)
+                                obj = task.getprimalobj(soltype)
+                                for var in self.variables.keys():
+                                        si=self.variables[var].startIndex
+                                        ei=self.variables[var].endIndex
+                                        varvect=xx[si:ei]
+                                        primals[var]=cvx.matrix(varvect, self.variables[var].size)
+                        except Exception as ex:
+                                primals={}
+                                obj=None
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Primal Solution not found\033[0m"
 
                 #--------------------#
                 # retrieve the duals #
@@ -3306,6 +4000,7 @@ class Problem:
                                                 duals.append(cvx.matrix(v))
                                                 ideq+=szcons
                                                 idconeq+=(szcons-len(fxd))
+                                                delNext=False
                                         elif self.constraints[k].typeOfConstraint[:3]=='lin':#inequality
                                                 szcons=int(np.product(self.constraints[k].Exp1.size))
                                                 fxd=[]
@@ -3364,6 +4059,7 @@ class Problem:
                                                 duals.append(cvx.matrix(v))
                                                 idin+=szcons
                                                 idconin+=(szcons-len(fxd))
+                                                delNext = False
                                         else:
                                                         if self.options['verbose']>0:
                                                                 print('dual for this constraint is not handled yet')
@@ -3485,21 +4181,25 @@ class Problem:
                 #----------------------#
                 # retrieve the primals #
                 #----------------------#
-                try:
-                        obj=sol.objective
-                        val=sol.values()
-                        primals={}
-                        for var in self.variables.keys():
-                                si=self.variables[var].startIndex
-                                ei=self.variables[var].endIndex
-                                varvect=self.scip_vars[si:ei]
-                                primals[var]=cvx.matrix([val[v] for v in varvect],
-                                        self.variables[var].size)
-                except Exception as ex:
-                        primals={}
-                        obj = None
-                        if self.options['verbose']>0:
-                                print "\033[1;31m*** Primal Solution not found\033[0m"
+                primals = {}
+                obj=sol.objective
+                if 'noprimals' in self.options and self.options['noprimals']:
+                        pass
+                else:
+                        try:
+                                val=sol.values()
+                                primals={}
+                                for var in self.variables.keys():
+                                        si=self.variables[var].startIndex
+                                        ei=self.variables[var].endIndex
+                                        varvect=self.scip_vars[si:ei]
+                                        primals[var]=cvx.matrix([val[v] for v in varvect],
+                                                self.variables[var].size)
+                        except Exception as ex:
+                                primals={}
+                                obj = None
+                                if self.options['verbose']>0:
+                                        print "\033[1;31m*** Primal Solution not found\033[0m"
 
                 #----------------------#
                 # retrieve the duals #
@@ -3673,11 +4373,11 @@ class Problem:
                 """
                 tp=self.type
                 if tp == 'LP':
-                        order=['cplex','mosek','zibopt','cvxopt','smcp']
+                        order=['cplex','gurobi','mosek','zibopt','cvxopt','smcp']
                 elif tp in ('QCQP,QP'):
-                        order=['cplex','mosek','cvxopt','zibopt']
+                        order=['cplex','mosek','gurobi','cvxopt','zibopt']
                 elif tp == 'SOCP':
-                        order=['mosek','cplex','cvxopt','smcp','zibopt']
+                        order=['mosek','cplex','gurobi','cvxopt','smcp','zibopt']
                 elif tp == 'SDP':
                         order=['cvxopt','smcp']
                 elif tp == 'ConeP':
@@ -3685,13 +4385,13 @@ class Problem:
                 elif tp == 'GP':
                         order=['cvxopt']
                 elif tp == 'general-obj':
-                        order=['cplex','mosek','zibopt','cvxopt','smcp']
-                elif tp in ('MIP','MIQCP','MISOCP','MIQP'):
-                        order=['cplex','mosek','zibopt']
+                        order=['cplex','mosek','gurobi','zibopt','cvxopt','smcp']
+                elif tp in ('MIP','MIQCP','MIQP'):
+                        order=['cplex','gurobi','mosek','zibopt']
                 elif tp == 'Mixed (SOCP+quad)':
-                        order=['mosek','cplex','cvxopt','smcp']
-                elif tp =='Mixed (MISOCP+quad)':
-                        order=['cplex','mosek']
+                        order=['mosek','cplex','gurobi','cvxopt','smcp']
+                elif tp in ('MISOCP','Mixed (MISOCP+quad)'):
+                        order=['mosek','cplex','gurobi']
                 elif tp == 'Mixed (SDP+quad)':
                         order=['cvxopt','smcp']
                 else:

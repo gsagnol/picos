@@ -319,6 +319,170 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         [ 2.93e-01]
         [...]
 
+SDP formulation of the c-optimal design problem
+===============================================
+
+We give below the SDP for c-optimality, in primal and dual
+form. You can observe that we obtain the same results as
+with the SOCP presented earlier:
+12.8% on experiment #5, and 87.2% on experiment #7.
+
+Primal Problem
+''''''''''''''
+
+The SDP formulation of the c-optimal design problem is:
+
+.. math::
+   :nowrap:   
+
+   \begin{center}
+   \begin{eqnarray*}
+   &\underset{\mu \in \mathbb{R}^s}{\mbox{minimize}}
+                      & \sum_{i=1}^s \mu_i\\
+   &\mbox{subject to} & \sum_{i=1}^s \mu_i A_i A_i^T \succeq c c^T,\\
+   &                  & \mu \geq 0.
+   \end{eqnarray*}
+   \end{center}
+
+.. testcode::
+
+        #create the problem, variables and params
+        prob_SDP_c_primal=pic.Problem()
+        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
+        s=len(AA)
+        AA=pic.new_param('A',AA)
+        cc=pic.new_param('c',c)
+        mu=prob_SDP_c_primal.add_variable('mu',s)
+
+        #define the constraints and objective function
+        prob_SDP_c_primal.add_constraint( 
+                pic.sum(
+                [mu[i]*AA[i]*AA[i].T for i in range(s)], #summands
+                'i', #index
+                '[s]' #set to which the index belongs
+                )  
+                >> cc*cc.T )
+        prob_SDP_c_primal.add_constraint(mu>0)
+        prob_SDP_c_primal.set_objective('min',1|mu)
+
+        #solve the problem and retrieve the weights of the optimal design
+        print prob_SDP_c_primal
+        prob_SDP_c_primal.solve(verbose=0)
+        w=mu.value
+        w=w/sum(w) #normalize mu to get the optimal weights
+        print
+        print 'The optimal deign is:'
+        print w
+
+.. testoutput::
+        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        
+        ---------------------
+        optimization problem  (SDP):
+        8 variables, 8 affine constraints, 15 vars in 1 SD cones
+
+        mu  : (8, 1), continuous
+
+                minimize 〈 |1| | mu 〉
+        such that
+        Σ_{i in [s]} mu[i]*A[i]*A[i].T ≽ c*c.T
+        mu > |0|
+        ---------------------
+
+        The optimal deign is:
+        [...]
+        [...]
+        [...]
+        [...]
+        [ 1.28e-01]
+        [...]
+        [ 8.72e-01]
+        [...]
+
+Dual Problem
+''''''''''''
+
+This is only to check that we obtain the same solution with the dual problem,
+and to provide one additional example in this doc:
+
+.. math::
+   :nowrap:   
+
+   \begin{center}
+   \begin{eqnarray*}
+   &\underset{X \in \mathbb{R}^{m \times m}}{\mbox{maximize}}
+                      &  c^T X c\\
+   &\mbox{subject to} & \forall i \in [s],\ \langle A_i A_i^T,\ X \rangle \leq 1,\\
+   &                  &  X \succeq 0.
+   \end{eqnarray*}
+   \end{center}
+
+
+.. testcode::
+
+        #create the problem, variables and params
+        prob_SDP_c_dual=pic.Problem()
+        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
+        s=len(AA)
+        AA=pic.new_param('A',AA)
+        cc=pic.new_param('c',c)
+        m =c.size[0]
+        X=prob_SDP_c_dual.add_variable('X',(m,m),vtype='symmetric')
+
+        #define the constraints and objective function
+        prob_SDP_c_dual.add_list_of_constraints(
+                [(AA[i]*AA[i].T | X ) <1 for i in range(s)], #constraints
+                'i', #index
+                '[s]' #set to which the index belongs
+                )
+        prob_SDP_c_dual.add_constraint(X>>0)
+        prob_SDP_c_dual.set_objective('max', cc.T*X*cc)
+        
+        #solve the problem and retrieve the weights of the optimal design
+        print prob_SDP_c_dual
+        prob_SDP_c_dual.solve(verbose=0,solver='smcp')
+        mu = [cons.dual[0] for cons in prob_SDP_c_dual.get_constraint((0,))] #Lagrangian duals of the SOC constraints
+        mu = cvx.matrix(mu)
+        w=mu/sum(mu) #normalize mu to get the optimal weights
+        print
+        print 'The optimal deign is:'
+        print w
+        print 'and the optimal positive semidefinite matrix X is'
+        print X
+        
+
+.. testoutput::
+        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        
+        ---------------------
+        optimization problem  (SDP):
+        15 variables, 8 affine constraints, 15 vars in 1 SD cones
+
+        X   : (5, 5), symmetric
+
+                maximize c.T*X*c
+        such that
+        〈 A[i]*A[i].T | X 〉 < 1.0 for all i in [s]
+        X ≽ |0|
+        ---------------------
+
+        The optimal deign is:
+        [...]
+        [...]
+        [...]
+        [...]
+        [ 1.28e-01]
+        [...]
+        [ 8.72e-01]
+        [...]
+
+        and the optimal positive semidefinite matrix X is
+        [ 5.92e-03  8.98e-03  2.82e-03 -3.48e-02 -1.43e-02]
+        [ 8.98e-03  1.36e-02  4.27e-03 -5.28e-02 -2.17e-02]
+        [ 2.82e-03  4.27e-03  1.34e-03 -1.66e-02 -6.79e-03]
+        [-3.48e-02 -5.28e-02 -1.66e-02  2.05e-01  8.39e-02]
+        [-1.43e-02 -2.17e-02 -6.79e-03  8.39e-02  3.44e-02]
+
 A-optimality: SOCP
 ==================
 
@@ -491,57 +655,68 @@ and to provide one additional example in this doc:
         [ 1.32e-01]
         [ 2.70e-01]
 
-SDP formulation of the c-optimal design problem
-===============================================
+A-optimality with multiple constraints: SOCP
+============================================
 
-We give below the SDP for c-optimality, in primal and dual
-form. You can observe that we obtain the same results as
-with the SOCP presented earlier:
-12.8% on experiment #5, and 87.2% on experiment #7.
-
-Primal Problem
-''''''''''''''
-
-The SDP formulation of the c-optimal design problem is:
+A-optimal designs can also be computed by SOCP
+when the vector of weights :math:`\mathbf{w}` is subject
+to several linear constraints.
+To give an example, we compute the A-optimal design for
+the observation matrices given in the preambule, when the weights
+must satisfy: :math:`\sum_{i=0}^3 w_i \leq 0.5` and :math:`\sum_{i=4}^7 w_i \leq 0.5`.
+This problem has the following SOCP formulation:
 
 .. math::
    :nowrap:   
 
    \begin{center}
    \begin{eqnarray*}
-   &\underset{\mu \in \mathbb{R}^s}{\mbox{minimize}}
+   &\underset{\substack{\mathbf{w} \in \mathbb{R}^s\\
+                        \mu \in \mathbb{R}^s\\ 
+                        \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
                       & \sum_{i=1}^s \mu_i\\
-   &\mbox{subject to} & \sum_{i=1}^s \mu_i A_i A_i^T \succeq c c^T,\\
-   &                  & \mu \geq 0.
+   &\mbox{subject to} & \sum_{i=1}^s A_i Z_i = I\\
+   &                  & \sum_{i=0}^3 w_i \leq 0.5\\
+   &                  & \sum_{i=4}^7 w_i \leq 0.5\\
+   &                  & \forall i \in [s],\ \Vert Z_i \Vert_F^2 \leq \mu_i w_i,
    \end{eqnarray*}
    \end{center}
 
+The optimal solution allocates 29.7% and 20.3% to the experiments #3 and #4,
+and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
+                          
 .. testcode::
-
+        
         #create the problem, variables and params
-        prob_SDP_c_primal=pic.Problem()
+        prob_A_multiconstraints=pic.Problem()
         AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
         s=len(AA)
         AA=pic.new_param('A',AA)
-        cc=pic.new_param('c',c)
-        mu=prob_SDP_c_primal.add_variable('mu',s)
+
+        mu=prob_A_multiconstraints.add_variable('mu',s)
+        w =prob_A_multiconstraints.add_variable('w',s)
+        Z=[prob_A_multiconstraints.add_variable('Z['+str(i)+']',AA[i].T.size) for i in range(s)]
 
         #define the constraints and objective function
-        prob_SDP_c_primal.add_constraint( 
+        prob_A_multiconstraints.add_constraint( 
                 pic.sum(
-                [mu[i]*AA[i]*AA[i].T for i in range(s)], #summands
+                [AA[i]*Z[i] for i in range(s)], #summands
                 'i', #index
                 '[s]' #set to which the index belongs
                 )  
-                >> cc*cc.T )
-        prob_SDP_c_primal.add_constraint(mu>0)
-        prob_SDP_c_primal.set_objective('min',1|mu)
+                == 'I' )
+        prob_A_multiconstraints.add_constraint( (1|w[:4]) < 0.5)
+        prob_A_multiconstraints.add_constraint( (1|w[4:]) < 0.5)
+        prob_A_multiconstraints.add_list_of_constraints(
+                        [abs(Z[i])**2<mu[i]*w[i]
+                        for i in range(s)],'i','[s]')
+        prob_A_multiconstraints.set_objective('min',1|mu)
 
         #solve the problem and retrieve the weights of the optimal design
-        print prob_SDP_c_primal
-        prob_SDP_c_primal.solve(verbose=0)
-        w=mu.value
-        w=w/sum(w) #normalize mu to get the optimal weights
+        print prob_A_multiconstraints
+        prob_A_multiconstraints.solve(verbose=0)
+        w=w.value
+        w=w/sum(w) #normalize w to get the optimal weights
         print
         print 'The optimal deign is:'
         print w
@@ -550,110 +725,30 @@ The SDP formulation of the c-optimal design problem is:
         :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
         
         ---------------------
-        optimization problem  (SDP):
-        8 variables, 8 affine constraints, 15 vars in 1 SD cones
+        optimization problem  (SOCP):
+        136 variables, 27 affine constraints, 136 vars in 8 SO cones
 
+        Z   : list of 8 variables, (3, 5), continuous
         mu  : (8, 1), continuous
+        w   : (8, 1), continuous
 
                 minimize 〈 |1| | mu 〉
         such that
-        Σ_{i in [s]} mu[i]*A[i]*A[i].T ≽ c*c.T
-        mu > |0|
+        Σ_{i in [s]} A[i]*Z[i] = I
+        〈 |1| | w[:4] 〉 < 0.5
+        〈 |1| | w[4:] 〉 < 0.5
+        ||Z[i]||^2 < ( mu[i])( w[i]) for all i in [s]
         ---------------------
 
         The optimal deign is:
         [...]
         [...]
-        [...]
-        [...]
-        [ 1.28e-01]
-        [...]
-        [ 8.72e-01]
-        [...]
-
-Dual Problem
-''''''''''''
-
-This is only to check that we obtain the same solution with the dual problem,
-and to provide one additional example in this doc:
-
-.. math::
-   :nowrap:   
-
-   \begin{center}
-   \begin{eqnarray*}
-   &\underset{X \in \mathbb{R}^{m \times m}}{\mbox{maximize}}
-                      &  c^T X c\\
-   &\mbox{subject to} & \forall i \in [s],\ \langle A_i A_i^T,\ X \rangle \leq 1,\\
-   &                  &  X \succeq 0.
-   \end{eqnarray*}
-   \end{center}
-
-
-.. testcode::
-
-        #create the problem, variables and params
-        prob_SDP_c_dual=pic.Problem()
-        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
-        s=len(AA)
-        AA=pic.new_param('A',AA)
-        cc=pic.new_param('c',c)
-        m =c.size[0]
-        X=prob_SDP_c_dual.add_variable('X',(m,m),vtype='symmetric')
-
-        #define the constraints and objective function
-        prob_SDP_c_dual.add_list_of_constraints(
-                [(AA[i]*AA[i].T | X ) <1 for i in range(s)], #constraints
-                'i', #index
-                '[s]' #set to which the index belongs
-                )
-        prob_SDP_c_dual.add_constraint(X>>0)
-        prob_SDP_c_dual.set_objective('max', cc.T*X*cc)
-        
-        #solve the problem and retrieve the weights of the optimal design
-        print prob_SDP_c_dual
-        prob_SDP_c_dual.solve(verbose=0,solver='smcp')
-        mu = [cons.dual[0] for cons in prob_SDP_c_dual.get_constraint((0,))] #Lagrangian duals of the SOC constraints
-        mu = cvx.matrix(mu)
-        w=mu/sum(mu) #normalize mu to get the optimal weights
-        print
-        print 'The optimal deign is:'
-        print w
-        print 'and the optimal positive semidefinite matrix X is'
-        print X
-        
-
-.. testoutput::
-        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
-        
-        ---------------------
-        optimization problem  (SDP):
-        15 variables, 8 affine constraints, 15 vars in 1 SD cones
-
-        X   : (5, 5), symmetric
-
-                maximize c.T*X*c
-        such that
-        〈 A[i]*A[i].T | X 〉 < 1.0 for all i in [s]
-        X ≽ |0|
-        ---------------------
-
-        The optimal deign is:
-        [...]
-        [...]
-        [...]
-        [...]
-        [ 1.28e-01]
-        [...]
-        [ 8.72e-01]
-        [...]
-
-        and the optimal positive semidefinite matrix X is
-        [ 5.92e-03  8.98e-03  2.82e-03 -3.48e-02 -1.43e-02]
-        [ 8.98e-03  1.36e-02  4.27e-03 -5.28e-02 -2.17e-02]
-        [ 2.82e-03  4.27e-03  1.34e-03 -1.66e-02 -6.79e-03]
-        [-3.48e-02 -5.28e-02 -1.66e-02  2.05e-01  8.39e-02]
-        [-1.43e-02 -2.17e-02 -6.79e-03  8.39e-02  3.44e-02]
+        [ 2.97e-01]
+        [ 2.03e-01]
+        [ 6.54e-02]
+        [ 1.19e-01]
+        [ 9.02e-02]
+        [ 2.25e-01]
 
 Exact A-optimal design: MISOCP
 ==============================
@@ -663,8 +758,8 @@ of experiments is given, and the goal is to find the optimal number of times
 :math:`n_i \in \mathbb{N}` that the experiment #i should be performed, 
 with :math:`\sum_i n_i =N`.
 
-In an alternative SOCP formulation of A-optimality,
-we may constrain the design variable to be integer, which results in a MISOCP:
+The SOCP formulation of A-optimality for constrained designs
+also accept integer constraints, which results in a MISOCP for exact A-optimality:
 
 .. math::
    :nowrap:   
@@ -681,10 +776,10 @@ we may constrain the design variable to be integer, which results in a MISOCP:
    \end{eqnarray*}
    \end{center}
 
-The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
+The exact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
 
 .. testcode::
-
+        
         #create the problem, variables and params
         prob_exact_A=pic.Problem()
         AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
@@ -717,7 +812,7 @@ The eact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
 
         #solve the problem and display the optimal design
         print prob_exact_A
-        prob_exact_A.solve(verbose = 0)
+        prob_exact_A.solve(solver='mosek',verbose = 0)
         print n
         
 .. testoutput::
@@ -852,23 +947,89 @@ to the experiments #3 to #8.
         [ 3.18e-01]
         [ 3.51e-01]
 
-We can also solve an exact D-optimal design problem by changing w into an
-intger variable, whose sum is bounded to N. For :math:`N=20`,
-we obtain the following exact D-optimal design:
+As for the A-optimal problem, there is an alternative SOCP formulation
+of D-optimality :ref:`[2] <optdes_refs>`, in which integer constraints may be added.
+This allows us to formulate the exact D-optimal problem as a MISOCP.
+For :math:`N=20`,
+we obtain the following N-exact D-optimal design:
 :math:`\mathbf{n}=[0,0,5,1,0,1,6,7]`:
 
 .. testcode::
 
-        w.vtype = 'integer'
-        N = 20
-        prob_D.remove_constraint((3,)) #remove the constraint (1|w)<1
-        prob_D.add_constraint((1|w)<N) #... and replace it by (1|w)<N
-        prob_D.solve(verbose=0)
-        print w
+        #create the problem, variables and params
+        prob_exact_D = pic.Problem()
+        L=prob_exact_D.add_variable('L',(m,m))
+        V=[prob_exact_D.add_variable('V['+str(i)+']',AA[i].T.size) for i in range(s)]
+        T=prob_exact_D.add_variable('T',(s,m))
+        n=prob_exact_D.add_variable('n',s,'integer')
+        N = pic.new_param('N',20)
+        #additional variables to handle the product of the diagonal elements of L
+        u={}
+        for k in ['01','23','4.','0123','4...','01234']:
+                u[k] = prob_exact_D.add_variable('u['+k+']',1)
+
+
+        #define the constraints and objective function
+        prob_exact_D.add_constraint(
+                        pic.sum([AA[i]*V[i]
+                        for i in range(s)],'i','[s]')
+                        == L)
+        #L is lower triangular
+        prob_exact_D.add_list_of_constraints( [L[i,j] == 0
+                                        for i in range(m)
+                                        for j in range(i+1,m)],['i','j'],'upper triangle')
+        
+        prob_exact_D.add_list_of_constraints([abs(V[i][:,k])**2<n[i]/N*T[i,k]
+                        for i in range(s) for k in range(m)],['i','k'])
+                        
+        prob_exact_D.add_list_of_constraints([(1|T[:,k])<1
+                        for k in range(m)],'k')
+
+
+        prob_exact_D.add_constraint(1|n<N)
+
+        #SOC constraints to define u['01234'] such that u['01234']**8 < L[0,0] * L[1,1] * ... * L[4,4]
+        prob_exact_D.add_constraint(u['01']**2   <L[0,0]*L[1,1])
+        prob_exact_D.add_constraint(u['23']**2   <L[2,2]*L[3,3])
+        prob_exact_D.add_constraint(u['4.']**2   <L[4,4])
+        prob_exact_D.add_constraint(u['0123']**2 <u['01']*u['23'])
+        prob_exact_D.add_constraint(u['4...']**2 <u['4.'])
+        prob_exact_D.add_constraint(u['01234']**2<u['0123']*u['4...'])
+
+        prob_exact_D.set_objective('max',u['01234'])
+
+        #solve the problem and display the optimal design
+        print prob_exact_D
+        prob_exact_D.solve(solver='mosek',verbose=0)
+        print n
 
 .. testoutput::
         :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
         
+        ---------------------
+        optimization problem  (MISOCP):
+        199 variables, 41 affine constraints, 218 vars in 46 SO cones
+
+        V       : list of 8 variables, (3, 5), continuous
+        u       : dict of 6 variables, (1, 1), continuous
+        L       : (5, 5), continuous
+        T       : (8, 5), continuous
+        n       : (8, 1), integer
+
+                maximize u[01234]
+        such that
+        L = Σ_{i in [s]} A[i]*V[i]
+        L[i,j] = 0 for all (i,j) in upper triangle
+        ||V[i][:,k]||^2 < ( n[i] / N)( T[i,k]) for all (i,k)
+        〈 |1| | T[:,k] 〉 < 1.0 for all k
+        〈 |1| | n 〉 < N
+        ||u[01]||^2 < ( L[0,0])( L[1,1])
+        ||u[23]||^2 < ( L[2,2])( L[3,3])
+        ||u[4.]||^2 < L[4,4]
+        ||u[0123]||^2 < ( u[01])( u[23])
+        ||u[4...]||^2 < u[4.]
+        ||u[01234]||^2 < ( u[0123])( u[4...])
+        ---------------------
         [...]
         [...]
         [ 5.00e+00]
@@ -877,102 +1038,6 @@ we obtain the following exact D-optimal design:
         [ 1.00e+00]
         [ 6.00e+00]
         [ 7.00e+00]
-
-
-A-optimality with multiple constraints: SOCP
-============================================
-
-A-optimal designs can also be computed by SOCP
-when the vector of weights :math:`\mathbf{w}` is subject
-to several linear constraints.
-To give an example, we compute the A-optimal design for
-the observation matrices given in the preambule, when the weights
-must satisfy: :math:`\sum_{i=0}^3 w_i \leq 0.5` and :math:`\sum_{i=4}^7 w_i \leq 0.5`.
-This problem has the following SOCP formulation:
-
-.. math::
-   :nowrap:   
-
-   \begin{center}
-   \begin{eqnarray*}
-   &\underset{\substack{\mathbf{w} \in \mathbb{R}^s\\
-                        \mu \in \mathbb{R}^s\\ 
-                        \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
-                      & \sum_{i=1}^s \mu_i\\
-   &\mbox{subject to} & \sum_{i=1}^s A_i Z_i = I\\
-   &                  & \sum_{i=0}^3 w_i \leq 0.5\\
-   &                  & \sum_{i=4}^7 w_i \leq 0.5\\
-   &                  & \forall i \in [s],\ \Vert Z_i \Vert_F^2 \leq \mu_i w_i,
-   \end{eqnarray*}
-   \end{center}
-
-The optimal solution allocates 29.7% and 20.3% to the experiments #3 and #4,
-and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
-                          
-.. testcode::
-        
-        #create the problem, variables and params
-        prob_A_multiconstraints=pic.Problem()
-        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
-        s=len(AA)
-        AA=pic.new_param('A',AA)
-
-        mu=prob_A_multiconstraints.add_variable('mu',s)
-        w =prob_A_multiconstraints.add_variable('w',s)
-        Z=[prob_A_multiconstraints.add_variable('Z['+str(i)+']',AA[i].T.size) for i in range(s)]
-
-        #define the constraints and objective function
-        prob_A_multiconstraints.add_constraint( 
-                pic.sum(
-                [AA[i]*Z[i] for i in range(s)], #summands
-                'i', #index
-                '[s]' #set to which the index belongs
-                )  
-                == 'I' )
-        prob_A_multiconstraints.add_constraint( (1|w[:4]) < 0.5)
-        prob_A_multiconstraints.add_constraint( (1|w[4:]) < 0.5)
-        prob_A_multiconstraints.add_list_of_constraints(
-                        [abs(Z[i])**2<mu[i]*w[i]
-                        for i in range(s)],'i','[s]')
-        prob_A_multiconstraints.set_objective('min',1|mu)
-
-        #solve the problem and retrieve the weights of the optimal design
-        print prob_A_multiconstraints
-        prob_A_multiconstraints.solve(verbose=0)
-        w=w.value
-        w=w/sum(w) #normalize w to get the optimal weights
-        print
-        print 'The optimal deign is:'
-        print w
-
-.. testoutput::
-        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
-        
-        ---------------------
-        optimization problem  (SOCP):
-        136 variables, 27 affine constraints, 136 vars in 8 SO cones
-
-        Z   : list of 8 variables, (3, 5), continuous
-        mu  : (8, 1), continuous
-        w   : (8, 1), continuous
-
-                minimize 〈 |1| | mu 〉
-        such that
-        Σ_{i in [s]} A[i]*Z[i] = I
-        〈 |1| | w[:4] 〉 < 0.5
-        〈 |1| | w[4:] 〉 < 0.5
-        ||Z[i]||^2 < ( mu[i])( w[i]) for all i in [s]
-        ---------------------
-
-        The optimal deign is:
-        [...]
-        [...]
-        [ 2.97e-01]
-        [ 2.03e-01]
-        [ 6.54e-02]
-        [ 1.19e-01]
-        [ 9.02e-02]
-        [ 2.25e-01]
 
 
 .. _optdes_refs:
@@ -984,3 +1049,6 @@ References
            Second-Order Cone Programming <http://arxiv.org/abs/0912.5467>`_", G. Sagnol,
            *Journal of Statistical Planning and Inference*,
            141(5), p. *1684-1708*, 2011.
+
+        2. "`SOC-representability of the D-criterion of optimal experimental design`",
+           R. Harman and G. Sagnol, Draft.

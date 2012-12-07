@@ -415,6 +415,15 @@ The constraints of the problem can then be accessed with the function
   >>> prob.get_constraint(2)                      #constraints are numbered from 0
   # (4x2)-affine constraint: Z[3] = Z[2] + Y.T #
 
+An alternative is to pass the constraint with the option ``ret = True``,
+which has the effect to return a reference to the constraint you want to add.
+In particular, this reference can be useful to access the optimal dual variable
+of the constraint, once the problem will have been solved.
+
+  >>> mycons = prob.add_constraint(Z[4]+Z[0] == Y.T, ret = True)
+  >>> print mycons
+  # (4x2)-affine constraint : Z[4] + Z[0] = Y.T #
+
 Groupping constraints
 ---------------------
 

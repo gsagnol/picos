@@ -916,6 +916,12 @@ def available_solvers():
                 del zo
         except ImportError:
                 pass
+        try:
+                import gurobipy as grb
+                lst.append('gurobi')
+                del grb
+        except ImportError:
+                pass
         return lst
         
 def offset_in_lil(lil,offset,lower):
