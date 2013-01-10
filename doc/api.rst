@@ -1,8 +1,8 @@
 .. _api:
 
-*************
-The PICOS API
-*************
+*******************
+The PICOS Reference
+*******************
 
 .. toctree::
    :maxdepth: 2

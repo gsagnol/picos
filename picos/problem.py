@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -84,6 +84,7 @@ class Problem:
                 
                 self.gurobi_Instance = None
                 self.grbvar = {}
+                self.grb_boundcons = None
                 
                 self.cplex_Instance = None
                 self.cplex_boundcons = None
@@ -257,6 +258,14 @@ class Problem:
                 if not (isinstance(expr,AffinExp) or isinstance(expr,LogSumExp)
                         or isinstance(expr,QuadExp) or isinstance(expr,GeneralFun)):
                         raise Exception('unsupported objective')
+                if isinstance(self.objective[1],LogSumExp):
+                        oldexp = self.objective[1]
+                        self.numberLSEConstraints-=1
+                        self.numberLSEVars-=oldexp.Exp.size[0]*oldexp.Exp.size[1]
+                if isinstance(self.objective[1],QuadExp):
+                        oldexp = self.objective[1]
+                        self.numberQuadConstraints-=1
+                        self.numberQuadNNZ-=oldexp.nnz()
                 if isinstance(expr,LogSumExp):
                         self.numberLSEVars+=expr.Exp.size[0]*expr.Exp.size[1]
                         self.numberLSEConstraints+=1
@@ -353,7 +362,8 @@ class Problem:
                 
         def set_all_options_to_default(self):
                 """set all the options to their default.
-                The following options are available:
+                The following options are available, and can be passed
+                as pairs of the form ``key=value`` to :func:`solve() <picos.Problem.solve>` :
                 
                 * General options common to all solvers:
                 
@@ -391,7 +401,7 @@ class Problem:
                 
                   * ``treememory = None``  : size of the buffer for the branch and bound tree,
                     in Megabytes. 
-                    *This option currently works only with cplex and gurobi TODOcheck*.
+                    *This option currently works only with cplex*.
                     
                   * ``gaplim = 1e-4`` : For mixed integer problems,
                     the solver returns a solution as soon as this value for the gap is reached
@@ -406,12 +416,18 @@ class Problem:
                     (this can lead to a huge gain of time).
                     
                   * ``noprimals = False`` : if ``True``, do not copy the optimal variable values in the
-                    attribute ``value`` of the problem variables.
+                    :attr:`value<picos.Variable.value>` attribute of the problem variables.
                     
                   * ``noduals = False`` : if ``True``, do not try to retrieve the dual variables.
 
                   * ``nbsol = None`` : maximum number of feasible solution nodes visited
                     when solving a mixed integer problem.
+                    
+                  * ``hotstart = False`` : if ``True``, the MIP optimizer tries to start from
+                    the solution
+                    specified (even partly) in the :attr:`value<picos.Variable.value>` attribute of the
+                    problem variables.
+                    *This option currently works only with cplex, mosek and gurobi*.
                                     
                   * ``convert_quad_to_socp_if_needed = True`` : Do we convert the convex quadratics to
                     second order cone constraints when the solver does not handle them directly ?
@@ -455,7 +471,14 @@ class Problem:
                     sets the absolute pivot tolerance of the
                     simplex optimizer to ``1e-4``.
                     
-                * Specific options available for gurobi: #TODO
+                * Specific options available for gurobi:
+                
+                  * ``gurobi_params = {}`` : a dictionary of
+                    `gurobi parameters <http://www.gurobi.com/documentation/5.0/reference-manual/node653>`_
+                    to be set before the gurobi
+                    optimizer is called. For example,
+                    ``gurobi_params={'NodeLimit' : 25}``
+                    limits the number of nodes visited by the MIP optimizer to 25.
                 
                 """
                 #Additional, hidden option (requires a patch of smcp, to use conlp to
@@ -488,6 +511,7 @@ class Problem:
                                  'mosek_params'   :{},
                                  'gurobi_params'  :{},
                                  'convert_quad_to_socp_if_needed' : True,
+                                 'hotstart'       :False,
                                  }
                                  
                                  
@@ -1164,7 +1188,7 @@ class Problem:
                         lsind=lsind[k]
                 #now, lsind must be the index or list of indices to remove
                 if isinstance(lsind,list) and lsind in self.consNumbering: #a list of constraints
-                        for ind in lsind:
+                        for ind in reversed(lsind):
                                 del self.constraints[ind]
                         self.countCons -= len(lsind)
                         self.consNumbering.remove(lsind)
@@ -1415,13 +1439,17 @@ class Problem:
                                         vectorObjective = objective[variable]
                                 else:
                                         vectorObjective = [0]*(variable.size[0]*variable.size[1])
+                                if variable.is_valued() and self.options['hotstart']:
+                                        vstart = variable.value
                                 for k in range(variable.size[0]*variable.size[1]):
                                         name=kvar+'_'+str(k)
                                         x.append( m.addVar(obj = vectorObjective[k],
                                                            name = name,
                                                            vtype = grb_type[variable.vtype],
                                                            lb = -grb.GRB.INFINITY))
-
+                                        if variable.is_valued() and self.options['hotstart']:
+                                                x[-1].Start = vstart[k]
+                                                           
                                         if self.options['verbose']>1:
                                                 #<--display progress
                                                 prog.increment_amount()
@@ -1851,6 +1879,8 @@ class Problem:
                         colnames=['']*self.numberOfVars
                         obj=[0]*self.numberOfVars
                         types=['C']*self.numberOfVars
+                        mipstart_ind=[]
+                        mipstart_vals=[]
                         
                         #specify bounds later, in constraints
                         ub=[cplex.infinity]*self.numberOfVars
@@ -1865,6 +1895,10 @@ class Problem:
                         
                         for kvar,variable in self.variables.iteritems():
                                 sj=variable.startIndex
+                                if variable.is_valued() and self.options['hotstart']:
+                                        mipstart_ind.extend(range(sj,variable.endIndex))
+                                        mipstart_vals.extend(variable.value)
+                                        
                                 if objective.has_key(variable):
                                         vectorObjective = objective[variable]
                                 else:
@@ -2124,6 +2158,10 @@ class Problem:
                                                     rhs = qcs,
                                                     sense = "L")
                 
+                if self.options['hotstart'] and len(mipstart_ind)>0:
+                        c.MIP_starts.add(cplex.SparsePair(
+                                        ind=mipstart_ind,val=mipstart_vals),
+                                        c.MIP_starts.effort_level.repair)
                 
                 tp=self.type
                 if tp == 'LP':
@@ -2396,10 +2434,27 @@ class Problem:
                                         task.putcj(j,self.cvxoptVars['c'][j])
                         #make the variable free
                         task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
+                        
 
                 for i in binaries:
                         #0/1 bound
                         task.putbound(mosek.accmode.var,i,mosek.boundkey.ra,0.,1.)
+                        
+                if not(self.is_continuous()) and self.options['hotstart']:
+                        # Set status of all variables to unknown
+                        task.makesolutionstatusunknown(mosek.soltype.itg);
+                        for kvar,variable in self.variables.iteritems():
+                                if variable.is_valued():
+                                        startvar = variable.value
+                                        for jk,j in enumerate(range(variable.startIndex,variable.endIndex)):
+                                                task.putsolutioni (
+                                                  mosek.accmode.var,
+                                                  j,
+                                                  mosek.soltype.itg,
+                                                  mosek.stakey.supbas,
+                                                  startvar[jk],
+                                                  0.0, 0.0, 0.0)
+                                
                         
                 #equality constraints:
                 Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
@@ -2906,6 +2961,8 @@ class Problem:
                 #-------------------------------#
                 #  runs the appropriate solver  #
                 #-------------------------------#
+                import time
+                tstart=time.time()
                 
                 if self.numberLSEConstraints>0:#GP
                         probtype='GP'
@@ -2981,7 +3038,7 @@ class Problem:
                         self.cvxoptVars['A']=P*self.cvxoptVars['A']
                         self.cvxoptVars['b']=P*self.cvxoptVars['b']
                         
-                                
+                        tstart = time.time()
                         if currentsolver=='smcp':
                                 try:
                                         import smcp
@@ -3005,6 +3062,8 @@ class Problem:
                                                         self.cvxoptVars['b'])
                         probtype='ConeLP'
 
+                tend = time.time()
+                
                 status=sol['status']
                 solv=currentsolver
                 if solv is None: solv='cvxopt'
@@ -3156,7 +3215,7 @@ class Problem:
                         if self.objective[0]=='max' and not obj is None:
                                 obj = -obj
                 
-                solt={'cvxopt_sol':sol,'status':status}
+                solt={'cvxopt_sol':sol,'status':status, 'time':tend-tstart}
                 return (primals,duals,obj,solt)
  
         
@@ -3264,7 +3323,9 @@ class Problem:
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
-              
+                import time
+                tstart = time.time()
+                
                 if not self.options['pool_size'] is None:
                         try:
                                 c.populate_solution_pool()
@@ -3278,7 +3339,7 @@ class Problem:
                                         raise NonConvexError('Error raised during solve. Problem is nonconvex')
                                 else:
                                         print "Exception raised during solve"
-                                
+                tend = time.time()                
         
                 self.cplex_Instance = c
                 
@@ -3509,7 +3570,7 @@ class Problem:
                 # return statement#
                 #-----------------#             
                 
-                sol = {'cplex_solution':c.solution,'status':status}
+                sol = {'cplex_solution':c.solution,'status':status,'time':(tend - tstart)}
                 return (primals,duals,obj,sol)
                 
         def  _gurobi_solve(self):
@@ -3540,7 +3601,10 @@ class Problem:
                 if not self.options['timelimit'] is None:
                         m.setParam('TimeLimit',self.options['timelimit'])
                 if not self.options['treememory'] is None:
-                        m.setParam('NodefileStart',self.options['treememory']/1024.)
+                        if self.options['verbose']:
+                                print 'option treememory ignored with gurobi'
+                        #m.setParam('NodefileStart',self.options['treememory']/1024.)
+                        # -> NO In fact this is a limit after which node files are written to disk
                 if not self.options['gaplim'] is None:
                         m.setParam('MIPGap',self.options['gaplim'])
                         #m.setParam('MIPGapAbs',self.options['gaplim'])
@@ -3596,7 +3660,9 @@ class Problem:
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
-              
+                
+                import time
+                tstart = time.time()
                 
                 try:
                         m.optimize()
@@ -3605,7 +3671,7 @@ class Problem:
                                 raise NonConvexError('Error raised during solve. Problem is nonconvex')
                         else:
                                 print "Exception raised during solve"
-                                
+                tend = time.time()
         
                 self.gurobi_Instance = m
                 
@@ -3691,7 +3757,7 @@ class Problem:
                                                                 elif (((v>0 and constr.typeOfConstraint[3]=='>') or
                                                                      (v<0 and constr.typeOfConstraint[3]=='<')) and
                                                                      du<0):#lower bound
-                                                                        seen_bounded_vars.append(j)
+                                                                        seen_bounded_vars.append(name)
                                                                         dual_values[i]=(-du/abs(v))
                                                                 else:
                                                                         dual_values[i]=0. #unactive constraint
@@ -3741,7 +3807,7 @@ class Problem:
                 # return statement#
                 #-----------------#             
                 
-                sol = {'gurobi_model':m, 'status':status}
+                sol = {'gurobi_model':m, 'status':status, 'time': tend - tstart}
                 return (primals,duals,obj,sol)
 
         def _mosek_solve(self):
@@ -3827,8 +3893,14 @@ class Problem:
                         task.putdouparam(mosek.dparam.optimizer_max_time,-1.0)
                         #task.putdouparam(mosek.dparam.mio_max_time_aprx_opt,-1.0)
                 
+                #number feasible solutions
                 if not self.options['nbsol'] is None:
                         task.putintparam(mosek.iparam.mio_max_num_solutions,self.options['nbsol'])
+                        
+                #hotstart
+                if self.options['hotstart']:
+                        task.putintparam(mosek.iparam.mio_construct_sol,mosek.onoffkey.on)
+                
                 
                 for par,val in self.options['mosek_params'].iteritems():
                         try:
@@ -3846,6 +3918,9 @@ class Problem:
                 #  call the solver   #
                 #--------------------# 
                 
+                import time
+                tstart = time.time()
+                
                 #optimize
                 try:
                         task.optimize()
@@ -3856,7 +3931,7 @@ class Problem:
                         else:
                                 print "Error raised during solve"
                                 
-                                
+                tend = time.time()                
                 
                 # Print a summary containing information
                 # about the solution for debugging purposes
@@ -4072,7 +4147,7 @@ class Problem:
                 # return statement#
                 #-----------------#  
                 #OBJECTIVE
-                sol = {'mosek_task':task,'status':status}
+                sol = {'mosek_task':task,'status':status, 'time':tend - tstart}
                 
                 #delete the patch variable for quad prog with 1 var
                 if '_ptch_' in self.variables:
@@ -4143,6 +4218,8 @@ class Problem:
                 #--------------------#
                 #  call the solver   #
                 #--------------------#
+                import time
+                tstart = time.time()
                 
                 if self.objective[0]=='max':
                         if self.scip_obj is None:
@@ -4164,6 +4241,8 @@ class Problem:
                                                         gap=gaplim,
                                                         nsol=nbsol,
                                                         objective=self.scip_obj)
+                tend = time.time()
+                
                 if sol.optimal:
                         status='optimal'
                 elif sol.infeasible:
@@ -4214,6 +4293,7 @@ class Problem:
                 solt={}
                 solt['zibopt_sol']=sol
                 solt['status']=status
+                solt['time'] = tend - tstart
                 return (primals,duals,obj,solt)
                 
                 
@@ -4419,22 +4499,34 @@ class Problem:
                                           `cplex LP format <http://pic.dhe.ibm.com/infocenter/cplexzos/v12r4/index.jsp?topic=%2Fcom.ibm.cplex.zos.help%2Fhomepages%2Freffileformatscplex.html>`_
                                           
                                         * ``'.mps'``: `MPS format <http://docs.mosek.com/6.0/pyapi/node021.html>`_
-                                          (recquires mosek or cplex).
+                                          (recquires mosek, gurobi or cplex).
                                           
                                         * ``'.opf'``: `OPF format <http://docs.mosek.com/6.0/pyapi/node023.html>`_
                                           (recquires mosek).
-
+                                          
                                         * ``'.dat-s'``: `sparse SDPA format <http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa>`_
                                           This format is suitable to save semidefinite programs (SDP). SOC constraints are
                                           stored as semidefinite constraints with an *arrow pattern*.
                                         
                 :type filename: str.
                 :param writer: The default writer is ``picos``, which has its own *LP* and
-                               *sparse SDPA* write functions. If cplex or mosek is installed,
-                               the user can pass the option ``writer=cplex`` or
-                               ``writer=mosek``, and the write function of this solver
+                               *sparse SDPA* write functions. If cplex, mosek or gurobi is installed,
+                               the user can pass the option ``writer='cplex'``, ``writer='gurobi'`` or
+                               ``writer='mosek'``, and the write function of this solver
                                will be used.                               
                 :type writer: str.
+                
+                .. Warning :: For problems involving a symmetric matrix variable :math:`X`
+                              (typically, semidefinite programs), the expressions
+                              involving :math:`X` are stored in PICOS as a function of
+                              :math:`svec(X)`, the symmetric vectorized form of
+                              X (see `Dattorro, ch.2.2.2.1 <http://meboo.convexoptimization.com/Meboo.html>`_).
+                              As a result, the symmetric matrix variables
+                              are written in :math:`svec()` form in the files created by this function.
+                              So if you use another solver to solve
+                              a problem that is described in a file created by PICOS, the optimal symmetric variables
+                              returned will also be in symmetric vectorized form.
+                              
                 """
                 if self.numberLSEConstraints:
                         raise Exception('gp are not supported')
@@ -4446,9 +4538,9 @@ class Problem:
                        filename[-3:]=='.lp' or
                        filename[-6:]=='.dat-s' or
                        filename[-7:]=='.dat-sx'):
-                        if writer=='mosek':
+                        if writer in ('mosek','gurobi'):
                                 if (self.numberSDPConstraints >0):
-                                        raise Exception('no sdp with mosek')
+                                        raise Exception('no sdp with mosek/gurobi')
                                 if (self.numberConeConstraints + 
                                     self.numberQuadConstraints) ==0:
                                         filename+='.lp'
@@ -4483,6 +4575,8 @@ class Problem:
                         if filename[-4:]=='.mps':
                                 if 'mosek' in avs:
                                         writer='mosek'
+                                elif 'gurobi' in avs:
+                                        writer='gurobi'
                                 else:
                                         raise Exception('no mps writer available')
                         elif filename[-4:]=='.opf':
@@ -4496,11 +4590,17 @@ class Problem:
                                 elif not(self.msk_task is None) and (self.numberConeConstraints + 
                                                                 self.numberQuadConstraints) ==0:
                                         writer='mosek'
+                                elif not(self.gurobi_Instance is None) and (self.numberConeConstraints + 
+                                                                self.numberQuadConstraints) ==0:
+                                        writer='gurobi'
                                 elif 'cplex' in avs:
                                         writer='cplex'
                                 elif 'mosek' in avs and (self.numberConeConstraints + 
                                                                 self.numberQuadConstraints) ==0:
                                         writer='mosek'
+                                elif 'gurobi' in avs and (self.numberConeConstraints + 
+                                                                self.numberQuadConstraints) ==0:
+                                        writer='gurobi'
                                 else:
                                         writer='picos'
                         elif filename[-6:]=='.dat-s':
@@ -4519,6 +4619,10 @@ class Problem:
                         if self.msk_task is None:
                                 self._make_mosek_instance()
                         self.msk_task.writedata(filename)
+                elif writer == 'gurobi':
+                        if self.gurobi_Instance is None:
+                                self._make_gurobi_instance()
+                        self.gurobi_Instance.write(filename)
                 elif writer == 'picos':
                         if filename[-3:]=='.lp':
                                 self._write_lp(filename)
@@ -4897,7 +5001,7 @@ class Problem:
                         for b,B in enumerate(Ak):
                                 for i,j,v in izip(B.I,B.J,B.V):
                                         f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
-                                                  k,b+1,i+1,j+1,-v))
+                                                  k,b+1,j+1,i+1,-v))
                 
                 #binaries an integers in extended format
                 if extended:

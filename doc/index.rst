@@ -3,10 +3,38 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. |br| raw:: html
+
+   <br />
+
 PICOS: A Python Interface for Conic Optimization Solvers
 ========================================================
 
 .. _contents:
+
+**News**
+
+ * 10 Jan. 13: **Picos** :ref:`0.1.2 <download>` **Released** |br|
+   bug-fix release, correcting:
+     * The :func:`write_to_file() <picos.Problem.write_to_file>`
+       function for sparse SDPA files. The function was writing the
+       coefficients of the lower triangular part of the constraint matrices
+       instead of the upper triangle.
+     * An ``IndexError`` occuring with the function
+       :func:`remove_constraint() <picos.Problem.remove_constraint>`
+   
+   Thanks to Warren Schudy for pointing out these bugs of the previous release !
+
+ * 08 Dec. 12: **Picos** :ref:`0.1.1 <download>` **Released** |br|
+   Major changes:
+     * Picos now interfaces GUROBI !
+     * You can specify an initial solution to *warm-start* mixed integer optimizers.
+       (see the option ``hotstart`` documented in
+       :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`)
+     * Minor bugs with quadratic expressions corrected
+     * It's possible to return a reference to a constraint added
+       with add_constraint()
+
 
 **PICOS Documentation contents**
 

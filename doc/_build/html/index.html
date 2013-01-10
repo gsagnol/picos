@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 0.1.1 documentation</title>
+    <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 0.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1.1',
+        VERSION:     '0.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,8 +25,24 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="picos 0.1.1 documentation" href="#" />
+    <link rel="top" title="picos 0.1.2 documentation" href="#" />
     <link rel="next" title="Introduction" href="intro.html" /> 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
   </head>
   <body>
     <div class="related">
@@ -52,7 +68,40 @@
             
   <div class="section" id="picos-a-python-interface-for-conic-optimization-solvers">
 <h1>PICOS: A Python Interface for Conic Optimization Solvers<a class="headerlink" href="#picos-a-python-interface-for-conic-optimization-solvers" title="Permalink to this headline">¶</a></h1>
-<p id="contents"><strong>PICOS Documentation contents</strong></p>
+<p id="contents"><strong>News</strong></p>
+<blockquote>
+<div><ul>
+<li><p class="first">10 Jan. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>0.1.2</em></a> <strong>Released</strong> <br />
+bug-fix release, correcting:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file()</span></tt></a>
+function for sparse SDPA files. The function was writing the
+coefficients of the lower triangular part of the constraint matrices
+instead of the upper triangle.</li>
+<li>An <tt class="docutils literal"><span class="pre">IndexError</span></tt> occuring with the function
+<a class="reference internal" href="problem.html#picos.Problem.remove_constraint" title="picos.Problem.remove_constraint"><tt class="xref py py-func docutils literal"><span class="pre">remove_constraint()</span></tt></a></li>
+</ul>
+</div></blockquote>
+<p>Thanks to Warren Schudy for pointing out these bugs of the previous release !</p>
+</li>
+<li><p class="first">08 Dec. 12: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>0.1.1</em></a> <strong>Released</strong> <br />
+Major changes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Picos now interfaces GUROBI !</li>
+<li>You can specify an initial solution to <em>warm-start</em> mixed integer optimizers.
+(see the option <tt class="docutils literal"><span class="pre">hotstart</span></tt> documented in
+<a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>)</li>
+<li>Minor bugs with quadratic expressions corrected</li>
+<li>It&#8217;s possible to return a reference to a constraint added
+with add_constraint()</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<p><strong>PICOS Documentation contents</strong></p>
 <p>Welcome to the documentation of PICOS.
 The latest version can be downloaded <a class="reference internal" href="download.html#download"><em>here</em></a>,
 and can be installed by following <a class="reference internal" href="intro.html#requirements"><em>these instructions</em></a>.
@@ -86,7 +135,7 @@ on every function of PICOS.</p>
 <li class="toctree-l2"><a class="reference internal" href="graphs.html">Cut problems in graphs</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS API</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="problem.html">Problem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tools.html">picos.tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="expression.html">Expression</a></li>
@@ -117,7 +166,7 @@ on every function of PICOS.</p>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
 </ul>
 
@@ -140,7 +189,7 @@ on every function of PICOS.</p>
 
   <h3><a href="download.html">Download</a></h3>
   <ul class="this-page-menu">
-    <li><a href="dist/PICOS-0.1.1.tar.gz">Latest Version (0.1.1)</a></li>
+    <li><a href="dist/PICOS-0.1.2.tar.gz" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version012']);">Latest Version (0.1.2)</a></li>
   </ul>
 
 <div id="searchbox" style="display: none">

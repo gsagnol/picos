@@ -251,6 +251,7 @@ features that are *not handled by PICOS*.
   * `smcp <http://abel.ee.ucla.edu/smcp/>`_ (LP, SOCP, SDP)
   * `mosek <http://www.mosek.com>`_ (LP, MIP, (MI)SOCP, convex QCQP, MIQP)
   * `cplex <http://www.ibm.com/software/integration/optimization/cplex-optimizer/>`_ (LP, MIP, (MI)SOCP, convex QCQP, MIQP)
+  * `gurobi <http://www.gurobi.com/>`_ (LP, MIP, (MI)SOCP, convex QCQP, MIQP)
   * `zibopt <http://zibopt.zib.de/>`_ (`soplex <http://soplex.zib.de/>`_ + 
     `scip <http://scip.zib.de/>`_ : LP, MIP, MIQP, general QCQP).
 
@@ -260,7 +261,7 @@ installed and linked in your ``PYTHONPATH`` variable. The sites of the solvers
 give instructions to do this, except for *zibopt*, for which you must install
 a separate interface: `python-zibopt <http://code.google.com/p/python-zibopt/>`_.
 To check your installation, you can simply verify that
-``import cvxopt`` (resp. ``smcp``, ``mosek``, ``cplex``, ``zibopt``) does
+``import cvxopt`` (resp. ``smcp``, ``mosek``, ``cplex``, ``zibopt``, ``gurobipy``) does
 not raise an ``ImportError``. The command
 
 >>> import picos;picos.tools.available_solvers() #doctest: +SKIP
@@ -338,6 +339,8 @@ Author and contributors
 
         * Contributors: People who contributed to Picos and their contributions
           (in no particular order) are:
+
+                        * `Warren Schudy <http://cs.brown.edu/~ws/>`_
 
                         * Bertrand Omont
 

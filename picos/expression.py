@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.1 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -1544,9 +1544,13 @@ class Variable(AffinExp):
                   by using either the present ``value`` attribute,
                   or the function
                   :func:`set_var_value()<picos.Problem.set_var_value>` of the class
-                  :class:`Problem<picos.Problem>`.
-                
+                  :class:`Problem<picos.Problem>`. Note that manually
+                  giving a value to a variable can be useful, e.g. to
+                  provide a solver with an initial solution (see
+                  the option ``hotstart`` documented in
+                  :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`)
                 * The problem involving the variable has been solved,
                   and the ``value`` attribute stores the optimal value
                   of this variable.
+             
         """
