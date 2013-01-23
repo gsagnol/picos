@@ -107,8 +107,9 @@ def sum(lst,it=None,indices=None):
         
         """
         from .expression import Expression
+        from .expression import AffinExp
         if len(lst)==0:
-                return 0
+                return AffinExp({},constant=0,size=(1,1),string='0')
         if not(all([isinstance(exi,Expression) for exi in lst])):
                 import __builtin__
                 return __builtin__.sum(lst)
