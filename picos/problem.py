@@ -110,7 +110,7 @@ class Problem:
                 self.number_solutions=0
                                 
                 self.longestkey=0 #for a nice display of constraints
-                self.varIndices=[]
+                self.varNames=[]
                 
                 self.status='unsolved'
                 """status returned by the solver. The default when
@@ -672,7 +672,7 @@ class Problem:
                         self.numberOfVars+=s0*(s0+1)/2
                 else:
                         self.numberOfVars+=size[0]*size[1]
-                self.varIndices.append(self.countVar)
+                self.varNames.append(name)
                 self.countVar+=1
                 
                 #svec operation
@@ -698,21 +698,45 @@ class Problem:
                                 del self.listOfVars[lisname] #not a complete list of vars anymore
                 if name not in self.variables.keys():
                         raise Exception('variable does not exist. Maybe you tried to remove some item x[i] of the variable x ?')
-                Id=self.variables[name].Id
                 self.countVar-=1
                 sz=self.variables[name].size
                 self.numberOfVars-=sz[0]*sz[1]
-                self.varIndices.remove(Id)
+                self.varNames.remove(name)
                 del self.variables[name]
                 self._recomputeStartEndIndices()
         
         def _recomputeStartEndIndices(self):
                 ind=0
-                for i in self.varIndices:
-                        nam=self.get_varName(i)
-                        self.variables[nam].startIndex=ind
-                        ind+=self.variables[nam].size[0]*self.variables[nam].size[1]
-                        self.variables[nam].endIndex=ind
+                for nam in self.varNames:
+                        var = self.variables[nam]
+                        var.startIndex=ind
+                        ind+=var.size[0]*var.size[1]
+                        var.endIndex=ind
+                        
+        def _remove_temporary_variables(self):
+                """
+                Remove the variables __tmp...
+                created by the solvers to cast the problem as socp
+                """
+                offset = 0
+                for nam in self.varNames:
+                        var = self.variables[nam]
+                        if '__tmp' in nam or '__noconstant' in nam:
+                                self.countVar-=1
+                                sz=self.variables[nam].size
+                                offset += sz[0]*sz[1]
+                                self.numberOfVars-=sz[0]*sz[1]
+                                self.varNames.remove(nam)
+                                del self.variables[nam]
+                        else:
+                                var.startIndex-=offset
+                                var.endIndex-=offset
+                
+                if '__tmprhs' in self.listOfVars:
+                        del self.listOfVars['__tmprhs']
+                if '__tmplhs' in self.listOfVars:
+                        del self.listOfVars['__tmplhs']
+                
 
         def copy(self):
                 """creates a copy of the problem."""
@@ -1676,21 +1700,17 @@ class Problem:
                         
                 m.update()
                 
-                if self.options['verbose']>0:
-                        print 'Gurobi instance created'
-                        print
                 self.gurobi_Instance=m
                 self.grbvar=x
                 self.grb_boundcons=boundcons
                 
-                #remove temporary variables for cone constraints
-                for v in tmplhs:
-                        self.remove_variable(v.name)
-                for v in tmprhs:
-                        self.remove_variable(v.name)                       
-                if 'noconstant' in newcons:
-                        self.remove_variable(noconstant.name)
+                if 'noconstant' in newcons or len(tmplhs)>0:
+                        self._remove_temporary_variables()
                 
+                if self.options['verbose']>0:
+                        print 'Gurobi instance created'
+                        print
+                                
         def is_continuous(self):
                 """ Returns ``True`` if there are only continuous variables"""
                 for kvar in self.variables.keys():
@@ -2181,17 +2201,15 @@ class Problem:
                 
                 
                 self.cplex_Instance = c
-                if self.options['verbose']>0:
-                        print('CPLEX INSTANCE created')
                 self.cplex_boundcons=boundcons
                 
-                #remove temporary variables for cone constraints
-                for v in tmplhs:
-                        self.remove_variable(v.name)
-                for v in tmprhs:
-                        self.remove_variable(v.name)                       
-                if 'noconstant' in newcons:
-                        self.remove_variable(noconstant.name)
+                if 'noconstant' in newcons or len(tmplhs)>0:
+                        self._remove_temporary_variables()
+                
+                
+                if self.options['verbose']>0:
+                        print('CPLEX INSTANCE created')
+               
 
                 
         def _make_cvxopt_instance(self,aff_part_of_quad=True,cone_as_quad=False):
