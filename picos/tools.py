@@ -38,6 +38,7 @@ __all__=['_retrieve_matrix',
         'svec',
         'svecm1',
         'sum',
+        '_bsum',
         'diag',
         'new_param',
         'available_solvers',
@@ -146,6 +147,11 @@ def sum(lst,it=None,indices=None):
                 affSum.string=sigma+sumstr
         return affSum
 
+def _bsum(lst):
+        """builtin sum operator"""
+        import __builtin__
+        return __builtin__.sum(lst)
+        
 def allIdent(lst):
         if len(lst)<=1:
                 return(True)

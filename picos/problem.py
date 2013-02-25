@@ -461,6 +461,8 @@ class Problem:
                     than this value. The default value ``None`` means that we
                     interrupt the computation regardless of the achieved gap.
                   
+                  * boundlimit TODO
+                  
                 * Specific options available for mosek:
                 
                   * ``mosek_params = {}`` : a dictionary of
@@ -512,6 +514,8 @@ class Problem:
                                  'gurobi_params'  :{},
                                  'convert_quad_to_socp_if_needed' : True,
                                  'hotstart'       :False,
+                                 'uboundlimit'    :None,
+                                 'lboundlimit'    :None,
                                  }
                                  
                                  
@@ -719,6 +723,7 @@ class Problem:
                 created by the solvers to cast the problem as socp
                 """
                 offset = 0
+                todel = []
                 for nam in self.varNames:
                         var = self.variables[nam]
                         if '__tmp' in nam or '__noconstant' in nam:
@@ -726,12 +731,16 @@ class Problem:
                                 sz=self.variables[nam].size
                                 offset += sz[0]*sz[1]
                                 self.numberOfVars-=sz[0]*sz[1]
-                                self.varNames.remove(nam)
+                                #self.varNames.remove(nam)
+                                todel.append(nam)
                                 del self.variables[nam]
                         else:
                                 var.startIndex-=offset
                                 var.endIndex-=offset
                 
+                for nam in todel:
+                        self.varNames.remove(nam)
+                        
                 if '__tmprhs' in self.listOfVars:
                         del self.listOfVars['__tmprhs']
                 if '__tmplhs' in self.listOfVars:
@@ -1438,7 +1447,7 @@ class Problem:
                         print
                 
                 if only_update:
-                        supvars=sum([nv[1] for nv in newvars])
+                        supvars=_bsum([nv[1] for nv in newvars])
                         x=self.grbvar
                         for kvar,sz in newvars:
                                 for kj in range(sz):
@@ -1882,7 +1891,7 @@ class Problem:
                 
                 #variables
                 if only_update:
-                        supvars=sum([nv[1] for nv in newvars])
+                        supvars=_bsum([nv[1] for nv in newvars])
                         colnames=['']*supvars
                         obj=[0]*supvars
                         types=['C']*supvars
@@ -2413,8 +2422,8 @@ class Problem:
                 # This is done to increase the speed of inputting data.                                
                                 
                 self._make_cvxopt_instance()
-                NUMVAR = self.numberOfVars+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
-                NUMCON = self.numberAffConstraints+int(sum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
+                NUMVAR = self.numberOfVars+int(_bsum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
+                NUMCON = self.numberAffConstraints+int(_bsum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
                 NUMCONE = self.numberConeConstraints
                 NUMANZ= len(self.cvxoptVars['A'].I)+len(self.cvxoptVars['Gl'].I)
                 NUMQNZ= self.numberQuadNNZ
@@ -3131,7 +3140,7 @@ class Problem:
                                         indzq=dims['l']
                                         zqkey='z'
                                         zskey='z'
-                                        indzs=dims['l']+sum(dims['q'])
+                                        indzs=dims['l']+_bsum(dims['q'])
                                 
                                 if currentsolver=='smcp':
                                         ieq=self.cvxoptVars['Gl'].size[0]
@@ -3329,7 +3338,20 @@ class Problem:
                         #nbsol_cb.nbsol = self.options['nbsol']
                 
                 
-                
+                if not self.options['uboundlimit'] is None:
+                        import cplex_callbacks
+                        bound_cb =  c.register_callback(cplex_callbacks.uboundCallback)
+                        bound_cb.aborted = 0
+                        bound_cb.ub = INFINITY
+                        bound_cb.bound = self.options['uboundlimit']
+                   
+                if not self.options['lboundlimit'] is None:
+                        import cplex_callbacks
+                        bound_cb =  c.register_callback(cplex_callbacks.lboundCallback)
+                        bound_cb.aborted = 0
+                        bound_cb.ub = -INFINITY
+                        bound_cb.bound = self.options['lboundlimit']  
+                   
                 #other cplex parameters
                 for par,val in self.options['cplex_params'].iteritems():
                         try:
@@ -4905,7 +4927,7 @@ class Problem:
 
                 nblocks = Nl + len(Nq) + len(Ns)
 
-                P_n = Nl+sum(Nq)+sum(Ns)
+                P_n = Nl+_bsum(Nq)+_bsum(Ns)
                 P_m = G.size[1]
 
                 P_A = {}

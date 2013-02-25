@@ -4,7 +4,7 @@
 #
 
 import cplex
-from cplex.callbacks import MIPInfoCallback, IncumbentCallback, BranchCallback
+from cplex.callbacks import MIPInfoCallback, IncumbentCallback, BranchCallback, NodeCallback
 import time
 
 class TimeLimitCallback(MIPInfoCallback):
@@ -38,4 +38,25 @@ class nbSolCallback(BranchCallback):
                 if self.cursol == self.nbsol:
                         self.aborted=1
                         self.abort()
-                        
+
+class lboundCallback(NodeCallback):
+        
+        def __call__(self):
+                if not self.aborted:
+                        v1 = self.get_incumbent_objective_value()
+                        v2 = self.get_best_objective_value()
+                        self.lb = min(v1,v2)
+                if self.lb > self.bound:
+                        self.aborted=1
+                        self.abort()
+              
+class uboundCallback(NodeCallback):
+        
+        def __call__(self):
+                if not self.aborted:
+                        v1 = self.get_incumbent_objective_value()
+                        v2 = self.get_best_objective_value()
+                        self.ub = max(v1,v2)
+                if self.ub < self.bound:
+                        self.aborted=1
+                        self.abort()
