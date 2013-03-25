@@ -769,8 +769,8 @@ class AffinExp(Expression):
                 else:
                         newstr=self.string+'['+indstr+']'
                 #check size
-                if self.size[0] == 0 or self.size[1] == 0:
-                        raise AttributeError('slice of zero-dimension')
+                if newsize[0] == 0 or newsize[1] == 0:
+                        raise IndexError('slice of zero-dimension')
                 return AffinExp(newfacs,newcons,newsize,newstr)
                 
         def __setitem__(self, key, value):

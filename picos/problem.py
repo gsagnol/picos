@@ -463,6 +463,8 @@ class Problem:
                   
                   * boundlimit TODO
                   
+                  * boundMonitor TODO
+                  
                 * Specific options available for mosek:
                 
                   * ``mosek_params = {}`` : a dictionary of
@@ -516,6 +518,7 @@ class Problem:
                                  'hotstart'       :False,
                                  'uboundlimit'    :None,
                                  'lboundlimit'    :None,
+                                 'boundMonitor'   :False,
                                  }
                                  
                                  
@@ -3352,6 +3355,14 @@ class Problem:
                         bound_cb.ub = -INFINITY
                         bound_cb.bound = self.options['lboundlimit']  
                    
+                if self.options['boundMonitor']:
+                        import cplex_callbacks
+                        import time
+                        monitor_cb = c.register_callback(cplex_callbacks.boundMonitorCallback)
+                        monitor_cb.starttime = time.time()
+                        monitor_cb.bounds = []
+                        
+                   
                 #other cplex parameters
                 for par,val in self.options['cplex_params'].iteritems():
                         try:
@@ -3611,6 +3622,8 @@ class Problem:
                 #-----------------#             
                 
                 sol = {'cplex_solution':c.solution,'status':status,'time':(tend - tstart)}
+                if self.options['boundMonitor']:
+                        sol['bounds_monitor'] = monitor_cb.bounds
                 return (primals,duals,obj,sol)
                 
         def  _gurobi_solve(self):
@@ -3848,6 +3861,7 @@ class Problem:
                 #-----------------#             
                 
                 sol = {'gurobi_model':m, 'status':status, 'time': tend - tstart}
+                
                 return (primals,duals,obj,sol)
 
         def _mosek_solve(self):

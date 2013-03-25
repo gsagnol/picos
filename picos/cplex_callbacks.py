@@ -39,7 +39,7 @@ class nbSolCallback(BranchCallback):
                         self.aborted=1
                         self.abort()
 
-class lboundCallback(NodeCallback):
+class lboundCallback(MIPInfoCallback):
         
         def __call__(self):
                 if not self.aborted:
@@ -50,7 +50,7 @@ class lboundCallback(NodeCallback):
                         self.aborted=1
                         self.abort()
               
-class uboundCallback(NodeCallback):
+class uboundCallback(MIPInfoCallback):
         
         def __call__(self):
                 if not self.aborted:
@@ -60,3 +60,10 @@ class uboundCallback(NodeCallback):
                 if self.ub < self.bound:
                         self.aborted=1
                         self.abort()
+                        
+class boundMonitorCallback(MIPInfoCallback):
+        def __call__(self):
+                v1 = self.get_incumbent_objective_value()
+                v2 = self.get_best_objective_value()
+                timeused = time.time() - self.starttime
+                self.bounds.append((timeused,min(v1,v2),max(v1,v2)))
