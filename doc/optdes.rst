@@ -844,7 +844,8 @@ The exact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
 approximate and exact D-optimal design: (MI)SOCP
 ================================================
 
-The D-optimal design problem has a convex programming formulation:
+The D-optimal design problem has a SOCP formulation involving a
+geometric mean in the objective function:
 
 .. math::
    :nowrap:   
@@ -854,7 +855,7 @@ The D-optimal design problem has a convex programming formulation:
    &\underset{\substack{\mathbf{L} \in \mathbb{R}^{m \times m}\\
                         \mathbf{w} \in \mathbb{R}^s\\
                         \forall i \in [s],\ V_i \in \mathbb{R}^{l_i \times m}}}{\mbox{maximize}}
-                      & \log \prod_{i=1}^m L_{i,i}\\
+                      & \left(\prod_{i=1}^m L_{i,i}\right)^{1/m}\\
    &\mbox{subject to} & \sum_{i=1}^s A_i V_i = L,\\
    &                  & L\ \mbox{lower triangular},\\
    &                  & \Vert V_i \Vert_F \leq \sqrt{m}\ w_i,\\
@@ -862,10 +863,12 @@ The D-optimal design problem has a convex programming formulation:
    \end{eqnarray*}
    \end{center}
 
-By introducing new SOC constraints, we can create a variable :math:`u_{01234}`
-such that :math:`u_{01234}^8 \leq \prod_{i=0}^4 L_{i,i}`. Hence, the
-D-optimal problem can be solved by second order cone programming. The example
-below allocates respectively 22.7%, 3.38%, 1.65%, 5.44%, 31.8% and 35.1%
+By introducing a new variable :math:`t` such that
+:math:`t \leq \left(\prod_{i=1}^m L_{i,i}\right)^{1/m}`, we can pass
+this problem to PICOS with the function :func:`picos.geomean() <picos.tools.geomean>`,
+which reformulates the geometric mean inequality as a set of equivalent second order cone
+constraints.
+The example below allocates respectively 22.7%, 3.38%, 1.65%, 5.44%, 31.8% and 35.1%
 to the experiments #3 to #8.
 
 .. testcode::
@@ -880,10 +883,8 @@ to the experiments #3 to #8.
         L=prob_D.add_variable('L',(m,m))
         V=[prob_D.add_variable('V['+str(i)+']',AA[i].T.size) for i in range(s)]
         w=prob_D.add_variable('w',s)
-        #additional variables to handle the product of the diagonal elements of L
-        u={}
-        for k in ['01','23','4.','0123','4...','01234']:
-                u[k] = prob_D.add_variable('u['+k+']',1)
+        #additional variable to handle the geometric mean in the objective function
+        t= prob_D.add_variable('t',1)
 
 
         #define the constraints and objective function
@@ -898,15 +899,8 @@ to the experiments #3 to #8.
         prob_D.add_list_of_constraints([abs(V[i])<(mm**0.5)*w[i]
                                         for i in range(s)],'i','[s]')
         prob_D.add_constraint(1|w<1)
-        #SOC constraints to define u['01234'] such that u['01234']**8 < L[0,0] * L[1,1] * ... * L[4,4]
-        prob_D.add_constraint(u['01']**2   <L[0,0]*L[1,1])
-        prob_D.add_constraint(u['23']**2   <L[2,2]*L[3,3])
-        prob_D.add_constraint(u['4.']**2   <L[4,4])
-        prob_D.add_constraint(u['0123']**2 <u['01']*u['23'])
-        prob_D.add_constraint(u['4...']**2 <u['4.'])
-        prob_D.add_constraint(u['01234']**2<u['0123']*u['4...'])
-
-        prob_D.set_objective('max',u['01234'])
+        prob_D.add_constraint(t<pic.geomean(pic.diag_vect(L)))
+        prob_D.set_objective('max',t)
 
         #solve the problem and display the optimal design
         print prob_D
@@ -915,17 +909,77 @@ to the experiments #3 to #8.
 
 .. testoutput::
         :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
+
+        ---------------------
+        optimization problem  (SOCP):
+        159 variables, 36 affine constraints, 146 vars in 14 SO cones
+
+        V   : list of 8 variables, (3, 5), continuous
+        L   : (5, 5), continuous
+        t   : (1, 1), continuous
+        w   : (8, 1), continuous
+
+                maximize t
+        such that
+        L = Σ_{i in [s]} A[i]*V[i]
+        L[i,j] = 0 for all (i,j) in upper triangle
+        ||V[i]|| < (m)**0.5*w[i] for all i in [s]
+        〈 |1| | w 〉 < 1.0
+        t<geomean( diag(L))
+        ---------------------
+        [...]
+        [...]
+        [ 2.27e-01]
+        [ 3.38e-02]
+        [ 1.65e-02]
+        [ 5.44e-02]
+        [ 3.18e-01]
+        [ 3.51e-01]
+
+
+We point out that until
+the version 0.1.3 of PICOS, the SOC constraints used to
+represent the geometric mean had to be added manually. For the previous example,
+a possible trick consists in creating a variable :math:`t`
+that must satisfies :math:`t^8 \leq \prod_{i=0}^4 L_{i,i}`:
+
+.. testcode::
+        
+        #remove the geometric mean inequality
+        prob_D.remove_constraint((4,))
+        #additional variables to handle the product of the diagonal elements of L
+        u={}
+        for k in ['01','23','4.','0123','4...']:
+                u[k] = prob_D.add_variable('u['+k+']',1)
+
+        #SOC constraints to define u['01234'] such that u['01234']**8 < L[0,0] * L[1,1] * ... * L[4,4]
+        prob_D.add_constraint(u['01']**2   <L[0,0]*L[1,1])
+        prob_D.add_constraint(u['23']**2   <L[2,2]*L[3,3])
+        prob_D.add_constraint(u['4.']**2   <L[4,4])
+        prob_D.add_constraint(u['0123']**2 <u['01']*u['23'])
+        prob_D.add_constraint(u['4...']**2 <u['4.'])
+        prob_D.add_constraint(t**2<u['0123']*u['4...'])
+
+        #solve the problem and display the optimal design
+        print prob_D
+        prob_D.solve(verbose=0)
+        print w
+
+.. testoutput::
+        :hide:
+        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
         
         ---------------------
         optimization problem  (SOCP):
         159 variables, 36 affine constraints, 146 vars in 14 SO cones
 
         V   : list of 8 variables, (3, 5), continuous
-        u   : dict of 6 variables, (1, 1), continuous
+        u   : dict of 5 variables, (1, 1), continuous
         L   : (5, 5), continuous
+        t   : (1, 1), continuous
         w   : (8, 1), continuous
 
-                maximize u[01234]
+                maximize t
         such that
         L = Σ_{i in [s]} A[i]*V[i]
         L[i,j] = 0 for all (i,j) in upper triangle
@@ -936,16 +990,18 @@ to the experiments #3 to #8.
         ||u[4.]||^2 < L[4,4]
         ||u[0123]||^2 < ( u[01])( u[23])
         ||u[4...]||^2 < u[4.]
-        ||u[01234]||^2 < ( u[0123])( u[4...])
+        ||t||^2 < ( u[0123])( u[4...])
         ---------------------
-        [...]
-        [...]
+        [ 1.13e-08]
+        [ 8.07e-09]
         [ 2.27e-01]
         [ 3.38e-02]
         [ 1.65e-02]
         [ 5.44e-02]
         [ 3.18e-01]
         [ 3.51e-01]
+
+
 
 As for the A-optimal problem, there is an alternative SOCP formulation
 of D-optimality :ref:`[2] <optdes_refs>`, in which integer constraints may be added.
@@ -963,10 +1019,8 @@ we obtain the following N-exact D-optimal design:
         T=prob_exact_D.add_variable('T',(s,m))
         n=prob_exact_D.add_variable('n',s,'integer')
         N = pic.new_param('N',20)
-        #additional variables to handle the product of the diagonal elements of L
-        u={}
-        for k in ['01','23','4.','0123','4...','01234']:
-                u[k] = prob_exact_D.add_variable('u['+k+']',1)
+        #additional variable to handle the geomean inequality
+        t = prob_exact_D.add_variable('t',1)
 
 
         #define the constraints and objective function
@@ -987,16 +1041,9 @@ we obtain the following N-exact D-optimal design:
 
 
         prob_exact_D.add_constraint(1|n<N)
+        prob_exact_D.add_constraint(t<pic.geomean( pic.diag_vect(L)))
 
-        #SOC constraints to define u['01234'] such that u['01234']**8 < L[0,0] * L[1,1] * ... * L[4,4]
-        prob_exact_D.add_constraint(u['01']**2   <L[0,0]*L[1,1])
-        prob_exact_D.add_constraint(u['23']**2   <L[2,2]*L[3,3])
-        prob_exact_D.add_constraint(u['4.']**2   <L[4,4])
-        prob_exact_D.add_constraint(u['0123']**2 <u['01']*u['23'])
-        prob_exact_D.add_constraint(u['4...']**2 <u['4.'])
-        prob_exact_D.add_constraint(u['01234']**2<u['0123']*u['4...'])
-
-        prob_exact_D.set_objective('max',u['01234'])
+        prob_exact_D.set_objective('max',t)
 
         #solve the problem and display the optimal design
         print prob_exact_D
@@ -1010,31 +1057,26 @@ we obtain the following N-exact D-optimal design:
         optimization problem  (MISOCP):
         199 variables, 41 affine constraints, 218 vars in 46 SO cones
 
-        V       : list of 8 variables, (3, 5), continuous
-        u       : dict of 6 variables, (1, 1), continuous
-        L       : (5, 5), continuous
-        T       : (8, 5), continuous
-        n       : (8, 1), integer
+        V   : list of 8 variables, (3, 5), continuous
+        L   : (5, 5), continuous
+        T   : (8, 5), continuous
+        n   : (8, 1), integer
+        t   : (1, 1), continuous
 
-                maximize u[01234]
+                maximize t
         such that
         L = Σ_{i in [s]} A[i]*V[i]
         L[i,j] = 0 for all (i,j) in upper triangle
         ||V[i][:,k]||^2 < ( n[i] / N)( T[i,k]) for all (i,k)
         〈 |1| | T[:,k] 〉 < 1.0 for all k
         〈 |1| | n 〉 < N
-        ||u[01]||^2 < ( L[0,0])( L[1,1])
-        ||u[23]||^2 < ( L[2,2])( L[3,3])
-        ||u[4.]||^2 < L[4,4]
-        ||u[0123]||^2 < ( u[01])( u[23])
-        ||u[4...]||^2 < u[4.]
-        ||u[01234]||^2 < ( u[0123])( u[4...])
+        t<geomean( diag(L))
         ---------------------
-        [...]
-        [...]
+        [ 0.00e+00]
+        [ 0.00e+00]
         [ 5.00e+00]
         [ 1.00e+00]
-        [...]
+        [ 0.00e+00]
         [ 1.00e+00]
         [ 6.00e+00]
         [ 7.00e+00]

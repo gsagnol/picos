@@ -14,6 +14,26 @@ PICOS: A Python Interface for Conic Optimization Solvers
 
 **News**
 
+ * 17 Apr. 13: **Picos** :ref:`0.1.3 <download>` **Released** |br|
+   Major changes:
+     * Function :func:`picos.geomean() <picos.tools.geomean>` implemented, to handle inequalities involving
+       a geometric mean and reformulate them automatically as a set of SOCP constraints.
+     * Some options were added for the function :func:`solve() <picos.Problem.solve>` ,
+       to tell CPLEX to stop the computation as soon as a given value for the
+       upper bound (or lower bound) is reached (see the options ``uboundlimit`` and ``lboundlimit``
+       documented in :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`).
+     * The time used by the solver is now stored in the dictionary
+       returned by :func:`solve() <picos.Problem.solve>`.
+     * The option ``boundMonitor`` of the function :func:`solve() <picos.Problem.solve>`
+       gives access to the values of the lower and upper bounds over time with cplex.
+       (this option is documented in :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`).
+     * The weak inequalities operators ``<=`` and ``>=`` can now be used (but strict inequalities are
+       still interpreted as weak inequalities !).
+     * Minor bugs corrected (access to the duals of fixed variables with CPLEX,
+       evaluation of constant affine expressions with a zero coefficient appearing
+       in the dict of linear terms, number of constraints is now updated in
+       :func:`remove_constraint() <picos.Problem.remove_constraint>`).
+
  * 10 Jan. 13: **Picos** :ref:`0.1.2 <download>` **Released** |br|
    bug-fix release, correcting:
      * The :func:`write_to_file() <picos.Problem.write_to_file>`
@@ -21,7 +41,7 @@ PICOS: A Python Interface for Conic Optimization Solvers
        coefficients of the lower triangular part of the constraint matrices
        instead of the upper triangle.
      * An ``IndexError`` occuring with the function
-       :func:`remove_constraint() <picos.Problem.remove_constraint>`
+       :func:`remove_constraint() <picos.Problem.remove_constraint>`.
    
    Thanks to Warren Schudy for pointing out these bugs of the previous release !
 

@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -49,7 +49,8 @@ __all__=['_retrieve_matrix',
         'ProgressBar',
         'QuadAsSocpError',
         'NotAppropriateSolverError',
-        'NonConvexError'
+        'NonConvexError',
+        'geomean'
 ]
 
 
@@ -151,6 +152,29 @@ def _bsum(lst):
         """builtin sum operator"""
         import __builtin__
         return __builtin__.sum(lst)
+        
+def geomean(exp):
+        """returns a :class:`GeoMeanExp <picos.GeoMeanExp>` object representing the geometric mean of the entries of ``exp[:]``.
+        This can be used to enter inequalities of the form ``t <= geomean(x)``.
+        Note that geometric mean inequalities are internally reformulated as a
+        set of SOC inequalities.
+        
+        ** Example: **
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('x',1)
+        >>> y = prob.add_variable('y',3)
+        >>> # the following line adds the constraint x <= (y0*y1*y2)**(1./3) in the problem:
+        >>> prob.add_constraint(x<pic.geomean(y))
+       
+        """
+        from .expression import AffinExp
+        from .expression import GeoMeanExp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return GeoMeanExp(exp)
         
 def allIdent(lst):
         if len(lst)<=1:

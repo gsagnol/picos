@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -39,6 +39,7 @@ __all__=['Expression',
         'QuadExp',
         'GeneralFun',
         'LogSumExp',
+        'GeoMeanExp',
         'Variable'
         ]
        
@@ -114,6 +115,12 @@ class Expression(object):
                         return not(val is None)
                 except Exception:
                         return False
+                        
+        def __le__(self,exp):
+                return self.__lt__(exp)
+                
+        def __ge__(self,exp):
+                return self.__gt__(exp)
                         
                 
 #----------------------------------
@@ -226,6 +233,9 @@ class AffinExp(Expression):
                         return cvx.matrix(val,self.size)
 
                 for k in self.factors:
+                        #ignore this factor if the coef is 0
+                        if not(self.factors[k]):
+                                continue
                         if ind is None:
                                 if not k.value is None:
                                         if k.vtype=='symmetric':
@@ -803,6 +813,8 @@ class AffinExp(Expression):
                                 return (-exp)<(-self)
                         else:
                                 raise Exception('not implemented')
+                elif isinstance(exp,GeoMeanExp):
+                        return exp > self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
                         exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
@@ -1434,6 +1446,100 @@ class GeneralFun(Expression):
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
 
+class GeoMeanExp(Expression):
+        """A class storing the geometric mean of a multidimensional expression.
+           It derives from :class:`Expression<picos.Expression>`.
+           
+           **Overloaded operator**
+        
+                :``>``: greater **or equal** than (the rhs must be a scalar affine expression)
+
+        """
+        def __init__(self,exp):
+                Expression.__init__(self,'geomean( '+exp.string+')')
+                self.exp = exp
+                """The affine expression to which the geomean is applied"""
+                
+        def __repr__(self):
+                return '# geometric mean: '+self.string+' #'
+         
+        def __str__(self):
+                if self.is_valued():
+                        return str(self.value[0])
+                else:
+                        return repr(self)
+
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                dim = self.exp.size[0] * self.exp.size[1]
+                return cvx.matrix(np.prod(val)**(1./dim),(1,1))
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        """the value of the geometric mean (if ``self.exp`` is valued)."""
+        
+        def __gt__(self,exp):
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('rhs of a geomean inequality must be scalar')
+                        if self.exp.size == (1,1):
+                                return self.exp > exp
+                        #construct a list of keys to index new variables with nodes of a binary tree
+                        #the new variables are added in a temporary problem Ptmp
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        m = self.exp.size[0] * self.exp.size[1]
+                        lm=[[i] for i in range(m-1,-1,-1)]
+                        K=[]
+                        depth=0
+                        u={}
+                        while len(lm)>1:
+                                depth+=1
+                                nlm=[]
+                                while lm:
+                                        i1=lm.pop()[-1]
+                                        if lm:
+                                                i2=lm.pop()[0]
+                                        else:
+                                                i2='x'
+                                        nlm.insert(0,(i2,i1))
+                                        k=str(depth)+':'+str(i1)+'-'+str(i2)
+                                        K.append(k)
+                                        u[k] = Ptmp.add_variable('u['+k+']',1)
+                                lm=nlm
+                        root=K[-1]
+                        maxd=int(K[-1].split(':')[0])
+                        Ptmp.remove_variable(u[root].name)
+                        u[root] = exp
+                        
+                        for k in K:
+                                i1=int(k.split('-')[0].split(':')[1])
+                                i2=k.split('-')[1]
+                                if i2<>'x': i2=int(i2)
+                                if k[:2]=='1:':
+                                        if i2<>'x':
+                                                Ptmp.add_constraint(u[k]**2   <self.exp[i1]*self.exp[i2])
+                                        else:
+                                                Ptmp.add_constraint(u[k]**2   <self.exp[i1]*exp)
+                                else:
+                                        d=int(k.split(':')[0])
+                                        if i2=='x' and d<maxd:
+                                                k2pot = [ki for ki in K if ki.startswith(str(d-1)+':') and int(ki.split(':')[1].split('-')[0])>=i1]
+                                                k1 = k2pot[0]
+                                                if len(k2pot)==2:
+                                                        k2 = k2pot[1]
+                                                        Ptmp.add_constraint(u[k]**2 < u[k1]*u[k2])
+                                                else:
+                                                        Ptmp.add_constraint(u[k]**2 < u[k1]*exp)
+                                        else:    
+                                                k1=[ki for ki in K if ki.startswith(str(d-1)+':'+str(i1))][0]
+                                                k2=[ki for ki in K if ki.startswith(str(d-1)+':') and ki.endswith('-'+str(i2))][0]
+                                                Ptmp.add_constraint(u[k]**2 < u[k1]*u[k2])
+                        return GeoMeanConstraint(exp,self.exp,Ptmp,exp.string + '<' + self.string)
+                                                
+                else:#constant          
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self>exp1
         
 class Variable(AffinExp):
         """This class stores a variable. It

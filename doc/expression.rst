@@ -39,3 +39,9 @@ LogSumExp
 
 .. autoclass:: picos.LogSumExp
     :members:
+
+GeoMeanExp
+==========
+
+.. autoclass:: picos.GeoMeanExp
+    :members:

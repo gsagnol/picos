@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -77,6 +77,9 @@ class Problem:
                 self.numberSDPConstraints=0
                 """number of SDP constraints"""
                 self.numberSDPVars=0
+                """number of geomean inequalities"""
+                self.numberGeomean=0
+                
                 """size of the s-vecotrized matrices involved in SDP constraints"""
                 self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
                                 'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
@@ -140,6 +143,8 @@ class Problem:
 
                 printedlis=[]
                 for vkey in self.variables.keys():
+                        if vkey.startswith('_gm'):
+                                continue
                         if '[' in vkey and ']' in vkey:
                                 lisname=vkey[:vkey.index('[')]
                                 if not lisname in printedlis:
@@ -210,6 +215,7 @@ class Problem:
                 self.numberQuadConstraints = 0
                 self.numberSDPConstraints = 0
                 self.numberLSEConstraints = 0
+                self.numberGeomean = 0
                 self.consNumbering=[]
                 self.groupsOfConstraints ={}
                 self.numberConeVars=0
@@ -461,9 +467,17 @@ class Problem:
                     than this value. The default value ``None`` means that we
                     interrupt the computation regardless of the achieved gap.
                   
-                  * boundlimit TODO
+                  * ``uboundlimit = None`` : tells CPLEX to stop as soon as an upper
+                    bound smaller than this value is found.
+                    
+                  * ``lboundlimit = None`` : tells CPLEX to stop as soon as a lower
+                    bound larger than this value is found.
                   
-                  * boundMonitor TODO
+                  * ``boundMonitor = True`` : tells CPLEX to store information about
+                    the evolution of the bounds during the solving process. At the end
+                    of the computation, a list of triples ``(time,lowerbound,upperbound)``
+                    will be provided in the field ``bounds_monitor`` of the dictionary
+                    returned by :func:`solve() <picos.Problem.solve>`.
                   
                 * Specific options available for mosek:
                 
@@ -702,7 +716,10 @@ class Problem:
                 if '[' in name and ']' in name:#list or dict of variables
                         lisname=name[:name.index('[')]
                         if lisname in self.listOfVars:
-                                del self.listOfVars[lisname] #not a complete list of vars anymore
+                                varattr = self.listOfVars[lisname]
+                                varattr['numvars'] -=1
+                                if varattr['numvars']==0:
+                                        del self.listOfVars[lisname] #empty list of vars
                 if name not in self.variables.keys():
                         raise Exception('variable does not exist. Maybe you tried to remove some item x[i] of the variable x ?')
                 self.countVar-=1
@@ -781,6 +798,27 @@ class Problem:
                             This can be useful to access the dual of this constraint.
                 :type ret: bool.
                 """
+                #SPECIAL CASE OF A GEOMETRIC MEAN INEQ
+                if isinstance(cons,GeoMeanConstraint):
+                        for ui in cons.Ptmp.variables:
+                                uiname = '_gm'+str(self.numberGeomean)+'_'+ui
+                                self.add_variable(uiname,(1,1))
+                                si = self.variables[uiname].startIndex
+                                self.variables[uiname] = cons.Ptmp.variables[ui]
+                                self.variables[uiname].startIndex = si
+                                self.variables[uiname].endIndex = si +1
+                                self.variables[uiname].name = uiname
+                                
+                        indcons = self.countCons
+                        self.add_list_of_constraints(cons.Ptmp.constraints,key=key)
+                        goc = self.groupsOfConstraints[indcons]
+                        goc[1]=cons.constring+'\n'
+                        self.numberGeomean += 1
+                        if ret:
+                                return cons
+                        else:
+                                return
+                        
                 cons.key=key
                 if not key is None:
                         self.longestkey=max(self.longestkey,len(key))
@@ -1183,7 +1221,27 @@ class Problem:
 
                 
                 """
-                if isinstance(ind,int):
+                if isinstance(ind,int): #constraint given with its "raw index"
+                        #<-INTEST TODO HERE (change plus into minus -- check !!!
+                        cons = self.constraints[ind]
+                        if cons.typeOfConstraint[:3]=='lin':
+                                self.numberAffConstraints-=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                        elif cons.typeOfConstraint[2:]=='cone':
+                                self.numberConeVars-=((cons.Exp1.size[0]*cons.Exp1.size[1])+1)
+                                self.numberConeConstraints-=1
+                                if cons.typeOfConstraint[:2]=='RS':
+                                        self.numberConeVars-=1
+                        elif cons.typeOfConstraint=='lse':
+                                self.numberLSEVars-=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                                self.numberLSEConstraints-=1
+                        elif cons.typeOfConstraint=='quad':
+                                self.numberQuadConstraints-=1
+                                self.numberQuadNNZ-=cons.Exp1.nnz()
+                        elif cons.typeOfConstraint[:3]=='sdp':
+                                self.numberSDPConstraints-=1
+                                self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                        #->
+                
                         del self.constraints[ind]
                         self.countCons -=1
                         if self.last_updated_constraint > 0:
@@ -1224,11 +1282,42 @@ class Problem:
                         lsind=lsind[k]
                 #now, lsind must be the index or list of indices to remove
                 if isinstance(lsind,list) and lsind in self.consNumbering: #a list of constraints
+                        start=lsind[0]
+                        #is it a list of soc constraints representing a geomean ineq ?
+                        if '<geomean(' in self.groupsOfConstraints[start][1]:
+                                self.numberGeomean -= 1
+                                fac=self.constraints[start].Exp1.factors
+                                gmvar = [v.name for v in fac.keys() if v.name.startswith('_gm')]
+                                if len(gmvar)!=1:
+                                        raise Exception('it was expected that the lhs of this constraint'+
+                                                        'depends on exactly one temporary _gm variable')
+                                geomeanindex=gmvar[0][3:].split('_')[0]
+                                temporary_vars_to_del = [v for v in self.variables if v.startswith('_gm'+geomeanindex)]
+                                for v in temporary_vars_to_del:
+                                        self.remove_variable(v)
                         for ind in reversed(lsind):
+                                #<-INTEST TODO HERE (change plus into minus -- check !!!
+                                cons = self.constraints[ind]
+                                if cons.typeOfConstraint[:3]=='lin':
+                                        self.numberAffConstraints-=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                                elif cons.typeOfConstraint[2:]=='cone':
+                                        self.numberConeVars-=((cons.Exp1.size[0]*cons.Exp1.size[1])+1)
+                                        self.numberConeConstraints-=1
+                                        if cons.typeOfConstraint[:2]=='RS':
+                                                self.numberConeVars-=1
+                                elif cons.typeOfConstraint=='lse':
+                                        self.numberLSEVars-=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                                        self.numberLSEConstraints-=1
+                                elif cons.typeOfConstraint=='quad':
+                                        self.numberQuadConstraints-=1
+                                        self.numberQuadNNZ-=cons.Exp1.nnz()
+                                elif cons.typeOfConstraint[:3]=='sdp':
+                                        self.numberSDPConstraints-=1
+                                        self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                                #->
                                 del self.constraints[ind]
                         self.countCons -= len(lsind)
                         self.consNumbering.remove(lsind)
-                        start=lsind[0]
                         self.consNumbering=offset_in_lil(self.consNumbering,len(lsind),start)
                         #offset in subsequent goc
                         del self.groupsOfConstraints[start]
@@ -1535,10 +1624,10 @@ class Problem:
                         print('adding constraints...')
                         print 
                 if self.options['verbose']>1:
-                        limitbar= (self.numberAffConstraints) #+ TODO
-                                   #self.numberQuadConstraints +
-                                   #len(newcons) -
-                                   #self.last_updated_constraint)
+                        limitbar= (self.numberAffConstraints +
+                                   self.numberQuadConstraints +
+                                   len(newcons) -
+                                   self.last_updated_constraint)
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                 
@@ -2835,8 +2924,9 @@ class Problem:
                                   See the list of available options
                                   in the doc of 
                                   :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`
-                :returns: A dictionary **sol** which contains the information
-                            returned by the solver.
+                :returns: A dictionary which contains the objective value of the problem,
+                          the time used by the solver, the status of the solver, and an object
+                          which depends on the solver and contains information about the solving process.
                 
                 """
                 if options is None: options={}
@@ -3486,9 +3576,9 @@ class Problem:
                                                                                 boundsj=[b0 for k0 in range(len(self.constraints))
                                                                                         for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
                                                                                         if j0==j]
-                                                                        if '=' in boundsj:
-                                                                                dual_values.insert(i,0.) #dual will be set later, only for the equality case
-                                                                                continue
+                                                                                if '=' in boundsj:
+                                                                                        dual_values.insert(i,0.) #dual will be set later, only for the equality case
+                                                                                        continue
                                                                         else: #equality
                                                                                 seen_bounded_vars.append(j)
                                                                                 du=c.solution.get_reduced_costs(j)/v
@@ -3553,9 +3643,9 @@ class Problem:
                                                                                 boundsj=[b0 for k0 in range(len(self.constraints))
                                                                                         for (i0,j0,b0,v0) in self.cplex_boundcons[k0]
                                                                                         if j0==j]
-                                                                        if '=' in boundsj:
-                                                                                dual_values[i] = 0. #dual will be set later, only for the equality case
-                                                                                continue
+                                                                                if '=' in boundsj:
+                                                                                        dual_values[i] = 0. #dual will be set later, only for the equality case
+                                                                                        continue
                                                                         else: #equality
                                                                                 seen_bounded_vars.append(j)
                                                                                 du=c.solution.get_reduced_costs(j)/v
@@ -3637,8 +3727,7 @@ class Problem:
                 
                 if self.type in ('unknown type','GP','SDP','ConeP','Mixed (SDP+quad)'):
                         raise NotAppropriateSolverError("'gurobi' cannot solve problems of type {0}".format(self.type))
-                #TODO qp,socp
-                
+                                
                 #----------------------------#
                 #  create the gurobi instance #
                 #----------------------------#
@@ -3650,7 +3739,7 @@ class Problem:
                 if m is None:
                         raise ValueError('a gurobi instance should have been created before')
                 
-                #TODO options
+                
                 if not self.options['timelimit'] is None:
                         m.setParam('TimeLimit',self.options['timelimit'])
                 if not self.options['treememory'] is None:

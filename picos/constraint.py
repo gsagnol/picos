@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint']
+__all__=['Constraint','GeoMeanConstraint']
 
 class Constraint:
         """A class for describing a constraint.
@@ -242,10 +242,6 @@ class Constraint:
         """
 
         def slack_var(self):
-                """returns the slack of the constraint
-                (For an inequality of the type ``lhs<rhs``,
-                the slack is ``rhs-lhs``, and for ``lhs>rhs``
-                the slack is ``lhs-rhs``)."""
                 if self.typeOfConstraint=='lse':
                         from .tools import lse
                         return -lse(self.Exp1).eval()
@@ -271,5 +267,31 @@ class Constraint:
         slack=property(slack_var,set_slack,del_slack)
         """Value of the slack variable associated to this constraint
            (should be nonnegative/zero if the inequality/equality
-           is satisfied)"""
+           is satisfied: for an inequality of the type ``lhs<rhs``,
+           the slack is ``rhs-lhs``, and for ``lhs>rhs``
+           the slack is ``lhs-rhs``)
+           """
         
+class GeoMeanConstraint:
+        """ A temporary object used to pass geometric mean inequalities"""
+        def __init__(self,expaff,expgeo,Ptmp,constring):
+                self.expaff = expaff
+                self.expgeo = expgeo
+                self.Ptmp = Ptmp
+                self.constring=constring
+                
+        def __repr__(self):
+                return '# geometric mean ineq : ' + self.constring + '#'
+        
+        def slack_var(self):
+                return geomean(self.expgeo).value-self.expaff.value
+
+        def set_slack(self,value):
+                raise AttributeError('slack is not writable')
+        
+        def del_slack(self):
+                raise AttributeError('slack is not writable')
+        
+        slack=property(slack_var,set_slack,del_slack)
+        """value of the slack of the geometric mean inequality constraint
+        (for ``t<geomean(x)``, returns the value of ``geomean(x)-t``)."""

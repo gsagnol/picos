@@ -513,6 +513,49 @@ A few examples:
   >>> 1 < (t-1)*(x[2]+x[3])                                                             #1 is understood as the squared norm of [1]
   # (1x1)-Rotated SOC constraint: 1.0 < ( t -1.0)( x[2] + x[3]) #
 
+Inequalities involving geometric means
+--------------------------------------
+
+It is possible to enter an inequality of the form
+
+.. math::
+   t \leq \prod_{i=1}^n x_i^{1/n}
+
+in PICOS, where :math:`t`
+is a scalar affine expression and :math:`x` is an affine expression
+of dimension :math:`n` (possibly a matrix, in which case
+:math:`x_i` is counted in column major order).
+This inequality is internally converted to an equivalent set of
+second order cone inequalities, by using standard techniques
+(cf. e.g. :ref:`[1] <tuto_refs>`).
+
+Many convex constraints can be formulated using inequalities that involve
+a geometric mean. For example, :math:`t \leq x_1^{2/3}` is equivalent
+to :math:`t \leq t^{1/4} x_1^{1/4} x_1^{1/4}`, which can be entered in PICOS
+thanks to the function :func:`picos.geomean() <picos.tools.geomean>` :
+
+  >>> t < pic.geomean(t //x[1] //x[1] //1)
+  # geometric mean ineq : t<geomean( [t;x[1];x[1];1.0])#
+
+Inequalities involving geometric means are stored in a temporary object
+of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>`,
+which can be passed to a problem with :func:`add_constraint() <picos.Problem.add_constraint>`:
+
+  >>> geom_ineq = prob.add_constraint(t<pic.geomean(Y[:6]), ret=True)
+
+When the option ``ret = True`` is used to pass an inequality with a geometric mean,
+the object of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>` is returned.
+This object has an attribute ``Ptmp`` which contains all the SOC inequalities that
+are used internally to represent the geometric mean:
+
+  >>> geom_ineq.Ptmp.constraints  #doctest: +NORMALIZE_WHITESPACE
+  [# (1x1)-Rotated SOC constraint: ||u[1:0-1]||^2 < ( Y[:6][0])( Y[:6][1]) #,
+   # (1x1)-Rotated SOC constraint: ||u[1:2-3]||^2 < ( Y[:6][2])( Y[:6][3]) #,
+   # (1x1)-Rotated SOC constraint: ||u[1:4-5]||^2 < ( Y[:6][4])( Y[:6][5]) #,
+   # (1x1)-Rotated SOC constraint: ||u[2:0-3]||^2 < ( u[1:0-1])( u[1:2-3]) #,
+   # (1x1)-Rotated SOC constraint: ||u[2:4-x]||^2 < ( u[1:4-5])( t) #,
+   # (1x1)-Rotated SOC constraint: ||t||^2 < ( u[2:0-3])( u[2:4-x]) #]
+
 Semidefinite Constraints
 -------------------------
 
@@ -920,3 +963,14 @@ return**
         * The symmetric positive definite matrix :math:`X` for the constraint
 
                  :math:`\sum_{i=1}^n x_i M_i \succeq M_0`.
+
+.. _tuto_refs:
+
+References
+==========
+
+        1. "`Applications of second-order cone programming`",
+           M.S. Lobo, L. Vandenberghe, S. Boyd and H. Lebret,
+           *Linear Algebra and its Applications*,
+           284, p. *193-228*, 1998.
+
