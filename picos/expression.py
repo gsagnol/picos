@@ -39,7 +39,9 @@ __all__=['Expression',
         'QuadExp',
         'GeneralFun',
         'LogSumExp',
+        '_ConvexExp',
         'GeoMeanExp',
+        'NormP_Exp',
         'Variable'
         ]
        
@@ -815,6 +817,8 @@ class AffinExp(Expression):
                                 raise Exception('not implemented')
                 elif isinstance(exp,GeoMeanExp):
                         return exp > self
+                elif isinstance(exp,NormP_Exp):
+                        return exp > self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
                         exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
@@ -833,6 +837,8 @@ class AffinExp(Expression):
                                 return (selfone>exp)    
                         return Constraint('lin>',None,self,exp)
                 elif isinstance(exp,QuadExp):
+                        return exp<self
+                elif isinstance(exp,NormP_Exp):
                         return exp<self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
@@ -1446,7 +1452,24 @@ class GeneralFun(Expression):
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
 
-class GeoMeanExp(Expression):
+class _ConvexExp(Expression):
+        """A parent class for all convex expressions which can be handled in picos"""
+        def __init__(self,string,expstring):
+                Expression.__init__(self,string)
+                self.expstring = expstring
+                
+        def __repr__(self):
+                return '# '+self.expstring+': '+self.string+' #'
+         
+        def __str__(self):
+                if self.is_valued():
+                        return str(self.value[0])
+                else:
+                        return repr(self)
+
+        
+        
+class GeoMeanExp(_ConvexExp):
         """A class storing the geometric mean of a multidimensional expression.
            It derives from :class:`Expression<picos.Expression>`.
            
@@ -1455,32 +1478,23 @@ class GeoMeanExp(Expression):
                 :``>``: greater **or equal** than (the rhs must be a scalar affine expression)
 
         """
+        
         def __init__(self,exp):
-                Expression.__init__(self,'geomean( '+exp.string+')')
+                _ConvexExp.__init__(self,'geomean( '+exp.string+')','geometric mean')
                 self.exp = exp
                 """The affine expression to which the geomean is applied"""
-                
-        def __repr__(self):
-                return '# geometric mean: '+self.string+' #'
-         
-        def __str__(self):
-                if self.is_valued():
-                        return str(self.value[0])
-                else:
-                        return repr(self)
-
+        
         def eval(self,ind=None):
                 val=self.exp.eval(ind)
                 dim = self.exp.size[0] * self.exp.size[1]
                 return cvx.matrix(np.prod(val)**(1./dim),(1,1))
-                
+        
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
-        """the value of the geometric mean (if ``self.exp`` is valued)."""
         
         def __gt__(self,exp):
                 if isinstance(exp,AffinExp):
                         if exp.size <> (1,1):
-                                raise Exception('rhs of a geomean inequality must be scalar')
+                                raise Exception('upper bound of a geomean must be scalar')
                         if self.exp.size == (1,1):
                                 return self.exp > exp
                         #construct a list of keys to index new variables with nodes of a binary tree
@@ -1540,7 +1554,154 @@ class GeoMeanExp(Expression):
                         term,termString=_retrieve_matrix(exp,(1,1))
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>exp1
+
+class NormP_Exp(_ConvexExp):
+        """A class storing the p-norm of a multidimensional expression.
+           It derives from :class:`Expression<picos.Expression>`.
+           Use the function :func:`picos.norm() <picos.tools.norm>` to create a instance of this class.
+           
+           Generalized norms are also defined for :math:`p<1`, by using the usual formula
+           :math:`\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
+           is concave (for :math:`p<1`) over the set of vectors with nonnegative coordinates.
+           When a constraint of the form :math:`\operatorname{norm}(x,p) > t` with :math:`p\geq 1` 
+           is entered, PICOS implicitely assume
+           that :math:`x` is a nonnegative vector.
+           
+           
         
+           
+           **Overloaded operator**
+        
+                :``<``: less **or equal** than (the rhs must be a scalar affine expression, AND
+                        p must be greater or equal than 1)
+                :``>``: less **or equal** than (the rhs must be a scalar affine expression, AND
+                        p must be less or equal than 1)
+                
+
+        """
+        
+        def __init__(self,exp,alpha,beta=1):
+                pstr = str(alpha)
+                if beta>1:
+                        pstr+='/'+str(beta)
+                p=float(alpha)/float(beta)
+                if p>=1:
+                        _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','p-norm expression')
+                else:
+                        _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','generalized p-norm expression')
+                self.exp = exp
+                """The affine expression to which the p-norm is applied"""
+                
+                self.numerator = alpha
+                """numerator of p"""
+                
+                self.denominator= beta
+                """denominator of p"""
+                
+        
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                p = float(self.numerator)/float(self.denominator)
+                return np.linalg.norm([vi for vi in val],p)
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        
+        def __lt__(self,exp):
+                if float(self.numerator)/self.denominator < 1:
+                        raise Exception('<= operator can be used only when the function is convex (p>=1)')
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('upper bound of a norm must be scalar')
+                        if self.exp.size == (1,1):
+                                return abs(self.exp) < exp
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        m = self.exp.size[0]*self.exp.size[1]
+                        v = Ptmp.add_variable('v',m)
+                        x = Ptmp.add_variable('x',m)
+                        
+                        amb = self.numerator - self.denominator
+                        b = self.denominator
+                        oneamb = '|1|('+str(amb)+',1)'
+                        oneb = '|1|('+str(b)+',1)'
+                        for i in range(m):
+                                if amb>0:
+                                        if b==1:
+                                                vec = (v[i])//(exp*oneamb)
+                                        else:
+                                                vec = (v[i]*oneb)//(exp*oneamb)
+                                else:
+                                        if b==1:
+                                                vec = v[i]
+                                        else:
+                                                vec = (v[i]*oneb)
+                                Ptmp.add_constraint(abs(self.exp[i]) < x[i])
+                                Ptmp.add_constraint(x[i] < geomean(vec))
+                                
+                        Ptmp.add_constraint((1|v)<exp)
+                        return NormP_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '<' + exp.string)
+                                        
+                        
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self<exp1
+                    
+        def __gt__(self,exp):
+                p = float(self.numerator)/self.denominator
+                if p > 1 or p==0:
+                        raise Exception('>= operator can be used only when the function is concave (p<=1, p<>0)')
+                
+                if isinstance(exp,AffinExp):
+                        from .problem import Problem
+                        if exp.size <> (1,1):
+                                raise Exception('lower bound of a generalized p-norm must be scalar')
+                        Ptmp = Problem()
+                        m = self.exp.size[0]*self.exp.size[1]
+                        if p == 1 :
+                                Ptmp.add_constraint(self.exp>0)
+                                Ptmp.add_constraint((1|self.exp) > exp)
+                        elif p>=0:
+                                v = Ptmp.add_variable('v',m)
+                                
+                                bma = -(self.numerator - self.denominator)
+                                a = self.numerator
+                                onebma = '|1|('+str(bma)+',1)'
+                                onea = '|1|('+str(a)+',1)'
+                                for i in range(m):
+                                        if a==1:
+                                                vec = (self.exp[i])//(exp*onebma)
+                                        else:
+                                                vec = (self.exp[i]*onea)//(exp*onebma)
+                                        
+                                        Ptmp.add_constraint(v[i] < geomean(vec))
+                                Ptmp.add_constraint( exp < (1|v) )
+                        else:
+                                v = Ptmp.add_variable('v',m)
+                                
+                                b = abs(self.denominator)
+                                a = abs(self.numerator)
+                                oneb = '|1|('+str(b)+',1)'
+                                onea = '|1|('+str(a)+',1)'
+                                for i in range(m):
+                                        if a==1 and b==1:
+                                                vec = (self.exp[i])//(v[i])
+                                        elif a>1 and b==1:
+                                                vec = (self.exp[i]*onea)//(v[i])
+                                        elif a==1 and b>1:
+                                                vec = (self.exp[i])//(v[i]*oneb)
+                                        else:
+                                                vec = (self.exp[i]*onea)//(v[i]*oneb)
+                                                                                
+                                        Ptmp.add_constraint( exp < geomean(vec))
+                                Ptmp.add_constraint( (1|v) <exp )
+                        return NormP_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '>' + exp.string)
+                          
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self>exp1
+                        
 class Variable(AffinExp):
         """This class stores a variable. It
         derives from :class:`AffinExp<picos.AffinExp>`.
@@ -1642,7 +1803,7 @@ class Variable(AffinExp):
         def del_var_value(self):
                 var._value = None
                        
-        value = property(eval,set_value,del_var_value,"value of the affine expression")
+        value = property(eval,set_value,del_var_value,"value of the variable")
         """value of the variable. The value of a variable is
                 defined in the following two situations:
                 

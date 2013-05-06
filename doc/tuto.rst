@@ -895,7 +895,7 @@ where
           :math:`A^l` is a matrix of size :math:`n^l \times n`;
 
         * :math:`\big\{M_k\big\}_{k=0,\ldots,n}` are :math:`m \times m` symmetric
-          matrices (:math:`M_k \in :math:`\mathbb{S}_m`).
+          matrices (:math:`M_k \in \mathbb{S}_m`).
 
 Its dual problem can be written as:
 

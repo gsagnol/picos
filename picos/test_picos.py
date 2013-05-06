@@ -287,7 +287,7 @@ prob_SDP_c_dual.set_objective('min',1|mu)
 
 prob_SDP_A=pic.Problem()
 AA=[cvx.sparse(a,tc='d').T for a in A]
-s=len(AA)
+#s=len(AA)
 AA=pic.new_param('A',AA)
 cc=pic.new_param('c',c)
 X=prob_SDP_A.add_variable('X',(c.size[0],c.size[0]),vtype='symmetric')
@@ -592,10 +592,11 @@ bim.set_objective('max',x.T*(AA+BB)*y-alpha-beta)
 avs=pic.tools.available_solvers()
 
 def LP1Test(solver_to_test):
+        print 'LP1',solver_to_test
         #1st test: c optimality single response
         primal=prob_LP_c.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         
@@ -629,10 +630,11 @@ def LP1Test(solver_to_test):
         return (True,primal.status)
         
 def LP2Test(solver_to_test):
+        print 'LP2',solver_to_test
         #1st test: LP in standard form
         primal=lp.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         
@@ -667,10 +669,11 @@ def LP2Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP1Test(solver_to_test):
+        print 'SOCP1',solver_to_test
         #first test (A optimality)
         primal=prob_multiresponse_A.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         
@@ -702,10 +705,11 @@ def SOCP1Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP2Test(solver_to_test):        
+        print 'SOCP2',solver_to_test
         #2d test (socp in standard form)
         primal=socp.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
                 
@@ -739,11 +743,12 @@ def SOCP2Test(solver_to_test):
                 return (False,'not dual optimal')
         return (True,primal.status)
 
-def SOCP3Test(solver_to_test):        
+def SOCP3Test(solver_to_test):    
+        print 'SOCP3',solver_to_test
         #3d test (socp with rotated cones)
         primal=prob_multiresponse_multiconstraints.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         
@@ -782,9 +787,10 @@ def SOCP3Test(solver_to_test):
         return (True,primal.status)        
 
 def SDPTest(solver_to_test):
+        print 'SDP',solver_to_test
         primal=prob_SDP_c.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         
@@ -801,20 +807,27 @@ def SDPTest(solver_to_test):
         muvar=prob_SDP_c_dual.get_variable('mu')
         try:
                 mu=[cs.dual[0] for cs in primal.constraints[:8]]
+                Z=primal.constraints[8].dual
         except TypeError:
+                return (False,'no dual computed')
+        if Z is None:
                 return (False,'no dual computed')
                 
         muvar.value=mu
         if not(prob_SDP_c_dual.check_current_value_feasibility()):
+                return (False,'not dual feasible')
+        S = (prob_SDP_c_dual.constraints[0].Exp1-prob_SDP_c_dual.constraints[0].Exp2)
+        if (abs(Z-S).value[0]/abs(S).value[0])>1e-5:
                 return (False,'not dual feasible')
         if abs(prob_SDP_c_dual.obj_value()-obj)/abs(obj)>1e-5:
                 return (False,'not dual optimal')
         return (True,primal.status)
 
 def CONEPTest(solver_to_test):
+        print 'CONEP',solver_to_test
         primal=coneP.copy()
         try:
-                primal.solve(solver=solver_to_test,tol=1e-7,timelimit=1)
+                primal.solve(solver=solver_to_test,tol=1e-7,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
         if not(primal.check_current_value_feasibility()):
@@ -842,6 +855,9 @@ def CONEPTest(solver_to_test):
         except TypeError:
                 return (False,'no dual computed')
         
+        if X is None:
+                return (False,'no dual computed')
+        
         muvar.value=mu
         zvar.value =z
         Xvar.value =X
@@ -857,7 +873,7 @@ def CONEPTest(solver_to_test):
 def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6):
         primal2=primal.copy()
         try:
-                primal2.solve(solver=solver_to_test)
+                primal2.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
 
@@ -877,32 +893,40 @@ def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6):
         return (True,primal2.status)
                 
 def QCQPTest(solver_to_test):
+        print 'QCQP',solver_to_test
         return testOnlyPrimal(solver_to_test,qcqp,
                                 -12.433985877219854)
         
 def MIXED_SOCP_QPTest(solver_to_test):
+        print 'MIXED SOCP QP',solver_to_test
         return testOnlyPrimal(solver_to_test,soqcqp,
                                 -6.8780810803741055)
         
 def MIQCQPTest(solver_to_test):
+        print 'MIQCQP',solver_to_test
         return testOnlyPrimal(solver_to_test,miqcqp,
                                 -10.21427246841899,tol=1e-4)
          
 def GPTest(solver_to_test):
+        print 'GP',solver_to_test
         return testOnlyPrimal(solver_to_test,gp,
                                 1.0397207708399179)
 def MISOCPTest(solver_to_test):
+        print 'MISOCP',solver_to_test
         return testOnlyPrimal(solver_to_test,prob_exact_c,
                                 8.601831095537415,tol=1e-4)
 
 def MIPTest(solver_to_test):
+        print 'MIP',solver_to_test
         return testOnlyPrimal(solver_to_test,prob_exact_single_c,
                                 5.48076923076923,tol=1e-4)
 def CONEQCPTest(solver_to_test):
+        print 'CONEQCP',solver_to_test
         return testOnlyPrimal(solver_to_test,coneQP,
                 1.1541072108276682)
 
 def NON_CONVEX_QPTest(solver_to_test):
+        print 'NONCONVEX QP',solver_to_test
         return testOnlyPrimal(solver_to_test,bim,0.)
                 
 #tests with cvxopt
@@ -915,6 +939,7 @@ conic_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SDP','coneP']
 
 results={}
 for solver in avs:
+        #if solver == 'smcp':continue#TODO TMP
         results[solver]={}
         for pclas in prob_classes:
                 results[solver][pclas]=eval(pclas.upper()+'Test')(solver)
@@ -936,7 +961,9 @@ print
 linesep='+---------------+'+'----------+'*len(avs)
 emptyln='|               |'+'          |'*len(avs)
 header= '| problem class |'
-for solver in avs: header+='{0:^10}|'.format(solver)
+for solver in avs:
+        #if solver == 'smcp':continue#TODO TMP
+        header+='{0:^10}|'.format(solver)
 
 
 print linesep
@@ -948,6 +975,7 @@ print linesep
 for pclas in prob_classes:
         clasln='|{0:^15}|'.format(pclas)
         for solver in avs:
+                #if solver == 'smcp':continue#TODO TMP
                 if results[solver][pclas][0]:
                         if pclas in conic_classes:
                                 clasln+='    OK*   |'

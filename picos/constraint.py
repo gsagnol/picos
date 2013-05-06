@@ -32,9 +32,9 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','GeoMeanConstraint']
+__all__=['Constraint','_Convex_Constraint','GeoMeanConstraint','NormP_Constraint']
 
-class Constraint:
+class Constraint(object):
         """A class for describing a constraint.
         """
 
@@ -69,6 +69,12 @@ class Constraint:
                 self.Id=Id
                 """An integer identifier"""
                 self.dualVariable=dualVariable
+                self.semidefVar = None
+                """for a constraint of the form X>>0, stores the semidef variable"""
+                self.exp1ConeVar = None
+                self.exp2ConeVar = None
+                self.exp3ConeVar = None#TODO
+                """for a constraint of the form ||x||<u or ||x||^2<u v, stores x, u and v"""
                 self.key=None
                 """A string to give a key name to the constraint"""
                 self.myconstring = None #workaround to redefine string representation
@@ -85,6 +91,40 @@ class Constraint:
                                 if Exp3.size<>(1,1):
                                         raise NameError(
                                         'expression on the rhs should be scalar')
+                        #are the lhs and or rhs obtained by a simple scaling of the variables ?
+                        fac1 = self.Exp1.factors
+                        simple_exp = not(self.Exp1.constant)
+                        conevars = []
+                        if simple_exp:
+                                for var in fac1:
+                                        mat = fac1[var]
+                                        if ( sorted(list(mat.I))== range(mat.size[0]) and # 1 var per row
+                                                len(set(mat.J)) == mat.size[0] and        # 1 row per var
+                                                var.vtype<>'symmetric'):                  # to exclude semidef var
+                                                for j,v in zip(mat.J,mat.V):
+                                                        conevars.append((var,j,v))
+                                        else:
+                                                simple_exp=False
+                                                break
+                        if simple_exp:
+                                self.exp1ConeVar = conevars
+                        #same thing for Exp2 (but simpler since Exp2 is scalar)
+                        fac2 = self.Exp2.factors
+                        if not(self.Exp2.constant) and len(fac2)==1:
+                                var = fac2.keys()[0]
+                                mat = fac2[var]
+                                if len(mat.J)==1 and var.vtype<>'symmetric':
+                                        self.exp2ConeVar = (var,mat.J[0],mat.V[0])
+                        #same thing for Exp3
+                        if self.Exp3 is not None:
+                                fac3 = self.Exp3.factors
+                                if not(self.Exp3.constant) and len(fac3)==1:
+                                        var = fac3.keys()[0]
+                                        mat = fac3[var]
+                                        if len(mat.J)==1 and var.vtype<>'symmetric':
+                                                self.exp3ConeVar = (var,mat.J[0],mat.V[0])
+                        
+                        
                 if typeOfConstraint=='lse':
                         if not (Exp2==0 or Exp2.is0()):
                                 raise NameError('lhs must be 0')
@@ -98,6 +138,30 @@ class Constraint:
                                 raise NameError('incoherent lhs and rhs')
                         if Exp1.size[0]<>Exp1.size[1]:
                                 raise NameError('lhs and rhs should be square')
+                        #is it a simple constraint of the form X>>0 ?
+                        fac1 = self.Exp1.factors
+                        if len(fac1)==1:
+                                var = fac1.keys()[0]
+                                mat = fac1[var]
+                                if var.vtype=='symmetric':
+                                        idty = _svecm1_identity('symmetric',var.size)
+                                if ( not(self.Exp1.constant) and
+                                     self.Exp2.is0() and
+                                     self.typeOfConstraint[3]=='>' and
+                                     var.vtype=='symmetric' and
+                                     list(mat.I) == list(idty.I) and
+                                     list(mat.J) == list(idty.J) and
+                                     list(mat.V) == list(idty.V)
+                                     ):
+                                        self.semidefVar = var
+                        fac2 = self.Exp1.factors
+                        if len(fac2)==1:
+                                var = fac2.keys()[0]
+                                if ( not(self.Exp2.constant) and
+                                     self.Exp1.is0() and
+                                     self.typeOfConstraint[3]=='<' and
+                                     var.vtype=='symmetric'):
+                                        self.semidefVar = var
 
         def __str__(self):
                 if not(self.myfullconstring is None):
@@ -259,10 +323,10 @@ class Constraint:
                         return -(self.Exp1.eval())
 
         def set_slack(self,value):
-                raise AttributeError('slack is not writable')
+                raise ValueError('slack is not writable')
         
         def del_slack(self):
-                raise AttributeError('slack is not writable')
+                raise ValueError('slack is not writable')
         
         slack=property(slack_var,set_slack,del_slack)
         """Value of the slack variable associated to this constraint
@@ -271,27 +335,56 @@ class Constraint:
            the slack is ``rhs-lhs``, and for ``lhs>rhs``
            the slack is ``lhs-rhs``)
            """
-        
-class GeoMeanConstraint:
-        """ A temporary object used to pass geometric mean inequalities"""
+
+class _Convex_Constraint(Constraint):
+        """A parent class for all (nonstandard) convex constraints handled by PICOS"""
+        def __init__(self,Ptmp,constring,constypestr):
+                self.Ptmp = Ptmp
+                self.myconstring=constring
+                self.constypestr=constypestr
+           
+        def __repr__(self):
+                return '# '+self.constypestr+' : ' + self.constring() + '#'   
+           
+           
+class GeoMeanConstraint(_Convex_Constraint):
+        """ A temporary object used to pass geometric mean inequalities.
+        This class derives from :class:`Constraint <picos.Constraint>`.
+        """
         def __init__(self,expaff,expgeo,Ptmp,constring):
                 self.expaff = expaff
                 self.expgeo = expgeo
-                self.Ptmp = Ptmp
-                self.constring=constring
-                
-        def __repr__(self):
-                return '# geometric mean ineq : ' + self.constring + '#'
+                _Convex_Constraint.__init__(self,Ptmp,constring,'geometric mean ineq')
+                self.prefix='_geo'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
                 return geomean(self.expgeo).value-self.expaff.value
-
-        def set_slack(self,value):
-                raise AttributeError('slack is not writable')
+                
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+                
+class NormP_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass p-norm inequalities
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """
+        def __init__(self,expaff,expnorm,alpha,beta,Ptmp,constring):
+                self.expaff = expaff
+                self.expnorm = expnorm
+                self.numerator=alpha
+                self.denominator=beta
+                p = float(alpha)/float(beta)
+                if p>1 or (p==1 and '<' in constring):
+                        _Convex_Constraint.__init__(self,Ptmp,constring,'p-norm ineq')
+                else:
+                        _Convex_Constraint.__init__(self,Ptmp,constring,'generalized p-norm ineq')
+                self.prefix='_nop'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
-        def del_slack(self):
-                raise AttributeError('slack is not writable')
-        
-        slack=property(slack_var,set_slack,del_slack)
-        """value of the slack of the geometric mean inequality constraint
-        (for ``t<geomean(x)``, returns the value of ``geomean(x)-t``)."""
+        def slack_var(self):
+                p = float(self.numerator) / self.denominator
+                if p>1 or (p==1 and '<' in self.myconstring):
+                        return self.expaff.value-norm(self.expnorm,self.numerator,self.denominator).value
+                else:
+                        return -(self.expaff.value-norm(self.expnorm,self.numerator,self.denominator).value)
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

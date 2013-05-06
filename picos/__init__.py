@@ -28,6 +28,6 @@
 from problem import *
 from expression import *
 from constraint import *
-from tools import sum,lse,new_param,diag,diag_vect,geomean,QuadAsSocpError,NotAppropriateSolverError,NonConvexError
+from tools import sum,lse,new_param,diag,diag_vect,geomean,norm,QuadAsSocpError,NotAppropriateSolverError,NonConvexError
 
 __all__=['tools','constraint','expression','problem']

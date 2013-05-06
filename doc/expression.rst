@@ -45,3 +45,9 @@ GeoMeanExp
 
 .. autoclass:: picos.GeoMeanExp
     :members:
+
+NormP_Exp
+=========
+
+.. autoclass:: picos.NormP_Exp
+    :members:

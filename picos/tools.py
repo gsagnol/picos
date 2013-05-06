@@ -37,6 +37,7 @@ __all__=['_retrieve_matrix',
         '_blocdiag',
         'svec',
         'svecm1',
+        'ltrim1',
         'sum',
         '_bsum',
         'diag',
@@ -50,7 +51,11 @@ __all__=['_retrieve_matrix',
         'QuadAsSocpError',
         'NotAppropriateSolverError',
         'NonConvexError',
-        'geomean'
+        'geomean',
+        '_flatten',
+        '_remove_in_lil',
+        'norm',
+        '_read_sdpa'
 ]
 
 
@@ -175,6 +180,51 @@ def geomean(exp):
                 mat,name=_retrieve_matrix(exp)
                 exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
         return GeoMeanExp(exp)
+        
+def norm(exp,num=2,denom=1):
+        """returns a :class:`NormP_Exp <picos.NormP_Exp>` object representing the (generalized-) p-norm of the entries
+        of ``exp[:]``.
+        This can be used to enter constraints of the form :math:`\Vert x \Vert_p \leq t` with :math:`p\geq1`.
+        Generalized norms are also defined for :math:`p<1`, by using the usual formula
+        :math:`\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
+        is concave (for :math:`p<1`) over the set of vectors with nonnegative coordinates.
+        When a constraint of the form :math:`\operatorname{norm}(x,p) > t` with :math:`p\leq1` is entered,
+        PICOS implicitely assumes that :math:`x` is a nonnegative vector.
+        
+        The exponent :math:`p` of the norm must be specified either by
+        a couple numerator (2d argument) / denominator (3d arguments),
+        or directly by a float ``p`` given as second argument. In the latter case a rational
+        approximation of ``p`` will be used.
+        
+        **Examples: **
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('x',1)
+        >>> y = prob.add_variable('y',3)
+        >>> pic.norm(y,7,3) < x
+        # p-norm ineq : norm_7/3( y)<x#
+        >>> pic.norm(y,-0.4) > x
+        # generalized p-norm ineq : norm_-2/5( y)>x#
+        
+        """
+        from .expression import AffinExp
+        from .expression import NormP_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        if num == 2 and denom == 1:
+                return abs(exp)
+        p = float(num)/float(denom)
+        if p==0:
+                raise Exception('undefined for p=0')
+        from fractions import Fraction
+        frac = Fraction(p).limit_denominator(1000)
+        return NormP_Exp(exp,frac.numerator,frac.denominator)
+        
+        
+        
+        
         
 def allIdent(lst):
         if len(lst)<=1:
@@ -785,7 +835,7 @@ def svec(mat):
 
         return cvx.spmatrix(V,I,J,(s0*(s0+1)/2,1))
 
-def svecm1(vec):
+def svecm1(vec,triu=False):
         if vec.size[1]>1:
                 raise ValueError('should be a column vector')
         v=vec.size[0]
@@ -805,13 +855,37 @@ def svecm1(vec):
                 if r==c:
                         V.append(v)
                 else:
-                        I.append(c)
-                        J.append(r)
-                        V.extend([v/np.sqrt(2)]*2)
+                        if triu:
+                                V.append(v/np.sqrt(2))
+                        else:
+                                I.append(c)
+                                J.append(r)
+                                V.extend([v/np.sqrt(2)]*2)
         return cvx.spmatrix(V,I,J,(n,n))
              
                 
-        
+def ltrim1(vec):
+        if vec.size[1]>1:
+                raise ValueError('should be a column vector')
+        v=vec.size[0]
+        n=int(np.sqrt(1+8*v)-1)/2
+        if n*(n+1)/2 != v:
+                raise ValueError('vec should be of dimension n(n+1)/2')
+        if not isinstance(vec,cvx.matrix):
+                vec=cvx.matrix(vec)
+        M = cvx.matrix(0.,(n,n))
+        r = 0
+        c = 0
+        for v in vec:
+                if r==n:
+                        c+=1
+                        r=c
+                M[r,c]=v
+                if r>c:
+                        M[c,r]=v
+                r+=1
+
+        return M
         
 def _svecm1_identity(vtype,size):
         """
@@ -970,7 +1044,27 @@ def offset_in_lil(lil,offset,lower):
                 else:
                         raise Exception('elements of lil must be int or list')
         return lil
-                               
+
+def _flatten(l):
+        """ flatten a (recursive) list of list """
+        for el in l:
+                if hasattr(el, "__iter__") and not isinstance(el, basestring):
+                        for sub in _flatten(el):
+                                yield sub
+                else:
+                        yield el
+                                
+def _remove_in_lil(lil,elem):
+        """ remove the element ``elem`` from a (recursive) list of list ``lil``.
+            empty lists are removed if any"""
+        if elem in lil:
+                lil.remove(elem)
+        for el in lil:
+                if isinstance(el,list):
+                        _remove_in_lil(el,elem)                
+                        _remove_in_lil(el,[])
+        if [] in lil: lil.remove([])
+        
 def _quad2norm(qd):
         """
         transform the list of bilinear terms qd
@@ -1066,7 +1160,87 @@ def _copy_exp_to_new_vars(exp,cvars):
                 raise Exception('unknown type of expression')
                 
                 
+def _read_sdpa(filename):
+                """TODO, remove dependence; currently relies on smcp sdpa_read
+                cone constraints ||x||<t are recognized if they have the arrow form [t,x';x,t*I]>>0
+                """
+                f=open(filename,'r')
+                import smcp
+                from .problem import Problem
+                A, bb, blockstruct = smcp.misc.sdpa_read(f)
                 
+                #make list of tuples (size,star,end) for each block
+                blocks = []
+                ix = 0
+                for b in blockstruct:
+                        blocks.append((b,ix,ix+b))
+                        ix+=b
+                
+                P = Problem()
+                nn = A.size[1]-1
+                x = P.add_variable('x',nn)
+                
+                #linear (in)equalities
+                Aineq = []
+                bineq = []
+                Aeq = []
+                beq = []
+                mm = int((A.size[0])**0.5)
+                oldv = None
+                for (_,i,_) in  [(sz,start,end) for (sz,start,end) in blocks if sz==1]:
+                        ix = i*(mm+1)
+                        v = A[ix,:]
+                        if (oldv is not None) and np.linalg.norm((v+oldv).V)<1e-7:
+                                Aineq.pop()
+                                bineq.pop()
+                                Aeq.append(v[1:].T)
+                                beq.append(v[0])
+                        else:
+                                Aineq.append(v[1:].T)
+                                bineq.append(v[0])
+                        oldv = v
+                Aeq = cvx.sparse(Aeq)
+                Aineq = cvx.sparse(Aineq)
+                if Aeq:
+                        P.add_constraint(Aeq*x == beq)
+                if Aineq:
+                        P.add_constraint(Aineq*x > bineq)
+                
+                #sdp and soc constraints
+                for (sz,start,end) in  [(sz,start,end) for (sz,start,end) in blocks if sz>1]:
+                        MM = [cvx.sparse(cvx.matrix(A[:,i],(mm,mm)))[start:end,start:end] for i in range(nn+1)]
+                        
+                        #test whether it is an arrow pattern
+                        isarrow = True
+                        issoc = True
+                        isrsoc = True
+                        for M in MM:
+                                for i,j in zip(M.I,M.J):
+                                        if i>j and j>0:
+                                                isarrow = False
+                                                break
+                                isrsoc = isrsoc and isarrow and all([M[i,i]==M[1,1] for i in xrange(2,sz)])
+                                issoc = issoc and isrsoc and (M[1,1]==M[0,0])
+                                if not(isrsoc): break
+                                
+                        if issoc or isrsoc:
+                                Acone = cvx.sparse([M[:,0].T for M in MM[1:]]).T
+                                bcone = MM[0][:,0]
+                                if issoc:
+                                        P.add_constraint(abs(Acone[1:,:]*x-bcone[1:]) < Acone[0,:]*x-bcone[0])
+                                else:
+                                        arcone = cvx.sparse([M[1,1] for M in MM[1:]]).T
+                                        brcone = MM[0][1,1]
+                                        P.add_constraint(abs(Acone[1:,:]*x-bcone[1:])**2 < (Acone[0,:]*x-bcone[0])*(arcone*x-brcone))
+                                
+                        else:
+                                CCj = MM[0]+MM[0].T-cvx.spdiag([MM[0][i,i] for i in range(sz)])
+                                MMj = [M+M.T-cvx.spdiag([M[i,i] for i in range(sz)]) for M in MM[1:]]
+                                P.add_constraint(sum([x[i]*MMj[i] for i in range(nn) if MMj[i]],'i')>>CCj)
+                 
+                #objective
+                P.set_objective('min',bb.T*x)
+                return P      
 
 
 
