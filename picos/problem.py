@@ -80,18 +80,19 @@ class Problem:
                 """size of the s-vecotrized matrices involved in SDP constraints"""
                 self.countGeomean=0
                 """number of geomean (and other nonstandard convex) inequalities"""
+                '''TOREM
                 self.semidefVars = []
                 """symmetric matrix variables constrained to be >>0"""
                 self.standardCones = []
                 """second order cones whose variables are simple scaling of the original variables"""
                 self.coneVars = set([])
                 """set of parts of variables (as pairs of the form (var,index)) that appear in a simple SOC cone"""
-                
+                '''
                 self.cvxoptVars={'c':None,
                                 'A':None,'b':None, #equalities
                                 'Gl':None,'hl':None, #inequalities
                                 'Gq':None,'hq':None, #quadratic cone
-                                'Gs':None,'hs':None, 'Xs':None, #semidefinite cone
+                                'Gs':None,'hs':None, #TOREM 'Xs':None, #semidefinite cone
                                 'F':None,'g':None, #GP constraints
                                 'quadcons': None} #other quads
                 
@@ -104,6 +105,9 @@ class Problem:
                 
                 self.msk_env=None
                 self.msk_task=None
+                self.msk_fxd=None
+                self.msk_scaledcols=None
+                self.msk_fxdconevars = None
 
                 self.scip_solver = None
                 self.scip_vars = None
@@ -130,6 +134,8 @@ class Problem:
                    a new problem is created is 'unsolved'.
                 """
                 
+                self.obj_passed = []
+                """list of solver instances where the objective has been passed"""
 
         def __str__(self):
                 probstr='---------------------\n'               
@@ -170,9 +176,10 @@ class Problem:
                                                 probstr+=', different type'
                                         else:
                                                 probstr+=', '+var['vtype']
+                                        probstr += var['bnd']
                         else:                   
                                 var = self.variables[vkey]
-                                probstr+='\n'+vkey+' \t: '+str(var.size)+', '+var.vtype
+                                probstr+='\n'+vkey+' \t: '+str(var.size)+', '+var.vtype+var._bndtext
                 probstr+='\n'
                 if self.objective[0]=='max':
                         probstr+='\n\tmaximize '+self.objective[1].string+'\n'
@@ -216,9 +223,41 @@ class Problem:
         ----------------------------------------------------------------
         """
 
+        def reset_solver_instances(self):
+                self.cvxoptVars={'c':None,
+                                'A':None,'b':None, #equalities
+                                'Gl':None,'hl':None, #inequalities
+                                'Gq':None,'hq':None, #quadratic cone
+                                'Gs':None,'hs':None, #TOREM 'Xs':None, #semidefinite cone
+                                'F':None,'g':None, #GP constraints
+                                'quadcons': None} #other quads
+                
+                self.gurobi_Instance = None
+                self.grbvar = {}
+                self.grb_boundcons = None
+                
+                self.cplex_Instance = None
+                self.cplex_boundcons = None
+                
+                self.msk_env=None
+                self.msk_task=None
+                self.msk_scaledcols=None
+                self.msk_fxd=None
+                self.msk_fxdconevars = None
+
+                self.scip_solver = None
+                self.scip_vars = None
+                self.scip_obj = None
+                for cons in self.constraints:
+                        cons.passed = []
+                self.obj_passed = []
+        
         def remove_all_constraints(self):
                 """
                 Removes all constraints from the problem
+                This function does not remove *hard-coded bounds* on variables;
+                use the function :func:`remove_all_variable_bounds() <picos.Problem.remove_all_variable_bounds>`
+                to do so.
                 """
                 self.numberConeConstraints = 0
                 self.numberAffConstraints = 0
@@ -236,7 +275,11 @@ class Problem:
                 self.numberLSEVars = 0
                 self.last_updated_constraint = 0
                 self.countGeomean=0
+                """TOREM
                 self.semidefVars=[]
+                self.coneVars=set([])
+                self.standardCones=[]
+                """
                 if self.objective[0] is not 'find':
                         if self.objective[1] is not None:
                                 expr=self.objective[1]
@@ -244,7 +287,16 @@ class Problem:
                                         self.numberQuadNNZ=expr.nnz()
                                 if isinstance(expr,LogSumExp):
                                         self.numberLSEVars=expr.Exp.size[0]*expr.Exp.size[1]
-
+                self.reset_solver_instances()
+                        
+        def remove_all_variable_bounds(self):
+                """
+                remove all the lower and upper bounds on variables (i.e,, 
+                *hard-coded bounds* passed in the attribute ``bnd`` of the variables.
+                """
+                for var in self.variables.values():
+                        var.bnd._reset()
+                
         
         def obj_value(self):
                 """
@@ -291,6 +343,7 @@ class Problem:
                         self.numberQuadConstraints+=1
                         self.numberQuadNNZ+=expr.nnz()
                 self.objective=(typ,expr)
+                self.obj_passed = []#reset the solvers which know this objective function
         
         def set_var_value(self,name,value,optimalvar=False):
                 """
@@ -546,6 +599,7 @@ class Problem:
                                  'lboundlimit'    :None,
                                  'boundMonitor'   :False,
                                  'handleBarVars'  :True, #TODOC: for MOSEK, do we handle semidefVars separatly
+                                 'handleConeVars' :True, #TODOC: for MOSEK, do we put original variables in cones when possible ?
                                  'solve_via_dual' :False, #TODO set None#TODOC the problem is dualized before being passed to the solver
                                  }
                                  
@@ -567,8 +621,11 @@ class Problem:
                 self.options[key]=val
                 if key=='verbose' and isinstance(val,bool):
                         self.options['verbose']=int(val)
-                
-        
+                        
+                #trick to force the use of mosek6 during the tests:
+                #if val=='mosek':
+                #        self.options['solver']='mosek6'
+                        
         def update_options(self, **options):
                 """
                 update the option dictionary, for each pair of the form
@@ -625,7 +682,7 @@ class Problem:
         ----------------------------------------------------------------
         """
 
-        def add_variable(self,name,size=1, vtype = 'continuous' ):
+        def add_variable(self,name,size=1, vtype = 'continuous',lower = None,upper =None ):
                 """
                 adds a variable in the problem,
                 and returns the corresponding instance of the :class:`Variable <picos.Variable>`.
@@ -664,7 +721,19 @@ class Problem:
                                 * ``'semiint'``: 0 or integer variable satisfying its bounds
                 
                 :type vtype: str.
+                :param lower: a lower bound for the variable. Can be either a vector/matrix of the
+                              same size as the variable, or a scalar (in which case all elements
+                              of the variable have the same lower bound).
+                :type lower: Any type recognized by the function
+                              :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`.
+                :param upper: an upper bound for the variable. Can be either a vector/matrix of the
+                              same size as the variable, or a scalar (in which case all elements
+                              of the variable have the same upper bound).
+                :type upper: Any type recognized by the function
+                              :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`.
+                
                 :returns: An instance of the class :class:`Variable <picos.Variable>`.
+                #TODOC tutorial examples with bounds and sparse bounds
                 """
 
                 if name in self.variables:
@@ -674,6 +743,7 @@ class Problem:
                 if len(size)==1:
                         size=(size[0],1)
 
+                lisname = None
                 if '[' in name and ']' in name:#list or dict of variables
                         lisname=name[:name.index('[')]
                         ind=name[name.index('[')+1:name.index(']')]
@@ -713,7 +783,18 @@ class Problem:
                                         size,
                                         countvar,
                                         numbervar,
-                                        vtype=vtype)
+                                        vtype=vtype,
+                                        lower = lower,
+                                        upper = upper)
+                if lisname is not None:
+                        if self.listOfVars[lisname].has_key('bnd'):
+                                bndtext = self.listOfVars[lisname]['bnd']
+                                thisbnd = self.variables[name]._bndtext
+                                if bndtext <> thisbnd:
+                                        self.listOfVars[lisname]['bnd'] = ', some bounds'
+                        else:
+                                self.listOfVars[lisname]['bnd'] = self.variables[name]._bndtext
+                
                 return self.variables[name]
         
         
@@ -722,6 +803,9 @@ class Problem:
                 Removes the variable ``name`` from the problem.
                 :param name: name of the variable to remove.
                 :type name: str.
+                
+                .. Warning:: This method does not check if some constraint still involves the variable
+                             to be removed.
                 """
                 if '[' in name and ']' in name:#list or dict of variables
                         lisname=name[:name.index('[')]
@@ -737,21 +821,24 @@ class Problem:
                 sz=var.size
                 self.numberOfVars-=sz[0]*sz[1]
                 self.varNames.remove(name)
-                if var in self.semidefVars:
+                """TOREM
+                if var in self.semidefVars: 
                         self.semidefVars.remove(var)
+                """
                 del self.variables[name]
                 self._recomputeStartEndIndices()
+                self.reset_solver_instances()
         
         def _recomputeStartEndIndices(self):
                 ind=0
                 for nam in self.varNames:
                         var = self.variables[nam]
-                        var.startIndex=ind
+                        var._startIndex=ind
                         if var.vtype=='symmetric':
                                 ind+=int((var.size[0]*(var.size[0]+1))/2)
                         else:
                                 ind+=var.size[0]*var.size[1]
-                        var.endIndex=ind
+                        var._endIndex=ind
                         
         def _remove_temporary_variables(self):
                 """
@@ -771,8 +858,8 @@ class Problem:
                                 todel.append(nam)
                                 del self.variables[nam]
                         else:
-                                var.startIndex-=offset
-                                var.endIndex-=offset
+                                var._startIndex-=offset
+                                var._endIndex-=offset
                 
                 for nam in todel:
                         self.varNames.remove(nam)
@@ -791,13 +878,19 @@ class Problem:
                 for (iv,v) in sorted([(v.startIndex,v) for v in self.variables.values()]):
                         cvars[v.name]=cop.add_variable(v.name,v.size,v.vtype)
                 for c in self.constraints:
+                        """old version doesnt handle conevars and bounded vars
                         c2=copy.deepcopy(c)
                         c2.Exp1=_copy_exp_to_new_vars(c2.Exp1,cvars)
                         c2.Exp2=_copy_exp_to_new_vars(c2.Exp2,cvars)
                         c2.Exp3=_copy_exp_to_new_vars(c2.Exp3,cvars)
                         if c.semidefVar:
                                 c2.semidefVar = cvars[c.semidefVar.name]
-                        cop.add_constraint(c2,c2.key)
+                        """
+                        E1=_copy_exp_to_new_vars(c.Exp1,cvars)
+                        E2=_copy_exp_to_new_vars(c.Exp2,cvars)
+                        E3=_copy_exp_to_new_vars(c.Exp3,cvars)
+                        c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
+                        cop.add_constraint(c2,c.key)
                 obj=_copy_exp_to_new_vars(self.objective[1],cvars)
                 cop.set_objective(self.objective[0],obj)
                 
@@ -826,8 +919,8 @@ class Problem:
                                 si = self.variables[uiname].startIndex
                                 ei = self.variables[uiname].endIndex
                                 self.variables[uiname] = vui
-                                self.variables[uiname].startIndex = si
-                                self.variables[uiname].endIndex = ei
+                                self.variables[uiname]._startIndex = si
+                                self.variables[uiname]._endIndex = ei
                                 self.variables[uiname].name = uiname
                                 
                         indcons = self.countCons
@@ -848,11 +941,13 @@ class Problem:
                 self.countCons+=1
                 if cons.typeOfConstraint[:3]=='lin':
                         self.numberAffConstraints+=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                                        
                 elif cons.typeOfConstraint[2:]=='cone':
                         self.numberConeVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])+1
                         self.numberConeConstraints+=1
                         if cons.typeOfConstraint[:2]=='RS':
                                 self.numberConeVars+=1
+                        """TOREM
                         ex1,ex2,ex3 = None,None,None
                         if cons.exp1ConeVar:
                                 tmp1 = [(var,j) for (var,j,v) in cons.exp1ConeVar]
@@ -873,7 +968,10 @@ class Problem:
                                         self.coneVars.update([tmp3])
                                 else:
                                         ex3 = None
-                        self.standardCones.append((ex1,ex2,ex3))        
+                                self.standardCones.append((ex1,ex2,ex3))
+                        else:
+                                self.standardCones.append((ex1,ex2))
+                        """
                 elif cons.typeOfConstraint=='lse':
                         self.numberLSEVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])
                         self.numberLSEConstraints+=1
@@ -885,7 +983,8 @@ class Problem:
                         self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
                         #is it a simple constraint of the form X>>0 ?
                         if cons.semidefVar:
-                                self.semidefVars.append(cons.semidefVar)
+                                #TOREM self.semidefVars.append(cons.semidefVar)
+                                cons.semidefVar.semiDef = True
                 if ret:
                         return cons
                 
@@ -1284,15 +1383,32 @@ class Problem:
                 """
                 #TODO    *examples with list of geomeans
                 
+                self.reset_solver_instances()
                 if isinstance(ind,int): #constraint given with its "raw index"
                         cons = self.constraints[ind]
                         if cons.typeOfConstraint[:3]=='lin':
                                 self.numberAffConstraints-=(cons.Exp1.size[0]*cons.Exp1.size[1])
+                                #TODO here we cant remove the bnd,
+                                #-> use an unknown flag,
+                                # and put bounds after being passed in all cons
+                                # and hving updated on the fly bounds with unknown flag ?
                         elif cons.typeOfConstraint[2:]=='cone':
                                 self.numberConeVars-=((cons.Exp1.size[0]*cons.Exp1.size[1])+1)
                                 self.numberConeConstraints-=1
                                 if cons.typeOfConstraint[:2]=='RS':
                                         self.numberConeVars-=1
+                                """TOREM
+                                cntcone = len([1 for cs in self.constraints[:ind] if cs.typeOfConstraint.endswith('cone')])
+                                stdcone = self.standardCones[cntcone]
+                                if stdcone[0]:
+                                        for (v,idx) in [(v,idx) for (v,idx,_) in stdcone[0]]:
+                                                self.coneVars.remove((v,idx))
+                                if stdcone[1]:
+                                        self.coneVars.remove((stdcone[1][0],stdcone[1][1]))
+                                if len(stdcone)>2:#TODO here
+                                        self.coneVars.remove((stdcone[1][0],stdcone[1][1]))
+                                del self.standardCones[cntcone]
+                                """
                         elif cons.typeOfConstraint=='lse':
                                 self.numberLSEVars-=(cons.Exp1.size[0]*cons.Exp1.size[1])
                                 self.numberLSEConstraints-=1
@@ -1302,8 +1418,13 @@ class Problem:
                         elif cons.typeOfConstraint[:3]=='sdp':
                                 self.numberSDPConstraints-=1
                                 self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                                """TOREM
                                 if cons.semidefVar:
                                         self.semidefVars.remove(cons.semidefVar)
+                                """
+                                if cons.semidefVar:
+                                        cons.semidefVar.semiDef = False
+                                        
                                       
                         del self.constraints[ind]
                         self.countCons -=1
@@ -1372,8 +1493,12 @@ class Problem:
                                 elif cons.typeOfConstraint[:3]=='sdp':
                                         self.numberSDPConstraints-=1
                                         self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                                        """TOREM
                                         if cons.semidefVar:
                                                 self.semidefVars.remove(cons.semidefVar)
+                                        """
+                                        if cons.semidefVar:
+                                                cons.semidefVar.semiDef = False
                                 del self.constraints[ind]
                         self.countCons -= len(lsind)
                         _remove_in_lil(self.consNumbering,lsind_top)
@@ -1515,6 +1640,8 @@ class Problem:
                 
                 newcons={}
                 newvars=[]
+                #TODO rewrite interface to cone functions without temporary variables ?
+                #     or at least make it correctly with 'passed', so remove_variable is never called
                 if self.numberConeConstraints > 0 :
                         for constrKey,constr in enumerate(self.constraints[self.last_updated_constraint:]):
                                 if constr.typeOfConstraint[2:]=='cone':
@@ -1594,8 +1721,8 @@ class Problem:
                                         icone+=1
                         #variable shift
                         for tv in tmprhs+tmplhs:
-                                tv.startIndex+=offset_supvars
-                                tv.endIndex+=offset_supvars
+                                tv._startIndex+=offset_supvars
+                                tv._endIndex+=offset_supvars
                 
                                 
                 #variables
@@ -2040,8 +2167,8 @@ class Problem:
                                         icone+=1
                         #variable shift
                         for tv in tmprhs+tmplhs:
-                                tv.startIndex+=offset_supvars
-                                tv.endIndex+=offset_supvars
+                                tv._startIndex+=offset_supvars
+                                tv._endIndex+=offset_supvars
                 
                 
                 if (self.options['verbose']>1) and (not only_update):
@@ -2399,7 +2526,7 @@ class Problem:
                 self.cvxoptVars['hq']=[]
                 self.cvxoptVars['Gs']=[]
                 self.cvxoptVars['hs']=[]
-                self.cvxoptVars['Xs']=[] #list of semidef vars (or None) corresponding to the LMI
+                #TOREM self.cvxoptVars['Xs']=[] #list of semidef vars (or None) corresponding to the LMI
                 self.cvxoptVars['quadcons']=[]
                 #objective
                 if isinstance(self.objective[1],QuadExp):
@@ -2505,10 +2632,12 @@ class Problem:
                                         self.cvxoptVars['hs'].append(h_lhs-h_rhs)
                                 else:
                                         raise NameError('unexpected case')
+                                """TOREM
                                 if self.constraints[k].semidefVar:
                                         self.cvxoptVars['Xs'].append(self.constraints[k].semidefVar)
                                 else:
                                         self.cvxoptVars['Xs'].append(None)
+                                """
                         else:
                                 raise NameError('unexpected case')
                         if self.options['verbose']>1:
@@ -2598,6 +2727,737 @@ class Problem:
                 """
                 if self.options['verbose']>0:
                         print('build mosek instance')
+                from itertools import izip
+                #import mosek
+                if self.options['solver'] == 'mosek6': #force to use version 6.0 of mosek.
+                        try:
+                                import mosek as mosek
+                                version7 = not(hasattr(mosek,'cputype'))
+                                if version7:
+                                        raise ImportError("I could''t find mosek 6.0; the package named mosek is the v7.0")
+                        except:
+                                raise ImportError('mosek library not found')
+                else:#try to load mosek7, else use the default mosek package (which can be any version)
+                        try:
+                                import mosek7 as mosek
+                        except ImportError:
+                                try:
+                                        import mosek as mosek
+                                except:
+                                        raise ImportError('mosek library not found')
+
+                version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
+                        
+                """TOREM (TODO TEST the passed  label)
+                #only change the objective coefficients
+                if self.options['onlyChangeObjective']:
+                        if self.msk_task is None:
+                                raise Exception('option is only available when msk_task has been defined before')
+                        newobj=self.objective[1]
+                        (cobj,constantInObjective)=self._makeGandh(newobj)
+                        self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
+                        
+                        for j in range(len(self.cvxoptVars['c'])):
+                        # Set the linear term c_j in the objective.
+                                self.msk_task.putcj(j,self.cvxoptVars['c'][j])
+                        return
+                """
+                if self.msk_env and self.msk_task:
+                        env = self.msk_env
+                        task = self.msk_task
+                else:
+                        # Make a MOSEK environment
+                        env = mosek.Env ()
+                        # Attach a printer to the environment
+                        if self.options['verbose']>=1:
+                                env.set_Stream (mosek.streamtype.log, self._streamprinter)
+                        # Create a task
+                        task = env.Task(0,0)
+                        # Attach a printer to the task
+                        if self.options['verbose']>=1:
+                                task.set_Stream (mosek.streamtype.log, self._streamprinter)                                
+                        
+                """TOREM
+                #patch for quadratic problems with a single var
+                if self.numberOfVars==1 and self.numberQuadConstraints>0:
+                        if '_ptch_' not in self.variables:
+                                ptch=self.add_variable('_ptch_',1)
+                        else:
+                                ptch=self.get_variable('_ptch_')
+                        self.add_constraint( ptch>0 )                                
+                """
+                
+                # Give MOSEK an estimate of the size of the input data.
+                # This is done to increase the speed of inputting data.                                
+                reset_hbv_True = False
+                NUMVAR_OLD = task.getnumvars()
+                if self.options['handleBarVars']:
+                        NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)
+                                        for var in self.variables.values()
+                                        if not(var.semiDef)
+                                        and not('mosek' in var.passed)]))
+                        
+                        indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
+                        indices = sorted(indices)
+                        idxsdpvars=[(si,ei) for (si,ei,v) in indices[::-1] if v.semiDef]
+                        indsdpvar = [i for i,cons in
+                                 enumerate([cs for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')])
+                                 if cons.semidefVar]
+                        if not(idxsdpvars):
+                                reset_hbv_True = True
+                                self.options['handleBarVars'] = False
+                        
+                else:
+                        NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)
+                                        for var in self.variables.values()
+                                        if not('mosek' in var.passed)]))
+               
+                NUMVAR = NUMVAR_OLD + NUMVAR_NEW
+                NUMVAR0 = NUMVAR # number of "plain" vars (without "bar" matrix vars and additional vars for so cones)
+                
+                NUMCON = self.numberAffConstraints + self.numberQuadConstraints#affine parts of quads
+                if isinstance(self.objective[1],QuadExp):
+                        NUMCON -=1
+                              #TODO compter seulement not passed !
+                              #TODO pass label also in variables, but recheck all vtype and bounds
+                              #TODO and for semidef vars ? -> OK si field passed in variable
+                              
+                NUMSDP =  self.numberSDPConstraints
+                if NUMSDP>0:
+                        #indices = [(v.startIndex,v.endIndex-v.startIndex) for v in self.variables.values()]
+                        #indices = sorted(indices)
+                        #BARVARDIM = [int((8*sz-1)**0.5/2.) for (_,sz) in indices]
+                        BARVARDIM = [cs.Exp1.size[0] for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')]
+                else:
+                        BARVARDIM = []
+                        
+                
+                
+                if (NUMSDP and not(version7)) or self.numberLSEConstraints:
+                        raise Exception('SDP or GP constraints are not interfaced. For SDP, try mosek 7.0')
+                
+                if version7:
+                        # Append 'NUMCON' empty constraints.
+                        # The constraints will initially have no bounds.
+                        task.appendcons(NUMCON)
+                        #Append 'NUMVAR' variables.
+                        # The variables will initially be fixed at zero (x=0).
+                        task.appendvars(NUMVAR)
+                        task.appendbarvars(BARVARDIM)
+                else:
+                        task.append(mosek.accmode.con,NUMCON)
+                        task.append(mosek.accmode.var,NUMVAR)
+                
+                #specifies the integer variables
+                ints = []
+                for k,var in self.variables.iteritems():
+                        if var.vtype=='binary':
+                                for ind,i in enumerate(range(var.startIndex,var.endIndex)):
+                                        ints.append(i)
+                                        (clb,cub) = var.bnd.get(ind,(-INFINITY,INFINITY))
+                                        lb = max(0.,clb)
+                                        ub = min(1.,cub)
+                                        var.bnd._set(ind,(lb,ub))
+                                        
+                        elif self.variables[k].vtype=='integer':
+                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
+                                        ints.append(i)
+                                        
+                        elif self.variables[k].vtype not in ['continuous','symmetric']:
+                                raise Exception('vtype not handled (yet) with mosek')
+                if self.options['handleBarVars']:
+                        ints,_,mats = self._separate_linear_cons(ints,[0.]*len(ints),idxsdpvars)
+                        if any([bool(mat) for mat in mats]):
+                                raise Exception('semidef vars with integer elements are not supported')
+                
+                for i in ints:
+                        task.putvartype(i,mosek.variabletype.type_int)
+                #--------------#
+                # obj and vars #
+                #--------------#
+                
+                for j in range(NUMVAR):
+                        #make the variable free
+                        task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
+                        task.putcj(j,0.)
+                
+                if 'mosek' not in self.obj_passed:
+                        self.obj_passed.append('mosek')
+                        if self.objective[1]:
+                                obj = self.objective[1]
+                                subI = []
+                                subJ = []
+                                subV = []
+                                if isinstance(obj,QuadExp):
+                                        for i,j in obj.quad:
+                                                si,ei=i.startIndex,i.endIndex
+                                                sj,ej=j.startIndex,j.endIndex
+                                                Qij=obj.quad[i,j]
+                                                if not isinstance(Qij,cvx.spmatrix):
+                                                        Qij=cvx.sparse(Qij)
+                                                if si==sj:#put A+A' on the diag
+                                                        sI=list((Qij+Qij.T).I+si)
+                                                        sJ=list((Qij+Qij.T).J+sj)
+                                                        sV=list((Qij+Qij.T).V)
+                                                        for u in range(len(sI)-1,-1,-1):
+                                                                #remove when j>i
+                                                                if sJ[u]>sI[u]:
+                                                                        del sI[u]
+                                                                        del sJ[u]
+                                                                        del sV[u]
+                                                elif si>=ej: #add A in the lower triang
+                                                        sI=list(Qij.I+si)
+                                                        sJ=list(Qij.J+sj)
+                                                        sV=list(Qij.V)
+                                                else: #add B' in the lower triang
+                                                        sI=list((Qij.T).I+sj)
+                                                        sJ=list((Qij.T).J+si)
+                                                        sV=list((Qij.T).V)
+                                                subI.extend(sI)
+                                                subJ.extend(sJ)
+                                                subV.extend(sV)
+                                        obj = obj.aff
+                                
+                                J = []
+                                V = []
+                                for var in obj.factors:
+                                        mat = obj.factors[var]
+                                        for j,v in izip(mat.J,mat.V):
+                                                V.append(v)
+                                                J.append(var.startIndex+j)
+                                                        
+                                if self.options['handleBarVars']:
+                                        J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                        
+                                        for imat,mat in enumerate(mats):
+                                                if mat:
+                                                        matij = task.appendsparsesymmat(
+                                                                mat.size[0],
+                                                                mat.I,mat.J,mat.V)
+                                                        task.putbarcj(indsdpvar[imat], [matij], [1.0])
+                                        if subI:
+                                                subI,subV,mat2 = self._separate_linear_cons(subI,subV,idxsdpvars)
+                                                subJ,_,mat3 = self._separate_linear_cons(subJ,[0.]*len(subJ),idxsdpvars)
+                                                if (any([bool(mat) for mat in mat2]) or
+                                                any([bool(mat) for mat in mat3])):
+                                                        raise Exception('quads with sdp bar vars are not supported')
+                                for j,v in izip(J,V):
+                                                task.putcj(j,v)
+                                if subI:
+                                        task.putqobj(subI,subJ,subV)
+                                        
+                #bound on vars
+                vbnds = {}
+                for varname in self.varNames:
+                        var = self.variables[varname]
+                        for ind,(lo,up) in var.bnd.iteritems():
+                                vbnds[var.startIndex+ind] = (lo,up)
+
+                if not(self.is_continuous()) and self.options['hotstart']:
+                        # Set status of all variables to unknown
+                        task.makesolutionstatusunknown(mosek.soltype.itg);
+                        jj = []
+                        sv = []
+                        for kvar,variable in self.variables.iteritems():
+                                if variable.is_valued():
+                                        for i,v in enumerate(variable.value):
+                                                jj.append(variable.startIndex + i)
+                                                sv.append(v)
+                                                
+                        if self.options['handleBarVars']:
+                                jj,sv,mats = self._separate_linear_cons(jj,sv,idxsdpvars)
+                                if any([bool(mat) for mat in mats]):
+                                        raise Exception('semidef vars hotstart is not supported')
+                                
+                        for j,v in izip(jj,sv):
+                                task.putsolutioni (
+                                        mosek.accmode.var,
+                                        j,
+                                        mosek.soltype.itg,
+                                        mosek.stakey.supbas,
+                                        v,
+                                        0.0, 0.0, 0.0)
+                                
+                fxdvars = {} #TODO different init. when some constraints are already in the task !
+                iaff = 0
+                icone=NUMVAR0
+                tridex = {}
+                isdp = 0
+                scaled_cols = {}
+                allconevars = []
+                fxdconevars = []
+                
+                #-------------#
+                # CONSTRAINTS #
+                #-------------#
+                
+                for idcons,cons in enumerate(self.constraints):
+                        if 'mosek' in cons.passed:
+                                continue
+                        else:
+                                cons.passed.append('mosek')
+                        if cons.typeOfConstraint.startswith('lin'):
+                                fxdvars[idcons] = []
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in (cons.Exp1-cons.Exp2).factors.iteritems():
+                                        if type(fact)!=cvx.base.spmatrix:
+                                                fact = cvx.sparse(fact)
+                                        sj=var.startIndex
+                                        ijv.extend(zip( fact.I,fact.J+sj,fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
+                                
+                                #constant term
+                                szcons = cons.Exp1.size[0]*cons.Exp1.size[1]
+                                rhstmp = cvx.matrix(0.,(szcons,1))
+                                constant1 = cons.Exp1.constant #None or a 1*1 matrix
+                                constant2 = cons.Exp2.constant
+                                if not constant1 is None:
+                                        rhstmp = rhstmp-constant1
+                                if not constant2 is None:
+                                        rhstmp = rhstmp+constant2
+                                
+                                for i in range(szcons):
+                                        jv = itojv.get(i,[])
+                                        J=[jvk[0] for jvk in jv]
+                                        V=[jvk[1] for jvk in jv]
+                                        
+                                        """TOREM
+                                        if self.options['handleBarVars']:
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                        is_fixed_var = (len(J)==1)
+                                        if is_fixed_var and self.options['handleBarVars']:
+                                                if any([bool(mat) for mat in mats]):
+                                                        is_fixed_var = False
+                                        """
+                                        is_fixed_var = (len(J)==1)
+                                        if is_fixed_var:
+                                                j0=J[0]
+                                                v0=V[0]
+                                        if self.options['handleBarVars']:
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                        if is_fixed_var and len(J)==0:
+                                                is_fixed_var = False #this is a bound constraint on a bar var, handle as normal cons
+                                                if (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
+                                                        lo = None
+                                                        up = rhstmp[i]/v0
+                                                else:
+                                                        lo = rhstmp[i]/v0
+                                                        up = None
+                                                if j0 in vbnds:
+                                                        #we handle the cons here, so do not add it at the end
+                                                        bdj0 = vbnds[j0]
+                                                        if (bdj0[0]==lo) and (lo is not None):
+                                                                if bdj0[1] is None:
+                                                                        del vbnds[j0]
+                                                                else:
+                                                                        vbnds[j0] = (None,bdj0[1])
+                                                        elif (bdj0[1]==up) and (up is not None):
+                                                                if bdj0[0] is None:
+                                                                        del vbnds[j0]
+                                                                else: 
+                                                                        vbnds[j0] = (bdj0[0],None)
+                                                        
+                                        
+                                        if is_fixed_var:
+                                                bdj0 = vbnds.get(j0,(-INFINITY,INFINITY))
+                                                if (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
+                                                        up = rhstmp[i]/v0
+                                                        if up<bdj0[1]:
+                                                                vbnds[j0] = (bdj0[0],up)
+                                                else:
+                                                        lo = rhstmp[i]/v0
+                                                        if lo>bdj0[0]:
+                                                                vbnds[j0] = (lo,bdj0[1])
+                                                
+                                                if cons.typeOfConstraint=='lin>':
+                                                        fxdvars[idcons].append((i,J[0],-V[0])) #and constraint handled as a bound
+                                                else:
+                                                        fxdvars[idcons].append((i,J[0],V[0]))
+                                                NUMCON -= 1
+                                                #remove one unnecessary constraint at the end
+                                                if version7:
+                                                        task.removecons([NUMCON])
+                                                else:
+                                                        task.remove(mosek.accmode.con,[NUMCON])
+                                                
+                                                
+                                        else:
+                                                b=rhstmp[i]
+                                                if version7:
+                                                        task.putarow(iaff,J,V)
+                                                else:
+                                                        task.putaijlist([iaff]*len(J),J,V)
+                                                if self.options['handleBarVars']:
+                                                        for imat,mat in enumerate(mats):
+                                                                if mat:
+                                                                        matij = task.appendsparsesymmat(
+                                                                                mat.size[0],
+                                                                                mat.I,mat.J,mat.V)
+                                                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
+                                                                        
+                                                if cons.typeOfConstraint[3]=='=':
+                                                        task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,
+                                                                b,b)
+                                                elif cons.typeOfConstraint[3]=='<':
+                                                        task.putbound(mosek.accmode.con,iaff,mosek.boundkey.up,
+                                                                -INFINITY,b)
+                                                elif cons.typeOfConstraint[3]=='>':
+                                                        task.putbound(mosek.accmode.con,iaff,mosek.boundkey.lo,
+                                                                b,INFINITY)
+                                                iaff+=1
+                                
+                                
+                                                       
+                        #conic constraints:
+                        elif cons.typeOfConstraint.endswith('cone'):
+                                
+                                conexp = (cons.Exp2 // cons.Exp1[:])
+                                if cons.Exp3:
+                                        conexp = ((cons.Exp3/2.) // conexp)
+                                
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in conexp.factors.iteritems():
+                                        if type(fact)!=cvx.base.spmatrix:
+                                                fact = cvx.sparse(fact)
+                                        sj=var.startIndex
+                                        ijv.extend(zip( fact.I,fact.J+sj,fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]   
+                                
+                                #add new eq. cons
+                                szcons = conexp.size[0] * conexp.size[1]
+                                rhstmp = conexp.constant
+                                if rhstmp is None:
+                                        rhstmp = cvx.matrix(0.,(szcons,1))
+
+                                istart=icone
+                                fxd = []
+                                conevars = []
+                                #for i,jv in itojv.iteritems():#TODO same error done with other solvers ?
+                                for i in range(szcons):
+                                        jv = itojv.get(i,[])
+                                        J=[jvk[0] for jvk in jv]
+                                        V=[-jvk[1] for jvk in jv]
+                                        h = rhstmp[i]
+                                        if self.options['handleBarVars']:
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                                for imat,mat in enumerate(mats):
+                                                        if mat:
+                                                                matij = task.appendsparsesymmat(
+                                                                        mat.size[0],
+                                                                        mat.I,mat.J,mat.V)
+                                                                task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
+                                        else:#for algorithmic simplicity
+                                                mats = [0]
+                                        if (self.options['handleConeVars'] and
+                                            len(J)==1 and
+                                            J[0] not in allconevars and
+                                            not(any([mat for mat in mats])) and
+                                            h==0):#no need to add an extra var
+                                                conevars.append(J[0])
+                                                allconevars.append(J[0])
+                                                fxd.append((i,J[0]))
+                                                if V[0]<>-1:
+                                                        scaled_cols[J[0]] = -V[0]
+                                                
+                                        else:
+                                                J.append(icone)
+                                                V.append(1)
+                                                if version7:
+                                                        task.appendcons(1)
+                                                        task.appendvars(1)
+                                                else:
+                                                        task.append(mosek.accmode.con,1)
+                                                        task.append(mosek.accmode.var,1)
+                                                NUMCON += 1
+                                                NUMVAR += 1
+                                                if version7:
+                                                        task.putarow(iaff,J,V)
+                                                else:
+                                                        task.putaijlist([iaff]*len(J),J,V)
+                                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,h,h)
+                                                conevars.append(icone)
+                                                iaff+=1
+                                                icone+=1
+                                iend=icone
+                                #sk in quadratic cone
+                                if cons.Exp3:
+                                        task.appendcone(mosek.conetype.rquad, 0.0, conevars)#range(istart,iend)TOREM
+                                else:
+                                        task.appendcone(mosek.conetype.quad, 0.0, conevars)
+                                        
+                                for j in xrange(istart,iend):#make extra variable free
+                                        task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
+                                fxdconevars.append(fxd)
+                
+                        #SDP constraints:
+                        elif cons.typeOfConstraint.startswith('sdp'):
+                                if self.options['handleBarVars'] and cons.semidefVar:
+                                        isdp +=1
+                                        continue
+                        
+                                szk = BARVARDIM[isdp]
+                                if szk not in tridex:
+                                        #tridex[szk] contains a list of all tuples of the form
+                                        #(E_ij,index(ij)),
+                                        #where ij is an index of a element in the lower triangle
+                                        #E_ij is the symm matrix s.t. <Eij|X> = X_ij
+                                        #and index(ij) is the index of the pair(ij) counted in column major order
+                                        tridex[szk]=[]
+                                        idx = -1
+                                        for j in range(szk):
+                                                for i in range(szk):
+                                                        idx+=1
+                                                        if i>=j: #(in lowtri)
+                                                                if i==j:
+                                                                        subi=[i]
+                                                                        subj=[i]
+                                                                        val=[1.]
+                                                                else:
+                                                                        subi=[i]
+                                                                        subj=[j]
+                                                                        val=[0.5]
+                                                                Eij = task.appendsparsesymmat(
+                                                                        BARVARDIM[isdp],
+                                                                        subi,subj,val)
+                                                                tridex[szk].append((Eij,idx))
+                                
+                                if cons.typeOfConstraint=='sdp<':
+                                        sdexp = (cons.Exp2 - cons.Exp1)
+                                else:
+                                        sdexp = (cons.Exp1 - cons.Exp2)
+                                
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in sdexp.factors.iteritems():
+                                        if type(fact)!=cvx.base.spmatrix:
+                                                fact = cvx.sparse(fact)
+                                        sj=var.startIndex
+                                        ijv.extend(zip( fact.I,fact.J+sj,fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)] 
+                                
+                                szcons = sdexp.size[0] * sdexp.size[1]
+                                rhstmp = sdexp.constant
+                                if rhstmp is None:
+                                        rhstmp = cvx.matrix(0.,(szcons,1))
+                                      
+                                szsym = (szk * (szk+1))/2
+                                if version7:
+                                        task.appendcons(szsym)
+                                else:
+                                        task.append(mosek.accmode.con,szsym)
+                                NUMCON += szsym
+                                for (Eij,idx) in tridex[szk]:
+                                        J=[jvk[0] for jvk in itojv.get(idx,[])]
+                                        V=[-jvk[1] for jvk in itojv.get(idx,[])]
+                                        h = rhstmp[idx]
+                                        if self.options['handleBarVars']:
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                                for imat,mat in enumerate(mats):
+                                                        if mat:
+                                                                matij = task.appendsparsesymmat(
+                                                                        mat.size[0],
+                                                                        mat.I,mat.J,mat.V)
+                                                                task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
+                                                                
+                                        if J:
+                                                task.putarow(iaff,J,V)
+                                        task.putbaraij(iaff, isdp, [Eij], [1.0])
+                                        task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,h,h)
+                                        iaff+=1
+                                isdp+=1
+                        #quadratic constraints:
+                        elif cons.typeOfConstraint=='quad':
+                                task.putmaxnumqnz(self.numberQuadNNZ)
+                                subI=[]
+                                subJ=[]
+                                subV=[]
+                                #quad part
+                                
+                                qexpr=cons.Exp1
+                                for i,j in qexpr.quad:
+                                        si,ei=i.startIndex,i.endIndex
+                                        sj,ej=j.startIndex,j.endIndex
+                                        Qij=qexpr.quad[i,j]
+                                        if not isinstance(Qij,cvx.spmatrix):
+                                                Qij=cvx.sparse(Qij)
+                                        if si==sj:#put A+A' on the diag
+                                                sI=list((Qij+Qij.T).I+si)
+                                                sJ=list((Qij+Qij.T).J+sj)
+                                                sV=list((Qij+Qij.T).V)
+                                                for u in range(len(sI)-1,-1,-1):
+                                                        #remove when j>i
+                                                        if sJ[u]>sI[u]:
+                                                                del sI[u]
+                                                                del sJ[u]
+                                                                del sV[u]
+                                        elif si>=ej: #add A in the lower triang
+                                                sI=list(Qij.I+si)
+                                                sJ=list(Qij.J+sj)
+                                                sV=list(Qij.V)
+                                        else: #add B' in the lower triang
+                                                sI=list((Qij.T).I+sj)
+                                                sJ=list((Qij.T).J+si)
+                                                sV=list((Qij.T).V)
+                                        subI.extend(sI)
+                                        subJ.extend(sJ)
+                                        subV.extend(sV)
+                                #aff part
+                                J = []
+                                V = []
+                                for var in qexpr.aff.factors:
+                                        mat = qexpr.aff.factors[var]
+                                        for j,v in izip(mat.J,mat.V):
+                                                V.append(v)
+                                                J.append(var.startIndex+j)
+                                                        
+                                if self.options['handleBarVars']:
+                                        J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                        subI,subV,mat2 = self._separate_linear_cons(subI,subV,idxsdpvars)
+                                        subJ,_,mat3 = self._separate_linear_cons(subJ,[0.]*len(subJ),idxsdpvars)
+                                        
+                                        if (any([bool(mat) for mat in mats]) or
+                                            any([bool(mat) for mat in mat2]) or
+                                            any([bool(mat) for mat in mat3])):
+                                                    raise Exception('quads with sdp bar vars are not supported')
+                                        
+                                rhs = qexpr.aff.constant
+                                if rhs is None:
+                                        rhs=0.
+                                else:
+                                        rhs = -rhs[0]
+                                
+                                if J:
+                                        if version7:
+                                                task.putarow(iaff,J,V)
+                                        else:
+                                                task.putaijlist([iaff]*len(J),J,V)
+                                task.putqconk(iaff,subI,subJ,subV)
+                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.up,-INFINITY,rhs)
+                                iaff +=1
+                        else:
+                                raise Exception('type of constraint not handled (yet ?) for mosek:{0}'.format(
+                                        constr.typeOfConstraint))
+                                
+               #bounds on vars and bar vars
+                bndjj = []
+                bndlo = []
+                bndup = []
+                for jj in sorted(vbnds.keys()):
+                        bndjj.append(jj)
+                        (lo,up) = vbnds[jj]
+                        if lo is None: lo = -INFINITY
+                        if up is None: up =  INFINITY
+                        bndlo.append(lo)
+                        bndup.append(up)
+                        
+                if self.options['handleBarVars']:
+                        _,bndlo,matslo = self._separate_linear_cons(bndjj,bndlo,idxsdpvars)
+                        bndjj,bndup,matsup = self._separate_linear_cons(bndjj,bndup,idxsdpvars)
+                for j,lo,up in izip(bndjj,bndlo,bndup):
+                        if up>=INFINITY:
+                                task.putbound(mosek.accmode.var,j,mosek.boundkey.lo,lo,INFINITY)
+                        elif lo<=-INFINITY:
+                                task.putbound(mosek.accmode.var,j,mosek.boundkey.up,-INFINITY,up)
+                        elif up==lo:
+                                task.putbound(mosek.accmode.var,j,mosek.boundkey.fx,lo,lo)
+                        else:
+                                task.putbound(mosek.accmode.var,j,mosek.boundkey.ra,lo,up)
+
+                if self.options['handleBarVars']:
+                        #bounds on bar vars by taking the matslo and matsup one by one
+                        for imat,(mlo,mup) in enumerate(zip(matslo,matsup)):
+                                for (i,j,v) in izip(mlo.I,mlo.J,mlo.V):
+                                        if i==j:
+                                                matij = task.appendsparsesymmat(
+                                                        mlo.size[0],
+                                                        [i],[i],[1.])
+                                                lo = v
+                                                up = mup[i,j]
+                                        else:
+                                                matij = task.appendsparsesymmat(
+                                                        mlo.size[0],
+                                                        [i],[j],[0.5])
+                                                lo = v * (2**0.5)
+                                                up = mup[i,j] * (2**0.5)
+                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
+                                        if lo<=-INFINITY:
+                                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.up,
+                                                        -INFINITY,up)
+                                        elif up>=INFINITY:
+                                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.lo,
+                                                        lo,INFINITY)
+                                        else:
+                                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.ra,
+                                                        lo,up)
+                                        iaff+=1
+                
+                #scale columns of variables in cones (simple change of variable which avoids adding an extra var)
+                for (j,v) in scaled_cols.iteritems():
+                        sj = [0]*NUMCON
+                        vj = [0]*NUMCON
+                        if version7:
+                                nzj=task.getacol(j,sj,vj)
+                                task.putacol(j,sj[:nzj],[vji/v for vji in vj[:nzj]])
+                        else:
+                                nzj=task.getavec(mosek.accmode.var,j,sj,vj)
+                                task.putavec(mosek.accmode.var,j,sj[:nzj],[vji/v for vji in vj[:nzj]])
+                        cj = [0.]
+                        task.getcslice(j,j+1,cj)
+                        task.putcj(j,cj[0]/v)
+                
+                #objective sense
+                if self.objective[0]=='max':
+                        task.putobjsense(mosek.objsense.maximize)
+                else:
+                        task.putobjsense(mosek.objsense.minimize)
+                
+                self.msk_env=env
+                self.msk_task=task
+                self.msk_fxd=fxdvars
+                self.msk_scaledcols = scaled_cols
+                self.msk_fxdconevars = fxdconevars
+
+                if reset_hbv_True:
+                        self.options['handleBarVars']=True
+                
+                if self.options['verbose']>0:
+                        print('mosek instance built')
+                   
+        def _make_mosek_instance_old(self):#TOREM
+                """
+                defines the variables msk_env and msk_task used by the solver mosek.
+                """
+                if self.options['verbose']>0:
+                        print('build mosek instance')
                 
                 #import mosek
                 if self.options['solver'] == 'mosek6': #force to use version 6.0 of mosek.
@@ -2650,7 +3510,7 @@ class Problem:
                         else:
                                 ptch=self.get_variable('_ptch_')
                         self.add_constraint( ptch>0 )                                
-                                
+                      
                                 
                 # Give MOSEK an estimate of the size of the input data.
                 # This is done to increase the speed of inputting data.                                
@@ -3244,18 +4104,31 @@ class Problem:
                 
                 solve_via_dual = self.options['solve_via_dual']
                 if solve_via_dual:
+                        converted = False
+                        raiseexp = False
                         try:
                                 dual = self.dualize()
-                                converted = False
-                        except QuadAsSocpError:
+                        except QuadAsSocpError as ex:
                                 if self.options['convert_quad_to_socp_if_needed']:
                                         pcop=self.copy()
-                                        pcop.convert_quad_to_socp()
-                                        converted = True
-                                        dual=pcop.dualize()
+                                        try:
+                                                pcop.convert_quad_to_socp()
+                                                converted = True
+                                                dual=pcop.dualize()
+                                        except NonConvexError as ex:
+                                                raiseexp = True
                                 else:
-                                        raise
+                                        raiseexp = True
+                        except Exception as ex:
+                                raiseexp = True
                         finally:
+                                #if nonconvex:
+                                        #raise NonConvexError('Problem is nonconvex')
+                                #if nosocpquad:
+                                        #raise QuadAsSocpError('Try to convert the quadratic constraints as cone constraints '+
+                                                #'with the function convert_quad_to_socp().')
+                                if raiseexp:
+                                        raise(ex)
                                 sol = dual.solve()
                                 obj = -sol['obj']
                                 if 'noprimals' in self.options and self.options['noprimals']:
@@ -3266,7 +4139,7 @@ class Problem:
                                         xx = dual.constraints[-1].dual
                                         if xx is None:
                                                 if self.options['verbose']>0:
-                                                        print "\033[1;31m Primal could dot be retrieved from the dual problem \033[0m"
+                                                        raise Exception("\033[1;31m no Primals retrieved from the dual problem \033[0m")
                                         else:
                                                 xx = -xx
                                                 indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
@@ -4497,7 +5370,10 @@ class Problem:
                         task.optimize()
                 except mosek.Error as ex:
                         #catch non-convexity exception
-                        if self.numberQuadConstraints>0 and (str(ex)=='(0) ' or str(ex).startswith('(1296)')):
+                        if self.numberQuadConstraints>0 and (str(ex)=='(0) ' or
+                                                             str(ex).startswith('(1296)') or
+                                                             str(ex).startswith('(1295)')
+                                                             ):
                                 raise NonConvexError('Error raised during solve. Problem nonconvex ?')
                         else:
                                 print "Error raised during solve"
@@ -4550,19 +5426,21 @@ class Problem:
                                 indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
                                 indices = sorted(indices)
                                 if self.options['handleBarVars']:
-                                        idxsdpvars=[(var.startIndex,var.endIndex) for var in self.semidefVars[::-1]]
+                                        #TOREM idxsdpvars=[(var.startIndex,var.endIndex) for var in self.semidefVars[::-1]]
+                                        idxsdpvars=[(si,ei) for (si,ei,v) in indices[::-1] if v.semiDef]
                                         isdpvar = 0
                                 else:
                                         idxsdpvars=[]
                                 for si,ei,var in indices:
                                         
-                                        if self.semidefVars and self.options['handleBarVars'] and var is self.semidefVars[isdpvar]:
+                                        if self.options['handleBarVars'] and var.semiDef:
                                                 #xjbar = np.zeros(int((var.size[0]*(var.size[0]+1))/2),float)
                                                 xjbar = [0.] * int((var.size[0]*(var.size[0]+1))/2)
                                                 task.getbarxj(mosek.soltype.itr,isdpvar,xjbar)
                                                 xjbar = ltrim1(cvx.matrix(xjbar))
                                                 primals[var.name]=cvx.matrix(xjbar,var.size)
                                                 isdpvar += 1
+                                                #TODO dont we need a indsdpvar for mixed LMI/semidef ?
                                                 
                                                 
                                         else:
@@ -4570,6 +5448,9 @@ class Problem:
                                                 xx = [0.] * (ei-si) #list instead of np.zeros to avoid PEEP 3118 buffer warning
                                                 (si,eim),_,_ = self._separate_linear_cons([si,ei-1],[0,0],idxsdpvars)
                                                 task.getsolutionslice(soltype,mosek.solitem.xx, si,eim+1, xx)
+                                                scaledx = [(j,v) for (j,v) in self.msk_scaledcols.iteritems() if j>=si and j<ei]
+                                                for (j,v) in scaledx: #do the change of variable the other way around.
+                                                        xx[j-si]/=v
                                                 if var.vtype=='symmetric':
                                                         xx=svecm1(cvx.matrix(xx))
                                                 primals[var.name]=cvx.matrix(xx,var.size)
@@ -4604,63 +5485,57 @@ class Problem:
                 else:
                         try:
                                 if self.options['handleBarVars']:
-                                        idvarcone = self.numberOfVars - int(_bsum([(Gs.size[0]+(Gs.size[0])**0.5)/2.
-                                             for Gs,Xs in zip(self.cvxoptVars['Gs'],self.cvxoptVars['Xs'])
-                                             if Xs]))
+                                        idvarcone = int(_bsum([(var.endIndex-var.startIndex)
+                                            for var in self.variables.values() if not(var.semiDef)]))
                                 else:
                                         idvarcone=self.numberOfVars #index of variables in cone
-                                ideq=0 #index of equality constraint in cvxoptVars['A']
-                                idconeq=0 #index of equality constraint in mosekcons (without fixed vars)
+                                
+                                idconin=0 #index of equality constraint in mosekcons (without fixed vars)
                                 idin=0 #index of inequality constraint in cvxoptVars['Gl']
-                                idconin=len([1 for ida in range(self.cvxoptVars['A'].size[0])
-                                                if len(self.cvxoptVars['A'][ida,:].J)>1])
-                                        #index of inequality constraint in mosekcons (without fixed vars)
                                 idcone=0 #number of seen cones
-                                Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
                                 idsdp = 0 #number of seen sdp cons
-                                
-                                #indices for ineq constraints
-                                
-                                ijvs=sorted(zip(Gli,Glj,Glv),reverse=True)
-                                if len(ijvs)>0:
-                                        (ik,jk,vk)=ijvs.pop()
-                                        curik=-1
-                                        delNext=False
-                                del Gli,Glj,Glv
-                                
-                                #indices for eq constraints
-                                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
-                                ijls=sorted(zip(Ai,Aj,Av),reverse=True)
-                                if len(ijls)>0:
-                                        (il,jl,vl)=ijls.pop()
-                                        curil=-1
-                                        delNext=False
-                                del Ai,Aj,Av
-                                
+                                szcones = [((cs.Exp1.size[0]*cs.Exp1.size[1] + 2) if cs.Exp3 else (cs.Exp1.size[0]*cs.Exp1.size[1] + 1))
+                                                for cs in self.constraints
+                                                if cs.typeOfConstraint.endswith('cone')]
                                 
                                 seen_bounded_vars = []
                                 
                                 #now we parse the constraints
-                                for k in range(len(self.constraints)):
+                                for k,cons in enumerate(self.constraints):
                                         #conic constraint
-                                        if self.constraints[k].typeOfConstraint[2:]=='cone':
-                                                szcone=self.cvxoptVars['Gq'][idcone].size[0]
+                                        if cons.typeOfConstraint[2:]=='cone':
+                                                szcone=szcones[idcone]
+                                                fxd = self.msk_fxdconevars[idcone]
                                                 #v=np.zeros(szcone,float) 
-                                                v= [0.] * szcone
+                                                v= [0.] * (szcone - len(fxd))
                                                 task.getsolutionslice(soltype,mosek.solitem.snx,
-                                                                idvarcone,idvarcone+szcone,v)
-                                                duals.append(cvx.matrix(v))
-                                                duals[-1][0]=-duals[-1][0]
-                                                idvarcone+=szcone
+                                                                idvarcone,idvarcone+len(v),v)
+                                                for i,j in fxd:
+                                                        vj=[0.]
+                                                        task.getsolutionslice(soltype,mosek.solitem.snx,
+                                                                j,j+1,vj)
+                                                        v.insert(i,vj[0])
+                                                
+                                                if cons.typeOfConstraint.startswith('SO'):
+                                                        duals.append(cvx.matrix(v))
+                                                        duals[-1][0]=-duals[-1][0]
+                                                else:
+                                                        vr = [-0.25*v[0] -0.5*v[1]] + [0.5*vi for vi in v[2:]] + [-0.25*v[0] +0.5*v[1]]
+                                                        duals.append(cvx.matrix(vr))
+                                                idvarcone+=szcone-len(fxd)
+                                                idconin+=szcone-len(fxd)
                                                 idcone+=1
+                                        
                                         elif self.constraints[k].typeOfConstraint=='lin=':
                                                 szcons=int(np.product(self.constraints[k].Exp1.size))
-                                                fxd=[(l-ideq,var,coef) for (l,var,coef) in self.msk_fxd[0] if l>=ideq and l<ideq+szcons]
+                                                #TOREM fxd=[(l-idin,var,coef) for (l,var,coef) in self.msk_fxd[0]
+                                                #        if l>=idin and l<idin+szcons]
+                                                fxd=self.msk_fxd[k]
                                                 #v=np.zeros(szcons-len(fxd),float)
                                                 v = [0.] * (szcons-len(fxd))
                                                 if len(v)>0:
                                                         task.getsolutionslice(soltype,mosek.solitem.y,
-                                                                idconeq,idconeq+szcons-len(fxd),v)
+                                                                idconin,idconin+szcons-len(fxd),v)
                                                 for (l,var,coef) in fxd: #dual of fixed var constraints
                                                         duu = [0.]
                                                         dul = [0.]
@@ -4676,22 +5551,32 @@ class Problem:
                                                         else:
                                                                 v.insert(l,0.)
                                                 duals.append(cvx.matrix(v))
-                                                ideq+=szcons
-                                                idconeq+=(szcons-len(fxd))
-                                                delNext=False
-                                        elif self.constraints[k].typeOfConstraint[:3]=='lin':#inequality
-                                                szcons=int(np.product(self.constraints[k].Exp1.size))
-                                                fxd=[(l-idin,var,coef) for (l,var,coef) in self.msk_fxd[1] if l>=idin and l<idin+szcons]
+                                                idin+=szcons
+                                                idconin+=(szcons-len(fxd))
                                                 
+                                        elif cons.typeOfConstraint[:3]=='lin':#inequality
+                                                szcons=int(np.product(cons.Exp1.size))
+                                                #TOREM fxd=[(l-idin,var,coef) for (l,var,coef)
+                                                #        in self.msk_fxd[1] if l>=idin and l<idin+szcons]
+                                                fxd=self.msk_fxd[k]
                                                 #v=np.zeros(szcons-len(fxd),float)
                                                 v=[0.] * (szcons-len(fxd))
                                                 if len(v)>0:
                                                         task.getsolutionslice(soltype,mosek.solitem.y,
                                                                 idconin,idconin+szcons-len(fxd),v)
+                                                if cons.typeOfConstraint[3]=='>':
+                                                        v = [-vi for vi in v]
                                                 for (l,var,coef) in fxd: #dual of simple bound constraints
                                                         #du=np.zeros(1,float)
                                                         du = [0.]
-                                                        bound=self.cvxoptVars['hl'][idin+l]/coef
+                                                        bound = (cons.Exp2 - cons.Exp1).constant
+                                                        if bound is None:
+                                                                bound = 0
+                                                        elif cons.typeOfConstraint[3]=='>':
+                                                                bound = -bound[l]/float(coef)
+                                                        else:
+                                                                bound = bound[l]/float(coef)
+                                                       
                                                         bk,bl,bu=task.getbound(mosek.accmode.var,var)
                                                         duu = [0.]
                                                         dul = [0.]
@@ -4723,9 +5608,9 @@ class Problem:
                                                 duals.append(cvx.matrix(v))
                                                 idin+=szcons
                                                 idconin+=(szcons-len(fxd))
-                                                delNext = False
-                                        elif self.constraints[k].typeOfConstraint[:3]=='sdp':
-                                                sz = self.constraints[k].Exp1.size
+                                                
+                                        elif cons.typeOfConstraint[:3]=='sdp':
+                                                sz = cons.Exp1.size
                                                 xx = [0.] * ((sz[0]*(sz[0]+1))/2)
                                                 #xx=np.zeros((sz[0]*(sz[0]+1))/2,float)
                                                 task.getbarsj(mosek.soltype.itr,idsdp,xx)
@@ -4747,11 +5632,6 @@ class Problem:
                 #-----------------#  
                 #OBJECTIVE
                 sol = {'mosek_task':task,'status':status, 'time':tend - tstart}
-                
-                #delete the patch variable for quad prog with 1 var
-                if '_ptch_' in self.variables:
-                        self.remove_variable('_ptch_')
-                        del primals['_ptch_']
                 
                 return (primals,duals,obj,sol)                
         
@@ -5684,12 +6564,12 @@ class Problem:
                                 
                             
         def dualize(self):
+                if self.numberLSEConstraints>0:
+                        raise DualizationError('GP cannot be dualized by PICOS')
+                if not self.is_continuous():
+                        raise DualizationError('Mixed integer problems cannot be dualized by picos')
                 if self.numberQuadConstraints>0:
                         raise QuadAsSocpError('try to convert the quads as socp before dualizing')
-                if self.numberLSEConstraints>0:
-                        raise Exception('GP cannot be dualized by PICOS')
-                if not self.is_continuous():
-                        raise Exception('Mixed integer problems cannot be dualized by picos')
                 dual = Problem()
                 self._make_cvxopt_instance()
                 cc = new_param('cc',self.cvxoptVars['c'])
@@ -5754,14 +6634,50 @@ class Problem:
                 return dual
                 
         def primalize(self):
+                if self.numberLSEConstraints>0:
+                        raise DualizationError('GP cannot be dualized by PICOS')
+                if not self.is_continuous():
+                        raise DualizationError('Mixed integer problems cannot be dualized by picos')
                 if self.numberQuadConstraints>0:
                         raise QuadAsSocpError('try to convert the quads as socp before dualizing')
-                if self.numberLSEConstraints>0:
-                        raise Exception('GP cannot be dualized by PICOS')
-                if not self.is_continuous():
-                        raise Exception('Mixed integer problems cannot be dualized by picos')
-                primal = Problem()
                 
+                #we first create a copy of the problem with the desired "nice dual form"
+                pcop = self.copy()
+                
+                socones = [] #list of list of (var index,coef) in a rotated so cone
+                rscones = [] #list of list of (var index,coef) in a rotated so cone
+                semidefs = [] #list of list of var indices in a sdcone
+                indlmi = 0
+                indzz= 0
+                XX=[]
+                zz=[]
+                #add new variables for LMI
+                for (i,cons) in [(i,cons) for (i,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.startswith('sdp')]:
+                        if cons.semidefVar:
+                                var = cons.semidefVar
+                                semidefs.append(range(var.startIndex,var.endIndex))
+                        else:
+                                sz = cons.Exp1.size
+                                pcop.remove_constraint(i)
+                                XX.append(pcop.add_variable('_Xlmi['+str(indlmi)+']',sz,'symmetric'))
+                                pcop.add_constraint(XX[indlmi]>>0)
+                                if cons.typeOfConstraint[3]=='<':
+                                        pcop.add_constraint(XX[indlmi] == cons.Exp2-cons.Exp1)
+                                else:
+                                        pcop.add_constraint(XX[indlmi] == cons.Exp1-cons.Exp2)
+                                semidefs.append(range(XX[indlmi].startIndex,XX[indlmi].endIndex))
+                                indlmi+=1
+                #add new variables for soc cones
+                for (i,cons) in [(i,cons) for (i,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.endswith('cone')]:
+                        stdcone = pcop,standardCones[i]
+                        cone = []
+                        #TODO or either as above, remove the constraint and add the standard cons.
+                        if stdcone[0]:
+                                for (var,idx,coef) in stdcone[0]:
+                                        cone.append((var.startIndex+idx,coef))
+                        else:
+                                zz.append(pcop.add_variable('zz['+str(indzz)+']',cons.Exp1.sz))
+                return pcop
                 
 #----------------------------------------
 #                 Obsolete functions

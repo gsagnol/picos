@@ -40,11 +40,15 @@ __all__=['Expression',
         'GeneralFun',
         'LogSumExp',
         '_ConvexExp',
+        '_NonWritableDict',
         'GeoMeanExp',
         'NormP_Exp',
         'Variable'
         ]
        
+global INFINITY
+INFINITY=1e16
+
 #----------------------------------
 #                Expression
 #----------------------------------
@@ -194,9 +198,14 @@ class AffinExp(Expression):
                 """constant of the affine expression,
                 stored as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
                 """
-                self.size=size
+                self._size=size
                 """size of the affine expression"""
                 #self.string=string
+                
+        @property
+        def size(self):
+                """size of the affine expression"""
+                return self._size
                 
         def __str__(self):
                 if self.is_valued():
@@ -339,7 +348,7 @@ class AffinExp(Expression):
                 if not (selfcopy.constant is None):
                         selfcopy.constant=cvx.matrix(selfcopy.constant,
                                         selfcopy.size).T[:]
-                selfcopy.size=(selfcopy.size[1],selfcopy.size[0])
+                selfcopy._size=(selfcopy.size[1],selfcopy.size[0])
                 if ( ('*' in selfcopy.affstring()) or ('/' in selfcopy.affstring())
                         or ('+' in selfcopy.affstring()) or ('-' in selfcopy.affstring()) ):
                         selfcopy.string='( '+selfcopy.string+' ).T'
@@ -383,7 +392,7 @@ class AffinExp(Expression):
                 else:
                         newfac=bfac*selfcopy.constant
                 selfcopy.constant=newfac
-                selfcopy.size=(fac.size[0],selfcopy.size[1])
+                selfcopy._size=(fac.size[0],selfcopy.size[1])
                 #the following removes 'I' from the string when a matrix is multiplied
                 #by the identity. We leave the 'I' when the factor of identity is a scalar
                 if len(facString)>0:            
@@ -466,7 +475,7 @@ class AffinExp(Expression):
                         selfcopy=selfcopy.diag(fac.size[0])
                         selfcopy.string=oldstring
                 prod=(self.T.__rmul__(fac.T)).T
-                prod.size=(selfcopy.size[0],fac.size[1])
+                prod._size=(selfcopy.size[0],fac.size[1])
                 #the following removes 'I' from the string when a matrix is multiplied
                 #by the identity. We leave the 'I' when the factor of identity is a scalar
                 if len(facString)>0:
@@ -510,7 +519,7 @@ class AffinExp(Expression):
                 else:
                         newfac=cfac*selfcopy.constant
                 selfcopy.constant=newfac
-                selfcopy.size=(1,1)
+                selfcopy._size=(1,1)
                 if facString[-1]=='I' and (len(facString)==1
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         selfcopy.string=facString[:-1]+'trace( '+selfcopy.string+' )'
@@ -543,7 +552,7 @@ class AffinExp(Expression):
                 else:
                         newfac=cfac*selfcopy.constant
                 selfcopy.constant=newfac
-                selfcopy.size=(1,1)
+                selfcopy._size=(1,1)
                 if facString[-1]=='I' and (len(facString)==1
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         selfcopy.string=facString[:-1]+'trace( '+selfcopy.string+' )'
@@ -902,7 +911,7 @@ class AffinExp(Expression):
                 if not self.constant is None:           
                         for i in idx:
                                 selfcopy.constant[i]=self.constant[0]
-                selfcopy.size=(dim,dim)
+                selfcopy._size=(dim,dim)
                 selfcopy.string='diag('+selfcopy.string+')'
                 return selfcopy
 
@@ -942,7 +951,7 @@ class AffinExp(Expression):
                                 else:
                                         newCons=cvx.sparse([[newCons,cvx.spmatrix([],[],[],(s2,1))]])
                                 selfcopy.constant=newCons
-                        selfcopy.size=(exp.size[0],exp.size[1]+selfcopy.size[1])
+                        selfcopy._size=(exp.size[0],exp.size[1]+selfcopy.size[1])
                         sstring=selfcopy.string
                         estring=exp.string
                         if sstring[0]=='[' and sstring[-1]==']':
@@ -965,7 +974,7 @@ class AffinExp(Expression):
                 """vertical concatenation"""
                 if isinstance(exp,AffinExp):
                         concat=(self.T & exp.T).T
-                        concat.size=(exp.size[0]+self.size[0],exp.size[1])
+                        concat._size=(exp.size[0]+self.size[0],exp.size[1])
                         sstring=self.string
                         estring=exp.string
                         if sstring[0]=='[' and sstring[-1]==']':
@@ -1701,7 +1710,30 @@ class NormP_Exp(_ConvexExp):
                         term,termString=_retrieve_matrix(exp,(1,1))
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>exp1
-                        
+                
+#a not writable dict
+class _NonWritableDict(dict):
+
+    def __getitem__(self,key):
+        return dict.__getitem__(self,key)
+
+    def __setitem__(self,key,value):
+        print 'not writable'
+
+    def __delitem__(self,key):
+        print 'not writable'
+
+    def _set(self,key,value):
+        dict.__setitem__(self,key,value)
+
+    def _del(self,key):
+        dict.__delitem__(self,key)
+        
+    def _reset(self):
+        for key in self.keys():
+                self._del(key)
+                
+                
 class Variable(AffinExp):
         """This class stores a variable. It
         derives from :class:`AffinExp<picos.AffinExp>`.
@@ -1711,7 +1743,9 @@ class Variable(AffinExp):
                           size,
                           Id,
                           startIndex,
-                          vtype = 'continuous'):
+                          vtype = 'continuous',
+                          lower = None,
+                          upper = None):
                 
                 ##attributes of the parent class (AffinExp)
                 idmat=_svecm1_identity(vtype,size)
@@ -1725,40 +1759,39 @@ class Variable(AffinExp):
                 """The name of the variable (str)"""
 
                 self.Id=Id
-                """An integer index"""
-                self.vtype=vtype
-                """one of the following strings:
+                """An integer index (obsolete)"""
+                self._vtype=vtype
                 
-                     * 'continuous' (continuous variable)
-                     * 'binary'     (binary 0/1 variable)
-                     * 'integer'    (integer variable)
-                     * 'symmetric'  (symmetric matrix variable)
-                     * 'semicont'   (semicontinuous variable 
-                                    [can take the value 0 or any 
-                                    other admissible value])
-                     * 'semiint'    (semi integer variable 
-                                     [can take the value 0 or any
-                                     other integer admissible value])
-                """
-                self.startIndex=startIndex
-                """starting position in the global vector of all variables"""
+                self._startIndex=startIndex
                 
-                self.endIndex=None
+                self._endIndex=None
                 """end position in the global vector of all variables"""
                 
                 
                 if vtype=='symmetric':
-                        self.endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
+                        self._endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
                 else:
-                        self.endIndex=startIndex+size[0]*size[1] #end position +1
+                        self._endIndex=startIndex+size[0]*size[1] #end position +1
                 
                 self._value=None
 
                 self.value_alt = {} #alternative values for solution pools
                                 
-
+                self._bnd = _NonWritableDict() #dictionary of (lower,upper) bounds ( +/-infinite if the index is not in the dict) 
                 
+                self._semiDef = False #True if this is a sym. variable X subject to X>>0
                 
+                self._bndtext = ''
+                
+                if not(lower is None):
+                        self.set_lower(lower)
+                        
+                if not(upper is None):
+                        self.set_upper(upper)
+                        
+                self.passed = []
+                """list of solvers which are aware of this variable"""
+                                        
         def __str__(self):
                 if self.is_valued():
                         if self.size==(1,1):
@@ -1772,7 +1805,234 @@ class Variable(AffinExp):
                 return '# variable {0}:({1} x {2}),{3} #'.format(
                         self.name,self.size[0],self.size[1],self.vtype)
                         
-                        
+        @property
+        def bnd(self):
+                """
+                ``var.bnd[i]`` returns a tuple ``(lo,up)`` of lower and upper bounds for the
+                ith element of the variable ``var``. None means +/- infinite.
+                if ``var.bnd[i]`` is not defined, then ``var[i]`` is unbounded.
+                """
+                return self._bnd
+        
+        @property
+        def startIndex(self):
+                """starting position in the global vector of all variables"""
+                return self._startIndex
+                
+        @property
+        def endIndex(self):
+                """end position in the global vector of all variables"""
+                return self._endIndex
+        @property
+        def vtype(self):
+                """one of the following strings:
+                
+                     * 'continuous' (continuous variable)
+                     * 'binary'     (binary 0/1 variable)
+                     * 'integer'    (integer variable)
+                     * 'symmetric'  (symmetric matrix variable)
+                     * 'semicont'   (semicontinuous variable 
+                                    [can take the value 0 or any 
+                                    other admissible value])
+                     * 'semiint'    (semi integer variable 
+                                     [can take the value 0 or any
+                                     other integer admissible value])
+                """
+                return self._vtype
+         
+        @vtype.setter
+        def vtype(self, value):
+                if not(value in ['symmetric','continuous','binary','integer','semicont','semiint']):
+                        raise ValueError('unknown variable type')
+                if self._vtype <> 'symmetric' and value == 'symmetric':
+                        raise Exception('change to symmetric is forbiden because of sym-vectorization')
+                if self._vtype == 'symmetric' and value <> 'symmetric':
+                        raise Exception('change from symmetric is forbiden because of sym-vectorization')
+                self._vtype = value
+                
+        @property
+        def semiDef(self):
+                """True if this is a sym. variable X subject to X>>0"""
+                return self._semiDef
+                
+        @semiDef.setter
+        def semiDef(self,value):
+                if not(self._semiDef) and (value) and ('mosek' in self.passed):
+                       print "\033[1;31mWarning: this var has already been passed to mosek, so mosek will not be able to handle it as a bar variable.\033[0m"
+                       
+                self._semiDef = value
+                
+        def set_lower(self,lo):
+                """
+                sets a lower bound to the variable
+                (lo may be scalar or a matrix of the same size as the variable ``self``).
+                Entries smaller than -INFINITY = -1e16 are ignored
+                """
+                lowexp = _retrieve_matrix(lo,self.size)[0]
+                if self.vtype=='symmetric':
+                        lowexp = svec(lowexp)
+                for i in range(lowexp.size[0] * lowexp.size[1]):
+                        li = lowexp[i]
+                        if li>-INFINITY:
+                                bil,biu = self.bnd.get(i,(None,None))
+                                self.bnd._set(i,(li,biu))
+                
+                if ('low' not in self._bndtext) and ('nonnegative' not in self._bndtext):
+                        if lowexp:
+                                self._bndtext += ', bounded below'
+                        else:
+                                self._bndtext += ', nonnegative'
+                elif ('low' in self._bndtext):
+                        if not(lowexp):
+                                self._bndtext.replace('bounded below','nonnegative')
+                        elif ('lower' in self._bndtext):
+                                self._bndtext.replace('some lower bounds','bounded below')
+                else:
+                        if lowexp:
+                                self._bndtext.replace('nonnegative','bounded below')
+                                
+        def set_sparse_lower(self,indices,bnds):
+                """
+                sets the lower bound bnds[i] to the index indices[i] of the variable.
+                For a symmetric matrix variable, bounds on elements in the upper triangle are ignored.
+                
+                :param indices: list of indices, given as integers (column major order) or tuples (i,j).
+                :type indices: ``list``
+                :param bnds: list of lower bounds.
+                :type lower: ``list``
+                
+                .. Warning:: This function does not modify the existing bounds on elements other
+                             than those specified in ``indices``.
+                
+                **Example:**
+
+                >>> import picos as pic
+                >>> P = pic.Problem()
+                >>> X = P.add_variable('X',(3,2),lower = 0)
+                >>> X.set_sparse_upper([0,(0,1),1],[1,2,0])
+                >>> X.bnd #doctest: +NORMALIZE_WHITESPACE
+                {0: (0.0, 1.0),
+                 1: (0.0, 0.0),
+                 2: (0.0, None),
+                 3: (0.0, 2.0),
+                 4: (0.0, None),
+                 5: (0.0, None)}
+                """
+                from itertools import izip
+                s0 = self.size[0]
+                vv = []
+                ii = []
+                jj = []
+                for idx,lo in izip(indices,bnds):
+                        if isinstance(idx,int):
+                                idx = (idx%s0, idx//s0)
+                        if self.vtype == 'symmetric':
+                                (i,j) = idx
+                                if i>j:
+                                        ii.append(i)
+                                        jj.append(j)
+                                        vv.append(lo)
+                                        ii.append(j)
+                                        jj.append(i)
+                                        vv.append(lo)
+                                elif i==j:
+                                        ii.append(i)
+                                        jj.append(i)
+                                        vv.append(lo)
+                        ii.append(idx[0])
+                        jj.append(idx[1])
+                        vv.append(lo)
+                spLO = cvx.spmatrix(vv,ii,jj,self.size)
+                if self.vtype == 'symmetric':
+                        spLO = svec(spLO)
+                for i,j,v in izip(spLO.I,spLO.J,spLO.V):
+                        ii = s0*j + i
+                        bil,biu = self.bnd.get(ii,(None,None))
+                        self.bnd._set(ii,(v,biu))
+                
+                if ('nonnegative' in self._bndtext):
+                        self._bndtext.replace('nonnegative','bounded below')
+                elif ('low' not in self._bndtext):
+                        self._bndtext += ', some lower bounds'
+                
+        def set_upper(self,up):
+                """
+                sets an upper bound to the variable
+                (up may be scalar or a matrix of the same size as the variable ``self``).
+                Entries larger than INFINITY = 1e16 are ignored
+                """
+                upexp = _retrieve_matrix(up,self.size)[0]
+                if self.vtype=='symmetric':
+                        upexp = svec(upexp)
+                for i in range(upexp.size[0] * upexp.size[1]):
+                        ui = upexp[i]
+                        if ui<INFINITY:
+                                bil,biu = self.bnd.get(i,(None,None))
+                                self.bnd._set(i,(bil,ui))
+                if ('above' not in self._bndtext) and ('upper' not in self._bndtext) and ('nonpositive' not in self._bndtext):
+                        if upexp:
+                                self._bndtext += ', bounded above'
+                        else:
+                                self._bndtext += ', nonpositive'
+                elif ('above' in self._bndtext):
+                        if not(upexp):
+                                self._bndtext.replace('bounded above','nonpositive')
+                elif ('upper' in self._bndtext):
+                                self._bndtext.replace('some upper bounds','bounded above')
+                else:
+                        if upexp:
+                                self._bndtext.replace('nonpositive','bounded above')
+                
+        def set_sparse_upper(self,indices,bnds):
+                """
+                sets the upper bound bnds[i] to the index indices[i] of the variable.
+                For a symmetric matrix variable, bounds on elements in the upper triangle are ignored.
+                
+                :param indices: list of indices, given as integers (column major order) or tuples (i,j).
+                :type indices: ``list``
+                :param bnds: list of upper bounds.
+                :type lower: ``list``
+                
+                .. Warning:: This function does not modify the existing bounds on elements other
+                             than those specified in ``indices``.
+                """
+                from itertools import izip
+                s0 = self.size[0]
+                vv = []
+                ii = []
+                jj = []
+                for idx,up in izip(indices,bnds):
+                        if isinstance(idx,int):
+                                idx = (idx%s0, idx//s0)
+                        if self.vtype == 'symmetric':
+                                (i,j) = idx
+                                if i>j:
+                                        ii.append(i)
+                                        jj.append(j)
+                                        vv.append(up)
+                                        ii.append(j)
+                                        jj.append(i)
+                                        vv.append(up)
+                                elif i==j:
+                                        ii.append(i)
+                                        jj.append(i)
+                                        vv.append(up)
+                        else:
+                                ii.append(idx[0])
+                                jj.append(idx[1])
+                                vv.append(up)
+                spUP = cvx.spmatrix(vv,ii,jj,self.size)
+                if self.vtype == 'symmetric':
+                        spUP = svec(spUP)
+                for i,j,v in izip(spUP.I,spUP.J,spUP.V):
+                        ii = s0*j + i
+                        bil,biu = self.bnd.get(ii,(None,None))
+                        self.bnd._set(ii,(bil,v))      
+                if ('nonpositive' in self._bndtext):
+                        self._bndtext.replace('nonpositive','bounded above')
+                elif ('above' not in self._bndtext) and ('upper' not in self._bndtext):
+                        self._bndtext += ', some upper bounds'
+                
         def eval(self, ind = None):
                 if ind is None:
                         if self._value is None:

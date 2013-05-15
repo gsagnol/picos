@@ -233,9 +233,6 @@ This generates the output:
     [ 2.32e-01]
     [ 2.59e-01]
 
-
-
-
 .. _solvers:
 
 Solvers

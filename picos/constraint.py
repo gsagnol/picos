@@ -73,17 +73,73 @@ class Constraint(object):
                 """for a constraint of the form X>>0, stores the semidef variable"""
                 self.exp1ConeVar = None
                 self.exp2ConeVar = None
-                self.exp3ConeVar = None#TODO
+                self.exp3ConeVar = None
                 """for a constraint of the form ||x||<u or ||x||^2<u v, stores x, u and v"""
+                self.boundCons = None
+                """stores  list of bounds of the form (var,index,lower,upper)"""
                 self.key=None
                 """A string to give a key name to the constraint"""
                 self.myconstring = None #workaround to redefine string representation
                 self.myfullconstring = None #workaround to redefine complete constraint (with # ... #) string
+                
+                self.passed = []
+                """list of solvers to which this constraints was already passed"""
+                
                 if typeOfConstraint=='RScone' and Exp3 is None:
                         raise NameError('I need a 3d expression')
                 if typeOfConstraint[:3]=='lin':
                         if Exp1.size<>Exp2.size:
                                 raise NameError('incoherent lhs and rhs')
+                        #are there some bound constrainta ?
+                        fac1 = self.Exp1.factors
+                        fac2 = self.Exp2.factors
+                        """TOREM
+                        bddvars = []
+                        conssz = Exp1.size[0] * Exp1.size[0]
+                        from itertools import izip
+                        itojv = {i:None for i in range(conssz)} #stores (i,j,v) when there is no more than one nonzero coef
+                        for var in fac1:
+                                mat = fac1[var]
+                                for ii,jj,vv in izip(mat.I,mat.J,mat.V):
+                                        ijvi = itojv.get(ii,-1)
+                                        if ijvi is None: #no coef yet in row i
+                                                itojv[ii] = (var,jj,vv)
+                                        elif ijvi == -1: #alredy deleted, ie more than one coef
+                                                continue
+                                        else:
+                                                del itojv[ii]
+                        for var in fac2:
+                                mat = fac2[var]
+                                for ii,jj,vv in izip(mat.I,mat.J,mat.V):
+                                        ijvi = itojv.get(ii,-1)
+                                        if ijvi is None: #no coef yet in row i
+                                                itojv[ii] = (var,jj,-vv)
+                                        elif ijvi == -1: #alredy deleted, ie more than one coef
+                                                continue
+                                        else:
+                                                del itojv[ii]
+                        #fix bounds when there is only one coef in the row
+                        for i in itojv:
+                                if itojv[i] is None:
+                                        continue
+                                (var,j,v) = itojv[i]
+                                if v == 0:
+                                        continue
+                                if self.Exp2.constant:
+                                        b = self.Exp2.constant[i]
+                                else:
+                                        b = 0.
+                                if self.Exp1.constant:
+                                        b -=self.Exp1.constant[i]
+                                bnd = float(b)/v
+                                if typeOfConstraint[3]=='=':
+                                        bddvars.append((var,j,bnd,bnd))
+                                elif (typeOfConstraint[3]=='<' and v>0) or (typeOfConstraint[3]=='>' and v<0):
+                                        bddvars.append((var,j,None,bnd))
+                                else:
+                                        bddvars.append((var,j,bnd,None))
+                        self.boundCons = bddvars
+                        """
                 if typeOfConstraint[2:]=='cone':                        
                         if Exp2.size<>(1,1):
                                 raise NameError('expression on the rhs should be scalar')
@@ -91,6 +147,7 @@ class Constraint(object):
                                 if Exp3.size<>(1,1):
                                         raise NameError(
                                         'expression on the rhs should be scalar')
+                        """TOREM
                         #are the lhs and or rhs obtained by a simple scaling of the variables ?
                         fac1 = self.Exp1.factors
                         simple_exp = not(self.Exp1.constant)
@@ -123,7 +180,7 @@ class Constraint(object):
                                         mat = fac3[var]
                                         if len(mat.J)==1 and var.vtype<>'symmetric':
                                                 self.exp3ConeVar = (var,mat.J[0],mat.V[0])
-                        
+                        """
                         
                 if typeOfConstraint=='lse':
                         if not (Exp2==0 or Exp2.is0()):

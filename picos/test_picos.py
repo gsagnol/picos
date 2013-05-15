@@ -109,9 +109,9 @@ prob_dual_c.add_constraint(
         == cc )
 prob_dual_c.set_objective('min',1|mu)
 
-#------------------------------------------------------#
-# multiresponse case c-optimality, exact-int dual SOCP #
-#------------------------------------------------------#
+#----------------------------------------------------------------#
+# multiresponse case exacr c-optimality, Lagrangian bound MISOCP #
+#----------------------------------------------------------------#
 prob_exact_c=pic.Problem()
 AA=[cvx.sparse(a,tc='d').T for a in A]
 s=len(AA)
@@ -209,7 +209,8 @@ prob_dual_A.set_objective('min',1|mu)
 # single response case, c-optimality LP #
 #---------------------------------------#
 prob_LP_c=pic.Problem()
-AA=[cvx.sparse(a[:,i],tc='d').T for i in range(3) for a in A[4:]]
+#AA=[cvx.sparse(a[:,i],tc='d').T for i in range(3) for a in A[4:]]
+AA=[cvx.sparse(a[:,0],tc='d').T for a in A]#new version to have variable bounds
 s=len(AA)
 AA=pic.new_param('A',AA)
 cc=pic.new_param('c',c)
@@ -219,13 +220,15 @@ prob_LP_c.add_list_of_constraints(
         'i', #index
         '[s]' #set to which the index belongs
         )
-prob_LP_c.set_objective('max', cc|u)
+#prob_LP_c.set_objective('max', cc|u)
+prob_LP_c.set_objective('min', cc|u)#new version to have a minimization LP
 
 #--------------------------------------------#
 # single response case, c-optimality dual LP #
 #--------------------------------------------#
 prob_LP_dual_c=pic.Problem()
-AA=[cvx.sparse(a[:,i],tc='d').T for i in range(3) for a in A[4:]]
+#AA=[cvx.sparse(a[:,i],tc='d').T for i in range(3) for a in A[4:]]
+AA = [cvx.sparse(a[:,0],tc='d').T for a in A] #new version to have variable bounds
 s=len(AA)
 AA=pic.new_param('A',AA)
 cc=pic.new_param('c',c)
@@ -482,6 +485,27 @@ dsocp.set_objective('min',3*mu-pic.sum(
         for i in range(s)],'i','[s]')
         )
 
+dsocp4=pic.Problem() #variant for the problem in TestSOCP4 with bounds on variables
+z=[dsocp4.add_variable('z['+str(i)+']',AA[i].size[0]) for i in range(s)]
+lbda=dsocp4.add_variable('lbda',s)
+mu=dsocp4.add_variable('mu',1)
+mu1=dsocp4.add_variable('mu1',1,lower = 0)
+mu2=dsocp4.add_variable('mu2',1,lower = 0)
+
+dsocp4.add_list_of_constraints(
+        [abs(z[i]) < lbda[i] for i in range(s)],
+        'i','[s]')
+
+dsocp4.add_constraint(
+        -cc+pic.sum([
+        lbda[i]*AA[i].T*'|2|(3,1)'
+        -AA[i].T*z[i]
+        for i in range(s)],'i','[s]') < mu +mu1 * 'e_1(5,1)' -mu2 * 'e_3(5,1)')
+        
+dsocp4.set_objective('min',3*mu+0.58*mu1-0.59*mu2-pic.sum(
+        [lbda[i]+z[i].T*AA[i]*'|1|(5,1)'
+        for i in range(s)],'i','[s]')
+        )
 #-----------------#
 #   SOCP + SDP    #
 #-----------------#
@@ -602,7 +626,7 @@ def LP1Test(solver_to_test):
         
         if not(primal.check_current_value_feasibility()):
                 return (False,'not primal feasible')
-        obj=3.413793103448276
+        obj=-14.
         
         if abs(primal.obj_value()-obj)/abs(obj)>0.1:
                 return (False,'failed')        
@@ -610,7 +634,7 @@ def LP1Test(solver_to_test):
                 return (False,'not primal optimal')
                 
         try:
-                z=[(cs.dual[0]-cs.dual[1]) for cs in primal.constraints]
+                z=[(cs.dual[1]-cs.dual[0]) for cs in primal.constraints]
                 mu=[abs(zi) for zi in z]
         except TypeError:
                 return (False,'no dual computed')
@@ -625,7 +649,7 @@ def LP1Test(solver_to_test):
         
         if not(prob_LP_dual_c.check_current_value_feasibility()):
                 return (False,'not dual feasible')
-        if abs(prob_LP_dual_c.obj_value()-obj)/abs(obj)>1e-5:
+        if abs(prob_LP_dual_c.obj_value()+obj)/abs(obj)>1e-5:
                 return (False,'not dual optimal')
         return (True,primal.status)
         
@@ -786,6 +810,67 @@ def SOCP3Test(solver_to_test):
                 return (False,'not dual optimal')
         return (True,primal.status)        
 
+def SOCP4Test(solver_to_test,with_hardcoded_bound = False):        
+        print 'SOCP4',solver_to_test
+        #4th test (socp in standard form, with additional variable bounds)
+        primal=socp.copy()
+        #try:
+        #        primal.solve()
+        #except:
+        #        pass
+        x = primal.get_variable('x')
+        primal.add_constraint(x[1]<0.58)
+        if with_hardcoded_bound:
+                x.set_sparse_lower([3],[0.59])
+        else:
+                primal.add_constraint(x[3]>0.59)
+        primal.set_objective('min',primal.objective[1])
+        try:
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
+        except Exception as ex:
+                return (False,repr(ex))
+                
+        if not(primal.check_current_value_feasibility()):
+                return (False,'not primal feasible')
+        obj=8.88848803874566
+        
+        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+                return (False,'failed')        
+        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
+                return (False,'not primal optimal')
+                
+        zvar=dsocp4.get_variable('z')
+        lbdavar=dsocp4.get_variable('lbda')
+        muvar=dsocp4.get_variable('mu')
+        mu1var=dsocp4.get_variable('mu1')
+        mu2var=dsocp4.get_variable('mu2')
+        try:
+                z=[cvx.matrix(cs.dual[1:],zvar[i].size)
+                for i,cs in enumerate(primal.constraints[:8])]
+                lbda=[cs.dual[0] for cs in primal.constraints[:8]]
+                mu=primal.get_constraint((1,)).dual[0]
+                mu1=primal.get_constraint((3,)).dual[0]
+                if not(with_hardcoded_bound):
+                        mu2=primal.get_constraint((4,)).dual[0]
+        except TypeError:
+                return (False,'no dual computed')
+        
+        lbdavar.value=lbda
+        muvar.value=mu
+        mu1var.value = mu1
+        if with_hardcoded_bound:
+                mu2var.value = 10.3493320209
+        else:
+                mu2var.value = mu2
+        
+        for i,zi in enumerate(z):
+                zvar[i].value=zi
+        if not(dsocp4.check_current_value_feasibility(tol=1e-5)):
+                return (False,'not dual feasible')
+        if abs(dsocp4.obj_value()+obj)/abs(obj)>1e-4:
+                return (False,'not dual optimal')
+        return (True,primal.status)
+        
 def SDPTest(solver_to_test):
         print 'SDP',solver_to_test
         primal=prob_SDP_c.copy()
@@ -930,11 +1015,12 @@ def NON_CONVEX_QPTest(solver_to_test):
         return testOnlyPrimal(solver_to_test,bim,0.)
                 
 #tests with cvxopt
-prob_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SDP','coneP','coneQCP',
+prob_classes = ['LP1','LP2','SOCP1',
+                'SOCP2','SOCP3','SOCP4','SDP','coneP','coneQCP',
                 'QCQP','Mixed_SOCP_QP','non_convex_Qp','GP',
                 'MIP','MISOCP','MIQCQP']
 
-conic_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SDP','coneP']
+conic_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SOCP4','SDP','coneP']
 
 
 results={}
@@ -987,6 +1073,10 @@ for pclas in prob_classes:
                                 clasln+='          |'
                         elif 'NonConvexError' in err:
                                 clasln+='          |'
+                        elif 'DualizationError' in err:
+                                clasln+='          |'
+                        elif 'no Primals' in err:
+                                clasln+='  failed  |'
                         elif 'primal' in err:
                                 clasln+='suboptimal|'
                         elif 'no dual' in err:

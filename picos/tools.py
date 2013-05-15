@@ -51,6 +51,7 @@ __all__=['_retrieve_matrix',
         'QuadAsSocpError',
         'NotAppropriateSolverError',
         'NonConvexError',
+        'DualizationError',
         'geomean',
         '_flatten',
         '_remove_in_lil',
@@ -524,7 +525,7 @@ def diag(exp,dim=1):
         if not exp.constant is None:           
                 for k,i in enumerate(idx):
                         expcopy.constant[i]=exp.constant[k%(n*m)]
-        expcopy.size=(dim*n*m,dim*n*m)
+        expcopy._size=(dim*n*m,dim*n*m)
         expcopy.string='Diag('+exp.string+')'
         return expcopy
 
@@ -552,7 +553,7 @@ def diag_vect(exp):
                 expcopy.factors[k] = proj * expcopy.factors[k]
         if not exp.constant is None:
                 expcopy.constant = proj * expcopy.constant
-        expcopy.size=(n,1)
+        expcopy._size=(n,1)
         expcopy.string='diag('+exp.string+')'
         return expcopy
         
@@ -612,7 +613,13 @@ def _retrieve_matrix(mat,exSize=None):
 
         """
         retstr=None
-        if isinstance(mat,np.ndarray):
+        from .expression import Expression
+        if isinstance(mat,Expression) and mat.is_valued():
+                if isinstance(mat.value,cvx.base.spmatrix) or isinstance(mat.value,cvx.base.matrix):
+                        retmat=mat.value
+                else:
+                        retmat=cvx.matrix(mat.value)
+        elif isinstance(mat,np.ndarray):
                 retmat=cvx.matrix(mat,tc='d')
         elif isinstance(mat,cvx.base.matrix):
                 if mat.typecode=='d':
@@ -1128,8 +1135,54 @@ def _quad2norm(qd):
                         allvars=allvars//v[:]
         return abs(V*allvars)**2
         
-        
+def _copy_dictexp_to_new_vars(dct,cvars):
+        D = {}
+        import copy
+        for var,value in dct.iteritems():
+                if isinstance(var,tuple):#quad
+                        D[cvars[var[0].name],cvars[var[1].name]] = copy.copy(value)
+                else:
+                        D[cvars[var.name]] = copy.copy(value)
+        return D
+
 def _copy_exp_to_new_vars(exp,cvars):
+        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp,NormP_Exp
+        import copy
+        if isinstance(exp,Variable):
+                return cvars[exp.name]
+        elif isinstance(exp,AffinExp):
+                newfacs = _copy_dictexp_to_new_vars(exp.factors,cvars)
+                return AffinExp(newfacs,copy.copy(exp.constant),exp.size,exp.string)
+        elif isinstance(exp,Norm):
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                return Norm(newexp)
+        elif isinstance(exp,LogSumExp):
+                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars)
+                return LogSumExp(newexp)
+        elif isinstance(exp,QuadExp): 
+                newaff =  _copy_exp_to_new_vars(exp.aff,cvars)
+                newqds = _copy_dictexp_to_new_vars(exp.quad,cvars)
+                if exp.LR is None:
+                        return QuadExp(newqds,newaff,exp.string,None)
+                else:
+                        LR0 = _copy_exp_to_new_vars(exp.LR[0],cvars)
+                        LR1 = _copy_exp_to_new_vars(exp.LR[1],cvars)
+                        return QuadExp(newqds,newaff,exp.string,(LR0,LR1))
+        elif isinstance(exp,GeneralFun): 
+                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars)
+                return LogSumExp(exp.fun,newexp,exp.funstring)
+        elif isinstance(exp,GeoMeanExp):
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                return GeoMeanExp(newexp)
+        elif isinstance(exp,NormP_Exp):
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                return NormP_Exp(newexp)
+        elif exp is None:
+                return None
+        else:
+                raise Exception('unknown type of expression')          
+        
+def _copy_exp_to_new_vars_old(exp,cvars):#TOREM
         from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun
         import copy
         ex2=copy.deepcopy(exp)
@@ -1408,3 +1461,13 @@ class NonConvexError(Exception):
                 
         def __str__(self): return self.msg
         def __repr__(self): return "NonConvexError('"+self.msg+"')"
+        
+class DualizationError(Exception):
+        """
+        Exception raised when a non-standard conic problem is being dualized.
+        """
+        def __init__(self,msg):
+                self.msg=msg 
+                
+        def __str__(self): return self.msg
+        def __repr__(self): return "DualizationError('"+self.msg+"')"
