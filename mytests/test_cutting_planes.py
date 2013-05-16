@@ -1,5 +1,5 @@
 #TEST CUTTING PLANES
-solver='mosek'
+solver='mosek7' #TODO something does not work anymore with mosek6...
 import picos as pic
 P=pic.Problem()
 x=P.add_variable('x',5)
