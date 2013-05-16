@@ -625,8 +625,8 @@ class Problem:
                         self.options['verbose']=int(val)
                         
                 #trick to force the use of mosek6 during the tests:
-                if val=='mosek':
-                        self.options['solver']='mosek6'
+                #if val=='mosek':
+                #        self.options['solver']='mosek6'
                         
         def update_options(self, **options):
                 """
