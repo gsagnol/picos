@@ -810,14 +810,15 @@ def SOCP3Test(solver_to_test):
                 return (False,'not dual optimal')
         return (True,primal.status)        
 
-def SOCP4Test(solver_to_test,with_hardcoded_bound = False):        
+def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
         print 'SOCP4',solver_to_test
         #4th test (socp in standard form, with additional variable bounds)
         primal=socp.copy()
+        #solve the problem a first time to check if constaints can be added afterwards
         #try:
-        #        primal.solve()
+                #primal.solve()
         #except:
-        #        pass
+                #pass
         x = primal.get_variable('x')
         primal.add_constraint(x[1]<0.58)
         if with_hardcoded_bound:
@@ -829,7 +830,7 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
-                
+
         if not(primal.check_current_value_feasibility()):
                 return (False,'not primal feasible')
         obj=8.88848803874566

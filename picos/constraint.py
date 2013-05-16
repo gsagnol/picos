@@ -91,55 +91,7 @@ class Constraint(object):
                         if Exp1.size<>Exp2.size:
                                 raise NameError('incoherent lhs and rhs')
                         #are there some bound constrainta ?
-                        fac1 = self.Exp1.factors
-                        fac2 = self.Exp2.factors
-                        """TOREM
-                        bddvars = []
-                        conssz = Exp1.size[0] * Exp1.size[0]
-                        from itertools import izip
-                        itojv = {i:None for i in range(conssz)} #stores (i,j,v) when there is no more than one nonzero coef
-                        for var in fac1:
-                                mat = fac1[var]
-                                for ii,jj,vv in izip(mat.I,mat.J,mat.V):
-                                        ijvi = itojv.get(ii,-1)
-                                        if ijvi is None: #no coef yet in row i
-                                                itojv[ii] = (var,jj,vv)
-                                        elif ijvi == -1: #alredy deleted, ie more than one coef
-                                                continue
-                                        else:
-                                                del itojv[ii]
-                        for var in fac2:
-                                mat = fac2[var]
-                                for ii,jj,vv in izip(mat.I,mat.J,mat.V):
-                                        ijvi = itojv.get(ii,-1)
-                                        if ijvi is None: #no coef yet in row i
-                                                itojv[ii] = (var,jj,-vv)
-                                        elif ijvi == -1: #alredy deleted, ie more than one coef
-                                                continue
-                                        else:
-                                                del itojv[ii]
-                        #fix bounds when there is only one coef in the row
-                        for i in itojv:
-                                if itojv[i] is None:
-                                        continue
-                                (var,j,v) = itojv[i]
-                                if v == 0:
-                                        continue
-                                if self.Exp2.constant:
-                                        b = self.Exp2.constant[i]
-                                else:
-                                        b = 0.
-                                if self.Exp1.constant:
-                                        b -=self.Exp1.constant[i]
-                                bnd = float(b)/v
-                                if typeOfConstraint[3]=='=':
-                                        bddvars.append((var,j,bnd,bnd))
-                                elif (typeOfConstraint[3]=='<' and v>0) or (typeOfConstraint[3]=='>' and v<0):
-                                        bddvars.append((var,j,None,bnd))
-                                else:
-                                        bddvars.append((var,j,bnd,None))
-                        self.boundCons = bddvars
-                        """
+                        
                 if typeOfConstraint[2:]=='cone':                        
                         if Exp2.size<>(1,1):
                                 raise NameError('expression on the rhs should be scalar')
@@ -147,40 +99,6 @@ class Constraint(object):
                                 if Exp3.size<>(1,1):
                                         raise NameError(
                                         'expression on the rhs should be scalar')
-                        """TOREM
-                        #are the lhs and or rhs obtained by a simple scaling of the variables ?
-                        fac1 = self.Exp1.factors
-                        simple_exp = not(self.Exp1.constant)
-                        conevars = []
-                        if simple_exp:
-                                for var in fac1:
-                                        mat = fac1[var]
-                                        if ( sorted(list(mat.I))== range(mat.size[0]) and # 1 var per row
-                                                len(set(mat.J)) == mat.size[0] and        # 1 row per var
-                                                var.vtype<>'symmetric'):                  # to exclude semidef var
-                                                for j,v in zip(mat.J,mat.V):
-                                                        conevars.append((var,j,v))
-                                        else:
-                                                simple_exp=False
-                                                break
-                        if simple_exp:
-                                self.exp1ConeVar = conevars
-                        #same thing for Exp2 (but simpler since Exp2 is scalar)
-                        fac2 = self.Exp2.factors
-                        if not(self.Exp2.constant) and len(fac2)==1:
-                                var = fac2.keys()[0]
-                                mat = fac2[var]
-                                if len(mat.J)==1 and var.vtype<>'symmetric':
-                                        self.exp2ConeVar = (var,mat.J[0],mat.V[0])
-                        #same thing for Exp3
-                        if self.Exp3 is not None:
-                                fac3 = self.Exp3.factors
-                                if not(self.Exp3.constant) and len(fac3)==1:
-                                        var = fac3.keys()[0]
-                                        mat = fac3[var]
-                                        if len(mat.J)==1 and var.vtype<>'symmetric':
-                                                self.exp3ConeVar = (var,mat.J[0],mat.V[0])
-                        """
                         
                 if typeOfConstraint=='lse':
                         if not (Exp2==0 or Exp2.is0()):

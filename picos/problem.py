@@ -251,6 +251,8 @@ class Problem:
                 for cons in self.constraints:
                         cons.passed = []
                 self.obj_passed = []
+                for var in self.variables.values():
+                        var.passed=[]
         
         def remove_all_constraints(self):
                 """
@@ -2790,8 +2792,12 @@ class Problem:
                 # Give MOSEK an estimate of the size of the input data.
                 # This is done to increase the speed of inputting data.                                
                 reset_hbv_True = False
-                NUMVAR_OLD = task.getnumvars()
+                NUMVAR_OLD = task.getnumvar()
                 if self.options['handleBarVars']:
+                        NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex)
+                                        for var in self.variables.values()
+                                        if not(var.semiDef)
+                                        and ('mosek' in var.passed)]))
                         NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)
                                         for var in self.variables.values()
                                         if not(var.semiDef)
@@ -2808,47 +2814,115 @@ class Problem:
                                 self.options['handleBarVars'] = False
                         
                 else:
+                        NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex)
+                                        for var in self.variables.values()
+                                        if ('mosek' in var.passed)]))
                         NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)
                                         for var in self.variables.values()
                                         if not('mosek' in var.passed)]))
                
-                NUMVAR = NUMVAR_OLD + NUMVAR_NEW
-                NUMVAR0 = NUMVAR # number of "plain" vars (without "bar" matrix vars and additional vars for so cones)
-                
-                NUMCON = self.numberAffConstraints + self.numberQuadConstraints#affine parts of quads
-                if isinstance(self.objective[1],QuadExp):
-                        NUMCON -=1
-                              #TODO compter seulement not passed !
-                              #TODO pass label also in variables, but recheck all vtype and bounds
-                              #TODO and for semidef vars ? -> OK si field passed in variable
+                NUMVAR = NUMVAR_OLD + NUMVAR_NEW#total number of variables (including extra vars for cones, but not the bar vars)
+                NUMVAR0 = NUMVAR0_OLD +  NUMVAR_NEW# number of "plain" vars (without "bar" matrix vars and additional vars for so cones)
+                                                   
+                NUMCON_OLD = task.getnumcon()
+                NUMCON_NEW = int(_bsum([(cs.Exp1.size[0] * cs.Exp1.size[1])
+                                        for cs in self.constraints
+                                        if (cs.typeOfConstraint.startswith('lin'))
+                                        and not('mosek' in cs.passed)] +
+                                        [1 for cs in self.constraints
+                                        if (cs.typeOfConstraint=='quad')
+                                        and not('mosek' in cs.passed)]
+                                       )
+                                 )
+
+                NUMCON = NUMCON_OLD + NUMCON_NEW
+                #TODO compter seulement not passed !
+                #TODO pass label also in variables, but recheck all vtype and bounds
+                #TODO and for semidef vars ? -> OK si field passed in variable
                               
                 NUMSDP =  self.numberSDPConstraints
                 if NUMSDP>0:
                         #indices = [(v.startIndex,v.endIndex-v.startIndex) for v in self.variables.values()]
                         #indices = sorted(indices)
                         #BARVARDIM = [int((8*sz-1)**0.5/2.) for (_,sz) in indices]
-                        BARVARDIM = [cs.Exp1.size[0] for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')]
+                        BARVARDIM_OLD = [cs.Exp1.size[0]
+                                        for cs in self.constraints
+                                        if cs.typeOfConstraint.startswith('sdp')
+                                        and ('mosek' in cs.passed)]
+                        BARVARDIM_NEW = [cs.Exp1.size[0]
+                                        for cs in self.constraints 
+                                        if cs.typeOfConstraint.startswith('sdp')
+                                        and not('mosek' in cs.passed)]
+                        BARVARDIM = BARVARDIM_OLD + BARVARDIM_NEW
                 else:
+                        BARVARDIM_OLD = []
+                        BARVARDIM_NEW = []
                         BARVARDIM = []
                         
-                
                 
                 if (NUMSDP and not(version7)) or self.numberLSEConstraints:
                         raise Exception('SDP or GP constraints are not interfaced. For SDP, try mosek 7.0')
                 
-                if version7:
-                        # Append 'NUMCON' empty constraints.
-                        # The constraints will initially have no bounds.
-                        task.appendcons(NUMCON)
-                        #Append 'NUMVAR' variables.
-                        # The variables will initially be fixed at zero (x=0).
-                        task.appendvars(NUMVAR)
-                        task.appendbarvars(BARVARDIM)
-                else:
-                        task.append(mosek.accmode.con,NUMCON)
-                        task.append(mosek.accmode.var,NUMVAR)
                 
-                #specifies the integer variables
+                #-------------#
+                #   new vars  #
+                #-------------#
+                if version7:
+                        #Append 'NUMVAR_NEW' variables.
+                        # The variables will initially be fixed at zero (x=0).
+                        task.appendvars(NUMVAR_NEW)
+                        task.appendbarvars(BARVARDIM_NEW)
+                else:
+                        task.append(mosek.accmode.var,NUMVAR_NEW)
+                
+                
+                #-------------------------------------------------------------#
+                # shift the old cone vars to make some place for the new vars #
+                #-------------------------------------------------------------#
+                
+                #shift in the linear constraints
+                if NUMVAR_OLD > NUMVAR0_OLD:
+                        for j in xrange(NUMVAR0_OLD,NUMVAR_OLD):
+                                sj = [0]*NUMCON_OLD
+                                vj = [0]*NUMCON_OLD
+                                if version7:
+                                        nzj=task.getacol(j,sj,vj)
+                                        task.putacol(j,sj[:nzj],[0.]*nzj) #remove the old column
+                                        task.putacol(j+NUMVAR_NEW,sj[:nzj],vj[:nzj]) #rewrites it, shifted to the right
+                                else:
+                                        nzj=task.getavec(mosek.accmode.var,j,sj,vj)
+                                        task.putavec(mosek.accmode.var,j,sj[:nzj],[0.]*nzj)
+                                        task.putavec(mosek.accmode.var,j+NUMVAR_NEW,sj[:nzj],vj[:nzj])
+                        
+                #shift in the conic constraints
+                nc = task.getnumcone()
+                if nc:
+                        sub = [0] * NUMVAR_OLD
+                for icone in range(nc):
+                        (ctype,cpar,sz) = task.getcone(icone,sub)
+                        shiftsub = [(s+NUMVAR_NEW if s>=NUMVAR0_OLD else s) for s in sub[:sz]]
+                        task.putcone (icone,ctype,cpar,shiftsub)
+                        
+                #WE DO NOT SHIFT QUADSCOEFS, BOUNDS OR OBJCOEFS SINCE THERE MUST NOT BE ANY
+                        
+                #-------------#
+                #   new cons  #
+                #-------------#
+                if version7:
+                        # Append 'NUMCON_NEW' empty constraints.
+                        # The constraints will initially have no bounds.
+                        task.appendcons(NUMCON_NEW)
+                else:
+                        task.append(mosek.accmode.con,NUMCON_NEW)
+                
+                if self.numberQuadNNZ:
+                        task.putmaxnumqnz(int(1.5*self.numberQuadNNZ)) #1.5 factor because the mosek doc
+                                                                       #claims it might be good to allocate more space than needed
+                #--------------#
+                # obj and vars #
+                #--------------#
+                               
+                #find integer variables, put 0-1 bounds on binaries
                 ints = []
                 for k,var in self.variables.iteritems():
                         if var.vtype=='binary':
@@ -2870,18 +2944,20 @@ class Problem:
                         if any([bool(mat) for mat in mats]):
                                 raise Exception('semidef vars with integer elements are not supported')
                 
+                
+                #supress all integers
+                for j in range(NUMVAR):
+                        task.putvartype(j,mosek.variabletype.type_cont)
+                
+                #specifies integer variables
                 for i in ints:
                         task.putvartype(i,mosek.variabletype.type_int)
-                #--------------#
-                # obj and vars #
-                #--------------#
                 
-                for j in range(NUMVAR):
-                        #make the variable free
-                        task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
-                        task.putcj(j,0.)
                 
+                #objective
+                newobj = False
                 if 'mosek' not in self.obj_passed:
+                        newobj = True
                         self.obj_passed.append('mosek')
                         if self.objective[1]:
                                 obj = self.objective[1]
@@ -2946,12 +3022,39 @@ class Problem:
                                 if subI:
                                         task.putqobj(subI,subJ,subV)
                                         
-                #bound on vars
+                #store bound on vars (will be added in the instance at the end)
                 vbnds = {}
                 for varname in self.varNames:
                         var = self.variables[varname]
+                        if 'mosek' not in var.passed:
+                                var.passed.append('mosek')
+                        else:#retrieve current bounds
+                                sz = var.endIndex - var.startIndex
+                                bk,bl,bu = [0.]*sz,[0.]*sz,[0.]*sz
+                                task.getboundslice(mosek.accmode.var,var.startIndex,var.endIndex,bk,bl,bu)
+                                for ind,(ky,l,u) in enumerate(izip(bk,bl,bu)):
+                                        if ky is mosek.boundkey.lo:
+                                                vbnds[var.startIndex+ind] = (l,None)
+                                        elif ky is mosek.boundkey.up:
+                                                vbnds[var.startIndex+ind] = (None,u)
+                                        elif ky is mosek.boundkey.fr:
+                                                pass
+                                        else:#fx or ra
+                                                vbnds[var.startIndex+ind] = (l,u)
+                                 
                         for ind,(lo,up) in var.bnd.iteritems():
-                                vbnds[var.startIndex+ind] = (lo,up)
+                                (clo,cup) = vbnds.get(var.startIndex+ind,(None,None))
+                                if clo is None: clo = -INFINITY
+                                if cup is None: cup = INFINITY
+                                nlo = max(clo,lo)
+                                nup = min(cup,up)
+                                if nlo <= -INFINITY: nlo = None
+                                if nup >=  INFINITY: nup = None
+                                vbnds[var.startIndex+ind] = (nlo,nup)
+                
+                for j in range(NUMVAR):
+                        #make the variables free
+                        task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
 
                 if not(self.is_continuous()) and self.options['hotstart']:
                         # Set status of all variables to unknown
@@ -2978,14 +3081,22 @@ class Problem:
                                         v,
                                         0.0, 0.0, 0.0)
                                 
-                fxdvars = {} #TODO different init. when some constraints are already in the task !
-                iaff = 0
-                icone=NUMVAR0
+                fxdvars = self.msk_fxd
+                if fxdvars is None:
+                        fxdvars = {}
+                iaff = NUMCON_OLD
+                icone=NUMVAR
                 tridex = {}
-                isdp = 0
-                scaled_cols = {}
-                allconevars = []
-                fxdconevars = []
+                isdp = len(BARVARDIM_OLD)
+                scaled_cols = self.msk_scaledcols
+                if scaled_cols is None:
+                        scaled_cols = {}
+                new_scaled_cols = []
+                fxdconevars = self.msk_fxdconevars
+                if fxdconevars is None:
+                        fxdconevars = []
+                allconevars = [t[1] for list_tuples in fxdconevars for t in list_tuples]
+                allconevars.extend(range(NUMVAR0,NUMVAR))
                 
                 #-------------#
                 # CONSTRAINTS #
@@ -3070,7 +3181,15 @@ class Problem:
                                         
                                         if is_fixed_var:
                                                 bdj0 = vbnds.get(j0,(-INFINITY,INFINITY))
-                                                if (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
+                                                if cons.typeOfConstraint=='lin=':
+                                                        fx = rhstmp[i]/v0
+                                                        if fx>=bdj0[0] and fx<=bdj0[1]:
+                                                                vbnds[j0] = (fx,fx)
+                                                        else:
+                                                                raise Exception('an equality constraint is not feasible: xx_{0} = {1}'.format(
+                                                                                j0,fx))
+                                                        
+                                                elif (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
                                                         up = rhstmp[i]/v0
                                                         if up<bdj0[1]:
                                                                 vbnds[j0] = (bdj0[0],up)
@@ -3168,18 +3287,22 @@ class Problem:
                                                                 task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
                                         else:#for algorithmic simplicity
                                                 mats = [0]
+                                        #do we add the variable directly in a cone ?
                                         if (self.options['handleConeVars'] and
-                                            len(J)==1 and
-                                            J[0] not in allconevars and
-                                            not(any([mat for mat in mats])) and
-                                            h==0):#no need to add an extra var
+                                            len(J)==1 and                               #a single var in the expression
+                                            J[0] not in allconevars and                 #not in a cone yet
+                                            not(any([mat for mat in mats])) and         #no coef on bar vars
+                                            h==0 and                                    #no constant term
+                                            (V[0]==-1 or (J[0] not in ints))            #int. variables cannot be scaled
+                                            ):
                                                 conevars.append(J[0])
                                                 allconevars.append(J[0])
                                                 fxd.append((i,J[0]))
                                                 if V[0]<>-1:
                                                         scaled_cols[J[0]] = -V[0]
+                                                        new_scaled_cols.append(J[0])
                                                 
-                                        else:
+                                        else:#or do we need an extra variable equal to this expression ?
                                                 J.append(icone)
                                                 V.append(1)
                                                 if version7:
@@ -3296,7 +3419,6 @@ class Problem:
                                 isdp+=1
                         #quadratic constraints:
                         elif cons.typeOfConstraint=='quad':
-                                task.putmaxnumqnz(self.numberQuadNNZ)
                                 subI=[]
                                 subJ=[]
                                 subV=[]
@@ -3366,8 +3488,8 @@ class Problem:
                         else:
                                 raise Exception('type of constraint not handled (yet ?) for mosek:{0}'.format(
                                         constr.typeOfConstraint))
-                                
-               #bounds on vars and bar vars
+                  
+                #bounds on vars and bar vars
                 bndjj = []
                 bndlo = []
                 bndup = []
@@ -3424,15 +3546,20 @@ class Problem:
                 for (j,v) in scaled_cols.iteritems():
                         sj = [0]*NUMCON
                         vj = [0]*NUMCON
-                        if version7:
+                        isnewcone = j in new_scaled_cols
+                        if version7: #scale all terms if this is a new cone, only the new rows otherwise
                                 nzj=task.getacol(j,sj,vj)
-                                task.putacol(j,sj[:nzj],[vji/v for vji in vj[:nzj]])
+                                task.putacol(j,sj[:nzj],[(vji/v if (isnewcone or i>=NUMCON_OLD) else vji) for (i,vji) in zip(sj[:nzj],vj[:nzj])])
                         else:
                                 nzj=task.getavec(mosek.accmode.var,j,sj,vj)
-                                task.putavec(mosek.accmode.var,j,sj[:nzj],[vji/v for vji in vj[:nzj]])
-                        cj = [0.]
-                        task.getcslice(j,j+1,cj)
-                        task.putcj(j,cj[0]/v)
+                                task.putavec(mosek.accmode.var,j,sj[:nzj],[(vji/v if (isnewcone or i>=NUMCON_OLD) else vji) for (i,vji) in zip(sj[:nzj],vj[:nzj])])
+                        
+                        if newobj or isnewcone: #scale the objective coef
+                                cj = [0.]
+                                task.getcslice(j,j+1,cj)
+                                task.putcj(j,cj[0]/v)
+                        
+                                
                 
                 #objective sense
                 if self.objective[0]=='max':

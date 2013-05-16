@@ -1791,6 +1791,7 @@ class Variable(AffinExp):
                         
                 self.passed = []
                 """list of solvers which are aware of this variable"""
+                
                                         
         def __str__(self):
                 if self.is_valued():

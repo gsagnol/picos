@@ -1,0 +1,33 @@
+v0.1.0, 22.06.2012 -- Initial release. 
+
+v0.1.1, 08.12.2012
+     * Picos now interfaces GUROBI !
+     * You can specify an initial solution to *warm-start* mixed integer optimizers.
+     * Minor bugs with quadratic expressions corrected
+     * It's possible to return a reference to a constraint added
+       with add_constraint()
+
+v0.1.2, 10.01.13
+     bug-fix release, correcting:
+     * The write_to_file() function for sparse SDPA files.
+       The function was writing the
+       coefficients of the lower triangular part
+       of the constraint matrices
+       instead of the upper triangle.
+     * An IndexError occuring with the function
+       remove_constraint()
+
+v0.1.3, 17.04.13
+     * geomean() function implemented, to handle inequalities involving
+       geometric mean and reformulate them as a set of SOCP constraints.
+     * Some options ['uboundlimit','lboundlimit'] were added to tell
+       CPLEX to stop the computation as soon as a given value for the
+       upper bound (or lower bound) is reached.
+     * The time used by the solver is now stored in the dictionary
+       returned bz solve().
+     * It is possible to get the evolution of the lower and upper bounds
+       over time, by using the option 'boundMonitor'.
+     * The weak inequalities operator can now be used.
+     * Minor bugs corrected (access to the duals of fixed variables with CPLEX,
+       evaluation of constant affine expressions with a zero coefficient appearing
+       in the dict of linear terms, number of constraints is now updated in remove_constraint() )
