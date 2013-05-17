@@ -625,8 +625,8 @@ class Problem:
                         self.options['verbose']=int(val)
                         
                 #trick to force the use of mosek6 during the tests:
-                #if val=='mosek':
-                #        self.options['solver']='mosek6'
+                if val=='mosek':
+                        self.options['solver']='mosek6'
                         
         def update_options(self, **options):
                 """
@@ -3293,7 +3293,8 @@ class Problem:
                                             J[0] not in allconevars and                 #not in a cone yet
                                             not(any([mat for mat in mats])) and         #no coef on bar vars
                                             h==0 and                                    #no constant term
-                                            (V[0]==-1 or (J[0] not in ints))            #int. variables cannot be scaled
+                                            #(V[0]==-1 or (J[0] not in ints)) #commented (int vars in cone yield a bug with mosek <6.59)   
+                                            J[0] not in ints                            #int. variables cannot be scaled
                                             ):
                                                 conevars.append(J[0])
                                                 allconevars.append(J[0])
