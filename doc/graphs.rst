@@ -266,11 +266,11 @@ We solve the mincut problem below, for ``s=16`` and ``t=10``:
         print mincut
         mincut.solve(verbose=0)
 
-        print 'The minimal cut has capacity {0}'.format(mincut.obj_value())
+        print 'The minimal cut has capacity {0}'.format(round(mincut.obj_value()))
 
-        cut=[e for e in G.edges() if d[e].value[0]==1]
-        S  =[n for n in G.nodes() if p[n].value[0]==1]
-        T  =[n for n in G.nodes() if p[n].value[0]==0]
+        cut=[e for e in G.edges() if abs(d[e].value[0]-1)<1e-6] #we round because some solvers return
+        S  =[n for n in G.nodes() if abs(p[n].value[0]-1)<1e-6] #0 or 1 up to the numerical precision
+        T  =[n for n in G.nodes() if abs(p[n].value[0])<1e-6]
         
         print 'the partition of the nodes is: '
         print 'S: {0}'.format(S)
@@ -305,15 +305,15 @@ of the maxflow LP:
 
         >>> #capacited flow constraint
         >>> capaflow=maxflow.get_constraint((0,))
-        >>> dualcut=[e for i,e in enumerate(G.edges()) if capaflow[i].dual[0]==1]
+        >>> dualcut=[e for i,e in enumerate(G.edges()) if abs(capaflow[i].dual[0]-1)<1e-6]
         >>> #flow conservation constraint
         >>> consflow=maxflow.get_constraint((1,))
         >>> Sdual = [s]+ [n for i,n in
         ...           enumerate([n for n in G.nodes() if n not in (s,t)])
-        ...           if consflow[i].dual[0]==1]
+        ...           if abs(consflow[i].dual[0]-1)<1e-6]
         >>> Tdual = [t]+ [n for i,n in
         ...           enumerate([n for n in G.nodes() if n not in (s,t)])
-        ...           if consflow[i].dual[0]==0]
+        ...           if abs(consflow[i].dual[0])<1e-6]
         >>> cut == dualcut
         True
         >>> set(S) == set(Sdual)
@@ -460,7 +460,7 @@ We solve the multicut problem below, for the terminal pairs
         cut=[e for e in G.edges() if y[e].value[0]==1]
                 
         print 'The edges forming the cut are: '
-        print cut
+        print sorted(cut)
 
 .. testoutput::
         :options: +NORMALIZE_WHITESPACE

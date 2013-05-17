@@ -1011,11 +1011,28 @@ def available_solvers():
         except ImportError:
                 pass
         try:
-                import mosek as mo
-                lst.append('mosek')
-                del mo
-        except ImportError:
-                pass
+		import mosek7 as mo7
+		lst.append('mosek7')
+		del mo7
+		try:
+                        import mosek as mo
+                        version7 = not(hasattr(mo,'cputype'))
+                        if not version7:
+                                lst.append('mosek6')
+                        del mo
+                except ImportError:
+                        pass
+	except ImportError:#only one default mosek available
+		try:
+                        import mosek as mo
+                        version7 = not(hasattr(mo,'cputype')) #True if this is the beta version 7 of MOSEK
+                        del mo
+                        if version7:
+                                lst.append('mosek7')
+                        else:
+                                lst.append('mosek6')
+                except ImportError:
+                        pass
         try:
                 import cplex as cp
                 lst.append('cplex')
@@ -1034,6 +1051,9 @@ def available_solvers():
                 del grb
         except ImportError:
                 pass
+        #TRICK to force mosek6 during tests
+        #if 'mosek7' in lst:
+        #        lst.remove('mosek7')
         return lst
         
 def offset_in_lil(lil,offset,lower):

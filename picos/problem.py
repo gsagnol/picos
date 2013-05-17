@@ -6066,27 +6066,27 @@ class Problem:
                 """
                 tp=self.type
                 if tp == 'LP':
-                        order=['cplex','gurobi','mosek','zibopt','cvxopt','smcp']
+                        order=['cplex','gurobi','mosek7','mosek6','zibopt','cvxopt','smcp']
                 elif tp in ('QCQP,QP'):
-                        order=['cplex','mosek','gurobi','cvxopt','zibopt']
+                        order=['cplex','mosek7','mosek6','gurobi','cvxopt','zibopt']
                 elif tp == 'SOCP':
-                        order=['mosek','cplex','gurobi','cvxopt','smcp','zibopt']
+                        order=['mosek7','mosek6','cplex','gurobi','cvxopt','smcp','zibopt']
                 elif tp == 'SDP':
-                        order=['mosek','cvxopt','smcp']
+                        order=['mosek7','cvxopt','smcp']
                 elif tp == 'ConeP':
-                        order=['mosek','cvxopt','smcp']
+                        order=['mosek7','cvxopt','smcp']
                 elif tp == 'GP':
                         order=['cvxopt']
                 elif tp == 'general-obj':
-                        order=['cplex','mosek','gurobi','zibopt','cvxopt','smcp']
+                        order=['cplex','mosek7','mosek6','gurobi','zibopt','cvxopt','smcp']
                 elif tp in ('MIP','MIQCP','MIQP'):
-                        order=['cplex','gurobi','mosek','zibopt']
+                        order=['cplex','gurobi','mosek7','mosek6','zibopt']
                 elif tp == 'Mixed (SOCP+quad)':
-                        order=['mosek','cplex','gurobi','cvxopt','smcp']
+                        order=['mosek7','mosek6','cplex','gurobi','cvxopt','smcp']
                 elif tp in ('MISOCP','Mixed (MISOCP+quad)'):
-                        order=['mosek','cplex','gurobi']
+                        order=['mosek7','mosek6','cplex','gurobi']
                 elif tp == 'Mixed (SDP+quad)':
-                        order=['cvxopt','smcp']
+                        order=['mosek7','cvxopt','smcp']
                 else:
                         raise Exception('no solver available for problem of type {0}'.format(tp))
                 avs=available_solvers()
@@ -6139,7 +6139,6 @@ class Problem:
                               So if you use another solver to solve
                               a problem that is described in a file created by PICOS, the optimal symmetric variables
                               returned will also be in symmetric vectorized form.
-                              
                 """
                 if self.numberLSEConstraints:
                         raise Exception('gp are not supported')

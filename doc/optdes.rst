@@ -239,9 +239,9 @@ c-optimality, single-response: LP
 When the observation matrices are row vectors (single-response framework),
 the SOCP above reduces to a simple LP, because the variables
 :math:`z_i` are scalar.
-We solve below the LP for the case where there are 12
+We solve below the LP for the case where there are 11
 available experiments, corresponding to the columns of the matrices
-``A[4]``, ``A[5]``, ``A[6]``, and ``A[7]`` defined in the preambule.
+``A[4]``, ``A[5]``, ``A[6]``, and ``A[7][:,:-1]`` defined in the preambule.
 
 The optimal design allocates 3.37% to experiment #5 (2nd column of ``A[5]``),
 27.9% to experiment #7 (1st column of ``A[6]``),
@@ -254,6 +254,7 @@ and 29.3% to experiment #11 (2nd column of ``A[7]``).
         #create the problem, variables and params
         prob_LP=pic.Problem()
         AA=[cvx.sparse(a[:,i],tc='d') for i in range(3) for a in A[4:]] #12 column vectors
+        AA=AA[:-1] #remove the last experiment (it is the same as the last-but-one)
         s=len(AA)
         AA=pic.new_param('A',AA)
         cc=pic.new_param('c',c)
@@ -294,10 +295,10 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         
         ---------------------
         optimization problem  (LP):
-        24 variables, 29 affine constraints
+        22 variables, 27 affine constraints
 
-        z   : list of 12 variables, (1, 1), continuous
-        mu  : (12, 1), continuous
+        z   : list of 11 variables, (1, 1), continuous
+        mu  : (11, 1), continuous
 
                 minimize 〈 |1| | mu 〉
         such that
@@ -317,7 +318,6 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         [ 2.76e-01]
         [...]
         [ 2.93e-01]
-        [...]
 
 SDP formulation of the c-optimal design problem
 ===============================================
@@ -440,7 +440,7 @@ and to provide one additional example in this doc:
         
         #solve the problem and retrieve the weights of the optimal design
         print prob_SDP_c_dual
-        prob_SDP_c_dual.solve(verbose=0,solver='smcp')
+        prob_SDP_c_dual.solve(verbose=0,solver='cvxopt')
         mu = [cons.dual[0] for cons in prob_SDP_c_dual.get_constraint((0,))] #Lagrangian duals of the SOC constraints
         mu = cvx.matrix(mu)
         w=mu/sum(mu) #normalize mu to get the optimal weights
@@ -962,7 +962,7 @@ that must satisfies :math:`t^8 \leq \prod_{i=0}^4 L_{i,i}`:
 
         #solve the problem and display the optimal design
         print prob_D
-        prob_D.solve(verbose=0)
+        prob_D.solve(verbose=0,solver='cvxopt')
         print w
 
 .. testoutput::
@@ -996,7 +996,7 @@ that must satisfies :math:`t^8 \leq \prod_{i=0}^4 L_{i,i}`:
         [...]
         [ 2.27e-01]
         [ 3.38e-02]
-        [ 1.66e-02]
+        [ 1.65e-02]
         [ 5.44e-02]
         [ 3.18e-01]
         [ 3.51e-01]
