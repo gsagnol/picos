@@ -39,7 +39,7 @@ __all__=[ 'Problem','Variable']
 global INFINITY
 INFINITY=1e16
 
-class Problem:
+class Problem(object):
         """This class represents an optimization problem.
         The constructor creates an empty problem.
         Some options can be provided under the form
@@ -119,7 +119,7 @@ class Problem:
                 #next constraint to consider in a makeXXX_instance
                 self.last_updated_constraint=0 #next constraint to consider in a makeXXX_instance
                 
-                self.options = {}
+                self._options = _NonWritableDict()
                 if options is None: options={}
                 self.set_all_options_to_default()
                 self.update_options(**options)
@@ -606,8 +606,12 @@ class Problem:
                                  }
                                  
                                  
-                self.options=default_options
-
+                self._options=_NonWritableDict(default_options)
+        
+        @property
+        def options(self):
+                return self._options
+                
         def set_option(self,key,val):
                 """
                 Sets the option **key** to the value **val**.
@@ -618,15 +622,17 @@ class Problem:
                 :type key: str.
                 :param val: New value for the option.
                 """
+                if key in ('handleBarVars','handleConeVars')  and val != self.options[key]:
+                        self.reset_solver_instances()#because we must pass in make_mosek_instance again.
                 if key not in self.options:
                         raise AttributeError('unkown option key :'+str(key))
-                self.options[key]=val
+                self.options._set(key,val)
                 if key=='verbose' and isinstance(val,bool):
-                        self.options['verbose']=int(val)
-                        
+                        self.options._set('verbose',int(val))
+                
                 #trick to force the use of mosek6 during the tests:
-                if val=='mosek':
-                        self.options['solver']='mosek6'
+                #if val=='mosek':
+                #        self.options._set('solver','mosek6')
                         
         def update_options(self, **options):
                 """
@@ -898,7 +904,7 @@ class Problem:
                 
                 cop.consNumbering=copy.deepcopy(self.consNumbering)
                 cop.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
-                cop.options=copy.deepcopy(self.options)
+                cop._options=_NonWritableDict(self.options)
                 
                 return cop
                 
@@ -1390,27 +1396,11 @@ class Problem:
                         cons = self.constraints[ind]
                         if cons.typeOfConstraint[:3]=='lin':
                                 self.numberAffConstraints-=(cons.Exp1.size[0]*cons.Exp1.size[1])
-                                #TODO here we cant remove the bnd,
-                                #-> use an unknown flag,
-                                # and put bounds after being passed in all cons
-                                # and hving updated on the fly bounds with unknown flag ?
                         elif cons.typeOfConstraint[2:]=='cone':
                                 self.numberConeVars-=((cons.Exp1.size[0]*cons.Exp1.size[1])+1)
                                 self.numberConeConstraints-=1
                                 if cons.typeOfConstraint[:2]=='RS':
                                         self.numberConeVars-=1
-                                """TOREM
-                                cntcone = len([1 for cs in self.constraints[:ind] if cs.typeOfConstraint.endswith('cone')])
-                                stdcone = self.standardCones[cntcone]
-                                if stdcone[0]:
-                                        for (v,idx) in [(v,idx) for (v,idx,_) in stdcone[0]]:
-                                                self.coneVars.remove((v,idx))
-                                if stdcone[1]:
-                                        self.coneVars.remove((stdcone[1][0],stdcone[1][1]))
-                                if len(stdcone)>2:#TODO here
-                                        self.coneVars.remove((stdcone[1][0],stdcone[1][1]))
-                                del self.standardCones[cntcone]
-                                """
                         elif cons.typeOfConstraint=='lse':
                                 self.numberLSEVars-=(cons.Exp1.size[0]*cons.Exp1.size[1])
                                 self.numberLSEConstraints-=1
@@ -1420,10 +1410,6 @@ class Problem:
                         elif cons.typeOfConstraint[:3]=='sdp':
                                 self.numberSDPConstraints-=1
                                 self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
-                                """TOREM
-                                if cons.semidefVar:
-                                        self.semidefVars.remove(cons.semidefVar)
-                                """
                                 if cons.semidefVar:
                                         cons.semidefVar.semiDef = False
                                         
@@ -1626,7 +1612,7 @@ class Problem:
                 else:
                         m.ModelSense = grb.GRB.MINIMIZE
                 
-                self.options['solver'] = 'gurobi'
+                self.options._set('solver','gurobi')
                 
                 
                 #create new variable and quad constraints to handle socp
@@ -2068,7 +2054,7 @@ class Problem:
                 #else:
                 #        raise ValueError('feasibility problems not implemented ?')
                 
-                self.options['solver'] = 'cplex'
+                self.set_option('solver','cplex')
                 
                 cplex_type = {  'continuous' : c.variables.type.continuous, 
                                 'binary' : c.variables.type.binary, 
@@ -2750,20 +2736,6 @@ class Problem:
 
                 version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
                         
-                """TOREM (TODO TEST the passed  label)
-                #only change the objective coefficients
-                if self.options['onlyChangeObjective']:
-                        if self.msk_task is None:
-                                raise Exception('option is only available when msk_task has been defined before')
-                        newobj=self.objective[1]
-                        (cobj,constantInObjective)=self._makeGandh(newobj)
-                        self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
-                        
-                        for j in range(len(self.cvxoptVars['c'])):
-                        # Set the linear term c_j in the objective.
-                                self.msk_task.putcj(j,self.cvxoptVars['c'][j])
-                        return
-                """
                 if self.msk_env and self.msk_task:
                         env = self.msk_env
                         task = self.msk_task
@@ -2811,7 +2783,7 @@ class Problem:
                                  if cons.semidefVar]
                         if not(idxsdpvars):
                                 reset_hbv_True = True
-                                self.options['handleBarVars'] = False
+                                self.set_option('handleBarVars',False)
                         
                 else:
                         NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex)
@@ -2836,9 +2808,6 @@ class Problem:
                                  )
 
                 NUMCON = NUMCON_OLD + NUMCON_NEW
-                #TODO compter seulement not passed !
-                #TODO pass label also in variables, but recheck all vtype and bounds
-                #TODO and for semidef vars ? -> OK si field passed in variable
                               
                 NUMSDP =  self.numberSDPConstraints
                 if NUMSDP>0:
@@ -2994,14 +2963,15 @@ class Problem:
                                                 subV.extend(sV)
                                         obj = obj.aff
                                 
-                                J = []
-                                V = []
+                                JV=[]
                                 for var in obj.factors:
                                         mat = obj.factors[var]
                                         for j,v in izip(mat.J,mat.V):
-                                                V.append(v)
-                                                J.append(var.startIndex+j)
-                                                        
+                                                JV.append((var.startIndex+j,v))
+                                JV = sorted(JV)
+                                J=[ji for (ji,_) in JV]
+                                V=[vi for (_,vi) in JV]
+                                                
                                 if self.options['handleBarVars']:
                                         J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
                                         
@@ -3018,7 +2988,7 @@ class Problem:
                                                 any([bool(mat) for mat in mat3])):
                                                         raise Exception('quads with sdp bar vars are not supported')
                                 for j,v in izip(J,V):
-                                                task.putcj(j,v)
+                                        task.putcj(j,v)
                                 if subI:
                                         task.putqobj(subI,subJ,subV)
                                         
@@ -3030,8 +3000,15 @@ class Problem:
                                 var.passed.append('mosek')
                         else:#retrieve current bounds
                                 sz = var.endIndex - var.startIndex
+                                si = var.startIndex
+                                
+                                if self.options['handleBarVars']:
+                                        if var.semiDef:
+                                                continue#this is a bar var so it has no bounds in the mosek instance
+                                        si,_,_ = self._separate_linear_cons([si],[0],idxsdpvars)
+                                        si = si[0]
                                 bk,bl,bu = [0.]*sz,[0.]*sz,[0.]*sz
-                                task.getboundslice(mosek.accmode.var,var.startIndex,var.endIndex,bk,bl,bu)
+                                task.getboundslice(mosek.accmode.var,si,si + sz,bk,bl,bu)
                                 for ind,(ky,l,u) in enumerate(izip(bk,bl,bu)):
                                         if ky is mosek.boundkey.lo:
                                                 vbnds[var.startIndex+ind] = (l,None)
@@ -3575,7 +3552,7 @@ class Problem:
                 self.msk_fxdconevars = fxdconevars
 
                 if reset_hbv_True:
-                        self.options['handleBarVars']=True
+                        self.options._set('handleBarVars',True)
                 
                 if self.options['verbose']>0:
                         print('mosek instance built')
@@ -4290,7 +4267,7 @@ class Problem:
                                                 primals[var.name]=cvx.matrix(varvect,var.size)
                                 
                                 if converted:
-                                        self.options['noduals'] = True
+                                        self.set_option('noduals',True)
                                 if 'noduals' in self.options and self.options['noduals']:
                                         pass
                                 else:
@@ -5556,26 +5533,26 @@ class Problem:
                                 if self.options['handleBarVars']:
                                         #TOREM idxsdpvars=[(var.startIndex,var.endIndex) for var in self.semidefVars[::-1]]
                                         idxsdpvars=[(si,ei) for (si,ei,v) in indices[::-1] if v.semiDef]
+                                        indsdpvar = [i for i,cons in
+                                                        enumerate([cs for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')])
+                                                        if cons.semidefVar]
                                         isdpvar = 0
                                 else:
                                         idxsdpvars=[]
                                 for si,ei,var in indices:
-                                        
                                         if self.options['handleBarVars'] and var.semiDef:
                                                 #xjbar = np.zeros(int((var.size[0]*(var.size[0]+1))/2),float)
                                                 xjbar = [0.] * int((var.size[0]*(var.size[0]+1))/2)
-                                                task.getbarxj(mosek.soltype.itr,isdpvar,xjbar)
+                                                task.getbarxj(mosek.soltype.itr,indsdpvar[isdpvar],xjbar)
                                                 xjbar = ltrim1(cvx.matrix(xjbar))
                                                 primals[var.name]=cvx.matrix(xjbar,var.size)
                                                 isdpvar += 1
-                                                #TODO dont we need a indsdpvar for mixed LMI/semidef ?
-                                                
                                                 
                                         else:
                                                 #xx = np.zeros((ei-si),float)
                                                 xx = [0.] * (ei-si) #list instead of np.zeros to avoid PEEP 3118 buffer warning
-                                                (si,eim),_,_ = self._separate_linear_cons([si,ei-1],[0,0],idxsdpvars)
-                                                task.getsolutionslice(soltype,mosek.solitem.xx, si,eim+1, xx)
+                                                (nsi,eim),_,_ = self._separate_linear_cons([si,ei-1],[0,0],idxsdpvars)
+                                                task.getsolutionslice(soltype,mosek.solitem.xx, nsi,eim+1, xx)
                                                 scaledx = [(j,v) for (j,v) in self.msk_scaledcols.iteritems() if j>=si and j<ei]
                                                 for (j,v) in scaledx: #do the change of variable the other way around.
                                                         xx[j-si]/=v
@@ -6754,8 +6731,7 @@ class Problem:
                         maff = 0
                 dual.add_constraint(lincons==maff)
                 dual.set_objective('max',obj)
-                import copy
-                dual.options=copy.deepcopy(self.options)
+                dual._options=_NonWritableDict(self.options)
                 #deactivate the solve_via_dual option (to avoid further dualization)
                 dual.set_option('solve_via_dual', False)
                 return dual
@@ -6771,40 +6747,144 @@ class Problem:
                 #we first create a copy of the problem with the desired "nice dual form"
                 pcop = self.copy()
                 
-                socones = [] #list of list of (var index,coef) in a rotated so cone
+                socones = [] #list of list of (var index,coef) in a so cone
                 rscones = [] #list of list of (var index,coef) in a rotated so cone
                 semidefs = [] #list of list of var indices in a sdcone
+                semidefset = set([]) #set of var indices in a sdcone
+                conevarset = set([]) #set of var indices in a (rotated) so cone
                 indlmi = 0
                 indzz= 0
                 XX=[]
                 zz=[]
                 #add new variables for LMI
-                for (i,cons) in [(i,cons) for (i,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.startswith('sdp')]:
+                listsdpcons = [(i,cons) for (i,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.startswith('sdp')]
+                for (i,cons) in reversed(listsdpcons):
                         if cons.semidefVar:
                                 var = cons.semidefVar
                                 semidefs.append(range(var.startIndex,var.endIndex))
+                                semidefset.update(range(var.startIndex,var.endIndex))
                         else:
                                 sz = cons.Exp1.size
                                 pcop.remove_constraint(i)
                                 XX.append(pcop.add_variable('_Xlmi['+str(indlmi)+']',sz,'symmetric'))
                                 pcop.add_constraint(XX[indlmi]>>0)
-                                if cons.typeOfConstraint[3]=='<':
-                                        pcop.add_constraint(XX[indlmi] == cons.Exp2-cons.Exp1)
+                                if cons.typeOfConstraint[3]=='<':#TODO equality on lowtri only
+                                        pcop.add_constraint(lowtri(XX[indlmi]) == lowtri(cons.Exp2-cons.Exp1))
                                 else:
-                                        pcop.add_constraint(XX[indlmi] == cons.Exp1-cons.Exp2)
+                                        pcop.add_constraint(lowtri(XX[indlmi]) == lowtri(cons.Exp1-cons.Exp2))
                                 semidefs.append(range(XX[indlmi].startIndex,XX[indlmi].endIndex))
+                                semidefset.update(range(XX[indlmi].startIndex,XX[indlmi].endIndex))
                                 indlmi+=1
                 #add new variables for soc cones
-                for (i,cons) in [(i,cons) for (i,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.endswith('cone')]:
-                        stdcone = pcop,standardCones[i]
-                        cone = []
-                        #TODO or either as above, remove the constraint and add the standard cons.
-                        if stdcone[0]:
-                                for (var,idx,coef) in stdcone[0]:
-                                        cone.append((var.startIndex+idx,coef))
+                listconecons = [(idcons,cons) for (idcons,cons) in enumerate(pcop.constraints) if cons.typeOfConstraint.endswith('cone')]
+                for (idcons,cons) in reversed(listconecons):
+                        conexp = (cons.Exp2 // cons.Exp1[:])
+                        if cons.Exp3:
+                                conexp = ((cons.Exp3) // conexp)
+                        
+                        #parse the (i,j,v) triple
+                        ijv=[]
+                        for var,fact in conexp.factors.iteritems():
+                                if type(fact)!=cvx.base.spmatrix:
+                                        fact = cvx.sparse(fact)
+                                sj = var.startIndex
+                                ijv.extend(zip( fact.I, fact.J +sj,fact.V))
+                        ijvs=sorted(ijv)
+                        
+                        itojv={}
+                        lasti=-1
+                        for (i,j,v) in ijvs:
+                                if i==lasti:
+                                        itojv[i].append((j,v))
+                                else:
+                                        lasti=i
+                                        itojv[i]=[(j,v)]   
+                        
+
+                        szcons = conexp.size[0] * conexp.size[1]
+                        rhstmp = conexp.constant
+                        if rhstmp is None:
+                                rhstmp = cvx.matrix(0.,(szcons,1))
+
+                        newconexp = new_param(' ',cvx.matrix([]))
+                        thiscone = []
+                        oldcone = []
+                        newvars = []
+                        #find the vars which we can keep
+                        for i in range(szcons):
+                                jv = itojv.get(i,[])
+                                if len(jv) == 1 and not(rhstmp[i]) and (jv[0][0] not in semidefset) and (jv[0][0] not in conevarset):
+                                        conevarset.update([jv[0][0]])
+                                        oldcone.append(jv[0])
+                                else:
+                                        newvars.append(i)
+                                        
+                        #add new vars
+                        countnewvars = len(newvars)
+                        if countnewvars>0:
+                                zz.append(pcop.add_variable('_zz['+str(indzz)+']',countnewvars))
+                                stz = zz[indzz].startIndex
+                                indzz += 1
+                                conevarset.update(range(stz,stz+countnewvars))
+                                
+                        
+                        #construct the new variable, add (vars,coefs) in 'thiscone'
+                        oldind = 0
+                        newind = 0
+                        for i in range(szcons):
+                                jv = itojv.get(i,[])
+                                if i not in newvars:
+                                        newconexp //= conexp[i]
+                                        thiscone.append(oldcone[oldind])
+                                        oldind += 1
+                                else:
+                                        newconexp //= zz[-1][newind]
+                                        thiscone.append((stz+newind,1))
+                                        pcop.add_constraint(zz[-1][newind] == conexp[i])
+                                        newind += 1
+                        
+                        if countnewvars>0:
+                                pcop.remove_constraint(idcons)
+                                if cons.Exp3:
+                                        nwcons = abs(newconexp[2:])**2 < newconexp[0] * newconexp[1]
+                                        if not(newvars in ([0],[1],[0,1])):
+                                                ncstring = '||sub(x;_zz[{0}])||**2 < '.format(indzz-1)
+                                        else:
+                                                ncstring = '||' + cons.Exp1.string + '||**2 < '
+                                        if 0 in newvars:
+                                                ncstring += '_zz[{0}][0]'.format(indzz-1)
+                                        else:
+                                                ncstring += cons.Exp2.string
+                                        if cons.Exp3.string !='1':
+                                                if 1 in newvars:
+                                                        if 0 in newvars:
+                                                                ncstring += '* _zz[{0}][1]'.format(indzz-1)
+                                                        else:
+                                                                ncstring += '* _zz[{0}][0]'.format(indzz-1)
+                                                else:
+                                                        ncstring += '* '+cons.Exp3.string
+                                        nwcons.myconstring = ncstring
+                                        pcop.add_constraint(nwcons)
+                                else:
+                                        nwcons = abs(newconexp[1:]) < newconexp[0]
+                                        if not(newvars==[0]):
+                                                ncstring = '||sub(x;_zz[{0}])|| < '.format(indzz-1)
+                                        else:
+                                                ncstring = '||' + cons.Exp1.string + '|| < '
+                                        if 0 in newvars:
+                                                ncstring += '_zz[{0}][0]'.format(indzz-1)
+                                        else:
+                                                ncstring += cons.Exp2.string
+                                        nwcons.myconstring = ncstring
+                                        pcop.add_constraint(nwcons)
+                        if cons.Exp3:
+                                rscones.append(thiscone)
                         else:
-                                zz.append(pcop.add_variable('zz['+str(indzz)+']',cons.Exp1.sz))
-                return pcop
+                                socones.append(thiscone)
+                                
+                #tmp return
+                #TODO think about bounds
+                return pcop                        
                 
 #----------------------------------------
 #                 Obsolete functions

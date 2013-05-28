@@ -38,6 +38,7 @@ __all__=['_retrieve_matrix',
         'svec',
         'svecm1',
         'ltrim1',
+        'lowtri',
         'sum',
         '_bsum',
         'diag',
@@ -48,6 +49,7 @@ __all__=['_retrieve_matrix',
         '_quad2norm',
         '_copy_exp_to_new_vars',
         'ProgressBar',
+        '_NonWritableDict',
         'QuadAsSocpError',
         'NotAppropriateSolverError',
         'NonConvexError',
@@ -829,7 +831,7 @@ def svec(mat):
         J=[]
         V=[]
         for (i,j,v) in zip((mat.I),(mat.J),(mat.V)):
-                if mat[j,i]!=v:
+                if abs(mat[j,i]-v)>1e-6:
                         raise ValueError('mat but be symmetric')
                 if i<=j:
                         isvec=j*(j+1)/2+i
@@ -894,6 +896,79 @@ def ltrim1(vec):
 
         return M
         
+def lowtri(exp):
+        r"""
+        if ``exp`` is a square affine expression of size (n,n),
+        ``lowtri(exp)`` returns the (n(n+1)/2)-vector of the lower triangular elements of ``exp``.
+        
+        **Example**
+        
+        >>> import picos as pic
+        >>> import cvxopt as cvx
+        >>> prob=pic.Problem()
+        >>> X=prob.add_variable('X',(4,4),'symmetric')
+        >>> pic.tools.lowtri(X)
+        # (10 x 1)-affine expression: lowtri(X) #
+        >>> X0 = cvx.matrix(range(16),(4,4))
+        >>> X.value = X0 * X0.T
+        >>> print X#doctest: +NORMALIZE_WHITESPACE
+        [ 2.24e+02  2.48e+02  2.72e+02  2.96e+02]
+        [ 2.48e+02  2.76e+02  3.04e+02  3.32e+02]
+        [ 2.72e+02  3.04e+02  3.36e+02  3.68e+02]
+        [ 2.96e+02  3.32e+02  3.68e+02  4.04e+02]
+        >>> print pic.tools.lowtri(X)#doctest: +NORMALIZE_WHITESPACE
+        [ 2.24e+02]
+        [ 2.48e+02]
+        [ 2.72e+02]
+        [ 2.96e+02]
+        [ 2.76e+02]
+        [ 3.04e+02]
+        [ 3.32e+02]
+        [ 3.36e+02]
+        [ 3.68e+02]
+        [ 4.04e+02]
+        """
+        if exp.size[0]<>exp.size[1]:
+                raise ValueError('exp must be square')
+        from .expression import AffinExp
+        from itertools import izip
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        (n,m)=exp.size
+        newfacs = {}
+        newrow={}#dict of new row indices
+        nr=0
+        for i in range(n**2):
+                col = i//n
+                row = i%n
+                if row>=col:
+                        newrow[i] = nr
+                        nr += 1
+        nsz = nr#this should be (n*(n+1))/2
+        for var,mat in exp.factors.iteritems():
+                I,J,V=[],[],[]
+                for i,j,v in izip(mat.I,mat.J,mat.V):
+                        col = i//n
+                        row = i%n
+                        if row>=col:
+                                I.append(newrow[i])
+                                J.append(j)
+                                V.append(v)
+                newfacs[var] = cvx.spmatrix(V,I,J,(nr,mat.size[1]))
+        if exp.constant is None:
+                newcons = None
+                
+        else:
+                ncs = []
+                for i,v in enumerate(cvx.matrix(exp.constant)):
+                        col = i//n
+                        row = i%n
+                        if row>=col:
+                                ncs.append(v)
+                newcons = cvx.matrix(ncs,(nr,1))
+        return AffinExp(newfacs,newcons,(nr,1),'lowtri('+exp.string+')')
+                        
 def _svecm1_identity(vtype,size):
         """
         row wise svec-1 transformation of the
@@ -1447,6 +1522,30 @@ class ProgressBar:
                         pass
                 # i give up. return default.
                 return (25, 80)
+                
+
+#a not writable dict
+class _NonWritableDict(dict):
+
+    def __getitem__(self,key):
+        return dict.__getitem__(self,key)
+
+    def __setitem__(self,key,value):
+        print 'not writable'
+        raise Exception('NONO')
+
+    def __delitem__(self,key):
+        print 'not writable'
+
+    def _set(self,key,value):
+        dict.__setitem__(self,key,value)
+
+    def _del(self,key):
+        dict.__delitem__(self,key)
+        
+    def _reset(self):
+        for key in self.keys():
+                self._del(key)
                 
 class QuadAsSocpError(Exception):
         """

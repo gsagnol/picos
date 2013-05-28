@@ -5,4 +5,4 @@ picos.tools
 ===========
 
 .. automodule:: picos.tools
-    :members: available_solvers, diag, diag_vect, eval_dict, lse, new_param, sum, norm, geomean, _retrieve_matrix
+    :members: available_solvers, diag, diag_vect, lowtri, eval_dict, lse, new_param, sum, norm, geomean, _retrieve_matrix

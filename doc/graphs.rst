@@ -481,11 +481,11 @@ We solve the multicut problem below, for the terminal pairs
         ---------------------
         The minimal multicut has capacity 49.0
         The edges forming the cut are: 
-        [(1, 0), (1, 4), (2, 16),
-         (2, 8), (3, 4), (5, 11),
+        [(1, 0), (1, 4), (2, 8),
+         (2, 16), (3, 4), (5, 11),
          (7, 8), (9, 8), (10, 11),
-         (13, 16), (13, 12),
-         (13, 14), (17, 16)]
+         (13, 12), (13, 14),
+         (13, 16), (17, 16)]
 
 Let us now draw the multicut:
 

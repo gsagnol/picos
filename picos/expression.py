@@ -40,7 +40,6 @@ __all__=['Expression',
         'GeneralFun',
         'LogSumExp',
         '_ConvexExp',
-        '_NonWritableDict',
         'GeoMeanExp',
         'NormP_Exp',
         'Variable'
@@ -325,35 +324,30 @@ class AffinExp(Expression):
                 else:
                         raise Exception('unexpected index (nonvalued, multidimensional, or noninteger)')
                 
+        def inplace_transpose(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_transpose should not be called on a Variable object')
+                for k in self.factors:
+                        bsize=self.size[0]
+                        bsize2=self.size[1]
+                        I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                        J=self.factors[k].J
+                        V=self.factors[k].V
+                        self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                        
+                if not (self.constant is None):
+                        self.constant=cvx.matrix(self.constant,
+                                        self.size).T[:]
+                self._size=(self.size[1],self.size[0])
+                if ( ('*' in self.affstring()) or ('/' in self.affstring())
+                        or ('+' in self.affstring()) or ('-' in self.affstring()) ):
+                        self.string='( '+self.string+' ).T'
+                else:
+                        self.string+='.T'
+                
         def transpose(self):
                 selfcopy=self.copy()
-                
-                for k in selfcopy.factors:
-                        bsize=selfcopy.size[0]
-                        bsize2=selfcopy.size[1]
-                        I0=[(i/bsize)+(i%bsize)*bsize2 for i in selfcopy.factors[k].I]
-                        J=selfcopy.factors[k].J
-                        V=selfcopy.factors[k].V
-                        selfcopy.factors[k]=cvx.spmatrix(V,I0,J,selfcopy.factors[k].size)
-                        '''old version -- not very efficient
-                        newfac=cvx.spmatrix([],[],[],(0,selfcopy.factors[k].size[1]))
-                        n=selfcopy.size[1]
-                        m=selfcopy.size[0]
-                        for j in range(m):
-                                for i in range(n):
-                                        newfac=cvx.sparse([newfac,selfcopy.factors[k][i*m+j,:]])
-                        selfcopy.factors[k]=newfac
-                        '''
-                        
-                if not (selfcopy.constant is None):
-                        selfcopy.constant=cvx.matrix(selfcopy.constant,
-                                        selfcopy.size).T[:]
-                selfcopy._size=(selfcopy.size[1],selfcopy.size[0])
-                if ( ('*' in selfcopy.affstring()) or ('/' in selfcopy.affstring())
-                        or ('+' in selfcopy.affstring()) or ('-' in selfcopy.affstring()) ):
-                        selfcopy.string='( '+selfcopy.string+' ).T'
-                else:
-                        selfcopy.string+='.T'
+                selfcopy.inplace_transpose()
                 return selfcopy
                 
         def setT(self,value):
@@ -918,58 +912,63 @@ class AffinExp(Expression):
         def __and__(self,exp):
                 """horizontal concatenation"""
                 selfcopy=self.copy()
+                selfcopy &= exp
+                return selfcopy
+                
+        def __rand__(self,exp):
+                Exp,ExpString=_retrieve_matrix(exp,self.size[0])
+                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
+                return (exp2 & self)
+
+        def __iand__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size[0]<>selfcopy.size[0]:
+                        if exp.size[0]<>self.size[0]:
                                 raise Exception('incompatible size for concatenation')
-                        for k in list(set(exp.factors.keys()).union(set(selfcopy.factors.keys()))):
-                                if (k in selfcopy.factors) and (k in exp.factors):
-                                        newfac=cvx.sparse([[selfcopy.factors[k],exp.factors[k]]])
-                                        selfcopy.factors[k]=newfac
+                        for k in list(set(exp.factors.keys()).union(set(self.factors.keys()))):
+                                if (k in self.factors) and (k in exp.factors):
+                                        newfac=cvx.sparse([[self.factors[k],exp.factors[k]]])
+                                        self.factors[k]=newfac
                                 elif k in exp.factors:
-                                        s1=selfcopy.size[0]*selfcopy.size[1]
+                                        s1=self.size[0]*self.size[1]
                                         s2=exp.factors[k].size[1]
                                         newfac=cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),
                                                         exp.factors[k]]])
-                                        selfcopy.factors[k]=newfac
+                                        self.factors[k]=newfac
                                 else:
                                         s1=exp.size[0]*exp.size[1]
-                                        s2=selfcopy.factors[k].size[1]
-                                        newfac=cvx.sparse([[selfcopy.factors[k],
+                                        s2=self.factors[k].size[1]
+                                        newfac=cvx.sparse([[self.factors[k],
                                                 cvx.spmatrix([],[],[],(s1,s2))]])
-                                        selfcopy.factors[k]=newfac
-                        if selfcopy.constant is None and exp.constant is None:
+                                        self.factors[k]=newfac
+                        if self.constant is None and exp.constant is None:
                                 pass
                         else:
-                                s1=selfcopy.size[0]*selfcopy.size[1]
+                                s1=self.size[0]*self.size[1]
                                 s2=exp.size[0]*exp.size[1]
-                                if not selfcopy.constant is None:
-                                        newCons=selfcopy.constant
+                                if not self.constant is None:
+                                        newCons=self.constant
                                 else:
                                         newCons=cvx.spmatrix([],[],[],(s1,1))
                                 if not exp.constant is None:
                                         newCons=cvx.sparse([[newCons,exp.constant]])
                                 else:
                                         newCons=cvx.sparse([[newCons,cvx.spmatrix([],[],[],(s2,1))]])
-                                selfcopy.constant=newCons
-                        selfcopy._size=(exp.size[0],exp.size[1]+selfcopy.size[1])
-                        sstring=selfcopy.string
+                                self.constant=newCons
+                        self._size=(exp.size[0],exp.size[1]+self.size[1])
+                        sstring=self.string
                         estring=exp.string
                         if sstring[0]=='[' and sstring[-1]==']':
                                 sstring=sstring[1:-1]
                         if estring[0]=='[' and estring[-1]==']':
                                 estring=estring[1:-1]
-                        selfcopy.string='['+sstring+','+estring+']'
-                        return selfcopy
+                        self.string='['+sstring+','+estring+']'
+                        return self
                 else:
                         Exp,ExpString=_retrieve_matrix(exp,self.size[0])
                         exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
-                        return (self & exp2)
-
-        def __rand__(self,exp):
-                Exp,ExpString=_retrieve_matrix(exp,self.size[0])
-                exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
-                return (exp2 & self)
-                        
+                        self &= exp2
+                        return self
+                
         def __floordiv__(self,exp):
                 """vertical concatenation"""
                 if isinstance(exp,AffinExp):
@@ -977,7 +976,7 @@ class AffinExp(Expression):
                         concat._size=(exp.size[0]+self.size[0],exp.size[1])
                         sstring=self.string
                         estring=exp.string
-                        if sstring[0]=='[' and sstring[-1]==']':
+                        if sstring[0]=='[' and sstring[-1]==']':#TODO problem when the [ does not match with ]
                                 sstring=sstring[1:-1]
                         if estring[0]=='[' and estring[-1]==']':
                                 estring=estring[1:-1]
@@ -988,6 +987,56 @@ class AffinExp(Expression):
                         exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
                         return (self // exp2)
 
+        def __ifloordiv__(self,exp):
+                """inplace vertical concatenation"""
+                if isinstance(exp,AffinExp):
+                        if exp.size[1]<>self.size[1]:
+                                raise Exception('incompatible size for concatenation')
+                        for k in list(set(exp.factors.keys()).union(set(self.factors.keys()))):
+                                if (k in self.factors) and (k in exp.factors):
+                                        newfac=cvx.sparse([self.factors[k],exp.factors[k]])
+                                        self.factors[k]=newfac
+                                elif k in exp.factors:
+                                        s1=self.size[0] * self.size[1]
+                                        s2=exp.factors[k].size[1]
+                                        newfac=cvx.sparse([cvx.spmatrix([],[],[],(s1,s2)),
+                                                        exp.factors[k]])
+                                        self.factors[k]=newfac
+                                else:
+                                        s1=exp.size[0]*exp.size[1]
+                                        s2=self.factors[k].size[1]
+                                        newfac=cvx.sparse([[self.factors[k],
+                                                cvx.spmatrix([],[],[],(s1,s2))]])
+                                        self.factors[k]=newfac
+                        if self.constant is None and exp.constant is None:
+                                pass
+                        else:
+                                s1=self.size[0]*self.size[1]
+                                s2=exp.size[0]*exp.size[1]
+                                if not self.constant is None:
+                                        newCons=self.constant
+                                else:
+                                        newCons=cvx.spmatrix([],[],[],(s1,1))
+                                if not exp.constant is None:
+                                        newCons=cvx.sparse([newCons,exp.constant])
+                                else:
+                                        newCons=cvx.sparse([newCons,cvx.spmatrix([],[],[],(s2,1))])
+                                self.constant=newCons
+                        self._size=(exp.size[0]+self.size[0],exp.size[1])
+                        sstring=self.string
+                        estring=exp.string
+                        if sstring[0]=='[' and sstring[-1]==']':
+                                sstring=sstring[1:-1]
+                        if estring[0]=='[' and estring[-1]==']':
+                                estring=estring[1:-1]
+                        self.string='['+sstring+';'+estring+']'
+                        return self
+                else:
+                        Exp,ExpString=_retrieve_matrix(exp,self.size[1])
+                        exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
+                        self //= exp2
+                        return self
+                        
         def __rfloordiv__(self,exp):
                 Exp,ExpString=_retrieve_matrix(exp,self.size[1])
                 exp2=AffinExp(factors={},constant=Exp[:],size=Exp.size,string=ExpString)
@@ -1710,28 +1759,6 @@ class NormP_Exp(_ConvexExp):
                         term,termString=_retrieve_matrix(exp,(1,1))
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>exp1
-                
-#a not writable dict
-class _NonWritableDict(dict):
-
-    def __getitem__(self,key):
-        return dict.__getitem__(self,key)
-
-    def __setitem__(self,key,value):
-        print 'not writable'
-
-    def __delitem__(self,key):
-        print 'not writable'
-
-    def _set(self,key,value):
-        dict.__setitem__(self,key,value)
-
-    def _del(self,key):
-        dict.__delitem__(self,key)
-        
-    def _reset(self):
-        for key in self.keys():
-                self._del(key)
                 
                 
 class Variable(AffinExp):

@@ -1,5 +1,3 @@
-mosek6 returns suboptimal solutions for MISOCP (in test_picos and doctest)
-solver_selection ne doit pas choisir mosek6 pour sdps ! (faire passer doctest avec trick mosek6)
 passed doit marcher avec tous les solvers (test_cutting_plane.py)
 Mention in the doc that socp - write_to_file --> scaled vars [mettre ds nom variable ?]
 CPLEX et Gurobi se plantent dans les dual de fixedcons pour les problemes avec 'min'
