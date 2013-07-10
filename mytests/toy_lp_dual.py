@@ -5,6 +5,7 @@ P.add_constraint(x[0] + x[1] +x[2] + x[3] > 1)
 P.add_constraint(x[2]+x[4] > 1)
 P.add_constraint(x[0]>0.55)
 P.add_constraint(x[5]-x[3]<0)
+#P.add_constraint(x[5]==x[3])
 
 P.add_constraint(x[1]>0.1)
 #x.set_sparse_lower([1],[0.1])
@@ -17,10 +18,10 @@ x.set_sparse_lower([5,6],[0.2,-8])
 x.set_sparse_upper([5,6],[0.6,-0.5])
 
 
-#P.set_objective('max',-(x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6]))
-P.set_objective('min',x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6])
+P.set_objective('max',-(x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6]))
+#P.set_objective('min',x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6])
 
-P.solve(solver='mosek')
+P.solve(solver='cvxopt')
 
 [cs.dual[0] for cs in P.constraints]
 

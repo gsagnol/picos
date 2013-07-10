@@ -866,6 +866,8 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
         
         for i,zi in enumerate(z):
                 zvar[i].value=zi
+        
+        #if solver_to_test=='mosek7': import pdb;pdb.set_trace() #[list(cs.slack) for cs in dsocp4.constraints] ...often quite bad !
         if not(dsocp4.check_current_value_feasibility(tol=1e-5)):
                 return (False,'not dual feasible')
         if abs(dsocp4.obj_value()+obj)/abs(obj)>1e-4:

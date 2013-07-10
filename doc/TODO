@@ -1,6 +1,7 @@
-passed doit marcher avec tous les solvers (test_cutting_plane.py)
+virer last_updated constraints
+passed et bnd doit marcher avec tous les solvers (test_cutting_plane.py).
 Mention in the doc that socp - write_to_file --> scaled vars [mettre ds nom variable ?]
-CPLEX et Gurobi se plantent dans les dual de fixedcons pour les problemes avec 'min'
+CPLEX et Gurobi se plantent dans les dual de fixedcons pour les problemes avec 'min' ->OK pr cplex. 1e-7 changed to 1e-4. saturation test was too tight
 documenter solve_via_dual (problemes avec gurobi ?), et bounds
 automatic selection of solve_via_dual for sdp problems.
 solve_via_dual avec cvxopt -- something special to do ?

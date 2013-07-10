@@ -80,19 +80,11 @@ class Problem(object):
                 """size of the s-vecotrized matrices involved in SDP constraints"""
                 self.countGeomean=0
                 """number of geomean (and other nonstandard convex) inequalities"""
-                '''TOREM
-                self.semidefVars = []
-                """symmetric matrix variables constrained to be >>0"""
-                self.standardCones = []
-                """second order cones whose variables are simple scaling of the original variables"""
-                self.coneVars = set([])
-                """set of parts of variables (as pairs of the form (var,index)) that appear in a simple SOC cone"""
-                '''
                 self.cvxoptVars={'c':None,
                                 'A':None,'b':None, #equalities
                                 'Gl':None,'hl':None, #inequalities
                                 'Gq':None,'hq':None, #quadratic cone
-                                'Gs':None,'hs':None, #TOREM 'Xs':None, #semidefinite cone
+                                'Gs':None,'hs':None, #semidefinite cone
                                 'F':None,'g':None, #GP constraints
                                 'quadcons': None} #other quads
                 
@@ -228,7 +220,7 @@ class Problem(object):
                                 'A':None,'b':None, #equalities
                                 'Gl':None,'hl':None, #inequalities
                                 'Gq':None,'hq':None, #quadratic cone
-                                'Gs':None,'hs':None, #TOREM 'Xs':None, #semidefinite cone
+                                'Gs':None,'hs':None, #semidefinite cone
                                 'F':None,'g':None, #GP constraints
                                 'quadcons': None} #other quads
                 
@@ -277,11 +269,6 @@ class Problem(object):
                 self.numberLSEVars = 0
                 self.last_updated_constraint = 0
                 self.countGeomean=0
-                """TOREM
-                self.semidefVars=[]
-                self.coneVars=set([])
-                self.standardCones=[]
-                """
                 if self.objective[0] is not 'find':
                         if self.objective[1] is not None:
                                 expr=self.objective[1]
@@ -829,10 +816,6 @@ class Problem(object):
                 sz=var.size
                 self.numberOfVars-=sz[0]*sz[1]
                 self.varNames.remove(name)
-                """TOREM
-                if var in self.semidefVars: 
-                        self.semidefVars.remove(var)
-                """
                 del self.variables[name]
                 self._recomputeStartEndIndices()
                 self.reset_solver_instances()
@@ -955,31 +938,7 @@ class Problem(object):
                         self.numberConeConstraints+=1
                         if cons.typeOfConstraint[:2]=='RS':
                                 self.numberConeVars+=1
-                        """TOREM
-                        ex1,ex2,ex3 = None,None,None
-                        if cons.exp1ConeVar:
-                                tmp1 = [(var,j) for (var,j,v) in cons.exp1ConeVar]
-                                if not (set(tmp1).intersection(self.coneVars)):
-                                        ex1 = cons.exp1ConeVar
-                                        self.coneVars.update(tmp1)
-                        if cons.exp2ConeVar:
-                                ex2 = cons.exp2ConeVar
-                                tmp2 = (ex2[0],ex2[1])
-                                if not tmp2 in self.coneVars:
-                                        self.coneVars.update([tmp2])
-                                else:
-                                        ex2 = None
-                        if cons.exp3ConeVar:
-                                ex3 = cons.exp3ConeVar
-                                tmp3 = (ex3[0],ex3[1])
-                                if not tmp3 in self.coneVars:
-                                        self.coneVars.update([tmp3])
-                                else:
-                                        ex3 = None
-                                self.standardCones.append((ex1,ex2,ex3))
-                        else:
-                                self.standardCones.append((ex1,ex2))
-                        """
+                        
                 elif cons.typeOfConstraint=='lse':
                         self.numberLSEVars+=(cons.Exp1.size[0]*cons.Exp1.size[1])
                         self.numberLSEConstraints+=1
@@ -991,7 +950,6 @@ class Problem(object):
                         self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
                         #is it a simple constraint of the form X>>0 ?
                         if cons.semidefVar:
-                                #TOREM self.semidefVars.append(cons.semidefVar)
                                 cons.semidefVar.semiDef = True
                 if ret:
                         return cons
@@ -1481,10 +1439,7 @@ class Problem(object):
                                 elif cons.typeOfConstraint[:3]=='sdp':
                                         self.numberSDPConstraints-=1
                                         self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
-                                        """TOREM
-                                        if cons.semidefVar:
-                                                self.semidefVars.remove(cons.semidefVar)
-                                        """
+                                        
                                         if cons.semidefVar:
                                                 cons.semidefVar.semiDef = False
                                 del self.constraints[ind]
@@ -1579,7 +1534,7 @@ class Problem(object):
         """        
 
         #GUROBI
-        def _make_gurobi_instance(self):
+        def _make_gurobi_instance_old(self):
                 """
                 defines the variables gurobi_Instance and grbvar
                 """
@@ -1715,6 +1670,7 @@ class Problem(object):
                                 
                 #variables
                 
+               
                 if (self.options['verbose']>1) and (not only_update):
                         limitbar=self.numberOfVars
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
@@ -1997,87 +1953,61 @@ class Problem(object):
                         print 'Gurobi instance created'
                         print
                                 
-        def is_continuous(self):
-                """ Returns ``True`` if there are only continuous variables"""
-                for kvar in self.variables.keys():
-                        if self.variables[kvar].vtype not in ['continuous','symmetric']:
-                                return False
-                return True
-                
-        def _make_cplex_instance(self):
+        def _make_gurobi_instance(self):
                 """
-                Defines the variables cplex_Instance and cplexvar,
-                used by the cplex solver.
+                defines the variables gurobi_Instance and grbvar
                 """
+                             
                 try:
-                        import cplex
+                        import gurobipy as grb
                 except:
-                        raise ImportError('cplex library not found')
+                        raise ImportError('gurobipy not found')
                 
-                #only change the objective coefficients
-                if self.options['onlyChangeObjective']:
-                        if self.cplex_Instance is None:
-                                raise Exception('option is only available when cplex_Instance has been defined before')
-                        newobj=self.objective[1]
-                        #redefine cplex_Instance
-                        coefs=[]
-                        for s,v in self.variables.iteritems():
-                                if v in newobj.factors:
-                                        fac=newobj.factors[v]
-                                        if not isinstance(fac,cvx.matrix):
-                                                fac=cvx.matrix(fac)
-                                        sv=v.startIndex
-                                        for jj,vv in enumerate(fac):
-                                                coefs.append((jj+sv,vv))
-                                else:
-                                        for i in xrange(v.startIndex,v.endIndex):
-                                                coefs.append((i,0))
-                        self.cplex_Instance.objective.set_linear(coefs)
-                        return
+                grb_type = {    'continuous' : grb.GRB.CONTINUOUS, 
+                                'binary' :     grb.GRB.BINARY, 
+                                'integer' :    grb.GRB.INTEGER, 
+                                'semicont' :   grb.GRB.SEMICONT, 
+                                'semiint' :    grb.GRB.SEMIINT,
+                                'symmetric': grb.GRB.CONTINUOUS}
                 
-                import itertools
+                #TODO: onlyChangeObjective
                 
-                if (self.last_updated_constraint == 0 or
-                    self.cplex_Instance is None):
-                        c = cplex.Cplex()
-                        self.last_updated_constraint = 0
-                        only_update = False
+                if (self.gurobi_Instance is None):
+                        m = grb.Model()
+                        boundcons = {}
                 else:
-                        c = self.cplex_Instance
-                        only_update = True
+                        m = self.gurobi_Instance
+                        boundcons = self.grb_boundcons
                 
-                sense_opt = self.objective[0]
-                if sense_opt == 'max':
-                        c.objective.set_sense(c.objective.sense.maximize)
-                elif sense_opt == 'min':
-                        c.objective.set_sense(c.objective.sense.minimize)
-                #else:
-                #        raise ValueError('feasibility problems not implemented ?')
+                if self.objective[0] == 'max':
+                        m.ModelSense = grb.GRB.MAXIMIZE
+                else:
+                        m.ModelSense = grb.GRB.MINIMIZE
                 
-                self.set_option('solver','cplex')
+                self.options._set('solver','gurobi')
                 
-                cplex_type = {  'continuous' : c.variables.type.continuous, 
-                                'binary' : c.variables.type.binary, 
-                                'integer' : c.variables.type.integer, 
-                                'semicont' : c.variables.type.semi_continuous, 
-                                'semiint' : c.variables.type.semi_integer,
-                                'symmetric': c.variables.type.continuous}                
                 
                 #create new variable and quad constraints to handle socp
                 tmplhs=[]
                 tmprhs=[]
                 icone =0
-                if only_update:
-                        offset_cone = len([na for na in c.variables.get_names() if '__tmprhs' in na])
-                        offset_supvars = c.variables.get_num() - self.numberOfVars -1
-                else:
-                        offset_cone = 0
-                        offset_supvars = 0
+                
+                NUMVAR_OLD = m.numVars #total number of vars before
+                NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex) #old number of vars without cone vars
+                        for var in self.variables.values()
+                        if ('gurobi' in var.passed)]))
+                OFFSET_CV = NUMVAR_OLD - NUMVAR0_OLD # number of conevars already there. 
+                NUMVAR0_NEW = int(_bsum([(var.endIndex-var.startIndex)#new vars without new cone vars
+                        for var in self.variables.values()
+                        if not('gurobi' in var.passed)]))
+                
                 
                 newcons={}
                 newvars=[]
                 if self.numberConeConstraints > 0 :
-                        for constrKey,constr in enumerate(self.constraints[self.last_updated_constraint:]):
+                        for constrKey,constr in enumerate(self.constraints):
+                                if 'gurobi' in constr.passed:
+                                        continue
                                 if constr.typeOfConstraint[2:]=='cone':
                                         if icone == 0: #first conic constraint
                                                 if '__noconstant__' in self.variables:
@@ -2090,6 +2020,479 @@ class Problem(object):
                                                 #no variable shift -> same noconstant var as before
                                 if constr.typeOfConstraint=='SOcone':
                                         if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                # remove_variable should never called (we let it for security)
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey)) #constrKey replaced the icone+offset_cone of previous version
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(constrKey),
+                                                constr.Exp1.size))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
+                                                constr.Exp1.size[0]*constr.Exp1.size[1]))
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
+                                                                        if constr.Exp1[i].isconstant() else 0
+                                                                        for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
+                                                                        constr.Exp1.size)
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
+                                                        constr.Exp1+v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
+                                                        constr.Exp2-noconstant == tmprhs[-1])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
+                                        icone+=1
+                                if constr.typeOfConstraint=='RScone':
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
+                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
+                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
+                                        tmplhs.append(self.add_variable(
+                                                '__tmplhs[{0}]__'.format(constrKey),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1
+                                                ))
+                                        tmprhs.append(self.add_variable(
+                                                '__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
+                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
+                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
+                                                1))
+                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
+                                        expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
+                                        v_cons = cvx.matrix( [np.sign(expcat.constant[i])
+                                                                        if expcat[i].isconstant() else 0
+                                                                        for i in range(expcat.size[0]*expcat.size[1])],
+                                                                        expcat.size)
+                                        
+                                        #lhs and rhs of the cone constraint
+                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
+                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[-1])
+                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
+                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[-1])
+                                        #conic constraints
+                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
+                                                        tmprhs[-1]>0)
+                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
+                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
+                                        icone+=1
+
+                NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)#new vars including cone vars
+                        for var in self.variables.values()
+                        if not('gurobi' in var.passed)]))
+               
+                NUMVAR = NUMVAR_OLD + NUMVAR_NEW#total number of variables (including extra vars for cones)
+                
+                                        
+                #variables
+                
+               
+                if (self.options['verbose']>1) and NUMVAR_NEW>0:
+                        limitbar=NUMVAR_NEW
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
+                        oldprog = str(prog)
+                        print('Creating variables...')
+                        print
+                
+                if NUMVAR_NEW:
+                        
+                        x=[]#list of new vars
+
+                        ub={j:grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
+                        lb={j:-grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
+                        
+                        for kvar,variable in [(kvar,variable) for (kvar,variable)
+                                                in self.variables.iteritems()
+                                                if 'gurobi' not in variable.passed]:
+                                
+                                variable.gurobi_startIndex=variable.startIndex + OFFSET_CV
+                                variable.gurobi_endIndex  =variable.endIndex + OFFSET_CV
+                                sj=variable.gurobi_startIndex
+                                ej=variable.gurobi_endIndex
+                                
+                                for ind,(lo,up) in variable.bnd.iteritems():
+                                      if not(lo is None):
+                                              lb[sj+ind]=lo
+                                      if not(up is None):
+                                              ub[sj+ind]=up
+                        
+                        vartopass = sorted([(variable.gurobi_startIndex,variable) for (kvar,variable)
+                                                in self.variables.iteritems()
+                                                if 'gurobi' not in variable.passed])
+                        
+                        
+                        for (vcsi,variable) in vartopass:
+                                variable.passed.append('gurobi')
+                                sj = variable.gurobi_startIndex
+                                tp = variable.vtype
+                                varsize = variable.endIndex-variable.startIndex
+                                
+                              
+                                for k in range(varsize):
+                                        name=variable.name+'_'+str(k)
+                                        x.append( m.addVar(obj = 0,
+                                                           name = name,
+                                                           vtype = grb_type[tp],
+                                                           lb = lb[sj+k],
+                                                           ub = ub[sj+k]))
+
+                                                           
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->
+                        
+                        if self.options['verbose']>1:
+                                prog.update_amount(limitbar)
+                                print prog, "\r",
+                                print
+                
+                m.update()
+                #parse all vars for hotstart
+                if self.options['hotstart']:
+                        for kvar,variable in self.variables.iteritems():
+                                if variable.is_valued():
+                                        vstart = variable.value
+                                        varsize = variable.endIndex-variable.startIndex
+                                        for k in range(varsize):
+                                                name = kvar+'_'+str(k)
+                                                xj=m.getVarByName(name)
+                                                xj.Start= vstart[k]
+                m.update()
+                
+                #parse all variable for the obective (only if not obj_passed)
+                if 'gurobi' not in self.obj_passed:
+                        self.obj_passed.append('gurobi')
+                        if self.objective[1] is None:
+                                objective = {}
+                        elif isinstance(self.objective[1],QuadExp):
+                                objective = self.objective[1].aff.factors
+                        elif isinstance(self.objective[1],AffinExp):
+                                objective = self.objective[1].factors
+                        
+                        m.set_objective(0)
+                        m.update()
+                        
+                        for variable,vect in objective.iteritems():
+                                varsize = variable.endIndex-variable.startIndex
+                                for (k,v) in zip(vect.J,vect.V):
+                                        name = variable.name+'_'+str(k)
+                                        xj=m.getVarByName(name)
+                                        xj.obj = v
+                        
+                        m.update()
+                        
+                        #quad part of the objective
+                        if isinstance(self.objective[1],QuadExp):
+                                lpart = m.getObjective()
+                                qd=self.objective[1].quad
+                                qind1,qind2,qval=[],[],[]
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        namei=i.name
+                                        namej=j.name
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
+                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
+                                        qval.extend(fact.V)
+                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
+                                m.setObjective(q_exp+lpart)
+                                m.update()
+                                        
+                        
+                #constraints
+                
+                NUMCON_NEW = int(_bsum([(cs.Exp1.size[0] * cs.Exp1.size[1])
+                                        for cs in self.constraints
+                                        if (cs.typeOfConstraint.startswith('lin'))
+                                        and not('gurobi' in cs.passed)] +
+                                        [1 for cs in self.constraints
+                                        if (cs.typeOfConstraint=='quad')
+                                        and not('gurobi' in cs.passed)]
+                                       )
+                                )
+                
+                #progress bar
+                if self.options['verbose']>0:
+                        print
+                        print('adding constraints...')
+                        print 
+                if self.options['verbose']>1:
+                        limitbar= NUMCON_NEW
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
+                        oldprog = str(prog)
+                
+              
+                
+                #join all constraints
+                def join_iter(it1,it2):
+                        for i in it1: yield i
+                        for i in it2: yield i
+                        
+                allcons = join_iter(enumerate(self.constraints),
+                                    newcons.iteritems())
+                
+                irow=0
+                for constrKey,constr in allcons:
+                        if 'gurobi' in constr.passed:
+                                continue
+                        else:
+                                constr.passed.append('gurobi')
+                        
+                        if constr.typeOfConstraint[:3] == 'lin':
+                                #init of boundcons[key]
+                                boundcons[constrkey]=[]
+                                
+                                #parse the (i,j,v) triple
+                                ijv=[]
+                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
+                                        if type(fact)!=cvx.base.spmatrix:
+                                                fact = cvx.sparse(fact)
+                                        ijv.extend(zip( fact.I,
+                                                [var.name+'_'+str(j) for j in fact.J],
+                                                fact.V))
+                                ijvs=sorted(ijv)
+                                
+                                itojv={}
+                                lasti=-1
+                                for (i,j,v) in ijvs:
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
+                                
+                                #constant term
+                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
+                                rhstmp = cvx.matrix(0.,(szcons,1))
+                                constant1 = constr.Exp1.constant #None or a 1*1 matrix
+                                constant2 = constr.Exp2.constant
+                                if not constant1 is None:
+                                        rhstmp = rhstmp-constant1
+                                if not constant2 is None:
+                                        rhstmp = rhstmp+constant2
+                                                                
+                                for i,jv in itojv.iteritems():
+                                        r=rhstmp[i]
+                                        if len(jv)==1:
+                                                #BOUND
+                                                name,v=jv[0]
+                                                xj=m.getVarByName(name)
+                                                b=r/float(v)
+                                                if v>0:
+                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
+                                                                if b<xj.ub:
+                                                                        xj.ub=b
+                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
+                                                                if b>xj.lb:
+                                                                        xj.lb=b
+                                                else:#v<0
+                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
+                                                                if b>xj.lb:
+                                                                        xj.lb=b
+                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
+                                                                if b<xj.ub:
+                                                                        xj.ub=b
+                                                if constr.typeOfConstraint[3]=='=': 
+                                                        b='='
+                                                boundcons[constrKey].append((i,name,b,v))
+                                        else:
+                                                LEXP = grb.LinExpr(
+                                                        [v for j,v in jv],
+                                                        [m.getVarByName(name) for name,v in jv])
+                                                name='lin'+str(constrKey)+'_'+str(i)
+                                                if constr.typeOfConstraint[:4] == 'lin<':
+                                                        m.addConstr(LEXP <= r,name=name)
+                                                elif constr.typeOfConstraint[:4] == 'lin>':
+                                                        m.addConstr(LEXP >= r,name=name)
+                                                elif constr.typeOfConstraint[:4] == 'lin=':
+                                                        m.addConstr(LEXP == r,name=name)
+                                                
+                                                irow+=1
+                                                
+                                        if self.options['verbose']>1:
+                                                #<--display progress
+                                                prog.increment_amount()
+                                                if oldprog != str(prog):
+                                                        print prog, "\r",
+                                                        sys.stdout.flush()
+                                                        oldprog=str(prog)
+                                                #-->                                                
+                        
+                        
+                        elif constr.typeOfConstraint == 'quad':
+                                #quad part
+                                qind1,qind2,qval=[],[],[]
+                                qd=constr.Exp1.quad
+                                q_exp= 0.
+                                for i,j in qd:
+                                        fact=qd[i,j]
+                                        namei=i.name
+                                        namej=j.name
+                                        si=i.startIndex
+                                        sj=j.startIndex
+                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
+                                                if si<sj:
+                                                        fact+=qd[j,i].T
+                                                elif si>sj:
+                                                        fact=cvx.sparse([0])
+                                                elif si==sj:
+                                                        pass
+                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
+                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
+                                        qval.extend(fact.V)
+                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
+                                #lin part
+                                lind,lval=[],[]
+                                af=constr.Exp1.aff.factors
+                                for var in af:
+                                        name = var.name
+                                        lind.extend([name+'_'+str(k) for k in af[var].J])
+                                        lval.extend(af[var].V)
+                                l_exp=grb.LinExpr(
+                                        lval,
+                                        [m.getVarByName(name) for name in lind])
+                                #constant
+                                qcs=0.
+                                if not(constr.Exp1.aff.constant is None):
+                                        qcs = - constr.Exp1.aff.constant[0]
+                                m.addQConstr(q_exp + l_exp <= qcs )
+                                
+                                if self.options['verbose']>1:
+                                        #<--display progress
+                                        prog.increment_amount()
+                                        if oldprog != str(prog):
+                                                print prog, "\r",
+                                                sys.stdout.flush()
+                                                oldprog=str(prog)
+                                        #-->
+                                
+                        elif constr.typeOfConstraint[2:] == 'cone':
+                                boundcons[constrKey]=[]
+                                #will be handled in the newcons dictionary
+                                
+                        else:
+                                raise Exception('type of constraint not handled (yet ?) for gurobi:{0}'.format(
+                                        constr.typeOfConstraint))
+                        
+                       
+
+                if self.options['verbose']>1:
+                        prog.update_amount(limitbar)
+                        print prog, "\r",
+                        print
+                        
+                m.update()
+                
+                self.gurobi_Instance=m
+                self.grbvar.extend(x)
+                self.grb_boundcons=boundcons
+                
+                if 'noconstant' in newcons or len(tmplhs)>0:
+                        self._remove_temporary_variables()
+                
+                if self.options['verbose']>0:
+                        print 'Gurobi instance created'
+                        print                                
+                                
+        def is_continuous(self):
+                """ Returns ``True`` if there are only continuous variables"""
+                for kvar in self.variables.keys():
+                        if self.variables[kvar].vtype not in ['continuous','symmetric']:
+                                return False
+                return True
+                
+                
+        def _make_cplex_instance(self):
+                """
+                Defines the variables cplex_Instance and cplexvar,
+                used by the cplex solver.
+                """
+                try:
+                        import cplex
+                except:
+                        raise ImportError('cplex library not found')
+                
+                import itertools
+                
+                if (self.cplex_Instance is None):
+                        c = cplex.Cplex()
+                        boundcons={}
+
+                else:
+                        c = self.cplex_Instance
+                        boundcons=self.cplex_boundcons
+                
+                sense_opt = self.objective[0]
+                if sense_opt == 'max':
+                        c.objective.set_sense(c.objective.sense.maximize)
+                elif sense_opt == 'min':
+                        c.objective.set_sense(c.objective.sense.minimize)
+                
+                self.set_option('solver','cplex')
+                
+                cplex_type = {  'continuous' : c.variables.type.continuous, 
+                                'binary' : c.variables.type.binary, 
+                                'integer' : c.variables.type.integer, 
+                                'semicont' : c.variables.type.semi_continuous, 
+                                'semiint' : c.variables.type.semi_integer,
+                                'symmetric': c.variables.type.continuous}                
+                
+                #create new variables and quad constraints to handle socp
+                tmplhs=[]
+                tmprhs=[]
+                icone =0
+                
+                
+                NUMVAR_OLD = c.variables.get_num() #total number of vars before
+                NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex) #old number of vars without cone vars
+                        for var in self.variables.values()
+                        if ('cplex' in var.passed)]))
+                OFFSET_CV = NUMVAR_OLD - NUMVAR0_OLD # number of conevars already there. 
+                NUMVAR0_NEW = int(_bsum([(var.endIndex-var.startIndex)#new vars without new cone vars
+                        for var in self.variables.values()
+                        if not('cplex' in var.passed)]))
+                        
+                
+                newcons={}
+                newvars=[]
+                if self.numberConeConstraints > 0 :
+                        for constrKey,constr in enumerate(self.constraints):
+                                if 'cplex' in constr.passed:
+                                        continue
+                                if constr.typeOfConstraint[2:]=='cone':
+                                        if icone == 0: #first conic constraint
+                                                if '__noconstant__' in self.variables:
+                                                        noconstant=self.get_variable('__noconstant__')
+                                                else:
+                                                        noconstant=self.add_variable(
+                                                                '__noconstant__',1)
+                                                        newvars.append(('__noconstant__',1))
+                                                newcons['noconstant']=(noconstant>0)
+                                                #no variable shift -> same noconstant var as before
+                                if constr.typeOfConstraint=='SOcone':
+                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
+                                                # remove_variable should never called (we let it for security)
                                                 self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
                                         if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
                                                 self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
@@ -2153,68 +2556,60 @@ class Problem(object):
                                         newcons['tmp_conequad_{0}'.format(constrKey)]=(
                                         -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
                                         icone+=1
-                        #variable shift
-                        for tv in tmprhs+tmplhs:
-                                tv._startIndex+=offset_supvars
-                                tv._endIndex+=offset_supvars
-                
-                
-                if (self.options['verbose']>1) and (not only_update):
-                        limitbar=self.numberOfVars
-                        prog = ProgressBar(0,limitbar, None, mode='fixed')
-                        oldprog = str(prog)
-                        if self.options['verbose']>0:
-                                print('Creating variables...')
-                                print
+                                
+                         
+                NUMVAR_NEW = int(_bsum([(var.endIndex-var.startIndex)#new vars including cone vars
+                        for var in self.variables.values()
+                        if not('cplex' in var.passed)]))
+               
+                NUMVAR = NUMVAR_OLD + NUMVAR_NEW#total number of variables (including extra vars for cones)
                 
                 #variables
-                if only_update:
-                        supvars=_bsum([nv[1] for nv in newvars])
-                        colnames=['']*supvars
-                        obj=[0]*supvars
-                        types=['C']*supvars
-                        #ub and lb contain the bounds for the old AND new variables
-                        ub=c.variables.get_upper_bounds()+([cplex.infinity]*supvars)
-                        lb=c.variables.get_lower_bounds()+([-cplex.infinity]*supvars)
-                        
-                        j=0
-                        for kvar,sz in newvars:
-                                for kj in range(sz):
-                                        colnames[j]=kvar+'_'+str(kj)
-                                        j+=1
-                else:
-                        colnames=['']*self.numberOfVars
-                        obj=[0]*self.numberOfVars
-                        types=['C']*self.numberOfVars
-                        mipstart_ind=[]
-                        mipstart_vals=[]
+                
+                if (self.options['verbose']>1) and NUMVAR_NEW>0:
+                        limitbar=NUMVAR_NEW
+                        prog = ProgressBar(0,limitbar, None, mode='fixed')
+                        oldprog = str(prog)
+                        print('Creating variables...')
+                        print
+                
+                if NUMVAR_NEW:
+
+                        colnames=[]
+                        types=[]
                         
                         #specify bounds later, in constraints
-                        ub=[cplex.infinity]*self.numberOfVars
-                        lb=[-cplex.infinity]*self.numberOfVars
+                        ub={j:cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
+                        lb={j:-cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
                         
-                        if self.objective[1] is None:
-                                objective = {}
-                        elif isinstance(self.objective[1],QuadExp):
-                                objective = self.objective[1].aff.factors
-                        elif isinstance(self.objective[1],AffinExp):
-                                objective = self.objective[1].factors
                         
-                        for kvar,variable in self.variables.iteritems():
-                                sj=variable.startIndex
-                                if variable.is_valued() and self.options['hotstart']:
-                                        mipstart_ind.extend(range(sj,variable.endIndex))
-                                        mipstart_vals.extend(variable.value)
+                        for kvar,variable in [(kvar,variable) for (kvar,variable)
+                                                in self.variables.iteritems()
+                                                if 'cplex' not in variable.passed]:
                                 
+                                variable.cplex_startIndex=variable.startIndex + OFFSET_CV
+                                variable.cplex_endIndex  =variable.endIndex + OFFSET_CV
+                                sj=variable.cplex_startIndex
+                                ej=variable.cplex_endIndex
+                                
+                                for ind,(lo,up) in variable.bnd.iteritems():
+                                      if not(lo is None):
+                                              lb[sj+ind]=lo
+                                      if not(up is None):
+                                              ub[sj+ind]=up
+                                
+                        
+                        vartopass = sorted([(variable.cplex_startIndex,variable) for (kvar,variable)
+                                                in self.variables.iteritems()
+                                                if 'cplex' not in variable.passed])
+                        
+                        for (vcsi,variable) in vartopass:
+                                variable.passed.append('cplex')
                                 varsize = variable.endIndex-variable.startIndex
-                                if objective.has_key(variable):
-                                        vectorObjective = objective[variable]
-                                else:
-                                        vectorObjective = [0]*(varsize)
+
                                 for k in range(varsize):
-                                        colnames[sj+k]=kvar+'_'+str(k)
-                                        obj[sj+k]=vectorObjective[k]
-                                        types[sj+k]=cplex_type[variable.vtype]
+                                        colnames.append(variable.name+'_'+str(k))
+                                        types.append(cplex_type[variable.vtype])
                                         
                                         if self.options['verbose']>1:
                                                 #<--display progress
@@ -2231,14 +2626,42 @@ class Problem(object):
                                 print
                 
                 
-                        #quad part of the objective
-                        quad_terms = []
+                        
+                #parse all vars for hotstart
+                mipstart_ind=[]
+                mipstart_vals=[]
+                if self.options['hotstart']:
+                        for kvar,variable in self.variables.iteritems():
+                                sj=variable.cplex_startIndex
+                                ej=variable.cplex_endIndex
+                                if variable.is_valued():
+                                        mipstart_ind.extend(range(sj,ej))
+                                        mipstart_vals.extend(variable.value)
+                                        
+                #parse all variable for the obective (only if not obj_passed)
+                newobjcoefs=[]
+                quad_terms = []
+                if 'cplex' not in self.obj_passed:
+                        self.obj_passed.append('cplex')
+                        
+                        if self.objective[1] is None:
+                                objective = {}
+                        elif isinstance(self.objective[1],QuadExp):
+                                objective = self.objective[1].aff.factors
+                        elif isinstance(self.objective[1],AffinExp):
+                                objective = self.objective[1].factors
+                        
+                        for variable,vect in objective.iteritems():
+                                sj = variable.cplex_startIndex
+                                newobjcoefs.extend(zip(vect.J+sj,vect.V))
+                    
+                    
                         if isinstance(self.objective[1],QuadExp):
                                 qd=self.objective[1].quad
                                 for i,j in qd:
                                         fact=qd[i,j]
-                                        si=i.startIndex
-                                        sj=j.startIndex
+                                        si=i.cplex_startIndex
+                                        sj=j.cplex_startIndex
                                         if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
                                                 if si<sj:
                                                         fact+=qd[j,i].T
@@ -2247,8 +2670,19 @@ class Problem(object):
                                                 elif si==sj:
                                                         pass
                                         quad_terms += zip(fact.I+si,fact.J+sj,2*fact.V)
-
+                                                       
                 #constraints
+                
+                NUMCON_NEW = int(_bsum([(cs.Exp1.size[0] * cs.Exp1.size[1])
+                                        for cs in self.constraints
+                                        if (cs.typeOfConstraint.startswith('lin'))
+                                        and not('cplex' in cs.passed)] +
+                                        [1 for cs in self.constraints
+                                        if (cs.typeOfConstraint=='quad')
+                                        and not('cplex' in cs.passed)]
+                                       )
+                                )
+                                
                 
                 #progress bar
                 if self.options['verbose']>0:
@@ -2256,10 +2690,7 @@ class Problem(object):
                         print('adding constraints...')
                         print 
                 if self.options['verbose']>1:
-                        limitbar= (self.numberAffConstraints +
-                                   self.numberQuadConstraints +
-                                   len(newcons) -
-                                   self.last_updated_constraint)
+                        limitbar= NUMCON_NEW
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                 
@@ -2285,26 +2716,26 @@ class Problem(object):
                         for i in it1: yield i
                         for i in it2: yield i
                         
-                allcons = join_iter(enumerate(self.constraints[self.last_updated_constraint:]),
+                allcons = join_iter(enumerate(self.constraints),
                                     newcons.iteritems())
                 
                 irow=0
                 for constrKey,constr in allcons:
+                        if 'cplex' in constr.passed:
+                                continue
+                        else:
+                                constr.passed.append('cplex')
                        
                         if constr.typeOfConstraint[:3] == 'lin':
                                 #init of boundcons[key]
-                                if isinstance(constrKey,int):
-                                        offsetkey=self.last_updated_constraint+constrKey
-                                else:
-                                        offsetkey=constrKey
-                                boundcons[offsetkey]=[]
+                                boundcons[constrKey]=[]
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
                                 for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
-                                        sj=var.startIndex
+                                        sj=var.cplex_startIndex
                                         ijv.extend(zip( fact.I,fact.J+sj,fact.V))
                                 ijvs=sorted(ijv)
                                 
@@ -2326,30 +2757,36 @@ class Problem(object):
                                         rhstmp = rhstmp-constant1
                                 if not constant2 is None:
                                         rhstmp = rhstmp+constant2
-                                                                
+                                                
                                 for i,jv in itojv.iteritems():
                                         r=rhstmp[i]
                                         if len(jv)==1:
                                                 #BOUND
                                                 j,v=jv[0]
                                                 b=r/float(v)
+                                                if j < NUMVAR_OLD:
+                                                        clj = c.variables.get_lower_bounds(j)
+                                                        cuj = c.variables.get_upper_bounds(j)
+                                                else:
+                                                        clj = lb[j]
+                                                        cuj = ub[j]
                                                 if v>0:
                                                         if constr.typeOfConstraint[:4] in ['lin<','lin=']:
-                                                                if b<ub[j]:
+                                                                if b<cuj:
                                                                         ub[j]=b
                                                         if constr.typeOfConstraint[:4] in ['lin>','lin=']:
-                                                                if b>lb[j]:
+                                                                if b>clj:
                                                                         lb[j]=b
                                                 else:#v<0
                                                         if constr.typeOfConstraint[:4] in ['lin<','lin=']:
-                                                                if b>lb[j]:
+                                                                if b>clj:
                                                                         lb[j]=b
                                                         if constr.typeOfConstraint[:4] in ['lin>','lin=']:
-                                                                if b<ub[j]:
+                                                                if b<cuj:
                                                                         ub[j]=b
                                                 if constr.typeOfConstraint[3]=='=': 
                                                         b='='
-                                                boundcons[offsetkey].append((i,j,b,v))
+                                                boundcons[constrKey].append((i,j,b,v))
                                         else:
                                                 if constr.typeOfConstraint[:4] == 'lin<':
                                                         senses += "L" # lower
@@ -2363,7 +2800,7 @@ class Problem(object):
                                                 vals.extend([v for j,v in jv])
                                                 rhs.append(r)
                                                 irow+=1
-                                                rownames.append('lin'+str(offsetkey)+'_'+str(i))
+                                                rownames.append('lin'+str(constrKey)+'_'+str(i))
                                                 
                                         if self.options['verbose']>1:
                                                 #<--display progress
@@ -2375,17 +2812,13 @@ class Problem(object):
                                                 #-->                                                
                         
                         elif constr.typeOfConstraint == 'quad':
-                                if isinstance(constrKey,int):
-                                        offsetkey=self.last_updated_constraint+constrKey
-                                else:
-                                        offsetkey=constrKey
                                 #quad part
                                 qind1,qind2,qval=[],[],[]
                                 qd=constr.Exp1.quad
                                 for i,j in qd:
                                         fact=qd[i,j]
-                                        si=i.startIndex
-                                        sj=j.startIndex
+                                        si=i.cplex_startIndex
+                                        sj=j.cplex_startIndex
                                         if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
                                                 if si<sj:
                                                         fact+=qd[j,i].T
@@ -2403,7 +2836,7 @@ class Problem(object):
                                 lind,lval=[],[]
                                 af=constr.Exp1.aff.factors
                                 for var in af:
-                                        sj=var.startIndex
+                                        sj=var.cplex_startIndex
                                         lind.extend(af[var].J + sj)
                                         lval.extend(af[var].V)
                                 l_exp=cplex.SparsePair(ind = lind, val = lval)
@@ -2427,8 +2860,7 @@ class Problem(object):
                                         #-->
                                 
                         elif constr.typeOfConstraint[2:] == 'cone':
-                                offsetkey=self.last_updated_constraint+constrKey
-                                boundcons[offsetkey]=[]
+                                boundcons[constrKey]=[]
                                 #will be handled in the newcons dictionary
                                 
                         else:
@@ -2445,19 +2877,20 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print
                         print('Passing to cplex...')
-                if only_update:
-                        c.variables.add(obj = obj, names = colnames,types=types)
-                        c.variables.set_lower_bounds(zip(range(len(lb)),lb))
-                        c.variables.set_upper_bounds(zip(range(len(ub)),ub))
-                        #import pdb;pdb.set_trace()
-                else:
-                        c.variables.add(obj = obj, ub = ub, lb=lb, names = colnames,types=types)
-                        if len(quad_terms)>0:
-                                c.objective.set_quadratic_coefficients(quad_terms)
+                
+                
+                c.variables.add(names = colnames,types=types)
+                c.variables.set_lower_bounds(lb.iteritems())
+                c.variables.set_upper_bounds(ub.iteritems())
+                c.objective.set_linear(newobjcoefs)
+                        
+                if len(quad_terms)>0:
+                        c.objective.set_quadratic_coefficients(quad_terms)
                 
                 offset=c.linear_constraints.get_num()
                 rows=[r+offset for r in rows]
                 c.linear_constraints.add(rhs = rhs, senses = senses,names=rownames)
+                
                 if len(rows)>0:
                         c.linear_constraints.set_coefficients(zip(rows, cols, vals))
                 for lp,qp,qcs in zip(ql,qq,qc):
@@ -2514,7 +2947,6 @@ class Problem(object):
                 self.cvxoptVars['hq']=[]
                 self.cvxoptVars['Gs']=[]
                 self.cvxoptVars['hs']=[]
-                #TOREM self.cvxoptVars['Xs']=[] #list of semidef vars (or None) corresponding to the LMI
                 self.cvxoptVars['quadcons']=[]
                 #objective
                 if isinstance(self.objective[1],QuadExp):
@@ -2620,12 +3052,7 @@ class Problem(object):
                                         self.cvxoptVars['hs'].append(h_lhs-h_rhs)
                                 else:
                                         raise NameError('unexpected case')
-                                """TOREM
-                                if self.constraints[k].semidefVar:
-                                        self.cvxoptVars['Xs'].append(self.constraints[k].semidefVar)
-                                else:
-                                        self.cvxoptVars['Xs'].append(None)
-                                """
+                                
                         else:
                                 raise NameError('unexpected case')
                         if self.options['verbose']>1:
@@ -2734,7 +3161,7 @@ class Problem(object):
                                 except:
                                         raise ImportError('mosek library not found')
 
-                version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
+                version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
                         
                 if self.msk_env and self.msk_task:
                         env = self.msk_env
@@ -2751,16 +3178,6 @@ class Problem(object):
                         if self.options['verbose']>=1:
                                 task.set_Stream (mosek.streamtype.log, self._streamprinter)                                
                         
-                """TOREM
-                #patch for quadratic problems with a single var
-                if self.numberOfVars==1 and self.numberQuadConstraints>0:
-                        if '_ptch_' not in self.variables:
-                                ptch=self.add_variable('_ptch_',1)
-                        else:
-                                ptch=self.get_variable('_ptch_')
-                        self.add_constraint( ptch>0 )                                
-                """
-                
                 # Give MOSEK an estimate of the size of the input data.
                 # This is done to increase the speed of inputting data.                                
                 reset_hbv_True = False
@@ -2781,9 +3198,10 @@ class Problem(object):
                         indsdpvar = [i for i,cons in
                                  enumerate([cs for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')])
                                  if cons.semidefVar]
+                        
                         if not(idxsdpvars):
                                 reset_hbv_True = True
-                                self.set_option('handleBarVars',False)
+                                self.options._set('handleBarVars',False)
                         
                 else:
                         NUMVAR0_OLD = int(_bsum([(var.endIndex-var.startIndex)
@@ -3119,14 +3537,6 @@ class Problem(object):
                                         J=[jvk[0] for jvk in jv]
                                         V=[jvk[1] for jvk in jv]
                                         
-                                        """TOREM
-                                        if self.options['handleBarVars']:
-                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                                        is_fixed_var = (len(J)==1)
-                                        if is_fixed_var and self.options['handleBarVars']:
-                                                if any([bool(mat) for mat in mats]):
-                                                        is_fixed_var = False
-                                        """
                                         is_fixed_var = (len(J)==1)
                                         if is_fixed_var:
                                                 j0=J[0]
@@ -3302,7 +3712,7 @@ class Problem(object):
                                 iend=icone
                                 #sk in quadratic cone
                                 if cons.Exp3:
-                                        task.appendcone(mosek.conetype.rquad, 0.0, conevars)#range(istart,iend)TOREM
+                                        task.appendcone(mosek.conetype.rquad, 0.0, conevars)
                                 else:
                                         task.appendcone(mosek.conetype.quad, 0.0, conevars)
                                         
@@ -3557,7 +3967,7 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print('mosek instance built')
                    
-        def _make_mosek_instance_old(self):#TOREM
+        def _make_mosek_instance_old(self):#TOREMOVE
                 """
                 defines the variables msk_env and msk_task used by the solver mosek.
                 """
@@ -3582,7 +3992,7 @@ class Problem(object):
                                 except:
                                         raise ImportError('mosek library not found')
 
-                version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
+                version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
                         
                 #only change the objective coefficients
                 if self.options['onlyChangeObjective']:
@@ -4924,7 +5334,7 @@ class Problem(object):
                                         #>0 and <0
                                         pos_conevar = self.numberOfVars+1 #plus 1 for the __noconstant__ variable 
                                         seen_bounded_vars = []
-                                        for k,constr in enumerate(self.constraints):
+                                        for k,constr in enumerate(self.constraints):                                               
                                                 if constr.typeOfConstraint[:3] == 'lin':
                                                         dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                                                         dim = dim - len(self.cplex_boundcons[k])
@@ -5004,7 +5414,7 @@ class Problem(object):
                                                         #rows with var bounds
                                                         for (i,j,b,v) in self.cplex_boundcons[k]:
                                                                 xj = c.solution.get_values(j)
-                                                                if ((b=='=') or abs(xj-b)<1e-7) and (j not in seen_bounded_vars):
+                                                                if ((b=='=') or abs(xj-b)<1e-4) and (j not in seen_bounded_vars):
                                                                         #does j appear in another equality constraint ?
                                                                         if b!='=':
                                                                                 boundsj=[b0 for k0 in range(len(self.constraints))
@@ -5016,10 +5426,12 @@ class Problem(object):
                                                                         else: #equality
                                                                                 seen_bounded_vars.append(j)
                                                                                 du=c.solution.get_reduced_costs(j)/v
+                                                                                if self.objective[0]=='min': du=-du
                                                                                 dual_values[i] = du
                                                                                 continue
                                                                         #what kind of inequality ?
                                                                         du=c.solution.get_reduced_costs(j)
+                                                                        if self.objective[0]=='min': du=-du
                                                                         if (((v>0 and constr.typeOfConstraint[3]=='<') or
                                                                         (v<0 and constr.typeOfConstraint[3]=='>')) and
                                                                         du>0):#upper bound
@@ -5034,15 +5446,18 @@ class Problem(object):
                                                                                 dual_values[i] = 0. #unactive constraint
                                                                 else:
                                                                         dual_values[i] = 0.
+                                                        
                                                         #rows with other constraints
                                                         for i in range(len(dual_values)):
                                                                 if dual_values[i] is None:
                                                                         du = c.solution.get_dual_values(
                                                                                 'lin'+str(k)+'_'+str(i))
+                                                                        if self.objective[0]=='min': du=-du
                                                                         if constr.typeOfConstraint[3]=='>':
                                                                                 dual_values[i] = -du
                                                                         else:
                                                                                 dual_values[i] = du
+                                                        #import pdb;pdb.set_trace()
                                                         duals.append(cvx.matrix(dual_values))
                                                         
                                                 elif constr.typeOfConstraint == 'SOcone':
@@ -5053,7 +5468,10 @@ class Problem(object):
                                                         for i in range(dim):
                                                                dual_values.append(
                                                             -c.solution.get_dual_values('lintmp_lhs_'+str(k)+'_'+str(i)))
-                                                        duals.append(cvx.matrix(dual_values))
+                                                        if self.objective[0]=='min':
+                                                                duals.append(-cvx.matrix(dual_values))
+                                                        else:
+                                                                duals.append(cvx.matrix(dual_values))
                                                 
                                                 elif constr.typeOfConstraint == 'RScone':
                                                         dual_values=[]
@@ -5063,7 +5481,10 @@ class Problem(object):
                                                         for i in range(dim):
                                                                dual_values.append(
                                                             -c.solution.get_dual_values('lintmp_lhs_'+str(k)+'_'+str(i)))
-                                                        duals.append(cvx.matrix(dual_values))
+                                                        if self.objective[0]=='min':
+                                                                duals.append(-cvx.matrix(dual_values))
+                                                        else:
+                                                                duals.append(cvx.matrix(dual_values))
                                                 
                                                 else:
                                                         if self.options['verbose']>0:
@@ -5343,13 +5764,13 @@ class Problem(object):
                         except ImportError:
                                 try:
                                         import mosek as mosek
-                                        version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
+                                        version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
                                         if self.options['solver'] == 'mosek7' and not(version7):
                                                 print "\033[1;31m mosek7 not found. using default mosek instead.\033[0m"
                                 except:
                                         raise ImportError('mosek library not found')
 
-                version7 = not(hasattr(mosek,'cputype')) #True if this is the beta version 7 of MOSEK
+                version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
                                         
                 #-------------------------------#
                 #  Can we solve it with mosek ? #
@@ -5376,7 +5797,7 @@ class Problem(object):
                 if self.options['verbose']>0:
                         if version7:
                                 print '-----------------------------------'
-                                print '         MOSEK beta version 7'
+                                print '         MOSEK version 7'
                                 print '-----------------------------------'
                         else:
                                 print '-----------------------------------'
@@ -5531,7 +5952,6 @@ class Problem(object):
                                 indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
                                 indices = sorted(indices)
                                 if self.options['handleBarVars']:
-                                        #TOREM idxsdpvars=[(var.startIndex,var.endIndex) for var in self.semidefVars[::-1]]
                                         idxsdpvars=[(si,ei) for (si,ei,v) in indices[::-1] if v.semiDef]
                                         indsdpvar = [i for i,cons in
                                                         enumerate([cs for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')])
@@ -5633,8 +6053,6 @@ class Problem(object):
                                         
                                         elif self.constraints[k].typeOfConstraint=='lin=':
                                                 szcons=int(np.product(self.constraints[k].Exp1.size))
-                                                #TOREM fxd=[(l-idin,var,coef) for (l,var,coef) in self.msk_fxd[0]
-                                                #        if l>=idin and l<idin+szcons]
                                                 fxd=self.msk_fxd[k]
                                                 #v=np.zeros(szcons-len(fxd),float)
                                                 v = [0.] * (szcons-len(fxd))
@@ -5661,8 +6079,6 @@ class Problem(object):
                                                 
                                         elif cons.typeOfConstraint[:3]=='lin':#inequality
                                                 szcons=int(np.product(cons.Exp1.size))
-                                                #TOREM fxd=[(l-idin,var,coef) for (l,var,coef)
-                                                #        in self.msk_fxd[1] if l>=idin and l<idin+szcons]
                                                 fxd=self.msk_fxd[k]
                                                 #v=np.zeros(szcons-len(fxd),float)
                                                 v=[0.] * (szcons-len(fxd))
@@ -6735,7 +7151,8 @@ class Problem(object):
                 #deactivate the solve_via_dual option (to avoid further dualization)
                 dual.set_option('solve_via_dual', False)
                 return dual
-                
+
+        """TODO primalize function (in development)
         def primalize(self):
                 if self.numberLSEConstraints>0:
                         raise DualizationError('GP cannot be dualized by PICOS')
@@ -6768,7 +7185,7 @@ class Problem(object):
                                 pcop.remove_constraint(i)
                                 XX.append(pcop.add_variable('_Xlmi['+str(indlmi)+']',sz,'symmetric'))
                                 pcop.add_constraint(XX[indlmi]>>0)
-                                if cons.typeOfConstraint[3]=='<':#TODO equality on lowtri only
+                                if cons.typeOfConstraint[3]=='<':
                                         pcop.add_constraint(lowtri(XX[indlmi]) == lowtri(cons.Exp2-cons.Exp1))
                                 else:
                                         pcop.add_constraint(lowtri(XX[indlmi]) == lowtri(cons.Exp1-cons.Exp2))
@@ -6882,9 +7299,10 @@ class Problem(object):
                         else:
                                 socones.append(thiscone)
                                 
-                #tmp return
+                
                 #TODO think about bounds
-                return pcop                        
+                return pcop #tmp return
+                """
                 
 #----------------------------------------
 #                 Obsolete functions
