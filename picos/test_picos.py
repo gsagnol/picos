@@ -624,14 +624,15 @@ def LP1Test(solver_to_test):
         except Exception as ex:
                 return (False,repr(ex))
         
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=-14.
-        
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
                 
         try:
                 z=[(cs.dual[1]-cs.dual[0]) for cs in primal.constraints]
@@ -646,11 +647,12 @@ def LP1Test(solver_to_test):
         for i,zi in enumerate(z):
                 zvar[i].value=zi
 
-        
-        if not(prob_LP_dual_c.check_current_value_feasibility()):
-                return (False,'not dual feasible')
-        if abs(prob_LP_dual_c.obj_value()+obj)/abs(obj)>1e-5:
-                return (False,'not dual optimal')
+        dualf = prob_LP_dual_c.check_current_value_feasibility() 
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(prob_LP_dual_c.obj_value()+obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
         
 def LP2Test(solver_to_test):
@@ -662,14 +664,16 @@ def LP2Test(solver_to_test):
         except Exception as ex:
                 return (False,repr(ex))
         
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=12.5
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
                 
         mu5 = primal.constraints[0].dual
         mu6 = primal.constraints[1].dual
@@ -686,10 +690,12 @@ def LP2Test(solver_to_test):
         mu6var.value=mu6
         mu7var.value=mu7
 
-        if not(dualp.check_current_value_feasibility()):
-                return (False,'not dual feasible')
-        if abs(dualp.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not dual optimal')
+        dualf=dualp.check_current_value_feasibility()
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(dualp.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
 
 def SOCP1Test(solver_to_test):
@@ -701,15 +707,17 @@ def SOCP1Test(solver_to_test):
         except Exception as ex:
                 return (False,repr(ex))
         
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=1.0759874194855403
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
-
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
+        
         Zvar=prob_dual_A.get_variable('Z')
         muvar=prob_dual_A.get_variable('mu')
         
@@ -722,10 +730,13 @@ def SOCP1Test(solver_to_test):
         muvar.value=mu
         for i,zi in enumerate(Z):
                 Zvar[i].value=zi
-        if not(prob_dual_A.check_current_value_feasibility(tol=1e-5)):
-                return (False,'not dual feasible')
-        if abs(prob_dual_A.obj_value()-obj)/abs(obj)>1e-4:
-                return (False,'not dual optimal')
+                
+        dualf=prob_dual_A.check_current_value_feasibility(tol=1e-5)
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(prob_dual_A.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
 
 def SOCP2Test(solver_to_test):        
@@ -736,15 +747,18 @@ def SOCP2Test(solver_to_test):
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
-                
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+             
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=8.921914163181004
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
+        
                 
         zvar=dsocp.get_variable('z')
         lbdavar=dsocp.get_variable('lbda')
@@ -761,10 +775,13 @@ def SOCP2Test(solver_to_test):
         muvar.value=mu
         for i,zi in enumerate(z):
                 zvar[i].value=zi
-        if not(dsocp.check_current_value_feasibility(tol=1e-5)):
-                return (False,'not dual feasible')
-        if abs(dsocp.obj_value()-obj)/abs(obj)>1e-4:
-                return (False,'not dual optimal')
+                
+        dualf=dsocp.check_current_value_feasibility(tol=1e-5)
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(dsocp.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
 
 def SOCP3Test(solver_to_test):    
@@ -776,15 +793,17 @@ def SOCP3Test(solver_to_test):
         except Exception as ex:
                 return (False,repr(ex))
         
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=1.7997245328947509
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
-                
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
+        
         zvar=multiconstraints_dual.get_variable('z')
         alphavar=multiconstraints_dual.get_variable('alpha')
         muvar=multiconstraints_dual.get_variable('mu')
@@ -804,10 +823,14 @@ def SOCP3Test(solver_to_test):
         tvar.value=t
         for i,zi in enumerate(z):
                 zvar[i].value=zi
-        if not(multiconstraints_dual.check_current_value_feasibility(tol=1e-5)):
-                return (False,'not dual feasible')
-        if abs(multiconstraints_dual.obj_value()-obj)/abs(obj)>1e-4:
-                return (False,'not dual optimal')
+                
+        dualf=multiconstraints_dual.check_current_value_feasibility(tol=1e-5)
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(multiconstraints_dual.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
+          
         return (True,primal.status)        
 
 def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
@@ -831,15 +854,17 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
         except Exception as ex:
                 return (False,repr(ex))
 
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=8.88848803874566
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
-                
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
+        
         zvar=dsocp4.get_variable('z')
         lbdavar=dsocp4.get_variable('lbda')
         muvar=dsocp4.get_variable('mu')
@@ -867,11 +892,13 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
         for i,zi in enumerate(z):
                 zvar[i].value=zi
         
-        #if solver_to_test=='mosek7': import pdb;pdb.set_trace() #[list(cs.slack) for cs in dsocp4.constraints] ...often quite bad !
-        if not(dsocp4.check_current_value_feasibility(tol=1e-5)):
-                return (False,'not dual feasible')
-        if abs(dsocp4.obj_value()+obj)/abs(obj)>1e-4:
-                return (False,'not dual optimal')
+        dualf=dsocp4.check_current_value_feasibility(tol=1e-5)
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(dsocp4.obj_value()+obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
+        
         return (True,primal.status)
         
 def SDPTest(solver_to_test):
@@ -882,15 +909,16 @@ def SDPTest(solver_to_test):
         except Exception as ex:
                 return (False,repr(ex))
         
-        
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=5.366615677650481
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
                 
         muvar=prob_SDP_c_dual.get_variable('mu')
         try:
@@ -902,13 +930,18 @@ def SDPTest(solver_to_test):
                 return (False,'no dual computed')
                 
         muvar.value=mu
-        if not(prob_SDP_c_dual.check_current_value_feasibility()):
-                return (False,'not dual feasible')
+        
+        dualf=prob_SDP_c_dual.check_current_value_feasibility()
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        
         S = (prob_SDP_c_dual.constraints[0].Exp1-prob_SDP_c_dual.constraints[0].Exp2)
-        if (abs(Z-S).value[0]/abs(S).value[0])>1e-5:
-                return (False,'not dual feasible')
-        if abs(prob_SDP_c_dual.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not dual optimal')
+        dfinf = (abs(Z-S).value[0]/abs(S).value[0])
+        if dfinf>1e-5:
+                return (False,'not dual feasible|{0:1.0e}'.format(dfinf))
+        dgap = abs(prob_SDP_c_dual.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
 
 def CONEPTest(solver_to_test):
@@ -918,14 +951,17 @@ def CONEPTest(solver_to_test):
                 primal.solve(solver=solver_to_test,tol=1e-7,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
-        if not(primal.check_current_value_feasibility()):
-                return (False,'not primal feasible')
+        
+        primf = primal.check_current_value_feasibility()
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         obj=1.0159165875250857
         
-        if abs(primal.obj_value()-obj)/abs(obj)>0.1:
+        pgap = abs(primal.obj_value()-obj)/abs(obj)
+        if pgap>0.1:
                 return (False,'failed')        
-        elif abs(primal.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not primal optimal')
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
                 
         zvar=dual_coneP.get_variable('z')
         muvar=dual_coneP.get_variable('mu')
@@ -952,32 +988,36 @@ def CONEPTest(solver_to_test):
         wvar.value =w
         uvar.value =u
 
-        if not(dual_coneP.check_current_value_feasibility()):
-                return (False,'not dual feasible')
-        if abs(dual_coneP.obj_value()-obj)/abs(obj)>1e-5:
-                return (False,'not dual optimal')
+        dualf=dual_coneP.check_current_value_feasibility()
+        if not(dualf[0]):
+                return (False,'not dual feasible|{0:1.0e}'.format(dualf[1]))
+        dgap = abs(dual_coneP.obj_value()-obj)/abs(obj)
+        if dgap >1e-5:
+                return (False,'not dual optimal|{0:1.0e}'.format(dgap))
         return (True,primal.status)
         
-def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6):
+def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6,maxit=50):
         primal2=primal.copy()
         try:
-                primal2.solve(solver=solver_to_test,timelimit=1,maxit=50)
+                primal2.solve(solver=solver_to_test,timelimit=1,maxit=maxit)
         except Exception as ex:
                 return (False,repr(ex))
 
-        if not(primal2.check_current_value_feasibility(tol=10*tol)):
-                return (False,'not primal feasible')
+        primf = primal2.check_current_value_feasibility(tol=10*tol)
+        if not(primf[0]):
+                return (False,'not primal feasible|{0:1.0e}'.format(primf[1]))
         
         if obj==0:
                 denom=1.
         else:
                 denom=abs(obj)
-                
-        if abs(primal2.obj_value()-obj)/denom>0.1:
-                return (False,'failed')        
-        elif abs(primal2.obj_value()-obj)/denom>tol:
-                return (False,'not primal optimal')
         
+        pgap = abs(primal2.obj_value()-obj)/denom
+        if pgap>0.1:
+                return (False,'failed')        
+        elif pgap>1e-5:
+                return (False,'not primal optimal|{0:1.0e}'.format(pgap))
+
         return (True,primal2.status)
                 
 def QCQPTest(solver_to_test):
@@ -993,7 +1033,7 @@ def MIXED_SOCP_QPTest(solver_to_test):
 def MIQCQPTest(solver_to_test):
         print 'MIQCQP',solver_to_test
         return testOnlyPrimal(solver_to_test,miqcqp,
-                                -10.21427246841899,tol=1e-4)
+                                -10.21427246841899,tol=1e-4,maxit=500)
          
 def GPTest(solver_to_test):
         print 'GP',solver_to_test
@@ -1002,12 +1042,12 @@ def GPTest(solver_to_test):
 def MISOCPTest(solver_to_test):
         print 'MISOCP',solver_to_test
         return testOnlyPrimal(solver_to_test,prob_exact_c,
-                                8.601831095537415,tol=1e-4)
+                                8.601831095537415,tol=1e-4,maxit=None)
 
 def MIPTest(solver_to_test):
         print 'MIP',solver_to_test
         return testOnlyPrimal(solver_to_test,prob_exact_single_c,
-                                5.48076923076923,tol=1e-4)
+                                5.48076923076923,tol=1e-4,maxit=500)
 def CONEQCPTest(solver_to_test):
         print 'CONEQCP',solver_to_test
         return testOnlyPrimal(solver_to_test,coneQP,
@@ -1081,11 +1121,19 @@ for pclas in prob_classes:
                         elif 'no Primals' in err:
                                 clasln+='  failed  |'
                         elif 'primal' in err:
-                                clasln+='suboptimal|'
+                                inf = err.split('|')[1]
+                                if 'feasible' in err:
+                                        clasln+='Pinf:'+inf+'|'
+                                else:
+                                        clasln+='gap: '+inf+'|'
                         elif 'no dual' in err:
-                                clasln+=' no duals |'
+                                clasln+='OK(nodual)|'
                         elif 'dual' in err:
-                                clasln+='nooptduals|'
+                                inf = err.split('|')[1]
+                                if 'feasible' in err:
+                                        clasln+='Dinf:'+inf+'|'
+                                else:
+                                        clasln+='Dgap:'+inf+'|'
                         else:
                                 clasln+='  failed  |'
         print clasln
@@ -1094,8 +1142,11 @@ for pclas in prob_classes:
 print
 print 'explanation: OK*        = test passed (optimal primal and dual variables computed).'
 print '             OK         = test passed (only the primal vars are computed for this class of problems).'
+print '             OK(nodual) = Optimal primal solution, but no dual variables were computed'
+print '             Dinf:err   = Optimal primal solution, but the dual infeasibility in the order of (err)'
+print '             Dgap:err   = Optimal primal solution, but duality gap in the order of (err)'
+print '             Pinf:err   = Primal solution with has an infeasibility in the order of (err) '
+print '             gap: err   = Feasible but suboptimal solution (gap in the order of (err)'
 print '             <blank>    = class of problem not handled by this solver'
 print '             failed     = The problem was not solved'
-print '             suboptimal = The problem was not solved to optimality'
-print '             no duals   = Optimal primal solution, but no dual variables were computed'
-print '             nooptduals = Optimal primal solution, but the dual variables are not optimal'
+

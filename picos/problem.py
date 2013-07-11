@@ -247,10 +247,10 @@ class Problem(object):
                 self.obj_passed = []
                 for var in self.variables.values():
                         var.passed=[]
-                        if hasattr(x,'gurobi_endIndex'): 
+                        if hasattr(var,'gurobi_endIndex'): 
                                 del var.gurobi_startIndex
                                 del var.gurobi_startIndex
-                        if hasattr(x,'cplex_endIndex'): 
+                        if hasattr(var,'cplex_endIndex'): 
                                 del var.cplex_startIndex
                                 del var.cplex_endIndex
         
@@ -1509,19 +1509,19 @@ class Problem(object):
                         if cs.typeOfConstraint.startswith('sdp'):
                                 #check symmetry
                                 if min(sl-sl.T)<-tol:
-                                        return False
+                                        return (False,-min(sl-sl.T))
                                 if min(sl.T-sl)<-tol:
-                                        return False
+                                        return (False,-min(sl.T-sl))
                                 #check positive semidefiniteness
                                 if isinstance(sl,cvx.spmatrix):
                                         sl=cvx.matrix(sl)
                                 sl=np.array(sl)
                                 eg=np.linalg.eigvalsh(sl)
                                 if min(eg)<-tol:
-                                        return False
+                                        return (False,-min(eg))
                         else:
                                 if min(sl)<-tol:
-                                        return False
+                                        return (False,-min(sl))
                 #integer feasibility
                 if not(self.is_continuous()):
                         for vnam,v in self.variables.iteritems():
@@ -1529,10 +1529,10 @@ class Problem(object):
                                         sl=v.value
                                         dsl=[min(s-int(s),int(s)+1-s) for s in sl]
                                         if max(dsl)>1e-3:
-                                                return False
+                                                return (False,max(dsl))
                                 
                 #so OK, it's feasible
-                return True
+                return (True,None)
                                 
                 
         """
@@ -2112,10 +2112,10 @@ class Problem(object):
                         print('Creating variables...')
                         print
                 
+                x=[]#list of new vars
+                
                 if NUMVAR_NEW:
                         
-                        x=[]#list of new vars
-
                         ub={j:grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
                         lb={j:-grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
                         
@@ -2889,9 +2889,12 @@ class Problem(object):
                 
                 
                 c.variables.add(names = colnames,types=types)
-                c.variables.set_lower_bounds(lb.iteritems())
-                c.variables.set_upper_bounds(ub.iteritems())
-                c.objective.set_linear(newobjcoefs)
+                if lb:
+                        c.variables.set_lower_bounds(lb.iteritems())
+                if ub:
+                        c.variables.set_upper_bounds(ub.iteritems())
+                if newobjcoefs:
+                        c.objective.set_linear(newobjcoefs)
                         
                 if len(quad_terms)>0:
                         c.objective.set_quadratic_coefficients(quad_terms)
