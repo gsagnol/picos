@@ -89,7 +89,7 @@ class Problem(object):
                                 'quadcons': None} #other quads
                 
                 self.gurobi_Instance = None
-                self.grbvar = {}
+                self.grbvar = []
                 self.grb_boundcons = None
                 
                 self.cplex_Instance = None
@@ -225,7 +225,7 @@ class Problem(object):
                                 'quadcons': None} #other quads
                 
                 self.gurobi_Instance = None
-                self.grbvar = {}
+                self.grbvar = []
                 self.grb_boundcons = None
                 
                 self.cplex_Instance = None
@@ -245,6 +245,12 @@ class Problem(object):
                 self.obj_passed = []
                 for var in self.variables.values():
                         var.passed=[]
+                        if hasattr(x,'gurobi_endIndex'): 
+                                del var.gurobi_startIndex
+                                del var.gurobi_startIndex
+                        if hasattr(x,'cplex_endIndex'): 
+                                del var.cplex_startIndex
+                                del var.cplex_endIndex
         
         def remove_all_constraints(self):
                 """
@@ -2182,7 +2188,7 @@ class Problem(object):
                         elif isinstance(self.objective[1],AffinExp):
                                 objective = self.objective[1].factors
                         
-                        m.set_objective(0)
+                        m.setObjective(0)
                         m.update()
                         
                         for variable,vect in objective.iteritems():
@@ -2261,7 +2267,7 @@ class Problem(object):
                         
                         if constr.typeOfConstraint[:3] == 'lin':
                                 #init of boundcons[key]
-                                boundcons[constrkey]=[]
+                                boundcons[constrKey]=[]
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
@@ -2321,6 +2327,8 @@ class Problem(object):
                                                         [v for j,v in jv],
                                                         [m.getVarByName(name) for name,v in jv])
                                                 name='lin'+str(constrKey)+'_'+str(i)
+                                                print name
+                                                if name=='lin3_0': import pdb;pdb.set_trace()#TODO chelou/ la nouvelle contrainte ne reste pas ?
                                                 if constr.typeOfConstraint[:4] == 'lin<':
                                                         m.addConstr(LEXP <= r,name=name)
                                                 elif constr.typeOfConstraint[:4] == 'lin>':
@@ -2403,7 +2411,7 @@ class Problem(object):
                         print
                         
                 m.update()
-                
+                import pdb;pdb.set_trace()
                 self.gurobi_Instance=m
                 self.grbvar.extend(x)
                 self.grb_boundcons=boundcons
@@ -2704,11 +2712,6 @@ class Problem(object):
                 ql=[]
                 qq=[]
                 qc=[]
-                
-                if only_update:
-                        boundcons=self.cplex_boundcons
-                else:
-                        boundcons={} #dictionary of i,j,b,v for bound constraints
                 
                 
                 #join all constraints
@@ -3967,451 +3970,6 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print('mosek instance built')
                    
-        def _make_mosek_instance_old(self):#TOREMOVE
-                """
-                defines the variables msk_env and msk_task used by the solver mosek.
-                """
-                if self.options['verbose']>0:
-                        print('build mosek instance')
-                
-                #import mosek
-                if self.options['solver'] == 'mosek6': #force to use version 6.0 of mosek.
-                        try:
-                                import mosek as mosek
-                                version7 = not(hasattr(mosek,'cputype'))
-                                if version7:
-                                        raise ImportError("I could''t find mosek 6.0; the package named mosek is the v7.0")
-                        except:
-                                raise ImportError('mosek library not found')
-                else:#try to load mosek7, else use the default mosek package (which can be any version)
-                        try:
-                                import mosek7 as mosek
-                        except ImportError:
-                                try:
-                                        import mosek as mosek
-                                except:
-                                        raise ImportError('mosek library not found')
-
-                version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
-                        
-                #only change the objective coefficients
-                if self.options['onlyChangeObjective']:
-                        if self.msk_task is None:
-                                raise Exception('option is only available when msk_task has been defined before')
-                        newobj=self.objective[1]
-                        (cobj,constantInObjective)=self._makeGandh(newobj)
-                        self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
-                        
-                        for j in range(len(self.cvxoptVars['c'])):
-                        # Set the linear term c_j in the objective.
-                                self.msk_task.putcj(j,self.cvxoptVars['c'][j])
-                        return
-                                
-                # Make a MOSEK environment
-                env = mosek.Env ()
-                # Attach a printer to the environment
-                if self.options['verbose']>=1:
-                        env.set_Stream (mosek.streamtype.log, self._streamprinter)
-                # Create a task
-                task = env.Task(0,0)
-                # Attach a printer to the task
-                if self.options['verbose']>=1:
-                        task.set_Stream (mosek.streamtype.log, self._streamprinter)                                
-                                
-                #patch for quadratic problems with a single var
-                if self.numberOfVars==1 and self.numberQuadConstraints>0:
-                        if '_ptch_' not in self.variables:
-                                ptch=self.add_variable('_ptch_',1)
-                        else:
-                                ptch=self.get_variable('_ptch_')
-                        self.add_constraint( ptch>0 )                                
-                      
-                                
-                # Give MOSEK an estimate of the size of the input data.
-                # This is done to increase the speed of inputting data.                                
-                                
-                self._make_cvxopt_instance()
-                if self.options['handleBarVars']:
-                        NUMVAR = self.numberOfVars - int(_bsum([(Gs.size[0]+(Gs.size[0])**0.5)/2.
-                                             for Gs,Xs in zip(self.cvxoptVars['Gs'],self.cvxoptVars['Xs'])
-                                             if Xs]))
-                        
-                        #start and end indices of the sdpvars, reverted so we can use pop()
-                        idxsdpvars=[(var.startIndex,var.endIndex) for var in self.semidefVars[::-1]]
-                        indsdpvar=[i for i,Xs in enumerate(self.cvxoptVars['Xs']) if Xs]
-                else:
-                        NUMVAR = self.numberOfVars
-                NUMVAR0 = NUMVAR # number of "plain" vars (without "bar" matrix var)
-                #NUMCON = #self.numberAffConstraints plus the quad constraints with an affine part
-                NUMCON = 0
-                if self.cvxoptVars['A'] is not None:
-                        NUMCON += self.cvxoptVars['A'].size[0]
-                if self.cvxoptVars['Gl'] is not None:
-                        NUMCON += self.cvxoptVars['Gl'].size[0]
-                NUMCONE = self.numberConeConstraints
-                if NUMCONE>0:
-                        varscone = int(_bsum([Gk.size[0] for Gk in self.cvxoptVars['Gq']]))
-                        NUMVAR+=varscone
-                        NUMCON+=varscone
-                
-                NUMSDP =  self.numberSDPConstraints
-                if NUMSDP>0:
-                        if self.options['handleBarVars']:
-                                varssdp= int(_bsum([(Gs.size[0]+(Gs.size[0])**0.5)/2.
-                                             for Gs,Xs in zip(self.cvxoptVars['Gs'],self.cvxoptVars['Xs'])
-                                             if not(Xs)]))
-                        else:
-                                varssdp= int(_bsum([(Gs.size[0]+(Gs.size[0])**0.5)/2.
-                                             for Gs in self.cvxoptVars['Gs']]))
-                                
-                        NUMCON+=varssdp
-                        BARVARDIM = [int((Gs.size[0])**0.5) for Gs in self.cvxoptVars['Gs']]
-                else:
-                        BARVARDIM = []
-                        
-                NUMANZ= len(self.cvxoptVars['A'].I)+len(self.cvxoptVars['Gl'].I)
-                NUMQNZ= self.numberQuadNNZ
-
-                if (bool(self.cvxoptVars['Gs']) and not(version7)) or bool(self.cvxoptVars['F']):
-                        raise Exception('SDP or GP constraints are not interfaced. For SDP, try mosek 7.0')
-                
-                if version7:
-                        # Append 'NUMCON' empty constraints.
-                        # The constraints will initially have no bounds.
-                        task.appendcons(NUMCON)
-                        #Append 'NUMVAR' variables.
-                        # The variables will initially be fixed at zero (x=0).
-                        task.appendvars(NUMVAR)
-                        task.appendbarvars(BARVARDIM)
-                else:
-                        task.append(mosek.accmode.con,NUMCON)
-                        task.append(mosek.accmode.var,NUMVAR)
-
-                #specifies the integer variables
-                binaries=[]
-                for k in self.variables:
-                        if self.variables[k].vtype=='binary':
-                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
-                                        task.putvartype(i,mosek.variabletype.type_int)
-                                        binaries.append(i)
-                        elif self.variables[k].vtype=='integer':
-                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
-                                        task.putvartype(i,mosek.variabletype.type_int)
-                        elif self.variables[k].vtype not in ['continuous','symmetric']:
-                                raise Exception('vtype not handled (yet) with mosek')
-                
-                if self.options['handleBarVars']:
-                        for j in range(NUMVAR):
-                                #make the variable free
-                                task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
-                                task.putcj(j,0.)
-                        
-                        cc = cvx.sparse(self.cvxoptVars['c'])
-                        if self.objective[0]=='max':#max is handled directly by MOSEK,
-                                                        #revert to initial value
-                                cc = - cc
-                        jj,vv=(cc.I,cc.V)
-                        J,V,mats = self._separate_linear_cons(jj,vv,idxsdpvars)
-                        for j,v in zip(J,V):
-                                task.putcj(j,v)
-                                
-                        for imat,mat in enumerate(mats):
-                                if mat:
-                                        matij = task.appendsparsesymmat(
-                                                mat.size[0],
-                                                mat.I,mat.J,mat.V)
-                                        task.putbarcj(indsdpvar[imat], [matij], [1.0])
-                                        
-                else:
-                        for j in range(NUMVAR):
-                                # Set the linear term c_j in the objective.
-                                if j< self.numberOfVars:
-                                        if self.objective[0]=='max':         #max is handled directly by MOSEK,
-                                                                        #revert to initial value        
-                                                task.putcj(j,-self.cvxoptVars['c'][j])
-                                        else:
-                                                task.putcj(j,self.cvxoptVars['c'][j])
-                                
-                                #make the variable free
-                                task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
-                                
-
-                for i in binaries:
-                        #0/1 bound
-                        task.putbound(mosek.accmode.var,i,mosek.boundkey.ra,0.,1.)
-                        
-                if not(self.is_continuous()) and self.options['hotstart']:
-                        # Set status of all variables to unknown
-                        task.makesolutionstatusunknown(mosek.soltype.itg);
-                        for kvar,variable in self.variables.iteritems():
-                                if variable.is_valued():
-                                        startvar = variable.value
-                                        for jk,j in enumerate(range(variable.startIndex,variable.endIndex)):
-                                                task.putsolutioni (
-                                                  mosek.accmode.var,
-                                                  j,
-                                                  mosek.soltype.itg,
-                                                  mosek.stakey.supbas,
-                                                  startvar[jk],
-                                                  0.0, 0.0, 0.0)
-                                
-                fxdvars = []
-                bddvars = []
-                #equality constraints:
-                Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
-                ijvs=sorted(zip(Ai,Aj,Av))
-                del Ai,Aj,Av
-                itojv={}
-                lasti=-1
-                for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
-                iaff=0
-                for i,jv in itojv.iteritems():
-                        J=[jvk[0] for jvk in jv]
-                        V=[jvk[1] for jvk in jv]
-                        if self.options['handleBarVars']:
-                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                        is_fixed_var = (len(J)==1)
-                        if is_fixed_var and self.options['handleBarVars']:
-                                if any([bool(mat) for mat in mats]):
-                                        is_fixed_var = False
-                        
-                        
-                        if is_fixed_var:
-                                #fixed variable
-                                fxdvars.append((i,J[0],V[0]))
-                                b=self.cvxoptVars['b'][i]/V[0]
-                                task.putbound(mosek.accmode.var,J[0],mosek.boundkey.fx,b,b)
-                        else:
-                        
-                                #affine inequality
-                                b=self.cvxoptVars['b'][i]
-                                task.putaijlist([iaff]*len(J),J,V)
-                                if self.options['handleBarVars']:
-                                        for imat,mat in enumerate(mats):
-                                                if mat:
-                                                        matij = task.appendsparsesymmat(
-                                                                mat.size[0],
-                                                                mat.I,mat.J,mat.V)
-                                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
-                                                        
-                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,
-                                                b,b)
-                                iaff+=1
-
-                #inequality constraints:
-                Gli,Glj,Glv=( self.cvxoptVars['Gl'].I,self.cvxoptVars['Gl'].J,self.cvxoptVars['Gl'].V)
-                ijvs=sorted(zip(Gli,Glj,Glv))
-                del Gli,Glj,Glv
-                itojv={}
-                lasti=-1
-                for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
-                
-                for i,jv in itojv.iteritems():
-                        J=[jvk[0] for jvk in jv]
-                        V=[jvk[1] for jvk in jv]
-                        if self.options['handleBarVars']:
-                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                        is_bounded_var = (len(J)==1 and (not (i in [t[1] for t in self.cvxoptVars['quadcons']])) )
-                        if is_bounded_var and self.options['handleBarVars']:
-                                if any([bool(mat) for mat in mats]):
-                                        is_bounded_var = False
-                                
-                                
-                        if is_bounded_var:
-                                #bounded variable
-                                bddvars.append((i,J[0],V[0]))
-                                bk,bl,bu=task.getbound(mosek.accmode.var,J[0])
-                                b=self.cvxoptVars['hl'][i]/V[0]
-                                if V[0]>0:
-                                        #less than
-                                        bu=min(b,bu)
-                                if V[0]<0:
-                                        #greater than
-                                        bl=max(b,bl)
-                                if bu==bl:
-                                        task.putbound(mosek.accmode.var,J[0],mosek.boundkey.fx,bl,bu)
-                                elif bl>bu:
-                                        raise Exception('unfeasible bound for var '+str(J[0]))
-                                else:
-                                        if bl<-INFINITY:
-                                                if bu>INFINITY:
-                                                        task.putbound(mosek.accmode.var,
-                                                        J[0],mosek.boundkey.fr,bl,bu)
-                                                else:
-                                                        task.putbound(mosek.accmode.var,
-                                                        J[0],mosek.boundkey.up,bl,bu)
-                                        else:
-                                                if bu>INFINITY:
-                                                        task.putbound(mosek.accmode.var,
-                                                        J[0],mosek.boundkey.lo,bl,bu)
-                                                else:
-                                                        task.putbound(mosek.accmode.var,
-                                                        J[0],mosek.boundkey.ra,bl,bu)
-                        else:
-                                #affine inequality
-                                b=self.cvxoptVars['hl'][i]
-                                task.putaijlist([iaff]*len(J),J,V)
-                                if self.options['handleBarVars']:
-                                        for imat,mat in enumerate(mats):
-                                                if mat:
-                                                        matij = task.appendsparsesymmat(
-                                                                mat.size[0],
-                                                                mat.I,mat.J,mat.V)
-                                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
-                                                        
-                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.up,-INFINITY,b)
-                                if i in [t[1] for t in self.cvxoptVars['quadcons']]:
-                                        #affine part of a quadratic constraint
-                                        qcons= [qc for (qc,l) in self.cvxoptVars['quadcons'] if l==i][0]
-                                        qconsindex=self.cvxoptVars['quadcons'].index((qcons,i))
-                                        self.cvxoptVars['quadcons'][qconsindex]=(qcons,iaff)
-                                        #we replace the line number in Gl by the index of the MOSEK constraint
-                                iaff+=1
-                
-                #conic constraints:
-                icone=NUMVAR0
-                for k in range(NUMCONE):
-                        #Gk x + sk = hk
-                        istart=icone
-                        for i in range(self.cvxoptVars['Gq'][k].size[0]):
-                                J=list(self.cvxoptVars['Gq'][k][i,:].J)
-                                V=list(self.cvxoptVars['Gq'][k][i,:].V)
-                                h=self.cvxoptVars['hq'][k][i]
-                                if self.options['handleBarVars']:
-                                        J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                                        for imat,mat in enumerate(mats):
-                                                if mat:
-                                                        matij = task.appendsparsesymmat(
-                                                                mat.size[0],
-                                                                mat.I,mat.J,mat.V)
-                                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
-                                J.append(icone)
-                                V.append(1)
-                                task.putaijlist([iaff]*len(J),J,V)
-                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,h,h)
-                                iaff+=1
-                                icone+=1
-                        iend=icone
-                        #sk in quadratic cone
-                        task.appendcone(mosek.conetype.quad, 0.0, range(istart,iend))
-                        
-                #SDP constraints:
-                tridex = {}
-                for k in range(NUMSDP):
-                        if self.options['handleBarVars'] and k in indsdpvar:
-                                continue
-                        
-                        szk = BARVARDIM[k]
-                        if szk not in tridex:
-                                #tridex[szk] contains a list of all tuples of the form
-                                #(E_ij,index(ij)),
-                                #where ij is an index of a element in the lower triangle
-                                #E_ij is the symm matrix s.t. <Eij|X> = X_ij
-                                #and index(ij) is the index of the pair(ij) counted in column major order
-                                tridex[szk]=[]
-                                idx = -1
-                                for j in range(szk):
-                                        for i in range(szk):
-                                                idx+=1
-                                                if i>=j: #(in lowtri)
-                                                        if i==j:
-                                                                subi=[i]
-                                                                subj=[i]
-                                                                val=[1.]
-                                                        else:
-                                                                subi=[i]
-                                                                subj=[j]
-                                                                val=[0.5]
-                                                        Eij = task.appendsparsesymmat(
-                                                                BARVARDIM[k],
-                                                                subi,subj,val)
-                                                        tridex[szk].append((Eij,idx))
-                                                        
-                        for (Eij,idx) in tridex[szk]:
-                                J = list(self.cvxoptVars['Gs'][k][idx,:].J)
-                                V = list(self.cvxoptVars['Gs'][k][idx,:].V)
-                                h= self.cvxoptVars['hs'][k][idx]
-                                if self.options['handleBarVars']:
-                                        J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                                        for imat,mat in enumerate(mats):
-                                                if mat:
-                                                        matij = task.appendsparsesymmat(
-                                                                mat.size[0],
-                                                                mat.I,mat.J,mat.V)
-                                                        task.putbaraij(iaff,indsdpvar[imat], [matij], [1.0])
-                                                        
-                                task.putarow(iaff,J,V)
-                                task.putbaraij(iaff, k, [Eij], [1.0])
-                                task.putbound(mosek.accmode.con,iaff,mosek.boundkey.fx,h,h)
-                                iaff+=1
-                                
-                        
-                #quadratic constraints:
-                task.putmaxnumqnz(NUMQNZ)
-                for (k,iaff) in self.cvxoptVars['quadcons']:
-                        subI=[]
-                        subJ=[]
-                        subV=[]
-                        if k=='_obj':
-                                qexpr=self.objective[1]
-                        else:
-                                qexpr=self.constraints[k].Exp1
-
-                        for i,j in qexpr.quad:
-                                si,ei=i.startIndex,i.endIndex
-                                sj,ej=j.startIndex,j.endIndex
-                                Qij=qexpr.quad[i,j]
-                                if not isinstance(Qij,cvx.spmatrix):
-                                        Qij=cvx.sparse(Qij)
-                                if si==sj:#put A+A' on the diag
-                                        sI=list((Qij+Qij.T).I+si)
-                                        sJ=list((Qij+Qij.T).J+sj)
-                                        sV=list((Qij+Qij.T).V)
-                                        for u in range(len(sI)-1,-1,-1):
-                                                #remove when j>i
-                                                if sJ[u]>sI[u]:
-                                                        del sI[u]
-                                                        del sJ[u]
-                                                        del sV[u]
-                                elif si>=ej: #add A in the lower triang
-                                        sI=list(Qij.I+si)
-                                        sJ=list(Qij.J+sj)
-                                        sV=list(Qij.V)
-                                else: #add B' in the lower triang
-                                        sI=list((Qij.T).I+sj)
-                                        sJ=list((Qij.T).J+si)
-                                        sV=list((Qij.T).V)
-                                subI.extend(sI)
-                                subJ.extend(sJ)
-                                subV.extend(sV)
-                        
-                        if k=='_obj':
-                                task.putqobj(subI,subJ,subV)
-                        else:
-                                task.putqconk(iaff,subI,subJ,subV)
-                #objective sense
-                if self.objective[0]=='max':
-                        task.putobjsense(mosek.objsense.maximize)
-                else:
-                        task.putobjsense(mosek.objsense.minimize)
-                
-                self.msk_env=env
-                self.msk_task=task
-                self.msk_fxd=(fxdvars,bddvars)
-
-                if self.options['verbose']>0:
-                        print('mosek instance built')
-                        
                         
         def _make_zibopt(self):
                 """
@@ -5661,12 +5219,13 @@ class Problem(object):
                         try:
                                 seen_bounded_vars = []
                                 for k,constr in enumerate(self.constraints):
+                                        #import pdb;pdb.set_trace()
                                         if constr.typeOfConstraint[:3] == 'lin':
                                                 dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                                                 dual_values = [None] * dim
                                                 for (i,name,b,v) in self.grb_boundcons[k]:
                                                         xj = self.gurobi_Instance.getVarByName(name).X
-                                                        if ((b=='=') or abs(xj-b)<1e-7) and (name not in seen_bounded_vars):
+                                                        if ((b=='=') or abs(xj-b)<1e-4) and (name not in seen_bounded_vars):
                                                                 #does j appear in another equality constraint ?
                                                                 if b!='=':
                                                                        boundsj=[b0 for k0 in range(len(self.constraints))
@@ -7063,22 +6622,7 @@ class Problem(object):
                         raise Exception('there should not be any quadratics left')
                 self.numberQuadNNZ=0
                 #reset solver instances
-                self.cvxoptVars={'c':None,'A':None,'b':None,'Gl':None,
-                                'hl':None,'Gq':None,'hq':None,'Gs':None,'hs':None,
-                                'F':None,'g':None, 'quadcons': None}
-                
-                self.gurobi_Instance = None
-                self.grbvar = {}
-                
-                self.cplex_Instance = None
-                self.cplex_boundcons = None
-                
-                self.msk_env=None
-                self.msk_task=None
-
-                self.scip_solver = None
-                self.scip_vars = None
-                self.scip_obj = None
+                self.reset_solver_instances()
                 if self.options['verbose']>0:
                         print 'done.'
                                 
