@@ -109,8 +109,6 @@ class Problem(object):
                 self.groupsOfConstraints = {}
                 self.listOfVars = {}
                 self.consNumbering=[]
-                #next constraint to consider in a makeXXX_instance
-                self.last_updated_constraint=0 #next constraint to consider in a makeXXX_instance
                 
                 self._options = _NonWritableDict()
                 if options is None: options={}
@@ -275,7 +273,6 @@ class Problem(object):
                 self.constraints = []
                 self.numberQuadNNZ=0
                 self.numberLSEVars = 0
-                self.last_updated_constraint = 0
                 self.countGeomean=0
                 if self.objective[0] is not 'find':
                         if self.objective[1] is not None:
@@ -475,14 +472,6 @@ class Problem(object):
                     the solver returns a solution as soon as this value for the gap is reached
                     (relative gap between the primal and the dual bound).
                     
-                
-                  * ``onlyChangeObjective = False`` : set this option to ``True`` if you have already
-                    solved the problem, and want to recompute the solution with a different
-                    objective funtion or different parameter settings. This way, the constraints
-                    of the problem will not be parsed by picos next
-                    time :func:`solve() <picos.Problem.solve>` is called
-                    (this can lead to a huge gain of time).
-                    
                   * ``noprimals = False`` : if ``True``, do not copy the optimal variable values in the
                     :attr:`value<picos.Variable.value>` attribute of the problem variables.
                     
@@ -574,7 +563,6 @@ class Problem(object):
                                  'solver'         :None,
                                  'step_sqp'       :1, #undocumented
                                  'harmonic_steps' :1, #undocumented
-                                 'onlyChangeObjective':False,
                                  'noprimals'      :False,
                                  'noduals'        :False,
                                  'smcp_feas'      :False,#undocumented
@@ -1382,8 +1370,6 @@ class Problem(object):
                                       
                         del self.constraints[ind]
                         self.countCons -=1
-                        if self.last_updated_constraint > 0:
-                                self.last_updated_constraint-=1
                         if ind in self.consNumbering: #single added constraint
                                 self.consNumbering.remove(ind)
                                 start=ind
@@ -1558,8 +1544,6 @@ class Problem(object):
                                 'semicont' :   grb.GRB.SEMICONT, 
                                 'semiint' :    grb.GRB.SEMIINT,
                                 'symmetric': grb.GRB.CONTINUOUS}
-                
-                #TODO: onlyChangeObjective
                 
                 if (self.gurobi_Instance is None):
                         m = grb.Model()
@@ -2889,7 +2873,7 @@ class Problem(object):
                 if (NUMSDP and not(version7)) or self.numberLSEConstraints:
                         raise Exception('SDP or GP constraints are not interfaced. For SDP, try mosek 7.0')
                 
-                
+                import pdb;pdb.set_trace()
                 #-------------#
                 #   new vars  #
                 #-------------#
@@ -2906,28 +2890,29 @@ class Problem(object):
                 # shift the old cone vars to make some place for the new vars #
                 #-------------------------------------------------------------#
                 
-                #shift in the linear constraints
-                if NUMVAR_OLD > NUMVAR0_OLD:
-                        for j in xrange(NUMVAR0_OLD,NUMVAR_OLD):
-                                sj = [0]*NUMCON_OLD
-                                vj = [0]*NUMCON_OLD
-                                if version7:
-                                        nzj=task.getacol(j,sj,vj)
-                                        task.putacol(j,sj[:nzj],[0.]*nzj) #remove the old column
-                                        task.putacol(j+NUMVAR_NEW,sj[:nzj],vj[:nzj]) #rewrites it, shifted to the right
-                                else:
-                                        nzj=task.getavec(mosek.accmode.var,j,sj,vj)
-                                        task.putavec(mosek.accmode.var,j,sj[:nzj],[0.]*nzj)
-                                        task.putavec(mosek.accmode.var,j+NUMVAR_NEW,sj[:nzj],vj[:nzj])
-                        
-                #shift in the conic constraints
-                nc = task.getnumcone()
-                if nc:
-                        sub = [0] * NUMVAR_OLD
-                for icone in range(nc):
-                        (ctype,cpar,sz) = task.getcone(icone,sub)
-                        shiftsub = [(s+NUMVAR_NEW if s>=NUMVAR0_OLD else s) for s in sub[:sz]]
-                        task.putcone (icone,ctype,cpar,shiftsub)
+                if NUMVAR_NEW:
+                        #shift in the linear constraints
+                        if (NUMVAR_OLD > NUMVAR0_OLD):
+                                for j in xrange(NUMVAR0_OLD,NUMVAR_OLD):
+                                        sj = [0]*NUMCON_OLD
+                                        vj = [0]*NUMCON_OLD
+                                        if version7:
+                                                nzj=task.getacol(j,sj,vj)
+                                                task.putacol(j,sj[:nzj],[0.]*nzj) #remove the old column
+                                                task.putacol(j+NUMVAR_NEW,sj[:nzj],vj[:nzj]) #rewrites it, shifted to the right
+                                        else:
+                                                nzj=task.getavec(mosek.accmode.var,j,sj,vj)
+                                                task.putavec(mosek.accmode.var,j,sj[:nzj],[0.]*nzj)
+                                                task.putavec(mosek.accmode.var,j+NUMVAR_NEW,sj[:nzj],vj[:nzj])
+                                
+                        #shift in the conic constraints
+                        nc = task.getnumcone()
+                        if nc:
+                                sub = [0] * NUMVAR_OLD
+                        for icone in range(nc):
+                                (ctype,cpar,sz) = task.getcone(icone,sub)
+                                shiftsub = [(s+NUMVAR_NEW if s>=NUMVAR0_OLD else s) for s in sub[:sz]]
+                                task.putcone (icone,ctype,cpar,shiftsub)
                         
                 #WE DO NOT SHIFT QUADSCOEFS, BOUNDS OR OBJCOEFS SINCE THERE MUST NOT BE ANY
                         
@@ -3621,6 +3606,41 @@ class Problem(object):
                 # INVALID SCIP STAGE error if we try to update a model that has already been solved. So we reset all
                 #TODO at least something clever to update the objective
                 ##
+                #we only handle the case where only the objective has changed
+                if (self.scip_solver is not None and
+                    not('scip' in self.obj_passed) and
+                    all([('scip' in v.passed) for v in self.variables.values()]) and
+                    all([('scip' in cs.passed) for cs in self.constraints])):
+                        
+                        #define scip_obj
+                        newobj=self.objective[1]
+                        x=self.scip_vars
+                        ob=0
+                        
+                        if isinstance(newobj,QuadExp):
+                                for i,j in newobj.quad:
+                                        si,ei=i.startIndex,i.endIndex
+                                        sj,ej=j.startIndex,j.endIndex
+                                        Qij=newobj.quad[i,j]
+                                        if not isinstance(Qij,cvx.spmatrix):
+                                                Qij=cvx.sparse(Qij)
+                                        for ii,jj,vv in zip(Qij.I,Qij.J,Qij.V):
+                                                ob+=vv*x[ii+si]*x[jj+sj]
+                                newobj=newobj.aff
+                                        
+                        if not(newobj is None):
+                                for v,fac in newobj.factors.iteritems():
+                                        if not isinstance(fac,cvx.spmatrix):
+                                                fac=cvx.sparse(fac)
+                                        sv=v.startIndex
+                                        for jj,vv in zip(fac.J,fac.V):
+                                                ob+=vv*x[jj+sv]
+                                if not(newobj.constant is None):
+                                        ob+=newobj.constant[0]
+                        self.scip_obj = ob
+                        return
+                
+                
                 self.scip_solver = None
                 self.scip_vars = None
                 self.scip_obj = None
@@ -4370,7 +4390,6 @@ class Problem(object):
                 #----------------------------#
                 import cplex
                 self._make_cplex_instance()
-                self.last_updated_constraint=self.countCons
                 c = self.cplex_Instance
                 
                 if c is None:
@@ -4762,7 +4781,6 @@ class Problem(object):
                 #----------------------------#
                 import gurobipy as grb
                 self._make_gurobi_instance()
-                self.last_updated_constraint=self.countCons
                 m = self.gurobi_Instance
                 
                 if m is None:
@@ -5046,7 +5064,6 @@ class Problem(object):
                                         
                                         
                 self._make_mosek_instance()
-                self.last_updated_constraint=self.countCons
                 task=self.msk_task
                 
                 if self.options['verbose']>0:

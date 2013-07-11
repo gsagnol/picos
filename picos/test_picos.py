@@ -850,7 +850,7 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
                 primal.add_constraint(x[3]>0.59)
         primal.set_objective('min',primal.objective[1])
         try:
-                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
+                sol=primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
                 return (False,repr(ex))
 
@@ -886,15 +886,25 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
         mu1var.value = mu1
         if with_hardcoded_bound:#TODO with reduced cost ?
                 if solver_to_test=='cplex':
-                        mu2var.value = 10.337220198679946
+                        mu2var.value = primal.cplex_Instance.solution.get_reduced_costs(3)
                 elif solver_to_test=='mosek7':
-                        mu2var.value = 10.3493320209
+                        rc=[0]
+                        try:
+                                import mosek7 as mosek
+                        except:
+                                import mosek
+                        primal.msk_task.getreducedcosts(mosek.soltype.itr,3,4,rc)
+                        mu2var.value = rc[0]
                 elif solver_to_test=='mosek6':
-                        mu2var.value = 10.338035946292555
+                        rc=[0]
+                        import mosek
+                        primal.msk_task.getreducedcosts(mosek.soltype.itr,3,4,rc)
+                        mu2var.value = rc[0]
+                        #mu2var.value = 10.338035946292555
                 elif solver_to_test=='cvxopt':
-                        mu2var.value = 10.337465065699078
+                        mu2var.value = sol['cvxopt_sol']['z'][6]
                 else: #'gurobi'
-                        mu2var.value = 10.342048487730082
+                        mu2var.value = primal.grbvar[3].RC
         else:
                 mu2var.value = mu2
         

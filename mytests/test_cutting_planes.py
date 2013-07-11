@@ -1,5 +1,5 @@
 #TEST CUTTING PLANES
-solver='cplex'
+solver='mosek6'
 import picos as pic
 P=pic.Problem()
 x=P.add_variable('x',5)
@@ -19,7 +19,7 @@ P.add_constraint(abs(x[2]//x[3])<y[1])
 P.add_constraint(y>0)
 P.add_constraint(1|y<1)
 P.solve(solver=solver)
-
+P.solve(solver=solver) #dble solve pb with mosek6!
 
 
 
@@ -40,7 +40,7 @@ P2.add_constraint(x[4]<y[0])
 P2.add_constraint(abs(x[2]//x[3])<y[1])
 P2.add_constraint(y>0)
 P2.add_constraint(1|y<1)
-P2.solve(solver=solver)
+P2.solve(solver=solver)#TODO here, pb row not added in gurobi, and pb -dual for min problems
 
 print x,'--',P.get_valued_variable('x')
 print y,'--',P2.get_valued_variable('y')

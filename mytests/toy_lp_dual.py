@@ -18,10 +18,10 @@ x.set_sparse_lower([5,6],[0.2,-8])
 x.set_sparse_upper([5,6],[0.6,-0.5])
 
 
-P.set_objective('max',-(x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6]))
-#P.set_objective('min',x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6])
+#P.set_objective('max',-(x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6]))
+P.set_objective('min',x[0] + 2*x[1] + 3*x[2] + 4*x[3]-x[6])
 
-P.solve(solver='cvxopt')
+P.solve(solver='gurobi')
 
 [cs.dual[0] for cs in P.constraints]
 
