@@ -91,6 +91,7 @@ class Problem(object):
                 self.gurobi_Instance = None
                 self.grbvar = []
                 self.grb_boundcons = None
+                self.grbcons = {}
                 
                 self.cplex_Instance = None
                 self.cplex_boundcons = None
@@ -227,6 +228,7 @@ class Problem(object):
                 self.gurobi_Instance = None
                 self.grbvar = []
                 self.grb_boundcons = None
+                self.grbcons = {}
                 
                 self.cplex_Instance = None
                 self.cplex_boundcons = None
@@ -1981,9 +1983,11 @@ class Problem(object):
                 if (self.gurobi_Instance is None):
                         m = grb.Model()
                         boundcons = {}
+                        grbcons = {}
                 else:
                         m = self.gurobi_Instance
                         boundcons = self.grb_boundcons
+                        grbcons = self.grbcons
                 
                 if self.objective[0] == 'max':
                         m.ModelSense = grb.GRB.MAXIMIZE
@@ -2259,6 +2263,7 @@ class Problem(object):
                                     newcons.iteritems())
                 
                 irow=0
+                
                 for constrKey,constr in allcons:
                         if 'gurobi' in constr.passed:
                                 continue
@@ -2327,14 +2332,12 @@ class Problem(object):
                                                         [v for j,v in jv],
                                                         [m.getVarByName(name) for name,v in jv])
                                                 name='lin'+str(constrKey)+'_'+str(i)
-                                                print name
-                                                if name=='lin3_0': import pdb;pdb.set_trace()#TODO chelou/ la nouvelle contrainte ne reste pas ?
                                                 if constr.typeOfConstraint[:4] == 'lin<':
-                                                        m.addConstr(LEXP <= r,name=name)
+                                                        grbcons[name] = m.addConstr(LEXP <= r,name=name)
                                                 elif constr.typeOfConstraint[:4] == 'lin>':
-                                                        m.addConstr(LEXP >= r,name=name)
+                                                        grbcons[name] = m.addConstr(LEXP >= r,name=name)
                                                 elif constr.typeOfConstraint[:4] == 'lin=':
-                                                        m.addConstr(LEXP == r,name=name)
+                                                        grbcons[name] = m.addConstr(LEXP == r,name=name)
                                                 
                                                 irow+=1
                                                 
@@ -2411,10 +2414,11 @@ class Problem(object):
                         print
                         
                 m.update()
-                import pdb;pdb.set_trace()
+                
                 self.gurobi_Instance=m
                 self.grbvar.extend(x)
                 self.grb_boundcons=boundcons
+                self.grbcons = grbcons
                 
                 if 'noconstant' in newcons or len(tmplhs)>0:
                         self._remove_temporary_variables()
@@ -2581,11 +2585,13 @@ class Problem(object):
                         print('Creating variables...')
                         print
                 
+                colnames=[]
+                types=[]
+                ub={}
+                lb={}
+                
                 if NUMVAR_NEW:
 
-                        colnames=[]
-                        types=[]
-                        
                         #specify bounds later, in constraints
                         ub={j:cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
                         lb={j:-cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
@@ -5219,7 +5225,6 @@ class Problem(object):
                         try:
                                 seen_bounded_vars = []
                                 for k,constr in enumerate(self.constraints):
-                                        #import pdb;pdb.set_trace()
                                         if constr.typeOfConstraint[:3] == 'lin':
                                                 dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                                                 dual_values = [None] * dim
@@ -5237,10 +5242,12 @@ class Problem(object):
                                                                 else: #equality
                                                                         seen_bounded_vars.append(name)
                                                                         du=  self.gurobi_Instance.getVarByName(name).RC/v
+                                                                        if self.objective[0]=='min': du=-du
                                                                         dual_values[i]=du
                                                                         continue
                                                                 #what kind of inequality ?
                                                                 du=self.gurobi_Instance.getVarByName(name).RC
+                                                                if self.objective[0]=='min': du=-du
                                                                 if (((v>0 and constr.typeOfConstraint[3]=='<') or
                                                                     (v<0 and constr.typeOfConstraint[3]=='>')) and
                                                                     du>0):#upper bound
@@ -5258,8 +5265,12 @@ class Problem(object):
                                                 #rows with other constraints
                                                 for i in range(len(dual_values)):
                                                         if dual_values[i] is None:
-                                                                du = m.getConstrByName(
-                                                                        'lin'+str(k)+'_'+str(i)).pi
+                                                                #getConstrByName is buggy if model updated several times,
+                                                                #so we store the constraints ourselves.
+                                                                #du = m.getConstrByName(
+                                                                #        'lin'+str(k)+'_'+str(i)).pi
+                                                                du = self.grbcons['lin'+str(k)+'_'+str(i)].pi
+                                                                if self.objective[0]=='min': du=-du
                                                                 if constr.typeOfConstraint[3]=='>':
                                                                         dual_values[i] = -du
                                                                 else:
@@ -5269,23 +5280,28 @@ class Problem(object):
                                                 
                                         elif constr.typeOfConstraint == 'SOcone':
                                                 dual_values=[]
-                                                dual_values.append(
-                                                        m.getConstrByName('lintmp_rhs_'+str(k)+'_0').pi)
+                                                dual_values.append(self.grbcons['lintmp_rhs_'+str(k)+'_0'].pi)
                                                 dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                                                 for i in range(dim):
                                                         dual_values.append(
-                                                        -m.getConstrByName('lintmp_lhs_'+str(k)+'_'+str(i)).pi)
-                                                duals.append(cvx.matrix(dual_values))
+                                                        -self.grbcons['lintmp_lhs_'+str(k)+'_'+str(i)].pi)
+                                                if self.objective[0]=='min':
+                                                        duals.append(-cvx.matrix(dual_values))
+                                                else:
+                                                        duals.append(cvx.matrix(dual_values))
                                         
                                         elif constr.typeOfConstraint == 'RScone':
                                                 dual_values=[]
                                                 dual_values.append(
-                                                        m.getConstrByName('lintmp_rhs_'+str(k)+'_0').pi)
+                                                        self.grbcons['lintmp_rhs_'+str(k)+'_0'].pi)
                                                 dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
                                                 for i in range(dim):
                                                         dual_values.append(
-                                                        -m.getConstrByName('lintmp_lhs_'+str(k)+'_'+str(i)).pi)
-                                                duals.append(cvx.matrix(dual_values))
+                                                        -self.grbcons['lintmp_lhs_'+str(k)+'_'+str(i)].pi)
+                                                if self.objective[0]=='min':
+                                                        duals.append(-cvx.matrix(dual_values))
+                                                else:
+                                                        duals.append(cvx.matrix(dual_values))
                                         
                                         else:
                                                 if self.options['verbose']>0:
