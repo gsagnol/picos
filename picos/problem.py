@@ -2873,7 +2873,6 @@ class Problem(object):
                 if (NUMSDP and not(version7)) or self.numberLSEConstraints:
                         raise Exception('SDP or GP constraints are not interfaced. For SDP, try mosek 7.0')
                 
-                import pdb;pdb.set_trace()
                 #-------------#
                 #   new vars  #
                 #-------------#
