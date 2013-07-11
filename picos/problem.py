@@ -1542,425 +1542,6 @@ class Problem(object):
         """        
 
         #GUROBI
-        def _make_gurobi_instance_old(self):
-                """
-                defines the variables gurobi_Instance and grbvar
-                """
-                             
-                try:
-                        import gurobipy as grb
-                except:
-                        raise ImportError('gurobipy not found')
-                
-                grb_type = {    'continuous' : grb.GRB.CONTINUOUS, 
-                                'binary' :     grb.GRB.BINARY, 
-                                'integer' :    grb.GRB.INTEGER, 
-                                'semicont' :   grb.GRB.SEMICONT, 
-                                'semiint' :    grb.GRB.SEMIINT,
-                                'symmetric': grb.GRB.CONTINUOUS}
-                
-                #TODO: onlyChangeObjective
-                
-                if (self.last_updated_constraint == 0 or
-                    self.gurobi_Instance is None):
-                        m = grb.Model()
-                        self.last_updated_constraint = 0
-                        only_update = False
-                else:
-                        m = self.gurobi_Instance
-                        only_update = True
-                
-                if self.objective[0] == 'max':
-                        m.ModelSense = grb.GRB.MAXIMIZE
-                else:
-                        m.ModelSense = grb.GRB.MINIMIZE
-                
-                self.options._set('solver','gurobi')
-                
-                
-                #create new variable and quad constraints to handle socp
-                tmplhs=[]
-                tmprhs=[]
-                icone =0
-                if only_update:
-                        offset_cone = len([1 for v in m.getVars() if '__tmprhs' in v.VarName])
-                        offset_supvars = m.NumVars - self.numberOfVars -1
-                else:
-                        offset_cone = 0
-                        offset_supvars = 0
-                
-                newcons={}
-                newvars=[]
-                #TODO rewrite interface to cone functions without temporary variables ?
-                #     or at least make it correctly with 'passed', so remove_variable is never called
-                if self.numberConeConstraints > 0 :
-                        for constrKey,constr in enumerate(self.constraints[self.last_updated_constraint:]):
-                                if constr.typeOfConstraint[2:]=='cone':
-                                        if icone == 0: #first conic constraint
-                                                if '__noconstant__' in self.variables:
-                                                        noconstant=self.get_variable('__noconstant__')
-                                                else:
-                                                        noconstant=self.add_variable(
-                                                                '__noconstant__',1)
-                                                        newvars.append(('__noconstant__',1))
-                                                newcons['noconstant']=(noconstant>0)
-                                                #no variable shift -> same noconstant var as before
-                                if constr.typeOfConstraint=='SOcone':
-                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey)) #constrKey replaced the icone+offset_cone of previous version
-                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
-                                        tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(constrKey),
-                                                constr.Exp1.size))
-                                        tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(constrKey),
-                                                1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
-                                                constr.Exp1.size[0]*constr.Exp1.size[1]))
-                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
-                                                1))
-                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
-                                        v_cons = cvx.matrix( [np.sign(constr.Exp1.constant[i])
-                                                                        if constr.Exp1[i].isconstant() else 0
-                                                                        for i in range(constr.Exp1.size[0]*constr.Exp1.size[1])],
-                                                                        constr.Exp1.size)
-                                        #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
-                                                        constr.Exp1+v_cons*noconstant == tmplhs[-1])
-                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
-                                                        constr.Exp2-noconstant == tmprhs[-1])
-                                        #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
-                                                        tmprhs[-1]>0)
-                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
-                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
-                                        icone+=1
-                                if constr.typeOfConstraint=='RScone':
-                                        if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
-                                                self.remove_variable('__tmplhs[{0}]__'.format(constrKey))
-                                        if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
-                                                self.remove_variable('__tmprhs[{0}]__'.format(constrKey))
-                                        tmplhs.append(self.add_variable(
-                                                '__tmplhs[{0}]__'.format(constrKey),
-                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1
-                                                ))
-                                        tmprhs.append(self.add_variable(
-                                                '__tmprhs[{0}]__'.format(constrKey),
-                                                1))
-                                        newvars.append(('__tmplhs[{0}]__'.format(constrKey),
-                                                (constr.Exp1.size[0]*constr.Exp1.size[1])+1))
-                                        newvars.append(('__tmprhs[{0}]__'.format(constrKey),
-                                                1))
-                                        #v_cons is 0/1/-1 to avoid constants in cone (problem with duals)
-                                        expcat = ((2*constr.Exp1[:]) // (constr.Exp2-constr.Exp3))
-                                        v_cons = cvx.matrix( [np.sign(expcat.constant[i])
-                                                                        if expcat[i].isconstant() else 0
-                                                                        for i in range(expcat.size[0]*expcat.size[1])],
-                                                                        expcat.size)
-                                        
-                                        #lhs and rhs of the cone constraint
-                                        newcons['tmp_lhs_{0}'.format(constrKey)]=(
-                                        (2*constr.Exp1[:] // (constr.Exp2-constr.Exp3)) + v_cons*noconstant == tmplhs[-1])
-                                        newcons['tmp_rhs_{0}'.format(constrKey)]=(
-                                                constr.Exp2+constr.Exp3 - noconstant == tmprhs[-1])
-                                        #conic constraints
-                                        newcons['tmp_conesign_{0}'.format(constrKey)]=(
-                                                        tmprhs[-1]>0)
-                                        newcons['tmp_conequad_{0}'.format(constrKey)]=(
-                                        -tmprhs[-1]**2+(tmplhs[-1]|tmplhs[-1])<0)
-                                        icone+=1
-                        #variable shift
-                        for tv in tmprhs+tmplhs:
-                                tv._startIndex+=offset_supvars
-                                tv._endIndex+=offset_supvars
-                
-                                
-                #variables
-                
-               
-                if (self.options['verbose']>1) and (not only_update):
-                        limitbar=self.numberOfVars
-                        prog = ProgressBar(0,limitbar, None, mode='fixed')
-                        oldprog = str(prog)
-                        print('Creating variables...')
-                        print
-                
-                if only_update:
-                        supvars=_bsum([nv[1] for nv in newvars])
-                        x=self.grbvar
-                        for kvar,sz in newvars:
-                                for kj in range(sz):
-                                        name = kvar+'_'+str(kj)
-                                        x.append( m.addVar(obj = 0.,
-                                                name = name,
-                                                vtype = grb_type['continuous'],
-                                                lb = -grb.GRB.INFINITY))
-                else:
-                        
-                        x=[]
-                        if self.objective[1] is None:
-                                objective = {}
-                        elif isinstance(self.objective[1],QuadExp):
-                                objective = self.objective[1].aff.factors
-                        elif isinstance(self.objective[1],AffinExp):
-                                objective = self.objective[1].factors
-                        
-                        for kvar,variable in self.variables.iteritems():
-                                sj=variable.startIndex
-                                varsize = variable.endIndex-sj
-                                if objective.has_key(variable):
-                                        vectorObjective = objective[variable]
-                                else:
-                                        vectorObjective = [0]*(varsize)
-                                if variable.is_valued() and self.options['hotstart']:
-                                        vstart = variable.value
-                                for k in range(varsize):
-                                        name=kvar+'_'+str(k)
-                                        x.append( m.addVar(obj = vectorObjective[k],
-                                                           name = name,
-                                                           vtype = grb_type[variable.vtype],
-                                                           lb = -grb.GRB.INFINITY))
-                                        if variable.is_valued() and self.options['hotstart']:
-                                                x[-1].Start = vstart[k]
-                                                           
-                                        if self.options['verbose']>1:
-                                                #<--display progress
-                                                prog.increment_amount()
-                                                if oldprog != str(prog):
-                                                        print prog, "\r",
-                                                        sys.stdout.flush()
-                                                        oldprog=str(prog)
-                                                #-->
-                        
-                        if self.options['verbose']>1:
-                                prog.update_amount(limitbar)
-                                print prog, "\r",
-                                print
-                
-                
-                        #quad part of the objective
-                        if isinstance(self.objective[1],QuadExp):
-                                m.update()
-                                lpart = m.getObjective()
-                                qd=self.objective[1].quad
-                                qind1,qind2,qval=[],[],[]
-                                for i,j in qd:
-                                        fact=qd[i,j]
-                                        namei=i.name
-                                        namej=j.name
-                                        si=i.startIndex
-                                        sj=j.startIndex
-                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
-                                                if si<sj:
-                                                        fact+=qd[j,i].T
-                                                elif si>sj:
-                                                        fact=cvx.sparse([0])
-                                                elif si==sj:
-                                                        pass
-                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
-                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
-                                        qval.extend(fact.V)
-                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
-                                m.setObjective(q_exp+lpart)
-                                
-                m.update()
-                #constraints
-                
-                #progress bar
-                if self.options['verbose']>0:
-                        print
-                        print('adding constraints...')
-                        print 
-                if self.options['verbose']>1:
-                        limitbar= (self.numberAffConstraints +
-                                   self.numberQuadConstraints +
-                                   len(newcons) -
-                                   self.last_updated_constraint)
-                        prog = ProgressBar(0,limitbar, None, mode='fixed')
-                        oldprog = str(prog)
-                
-                if only_update:
-                        boundcons=self.grb_boundcons
-                else:
-                        boundcons={} #dictionary of i,j,b,v for bound constraints
-                
-                #join all constraints
-                def join_iter(it1,it2):
-                        for i in it1: yield i
-                        for i in it2: yield i
-                        
-                allcons = join_iter(enumerate(self.constraints[self.last_updated_constraint:]),
-                                    newcons.iteritems())
-                
-                irow=0
-                for constrKey,constr in allcons:
-                        
-                        if constr.typeOfConstraint[:3] == 'lin':
-                                #init of boundcons[key]
-                                if isinstance(constrKey,int):
-                                        offsetkey=self.last_updated_constraint+constrKey
-                                else:
-                                        offsetkey=constrKey
-                                boundcons[offsetkey]=[]
-                                
-                                #parse the (i,j,v) triple
-                                ijv=[]
-                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
-                                        if type(fact)!=cvx.base.spmatrix:
-                                                fact = cvx.sparse(fact)
-                                        ijv.extend(zip( fact.I,
-                                                [var.name+'_'+str(j) for j in fact.J],
-                                                fact.V))
-                                ijvs=sorted(ijv)
-                                
-                                itojv={}
-                                lasti=-1
-                                for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]
-                                
-                                #constant term
-                                szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
-                                rhstmp = cvx.matrix(0.,(szcons,1))
-                                constant1 = constr.Exp1.constant #None or a 1*1 matrix
-                                constant2 = constr.Exp2.constant
-                                if not constant1 is None:
-                                        rhstmp = rhstmp-constant1
-                                if not constant2 is None:
-                                        rhstmp = rhstmp+constant2
-                                                                
-                                for i,jv in itojv.iteritems():
-                                        r=rhstmp[i]
-                                        if len(jv)==1:
-                                                #BOUND
-                                                name,v=jv[0]
-                                                xj=m.getVarByName(name)
-                                                b=r/float(v)
-                                                if v>0:
-                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
-                                                                if b<xj.ub:
-                                                                        xj.ub=b
-                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
-                                                                if b>xj.lb:
-                                                                        xj.lb=b
-                                                else:#v<0
-                                                        if constr.typeOfConstraint[:4] in ['lin<','lin=']:
-                                                                if b>xj.lb:
-                                                                        xj.lb=b
-                                                        if constr.typeOfConstraint[:4] in ['lin>','lin=']:
-                                                                if b<xj.ub:
-                                                                        xj.ub=b
-                                                if constr.typeOfConstraint[3]=='=': 
-                                                        b='='
-                                                boundcons[offsetkey].append((i,name,b,v))
-                                        else:
-                                                LEXP = grb.LinExpr(
-                                                        [v for j,v in jv],
-                                                        [m.getVarByName(name) for name,v in jv])
-                                                name='lin'+str(offsetkey)+'_'+str(i)
-                                                if constr.typeOfConstraint[:4] == 'lin<':
-                                                        m.addConstr(LEXP <= r,name=name)
-                                                elif constr.typeOfConstraint[:4] == 'lin>':
-                                                        m.addConstr(LEXP >= r,name=name)
-                                                elif constr.typeOfConstraint[:4] == 'lin=':
-                                                        m.addConstr(LEXP == r,name=name)
-                                                
-                                                irow+=1
-                                                
-                                        if self.options['verbose']>1:
-                                                #<--display progress
-                                                prog.increment_amount()
-                                                if oldprog != str(prog):
-                                                        print prog, "\r",
-                                                        sys.stdout.flush()
-                                                        oldprog=str(prog)
-                                                #-->                                                
-                        
-                        
-                        elif constr.typeOfConstraint == 'quad':
-                                if isinstance(constrKey,int):
-                                        offsetkey=self.last_updated_constraint+constrKey
-                                else:
-                                        offsetkey=constrKey
-                                #quad part
-                                qind1,qind2,qval=[],[],[]
-                                qd=constr.Exp1.quad
-                                q_exp= 0.
-                                for i,j in qd:
-                                        fact=qd[i,j]
-                                        namei=i.name
-                                        namej=j.name
-                                        si=i.startIndex
-                                        sj=j.startIndex
-                                        if (j,i) in qd: #quad stores x'*A1*y + y'*A2*x
-                                                if si<sj:
-                                                        fact+=qd[j,i].T
-                                                elif si>sj:
-                                                        fact=cvx.sparse([0])
-                                                elif si==sj:
-                                                        pass
-                                        qind1.extend([namei+'_'+str(k) for k in fact.I])
-                                        qind2.extend([namej+'_'+str(k) for k in fact.J])
-                                        qval.extend(fact.V)
-                                q_exp=grb.quicksum([f*m.getVarByName(n1) * m.getVarByName(n2) for (f,n1,n2) in zip(qval,qind1,qind2)])
-                                #lin part
-                                lind,lval=[],[]
-                                af=constr.Exp1.aff.factors
-                                for var in af:
-                                        name = var.name
-                                        lind.extend([name+'_'+str(k) for k in af[var].J])
-                                        lval.extend(af[var].V)
-                                l_exp=grb.LinExpr(
-                                        lval,
-                                        [m.getVarByName(name) for name in lind])
-                                #constant
-                                qcs=0.
-                                if not(constr.Exp1.aff.constant is None):
-                                        qcs = - constr.Exp1.aff.constant[0]
-                                m.addQConstr(q_exp + l_exp <= qcs )
-                                
-                                if self.options['verbose']>1:
-                                        #<--display progress
-                                        prog.increment_amount()
-                                        if oldprog != str(prog):
-                                                print prog, "\r",
-                                                sys.stdout.flush()
-                                                oldprog=str(prog)
-                                        #-->
-                                
-                        elif constr.typeOfConstraint[2:] == 'cone':
-                                offsetkey=self.last_updated_constraint+constrKey
-                                boundcons[offsetkey]=[]
-                                #will be handled in the newcons dictionary
-                                
-                        else:
-                                raise Exception('type of constraint not handled (yet ?) for cplex:{0}'.format(
-                                        constr.typeOfConstraint))
-                        
-                       
-
-                if self.options['verbose']>1:
-                        prog.update_amount(limitbar)
-                        print prog, "\r",
-                        print
-                        
-                m.update()
-                
-                self.gurobi_Instance=m
-                self.grbvar=x
-                self.grb_boundcons=boundcons
-                
-                if 'noconstant' in newcons or len(tmplhs)>0:
-                        self._remove_temporary_variables()
-                
-                if self.options['verbose']>0:
-                        print 'Gurobi instance created'
-                        print
-                                
         def _make_gurobi_instance(self):
                 """
                 defines the variables gurobi_Instance and grbvar
@@ -2114,6 +1695,7 @@ class Problem(object):
                 
                 x=[]#list of new vars
                 
+                #TODO pb if bounds of old variables changed
                 if NUMVAR_NEW:
                         
                         ub={j:grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
@@ -2182,7 +1764,7 @@ class Problem(object):
                                                 xj.Start= vstart[k]
                 m.update()
                 
-                #parse all variable for the obective (only if not obj_passed)
+                #parse all variable for the objective (only if not obj_passed)
                 if 'gurobi' not in self.obj_passed:
                         self.obj_passed.append('gurobi')
                         if self.objective[1] is None:
@@ -2589,7 +2171,7 @@ class Problem(object):
                 types=[]
                 ub={}
                 lb={}
-                
+                #TODO pb if bounds of old variables changed
                 if NUMVAR_NEW:
 
                         #specify bounds later, in constraints
@@ -2945,54 +2527,88 @@ class Problem(object):
                
 
                 
-        def _make_cvxopt_instance(self,aff_part_of_quad=True,cone_as_quad=False):
+        def _make_cvxopt_instance(self,aff_part_of_quad=True,cone_as_quad=False,
+                                  new_cvxopt_cons_only=False,
+                                  new_scip_cons_only=False,
+                                  reset=True):
                 """
                 defines the variables in self.cvxoptVars, used by the cvxopt solver
+                new_scip_cons_only: if True, consider only cons where 'scip' not in passed
+                new_cvxopt_cons_only: if True, consider only cons where 'cvxopt' not in passed
+                reset: if True, reset the cvxoptVars at the beginning.
                 """
                 ss=self.numberOfVars
-                #initial values                
-                self.cvxoptVars['A']=cvx.spmatrix([],[],[],(0,ss),tc='d')
-                self.cvxoptVars['b']=cvx.matrix([],(0,1),tc='d')
-                self.cvxoptVars['Gl']=cvx.spmatrix([],[],[],(0,ss),tc='d')
-                self.cvxoptVars['hl']=cvx.matrix([],(0,1),tc='d')
-                self.cvxoptVars['Gq']=[]
-                self.cvxoptVars['hq']=[]
-                self.cvxoptVars['Gs']=[]
-                self.cvxoptVars['hs']=[]
-                self.cvxoptVars['quadcons']=[]
-                #objective
-                if isinstance(self.objective[1],QuadExp):
-                        self.cvxoptVars['quadcons'].append(('_obj',-1))
-                        objexp=self.objective[1].aff
-                elif isinstance(self.objective[1],LogSumExp):
-                        objexp=self.objective[1].Exp
-                else:
-                        objexp=self.objective[1]
-                if self.numberLSEConstraints==0:
-                        if self.objective[0]=='find':
-                                self.cvxoptVars['c']=cvx.matrix(0,(ss,1),tc='d')
-                        elif self.objective[0]=='min':
-                                (c,constantInObjective)=self._makeGandh(objexp)
-                                self.cvxoptVars['c']=cvx.matrix(c,tc='d').T
-                        elif self.objective[0]=='max':
-                                (c,constantInObjective)=self._makeGandh(objexp)
-                                self.cvxoptVars['c']=-cvx.matrix(c,tc='d').T
-                else:
-                        if self.objective[0]=='find':
-                                self.cvxoptVars['F']=cvx.matrix(0,(1,ss),tc='d')
-                                self.cvxoptVars['K']=[0]
-                        else:
-                                (F,g)=self._makeGandh(objexp)
-                                self.cvxoptVars['K']=[F.size[0]]
-                                if self.objective[0]=='min':
-                                        self.cvxoptVars['F']=cvx.matrix(F,tc='d')
-                                        self.cvxoptVars['g']=cvx.matrix(g,tc='d')
-                                elif self.objective[0]=='max':
-                                        self.cvxoptVars['F']=-cvx.matrix(F,tc='d')
-                                        self.cvxoptVars['g']=-cvx.matrix(g,tc='d')
+                #initial values
+                if self.cvxoptVars['A'] is None:
+                        reset=True
                 
-                if not(aff_part_of_quad) and isinstance(self.objective[1],QuadExp):
-                        self.cvxoptVars['c']=cvx.matrix(0,(ss,1),tc='d')
+                if reset:
+                        self.cvxoptVars['A']=cvx.spmatrix([],[],[],(0,ss),tc='d')
+                        self.cvxoptVars['b']=cvx.matrix([],(0,1),tc='d')
+                        self.cvxoptVars['Gl']=cvx.spmatrix([],[],[],(0,ss),tc='d')
+                        self.cvxoptVars['hl']=cvx.matrix([],(0,1),tc='d')
+                        self.cvxoptVars['Gq']=[]
+                        self.cvxoptVars['hq']=[]
+                        self.cvxoptVars['Gs']=[]
+                        self.cvxoptVars['hs']=[]
+                        self.cvxoptVars['quadcons']=[]
+                elif ss>self.cvxoptVars['A'].size[1]:
+                        nv = ss-self.cvxoptVars['A'].size[1]
+                        self.cvxoptVars['A']=cvx.sparse([[ self.cvxoptVars['A']],
+                                                         [cvx.spmatrix([],[],[],(self.cvxoptVars['A'].size[0],nv),tc='d')]])
+                        self.cvxoptVars['Gl']=cvx.sparse([[ self.cvxoptVars['Gl']],
+                                                          [cvx.spmatrix([],[],[],(self.cvxoptVars['Gl'].size[0],nv),tc='d')]])
+                        for i,Gqi in enumerate(self.cvxoptVars['Gq']):
+                                self.cvxoptVars['Gq'][i]=cvx.sparse([[Gqi],
+                                                          [cvx.spmatrix([],[],[],(Gqi.size[0],nv),tc='d')]])
+                        for i,Gsi in enumerate(self.cvxoptVars['Gs']):
+                                self.cvxoptVars['Gs'][i]=cvx.sparse([[Gsi],
+                                                          [cvx.spmatrix([],[],[],(Gsi.size[0],nv),tc='d')]])
+                
+                
+                #objective
+                if not((new_scip_cons_only and 'scip' in self.obj_passed) or
+                       (new_cvxopt_cons_only and 'cvxopt' in self.obj_passed)):
+                        if isinstance(self.objective[1],QuadExp):
+                                self.cvxoptVars['quadcons'].append(('_obj',-1))
+                                objexp=self.objective[1].aff
+                        elif isinstance(self.objective[1],LogSumExp):
+                                objexp=self.objective[1].Exp
+                        else:
+                                objexp=self.objective[1]
+                        if self.numberLSEConstraints==0:
+                                if self.objective[0]=='find':
+                                        self.cvxoptVars['c']=cvx.matrix(0,(ss,1),tc='d')
+                                elif self.objective[0]=='min':
+                                        (c,constantInObjective)=self._makeGandh(objexp)
+                                        self.cvxoptVars['c']=cvx.matrix(c,tc='d').T
+                                elif self.objective[0]=='max':
+                                        (c,constantInObjective)=self._makeGandh(objexp)
+                                        self.cvxoptVars['c']=-cvx.matrix(c,tc='d').T
+                        else:
+                                if self.objective[0]=='find':
+                                        self.cvxoptVars['F']=cvx.matrix(0,(1,ss),tc='d')
+                                        self.cvxoptVars['K']=[0]
+                                else:
+                                        (F,g)=self._makeGandh(objexp)
+                                        self.cvxoptVars['K']=[F.size[0]]
+                                        if self.objective[0]=='min':
+                                                self.cvxoptVars['F']=cvx.matrix(F,tc='d')
+                                                self.cvxoptVars['g']=cvx.matrix(g,tc='d')
+                                        elif self.objective[0]=='max':
+                                                self.cvxoptVars['F']=-cvx.matrix(F,tc='d')
+                                                self.cvxoptVars['g']=-cvx.matrix(g,tc='d')
+                        
+                        if not(aff_part_of_quad) and isinstance(self.objective[1],QuadExp):
+                                self.cvxoptVars['c']=cvx.matrix(0,(ss,1),tc='d')
+                        if new_scip_cons_only:
+                                self.obj_passed.append('scip')
+                        if new_cvxopt_cons_only:
+                                self.obj_passed.append('cvxopt')
+                elif self.cvxoptVars['c'].size[0]<ss:
+                        nv = ss - self.cvxoptVars['c'].size[0]
+                        self.cvxoptVars['c']=cvx.matrix(cvx.sparse([ self.cvxoptVars['c'],
+                                                                    cvx.spmatrix([],[],[],(nv,1),tc='d')]))
 
                 if self.options['verbose']>1:
                         limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
@@ -3000,12 +2616,30 @@ class Problem(object):
                         oldprog = str(prog)
                 
                 #constraints                
-                for k in range(len(self.constraints)):
+                for k,consk in enumerate(self.constraints):
+                        if self.options['verbose']>1:
+                                #<--display progress
+                                prog.increment_amount()
+                                if oldprog != str(prog):
+                                        print prog, "\r",
+                                        sys.stdout.flush()
+                                        oldprog=str(prog)
+                                #-->
+                        if new_scip_cons_only:
+                                if 'scip' in consk.passed:
+                                        continue
+                                else:
+                                        consk.passed.append('scip')
+                        if new_cvxopt_cons_only:
+                                if 'cvxopt' in consk.passed:
+                                        continue
+                                else:
+                                        consk.passed.append('cvxopt')
                         #linear constraints                        
-                        if self.constraints[k].typeOfConstraint[:3]=='lin':
-                                sense=self.constraints[k].typeOfConstraint[3]
-                                (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1)
-                                (G_rhs,h_rhs)=self._makeGandh(self.constraints[k].Exp2)
+                        if consk.typeOfConstraint[:3]=='lin':
+                                sense=consk.typeOfConstraint[3]
+                                (G_lhs,h_lhs)=self._makeGandh(consk.Exp1)
+                                (G_rhs,h_rhs)=self._makeGandh(consk.Exp2)
                                 if sense=='=':
                                         self.cvxoptVars['A']=cvx.sparse([self.cvxoptVars['A'],G_lhs-G_rhs])
                                         self.cvxoptVars['b']=cvx.matrix([self.cvxoptVars['b'],h_rhs-h_lhs])
@@ -3017,10 +2651,10 @@ class Problem(object):
                                         self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],h_lhs-h_rhs])
                                 else:
                                         raise NameError('unexpected case')
-                        elif self.constraints[k].typeOfConstraint=='SOcone':
+                        elif consk.typeOfConstraint=='SOcone':
                                 if not(cone_as_quad):
-                                        (A,b)=self._makeGandh(self.constraints[k].Exp1)
-                                        (c,d)=self._makeGandh(self.constraints[k].Exp2)
+                                        (A,b)=self._makeGandh(consk.Exp1)
+                                        (c,d)=self._makeGandh(consk.Exp2)
                                         self.cvxoptVars['Gq'].append(cvx.sparse([-c,-A]))
                                         self.cvxoptVars['hq'].append(cvx.matrix([d,b]))
                                 else:
@@ -3028,11 +2662,11 @@ class Problem(object):
                                                 (k,self.cvxoptVars['Gl'].size[0]))
                                         if aff_part_of_quad:
                                                 raise Exception('cone_as_quad + aff_part_of_quad')
-                        elif self.constraints[k].typeOfConstraint=='RScone':
+                        elif consk.typeOfConstraint=='RScone':
                                 if not(cone_as_quad):
-                                        (A,b)=self._makeGandh(self.constraints[k].Exp1)
-                                        (c1,d1)=self._makeGandh(self.constraints[k].Exp2)
-                                        (c2,d2)=self._makeGandh(self.constraints[k].Exp3)
+                                        (A,b)=self._makeGandh(consk.Exp1)
+                                        (c1,d1)=self._makeGandh(consk.Exp2)
+                                        (c2,d2)=self._makeGandh(consk.Exp3)
                                         self.cvxoptVars['Gq'].append(cvx.sparse([-c1-c2,-2*A,c2-c1]))
                                         self.cvxoptVars['hq'].append(cvx.matrix([d1+d2,2*b,d1-d2]))
                                 else:
@@ -3040,22 +2674,22 @@ class Problem(object):
                                                 (k,self.cvxoptVars['Gl'].size[0]))
                                         if aff_part_of_quad:
                                                 raise Exception('cone_as_quad + aff_part_of_quad')
-                        elif self.constraints[k].typeOfConstraint=='lse':
-                                (F,g)=self._makeGandh(self.constraints[k].Exp1)
+                        elif consk.typeOfConstraint=='lse':
+                                (F,g)=self._makeGandh(consk.Exp1)
                                 self.cvxoptVars['F']=cvx.sparse([self.cvxoptVars['F'],F])
                                 self.cvxoptVars['g']=cvx.matrix([self.cvxoptVars['g'],g])
                                 self.cvxoptVars['K'].append(F.size[0])
-                        elif self.constraints[k].typeOfConstraint=='quad':
+                        elif consk.typeOfConstraint=='quad':
                                 self.cvxoptVars['quadcons'].append((k,self.cvxoptVars['Gl'].size[0]))
                                 if aff_part_of_quad:
                                         #quadratic part handled later
-                                        (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1.aff)
+                                        (G_lhs,h_lhs)=self._makeGandh(consk.Exp1.aff)
                                         self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
                                         self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-h_lhs])
-                        elif self.constraints[k].typeOfConstraint[:3]=='sdp':
-                                sense=self.constraints[k].typeOfConstraint[3]
-                                (G_lhs,h_lhs)=self._makeGandh(self.constraints[k].Exp1)
-                                (G_rhs,h_rhs)=self._makeGandh(self.constraints[k].Exp2)
+                        elif consk.typeOfConstraint[:3]=='sdp':
+                                sense=consk.typeOfConstraint[3]
+                                (G_lhs,h_lhs)=self._makeGandh(consk.Exp1)
+                                (G_rhs,h_rhs)=self._makeGandh(consk.Exp2)
                                 if sense=='<':
                                         self.cvxoptVars['Gs'].append(G_lhs-G_rhs)
                                         self.cvxoptVars['hs'].append(h_rhs-h_lhs)
@@ -3067,14 +2701,7 @@ class Problem(object):
                                 
                         else:
                                 raise NameError('unexpected case')
-                        if self.options['verbose']>1:
-                                #<--display progress
-                                prog.increment_amount()
-                                if oldprog != str(prog):
-                                        print prog, "\r",
-                                        sys.stdout.flush()
-                                        oldprog=str(prog)
-                                #-->
+                        
                         
                 #reshape hs matrices as square matrices
                 #for m in self.cvxoptVars['hs']:
@@ -3990,9 +3617,28 @@ class Problem(object):
                 except:
                         raise ImportError('scip library not found')
                 
-                scip_solver = scip.solver(quiet=not(self.options['verbose']))
+                ###
+                # INVALID SCIP STAGE error if we try to update a model that has already been solved. So we reset all
+                #TODO at least something clever to update the objective
+                ##
+                self.scip_solver = None
+                self.scip_vars = None
+                self.scip_obj = None
+                for cons in self.constraints:
+                        if 'scip' in cons.passed:
+                                cons.passed.remove('scip')
+                if 'scip' in self.obj_passed:
+                        self.obj_passed.remove('scip')
+                for var in self.variables.values():
+                        if 'scip' in var.passed:
+                                var.passed.remove('scip')
                 
-                self._make_cvxopt_instance(aff_part_of_quad=False,cone_as_quad=True)
+                if self.scip_solver is None:
+                        scip_solver = scip.solver(quiet=not(self.options['verbose']))
+                else:
+                        scip_solver = self.scip_solver
+                
+                self._make_cvxopt_instance(aff_part_of_quad=False,cone_as_quad=True,new_scip_cons_only=True,reset=True)
                 
                 if bool(self.cvxoptVars['Gs']) or bool(self.cvxoptVars['F']) or bool(self.cvxoptVars['Gq']):
                         raise Exception('SDP, SOCP, or GP constraints are not implemented in zibopt')
@@ -4007,29 +3653,50 @@ class Problem(object):
                             'symmetric' :scip.CONTINUOUS
                            }
                 types=[0]*self.cvxoptVars['A'].size[1]
-                for var in self.variables.keys():
-                                si=self.variables[var].startIndex
-                                ei=self.variables[var].endIndex
-                                vtype=self.variables[var].vtype
+                lb={}
+                ub={}
+                
+                for (var,variable) in self.variables.iteritems():
+                                si=variable.startIndex
+                                ei=variable.endIndex
+                                for ind,(lo,up) in variable.bnd.iteritems():
+                                        if not(lo is None):
+                                                lb[si+ind]=lo
+                                        if not(up is None):
+                                                ub[si+ind]=up
+                                vtype=variable.vtype
                                 try:
                                         types[si:ei]=[zib_types[vtype]]*(ei-si)
                                 except:
                                         raise Exception('this vtype is not handled by scip: '+str(vtype))
                 
-                x=[]
+                if self.scip_vars is None:
+                        x= []
+                else:
+                        x = self.scip_vars
+                        
                 INFINITYZO = 1e10
-                for i in range(self.cvxoptVars['A'].size[1]):
-                    if not(self.cvxoptVars['c'] is None):
-                        x.append(scip_solver.variable(types[i],
-                                lower=-INFINITYZO,
-                                upper=INFINITYZO,
-                                coefficient=self.cvxoptVars['c'][i])
-                            )
-                    else:
-                        x.append(scip_solver.variable(types[i],
-                                lower=-INFINITYZO,
-                                upper=INFINITYZO
-                                ))
+                
+                sortedvars = sorted([(var.startIndex,var) for varname,var in self.variables.iteritems()])
+                for si,var in sortedvars:
+                        if 'scip' in var.passed:
+                                #TODO how do we modify type and bounds ? and coef if not obj_passed ?
+                                pass
+                        else:
+                                var.passed.append('scip')
+                                varsize = var.endIndex - si
+                                for i in range(si,si+varsize):
+                                        if not(self.cvxoptVars['c'] is None):
+                                                x.append(scip_solver.variable(types[i],
+                                                        lower=lb.get(i,-INFINITYZO),
+                                                        upper=ub.get(i,INFINITYZO),
+                                                        coefficient=self.cvxoptVars['c'][i])
+                                                )
+                                        else:
+                                                x.append(scip_solver.variable(types[i],
+                                                        lower=lb.get(i,-INFINITYZO),
+                                                        upper=ub.get(i,INFINITYZO)
+                                                        ))
                 
                 #equalities
                 Ai,Aj,Av=( self.cvxoptVars['A'].I,self.cvxoptVars['A'].J,self.cvxoptVars['A'].V)
@@ -4076,6 +3743,7 @@ class Problem(object):
                         subI=[]
                         subJ=[]
                         subV=[]
+                        consk = self.constraints[k]
                         if k=='_obj':
                                 x.append(scip_solver.variable(
                                         zib_types['continuous'],
@@ -4084,21 +3752,21 @@ class Problem(object):
                                         ))
                                 qexpr=self.objective[1]
                         else:
-                                if self.constraints[k].typeOfConstraint=='quad':
-                                        qexpr=self.constraints[k].Exp1
-                                if self.constraints[k].typeOfConstraint=='SOcone':
-                                        qexpr=(self.constraints[k].Exp1|self.constraints[k].Exp1)-(
-                                                self.constraints[k].Exp2*self.constraints[k].Exp2)
-                                        (e2x,e2c)=self._makeGandh(self.constraints[k].Exp2)
+                                if consk.typeOfConstraint=='quad':
+                                        qexpr=consk.Exp1
+                                if consk.typeOfConstraint=='SOcone':
+                                        qexpr=(consk.Exp1|consk.Exp1)-(
+                                                consk.Exp2*consk.Exp2)
+                                        (e2x,e2c)=self._makeGandh(consk.Exp2)
                                         exp=e2c[0]
                                         for j,v in zip(e2x.J,e2x.V):
                                                 exp+=v*x[j]
                                         if e2x:
                                                 scip_solver += exp >=0
-                                if self.constraints[k].typeOfConstraint=='RScone':
-                                        qexpr=(self.constraints[k].Exp1|self.constraints[k].Exp1)-(
-                                                self.constraints[k].Exp2*self.constraints[k].Exp3)
-                                        (e2x,e2c)=self._makeGandh(self.constraints[k].Exp2)
+                                if consk.typeOfConstraint=='RScone':
+                                        qexpr=(consk.Exp1|consk.Exp1)-(
+                                                consk.Exp2*consk.Exp3)
+                                        (e2x,e2c)=self._makeGandh(consk.Exp2)
                                         exp=e2c[0]
                                         for j,v in zip(e2x.J,e2x.V):
                                                 exp+=v*x[j]
@@ -4370,15 +4038,21 @@ class Problem(object):
                 # makes the instance #
                 #--------------------#
                 
-                if self.options['onlyChangeObjective']:
-                        if self.cvxoptVars['c'] is None:
-                                raise Exception('option is only available when cvxoptVars has been defined before')
-                        newobj=self.objective[1]
-                        (cobj,constantInObjective)=self._makeGandh(newobj)
-                        self.cvxoptVars['c']=cvx.matrix(cobj,tc='d').T
-                else:
-                        self._make_cvxopt_instance()
-                self.last_updated_constraint=self.countCons
+                
+                self._make_cvxopt_instance(reset=False,new_cvxopt_cons_only=True)
+                #hard-coded bounds
+                for (var,variable) in self.variables.iteritems():
+                        for ind,(lo,up) in variable.bnd.iteritems():
+                                if not(lo is None):
+                                        (G_lhs,h_lhs)=self._makeGandh(variable[ind])
+                                        self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],-G_lhs])
+                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-lo])
+                                if not(up is None):
+                                        (G_lhs,h_lhs)=self._makeGandh(variable[ind])
+                                        self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
+                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],up])
+                                        
+                
                 #--------------------#        
                 #  sets the options  #
                 #--------------------#
@@ -4582,31 +4256,31 @@ class Problem(object):
                                 else:
                                         soleq=sol['y']
                                 
-                                for k in range(len(self.constraints)):
+                                for k,consk in enumerate(self.constraints):
                                         #Equality
-                                        if self.constraints[k].typeOfConstraint=='lin=':
+                                        if consk.typeOfConstraint=='lin=':
                                                 if not (soleq is None):
-                                                        consSz=np.product(self.constraints[k].Exp1.size)
+                                                        consSz=np.product(consk.Exp1.size)
                                                         duals.append((P.T*soleq)[indy:indy+consSz])
                                                         indy+=consSz
                                                 else:
                                                         printnodual=True
                                                         duals.append(None)
                                         #Inequality
-                                        elif self.constraints[k].typeOfConstraint[:3]=='lin':
+                                        elif consk.typeOfConstraint[:3]=='lin':
                                                 if not (sol[zkey] is None):
-                                                        consSz=np.product(self.constraints[k].Exp1.size)
+                                                        consSz=np.product(consk.Exp1.size)
                                                         duals.append(sol[zkey][indzl:indzl+consSz])
                                                         indzl+=consSz
                                                 else:
                                                         printnodual=True
                                                         duals.append(None)
                                         #SOCP constraint [Rotated or not]
-                                        elif self.constraints[k].typeOfConstraint[2:]=='cone':
+                                        elif consk.typeOfConstraint[2:]=='cone':
                                                 if not (sol[zqkey] is None):
                                                         if probtype=='ConeLP':
-                                                                consSz=np.product(self.constraints[k].Exp1.size)+1
-                                                                if self.constraints[k].typeOfConstraint[:2]=='RS':
+                                                                consSz=np.product(consk.Exp1.size)+1
+                                                                if consk.typeOfConstraint[:2]=='RS':
                                                                         consSz+=1
                                                                 duals.append(sol[zqkey][indzq:indzq+consSz])
                                                                 duals[-1][1:]=-duals[-1][1:]
@@ -4619,24 +4293,24 @@ class Problem(object):
                                                         printnodual=True
                                                         duals.append(None)
                                         #SDP constraint
-                                        elif self.constraints[k].typeOfConstraint[:3]=='sdp':
+                                        elif consk.typeOfConstraint[:3]=='sdp':
                                                 if not (sol[zskey] is None):
                                                         if probtype=='ConeLP':
-                                                                matsz=self.constraints[k].Exp1.size[0]
+                                                                matsz=consk.Exp1.size[0]
                                                                 consSz=matsz*matsz
                                                                 duals.append(cvx.matrix(sol[zskey][indzs:indzs+consSz],(matsz,matsz)))
                                                                 indzs+=consSz
                                                         else:
-                                                                matsz=self.constraints[k].Exp1.size[0]
+                                                                matsz=consk.Exp1.size[0]
                                                                 duals.append(cvx.matrix(sol[zskey][indzs],(matsz,matsz)))
                                                                 indzs+=1
                                                 else:
                                                         printnodual=True
                                                         duals.append(None)
                                         #GP constraint
-                                        elif self.constraints[k].typeOfConstraint=='lse':
+                                        elif consk.typeOfConstraint=='lse':
                                                 if not (sol['znl'] is None):
-                                                        consSz=np.product(self.constraints[k].Exp1.size)
+                                                        consSz=np.product(consk.Exp1.size)
                                                         duals.append(sol['znl'][indznl:indznl+consSz])
                                                         indznl+=consSz
                                                 else:
@@ -5149,11 +4823,14 @@ class Problem(object):
                         m.setParam(par,val)
                         
                 #QCPDuals
+                
                 if not(self.isContinuous()) or (
                      'noduals' in self.options and self.options['noduals']):
                         m.setParam('QCPDual',0)
                 else:
                         m.setParam('QCPDual',1)
+                
+                
                 #--------------------#
                 #  call the solver   #
                 #--------------------#                
@@ -5629,8 +5306,8 @@ class Problem(object):
                                                 idconin+=szcone-len(fxd)
                                                 idcone+=1
                                         
-                                        elif self.constraints[k].typeOfConstraint=='lin=':
-                                                szcons=int(np.product(self.constraints[k].Exp1.size))
+                                        elif cons.typeOfConstraint=='lin=':
+                                                szcons=int(np.product(cons.Exp1.size))
                                                 fxd=self.msk_fxd[k]
                                                 #v=np.zeros(szcons-len(fxd),float)
                                                 v = [0.] * (szcons-len(fxd))
@@ -5752,39 +5429,8 @@ class Problem(object):
                 #-----------------------------#
                 #  create the zibopt instance #
                 #-----------------------------#
-                if self.options['onlyChangeObjective']:
-                        if self.scip_solver is None:
-                                raise Exception('option is only available when scip_solver has been defined before')
-                        #define scip_obj
-                        newobj=self.objective[1]
-                        x=self.scip_vars
-                        ob=0
-                        
-                        if isinstance(newobj,QuadExp):
-                                for i,j in newobj.quad:
-                                        si,ei=i.startIndex,i.endIndex
-                                        sj,ej=j.startIndex,j.endIndex
-                                        Qij=newobj.quad[i,j]
-                                        if not isinstance(Qij,cvx.spmatrix):
-                                                Qij=cvx.sparse(Qij)
-                                        for ii,jj,vv in zip(Qij.I,Qij.J,Qij.V):
-                                                ob+=vv*x[ii+si]*x[jj+sj]
-                                newobj=newobj.aff
-                                        
-                        if not(newobj is None):
-                                for v,fac in newobj.factors.iteritems():
-                                        if not isinstance(fac,cvx.spmatrix):
-                                                fac=cvx.sparse(fac)
-                                        sv=v.startIndex
-                                        for jj,vv in zip(fac.J,fac.V):
-                                                ob+=vv*x[jj+sv]
-                                if not(newobj.constant is None):
-                                        ob+=newobj.constant[0]
-                        self.scip_obj = ob
-                        
-                else:
-                        self._make_zibopt()
-                        self.last_updated_constraint=self.countCons
+                self._make_zibopt()
+                       
                 
                 timelimit=10000000.
                 gaplim=self.options['tol']

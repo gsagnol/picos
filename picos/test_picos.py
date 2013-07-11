@@ -833,7 +833,7 @@ def SOCP3Test(solver_to_test):
           
         return (True,primal.status)        
 
-def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
+def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
         print 'SOCP4',solver_to_test
         #4th test (socp in standard form, with additional variable bounds)
         primal=socp.copy()
@@ -884,8 +884,17 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = False):
         lbdavar.value=lbda
         muvar.value=mu
         mu1var.value = mu1
-        if with_hardcoded_bound:
-                mu2var.value = 10.3493320209
+        if with_hardcoded_bound:#TODO with reduced cost ?
+                if solver_to_test=='cplex':
+                        mu2var.value = 10.337220198679946
+                elif solver_to_test=='mosek7':
+                        mu2var.value = 10.3493320209
+                elif solver_to_test=='mosek6':
+                        mu2var.value = 10.338035946292555
+                elif solver_to_test=='cvxopt':
+                        mu2var.value = 10.337465065699078
+                else: #'gurobi'
+                        mu2var.value = 10.342048487730082
         else:
                 mu2var.value = mu2
         
