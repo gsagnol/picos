@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -150,7 +150,7 @@ class Problem(object):
 
                 printedlis=[]
                 for vkey in self.variables.keys():
-                        if vkey.startswith('_geo') or vkey.startswith('_nop'):
+                        if vkey.startswith('_geo') or vkey.startswith('_nop') or vkey.startswith('_ntp') or vkey.startswith('_ndt'):
                                 continue
                         if '[' in vkey and ']' in vkey:
                                 lisname=vkey[:vkey.index('[')]
@@ -214,7 +214,25 @@ class Problem(object):
         ----------------------------------------------------------------
         """
 
-        def reset_solver_instances(self):
+        def remove_solver_from_passed(self,solver):
+                for cons in self.constraints:
+                        if solver in cons.passed:
+                                cons.passed.remove(solver)
+                if solver in self.obj_passed:
+                        self.obj_passed.remove(solver)
+                for var in self.variables.values():
+                        if solver in var.passed:
+                                var.passed.remove(solver)
+                        if solver=='gurobi' and hasattr(var,'gurobi_endIndex'): 
+                                del var.gurobi_startIndex
+                                del var.gurobi_endIndex
+                        if solver=='cplex' and hasattr(var,'cplex_endIndex'): 
+                                del var.cplex_startIndex
+                                del var.cplex_endIndex                        
+                
+        def reset_cvxopt_instance(self,onlyvar=True):
+                """reset the variable ``cvxoptVars``, used by the solver cvxopt (and smcp)"""
+                
                 self.cvxoptVars={'c':None,
                                 'A':None,'b':None, #equalities
                                 'Gl':None,'hl':None, #inequalities
@@ -222,32 +240,70 @@ class Problem(object):
                                 'Gs':None,'hs':None, #semidefinite cone
                                 'F':None,'g':None, #GP constraints
                                 'quadcons': None} #other quads
+        
+                if onlyvar:
+                        self.remove_solver_from_passed('cvxopt')
+        
+        def reset_gurobi_instance(self, onlyvar=True):
+                """reset the variables used by the solver gurobi"""
                 
                 self.gurobi_Instance = None
                 self.grbvar = []
                 self.grb_boundcons = None
                 self.grbcons = {}
                 
+                if onlyvar:
+                        self.remove_solver_from_passed('gurobi')
+                        
+        def reset_cplex_instance(self, onlyvar=True):
+                """reset the variables used by the solver cplex"""
+                
                 self.cplex_Instance = None
                 self.cplex_boundcons = None
+
+                if onlyvar:
+                        self.remove_solver_from_passed('cplex')
+
+                
+        def reset_mosek_instance(self, onlyvar = True):
+                """reset the variables used by the solver mosek"""
                 
                 self.msk_env=None
                 self.msk_task=None
                 self.msk_scaledcols=None
                 self.msk_fxd=None
                 self.msk_fxdconevars = None
-
+                
+                if onlyvar:
+                        self.remove_solver_from_passed('mosek')
+                        
+        def reset_scip_instance(self, onlyvar=True):
+                """reset the variables used by the solver scip"""
+                
                 self.scip_solver = None
                 self.scip_vars = None
                 self.scip_obj = None
+
+                if onlyvar:
+                        self.remove_solver_from_passed('scip')
+                
+        def reset_solver_instances(self):
+                
+                self.reset_cvxopt_instance(False)
+                self.reset_gurobi_instance(False)
+                self.reset_cplex_instance(False)
+                self.reset_mosek_instance(False)
+                self.reset_scip_instance(False)
+
                 for cons in self.constraints:
                         cons.passed = []
                 self.obj_passed = []
+                
                 for var in self.variables.values():
                         var.passed=[]
                         if hasattr(var,'gurobi_endIndex'): 
                                 del var.gurobi_startIndex
-                                del var.gurobi_startIndex
+                                del var.gurobi_endIndex
                         if hasattr(var,'cplex_endIndex'): 
                                 del var.cplex_startIndex
                                 del var.cplex_endIndex
@@ -488,6 +544,15 @@ class Problem(object):
                                     
                   * ``convert_quad_to_socp_if_needed = True`` : Do we convert the convex quadratics to
                     second order cone constraints when the solver does not handle them directly ?
+                    
+                  * ``solve_via_dual = None`` : If set to ``True``, the Lagrangian Dual (computed with the
+                    function :func:`dualize() <picos.Problem.dualize>` ) is passed to the
+                    solver, instead of the problem itself. In some situations this can yield an
+                    important speed-up. In particular for Mosek and SOCPs/SDPs whose form is close to the
+                    standard primal form (as in the :ref:`note on dual variables <noteduals>` of the tutorial),
+                    since the MOSEK interface is better adapted for problems given in a *dual form*.
+                    When this option is set to ``None`` (default), PICOS chooses automatically whether the problem
+                    itself should be passed to the solver, or rather its dual.
                                     
                 * Specific options available for cvxopt/smcp:
                 
@@ -540,6 +605,41 @@ class Problem(object):
                     sets the absolute pivot tolerance of the
                     simplex optimizer to ``1e-4``.
                     
+                  * ``handleBarVars = True`` : For semidefinite programming,
+                    Mosek handles the Linear Matrix Inequalities by using a separate
+                    class of variables, called *bar variables*, representing semidefinite positive matrices.
+                    
+                    If this option is set to ``False``, Mosek adds a new *bar variable* for every LMI, and let the
+                    elements of the slack variable of the LMIs match the bar variables by adding equality constraints.
+                    
+                    If set to ``True`` (default), PICOS avoid creating useless bar variables for LMIs of the form ``X >> 0``: in this
+                    case ``X`` will be added in mosek directly as a ``bar variable``. This can avoid
+                    creating a lot of unnecessary variables for problems whose form is close to the canonical
+                    dual form (See the :ref:`note on dual variables <noteduals>` in the tutorial).
+                    
+                    See also the option ``solve_via_dual``.
+                    
+                  * ``handleConeVars = True`` : For Second Order Cone Programming, Mosek handles the SOC inequalities
+                    by *appending a standard cone*. This must be done in a careful way, since
+                    a single variable is not allowed to belong to several standard cones.
+                    
+                    If this option is set to ``False``, Picos adds a new variable for each coordinate of a vector
+                    in a second order cone inequality, as well as an equality constraint to match the value of
+                    this coordinate with the value of the new variable.
+                    
+                    If set to ``True``, additional variables are added only when needed, and simple changes of variables
+                    are done in order to reduce the number of necessary additional variables.
+                    This can avoid
+                    creating a lot of unnecessary variables for problems whose form is close to the canonical
+                    dual form (See the :ref:`note on dual variables <noteduals>` in the tutorial).
+                    Consider for example
+                    the SOC inequality :math:`\Vert [x,x-y,3z,t] \Vert \leq 5t`. Here 2 new variables :math:`u`
+                    and :math:`v` will be added, with the constraint :math:`x-y=u` and :math:`5t=v`,
+                    and a change of variable :math:`z'=3z` will be done. Then a standard cone with the variables 
+                    :math:`(v,x,u,z',t)` will be appended (cf. the doc of the mosek interface).
+
+                    See also the option ``solve_via_dual``.
+                    
                 * Specific options available for gurobi:
                 
                   * ``gurobi_params = {}`` : a dictionary of
@@ -583,9 +683,9 @@ class Problem(object):
                                  'uboundlimit'    :None,
                                  'lboundlimit'    :None,
                                  'boundMonitor'   :False,
-                                 'handleBarVars'  :True, #TODOC: for MOSEK, do we handle semidefVars separatly
-                                 'handleConeVars' :True, #TODOC: for MOSEK, do we put original variables in cones when possible ?
-                                 'solve_via_dual' :False, #TODO set None#TODOC the problem is dualized before being passed to the solver
+                                 'handleBarVars'  :True,
+                                 'handleConeVars' :True,
+                                 'solve_via_dual' :None,
                                  }
                                  
                                  
@@ -770,7 +870,8 @@ class Problem(object):
                 #svec operation
                 idmat=_svecm1_identity(vtype,size)
                 
-                self.variables[name]=Variable(name,
+                self.variables[name]=Variable(self,
+                                        name,
                                         size,
                                         countvar,
                                         numbervar,
@@ -902,7 +1003,7 @@ class Problem(object):
                 if isinstance(cons,_Convex_Constraint):
                         for ui,vui in cons.Ptmp.variables.iteritems():
                                 uiname = cons.prefix+str(self.countGeomean)+'_'+ui
-                                self.add_variable(uiname,vui.size)
+                                self.add_variable(uiname,vui.size,vui.vtype)
                                 si = self.variables[uiname].startIndex
                                 ei = self.variables[uiname].endIndex
                                 self.variables[uiname] = vui
@@ -2514,7 +2615,8 @@ class Problem(object):
         def _make_cvxopt_instance(self,aff_part_of_quad=True,cone_as_quad=False,
                                   new_cvxopt_cons_only=False,
                                   new_scip_cons_only=False,
-                                  reset=True):
+                                  reset=True,
+                                  hard_coded_bounds = False):
                 """
                 defines the variables in self.cvxoptVars, used by the cvxopt solver
                 new_scip_cons_only: if True, consider only cons where 'scip' not in passed
@@ -2594,6 +2696,11 @@ class Problem(object):
                         self.cvxoptVars['c']=cvx.matrix(cvx.sparse([ self.cvxoptVars['c'],
                                                                     cvx.spmatrix([],[],[],(nv,1),tc='d')]))
 
+                if new_cvxopt_cons_only:
+                        for var in self.variables.values():
+                                if 'cvxopt' not in var.passed:
+                                        var.passed.append('cvxopt')
+                                                                    
                 if self.options['verbose']>1:
                         limitbar=self.numberAffConstraints + self.numberConeConstraints + self.numberQuadConstraints + self.numberLSEConstraints + self.numberSDPConstraints
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
@@ -2685,8 +2792,20 @@ class Problem(object):
                                 
                         else:
                                 raise NameError('unexpected case')
-                        
-                        
+                       
+                #hard-coded bounds
+                if hard_coded_bounds:
+                        for (var,variable) in self.variables.iteritems():
+                                for ind,(lo,up) in variable.bnd.iteritems():
+                                        if not(lo is None):
+                                                (G_lhs,h_lhs)=self._makeGandh(variable[ind])
+                                                self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],-G_lhs])
+                                                self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-lo])
+                                        if not(up is None):
+                                                (G_lhs,h_lhs)=self._makeGandh(variable[ind])
+                                                self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
+                                                self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],up])
+                
                 #reshape hs matrices as square matrices
                 #for m in self.cvxoptVars['hs']:
                 #        n=int(np.sqrt(len(m)))
@@ -3281,7 +3400,6 @@ class Problem(object):
                                 istart=icone
                                 fxd = []
                                 conevars = []
-                                #for i,jv in itojv.iteritems():#TODO same error done with other solvers ?
                                 for i in range(szcons):
                                         jv = itojv.get(i,[])
                                         J=[jvk[0] for jvk in jv]
@@ -3603,8 +3721,7 @@ class Problem(object):
                 
                 ###
                 # INVALID SCIP STAGE error if we try to update a model that has already been solved. So we reset all
-                #TODO at least something clever to update the objective
-                ##
+                ###
                 #we only handle the case where only the objective has changed
                 if (self.scip_solver is not None and
                     not('scip' in self.obj_passed) and
@@ -3700,6 +3817,7 @@ class Problem(object):
                 for si,var in sortedvars:
                         if 'scip' in var.passed:
                                 #TODO how do we modify type and bounds ? and coef if not obj_passed ?
+                                #For now it doesnt matter because scip instance is reset each time.
                                 pass
                         else:
                                 var.passed.append('scip')
@@ -3872,10 +3990,20 @@ class Problem(object):
                         return self._sqpsolve(options)
                 
                 solve_via_dual = self.options['solve_via_dual']
+                if solve_via_dual is None:
+                        if (self.numberSDPConstraints>0 and
+                            len([1 for v in self.variables.values() if v.semiDef]) < 0.3 * self.numberSDPConstraints
+                            ):  #thats empirical !
+                                solve_via_dual = True
+                        else:
+                                solve_via_dual = False
+                                
                 if solve_via_dual:
                         converted = False
                         raiseexp = False
                         try:
+                                if self.options['verbose']>0:
+                                        print '*** Dualizing the problem...  ***'
                                 dual = self.dualize()
                         except QuadAsSocpError as ex:
                                 if self.options['convert_quad_to_socp_if_needed']:
@@ -4058,18 +4186,7 @@ class Problem(object):
                 #--------------------#
                 
                 
-                self._make_cvxopt_instance(reset=False,new_cvxopt_cons_only=True)
-                #hard-coded bounds
-                for (var,variable) in self.variables.iteritems():
-                        for ind,(lo,up) in variable.bnd.iteritems():
-                                if not(lo is None):
-                                        (G_lhs,h_lhs)=self._makeGandh(variable[ind])
-                                        self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],-G_lhs])
-                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],-lo])
-                                if not(up is None):
-                                        (G_lhs,h_lhs)=self._makeGandh(variable[ind])
-                                        self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],G_lhs])
-                                        self.cvxoptVars['hl']=cvx.matrix([self.cvxoptVars['hl'],up])
+                self._make_cvxopt_instance(reset=False,new_cvxopt_cons_only=True,hard_coded_bounds = True)
                                         
                 
                 #--------------------#        
@@ -5763,16 +5880,29 @@ class Problem(object):
                                will be used.                               
                 :type writer: str.
                 
-                .. Warning :: For problems involving a symmetric matrix variable :math:`X`
-                              (typically, semidefinite programs), the expressions
-                              involving :math:`X` are stored in PICOS as a function of
-                              :math:`svec(X)`, the symmetric vectorized form of
-                              X (see `Dattorro, ch.2.2.2.1 <http://meboo.convexoptimization.com/Meboo.html>`_).
-                              As a result, the symmetric matrix variables
-                              are written in :math:`svec()` form in the files created by this function.
-                              So if you use another solver to solve
-                              a problem that is described in a file created by PICOS, the optimal symmetric variables
-                              returned will also be in symmetric vectorized form.
+                .. Warning :: * In the case of a SOCP, when the selected writer is ``'mosek'``, the written file may
+                                contain some changes of variables with respect to the original formulation
+                                when the option ``handleConeVars`` is set to ``True`` (this is the default).
+                                
+                                If this is an issue, turn the option ``handleConeVars`` to ``False`` and reset the
+                                mosek instance by calling :func:`reset_mosek_instance() <picos.Problem.reset_mosek_instance>`,
+                                but turning off this option may increase the number of variables and constraints.
+                                
+                                Otherwise, the set of change of variables can be queried by ``self.msk_scaledcols``.
+                                Each (Key,Value) pair ``i -> alpha`` of this dictionary indicates that
+                                the ``i`` th column has been rescaled by a factor ``alpha``.
+                                
+                              
+                              * For problems involving a symmetric matrix variable :math:`X`
+                                (typically, semidefinite programs), the expressions
+                                involving :math:`X` are stored in PICOS as a function of
+                                :math:`svec(X)`, the symmetric vectorized form of
+                                X (see `Dattorro, ch.2.2.2.1 <http://meboo.convexoptimization.com/Meboo.html>`_).
+                                As a result, the symmetric matrix variables
+                                are written in :math:`svec()` form in the files created by this function.
+                                So if you use another solver to solve
+                                a problem that is described in a file created by PICOS, the optimal symmetric variables
+                                returned will also be in symmetric vectorized form.
                 """
                 if self.numberLSEConstraints:
                         raise Exception('gp are not supported')
@@ -6309,6 +6439,12 @@ class Problem(object):
                                 
                             
         def dualize(self):
+                """
+                Returns a Problem containing the Lagrangian dual of the current problem ``self``.
+                More precisely, the current problem is parsed as a problem
+                in a canonical primal form (cf. the :ref:`note on dual variables <noteduals>` of the tutorial),
+                and the corresponding dual form is returned.
+                """
                 if self.numberLSEConstraints>0:
                         raise DualizationError('GP cannot be dualized by PICOS')
                 if not self.is_continuous():
@@ -6316,7 +6452,7 @@ class Problem(object):
                 if self.numberQuadConstraints>0:
                         raise QuadAsSocpError('try to convert the quads as socp before dualizing')
                 dual = Problem()
-                self._make_cvxopt_instance()
+                self._make_cvxopt_instance(hard_coded_bounds = True)
                 cc = new_param('cc',self.cvxoptVars['c'])
                 lincons = cc
                 obj = 0

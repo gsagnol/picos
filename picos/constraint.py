@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','_Convex_Constraint','GeoMeanConstraint','NormP_Constraint']
+__all__=['Constraint','_Convex_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint']
 
 class Constraint(object):
         """A class for describing a constraint.
@@ -317,6 +317,9 @@ class _Convex_Constraint(Constraint):
                 self.Ptmp = Ptmp
                 self.myconstring=constring
                 self.constypestr=constypestr
+                
+        def __str__(self):
+                return '# '+self.constypestr+' : ' + self.constring() + '#'   
            
         def __repr__(self):
                 return '# '+self.constypestr+' : ' + self.constring() + '#'   
@@ -339,7 +342,7 @@ class GeoMeanConstraint(_Convex_Constraint):
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
                 
 class NormP_Constraint(_Convex_Constraint):
-        """ A temporary object used to pass p-norm inequalities
+        """ A temporary object used to pass p-norm inequalities.
         This class derives from :class:`Constraint <picos.Constraint>`
         """
         def __init__(self,expaff,expnorm,alpha,beta,Ptmp,constring):
@@ -361,5 +364,48 @@ class NormP_Constraint(_Convex_Constraint):
                         return self.expaff.value-norm(self.expnorm,self.numerator,self.denominator).value
                 else:
                         return -(self.expaff.value-norm(self.expnorm,self.numerator,self.denominator).value)
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+
+class TracePow_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass (trace of) pth power inequalities
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """
+        def __init__(self,exprhs,explhs,alpha,beta,Ptmp,constring):
+                self.explhs = explhs
+                self.exprhs = exprhs
+                self.numerator=alpha
+                self.denominator=beta
+                p = float(alpha)/float(beta)
+                if explhs.size[0]>1:
+                        _Convex_Constraint.__init__(self,Ptmp,constring,'trace of pth power ineq')
+                else:
+                        _Convex_Constraint.__init__(self,Ptmp,constring,'pth power ineq')
+                self.prefix='_ntp'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+        
+        def slack_var(self):
+                p = float(self.numerator) / self.denominator
+                slk = self.exprhs.value-tracepow(self.explhs,self.numerator,self.denominator).value
+                if p>0 and p<1:
+                        return -slk
+                else:
+                        return slk
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+        
+class DetRootN_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass nth root of determinant inequalities.
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """
+        def __init__(self,expdet,exprhs,Ptmp,constring):
+                self.expdet = expdet
+                self.exprhs = exprhs
+                _Convex_Constraint.__init__(self,Ptmp,constring,'nth root of det ineq')
+                self.prefix='_ndt'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+        
+        def slack_var(self):
+                return self.exprhs.value - detrootn(self.expdet).value
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

@@ -11,7 +11,7 @@ First of all, let us import the PICOS module and cvxopt
 
 We now generate some arbitrary data, that we will use in this tutorial.
 
-  >>> pairs = [(0,2), (1,4), (1,3), (3,2), (0,4),(2,4)]        #a list of pairs
+  >>> pairs = [(0,2), (1,4), (1,3), (3,2), (0,4),(2,4)]  #a list of pairs
   >>> A = []
   >>> b = ( [0 ,2 ,0 ,3 ],                               #a tuple of 5 lists, each of length 4
   ...       [1 ,1 ,0 ,5 ],
@@ -513,49 +513,6 @@ A few examples:
   >>> 1 < (t-1)*(x[2]+x[3])                                                             #1 is understood as the squared norm of [1]
   # (1x1)-Rotated SOC constraint: 1.0 < ( t -1.0)( x[2] + x[3]) #
 
-Inequalities involving geometric means
---------------------------------------
-
-It is possible to enter an inequality of the form
-
-.. math::
-   t \leq \prod_{i=1}^n x_i^{1/n}
-
-in PICOS, where :math:`t`
-is a scalar affine expression and :math:`x` is an affine expression
-of dimension :math:`n` (possibly a matrix, in which case
-:math:`x_i` is counted in column major order).
-This inequality is internally converted to an equivalent set of
-second order cone inequalities, by using standard techniques
-(cf. e.g. :ref:`[1] <tuto_refs>`).
-
-Many convex constraints can be formulated using inequalities that involve
-a geometric mean. For example, :math:`t \leq x_1^{2/3}` is equivalent
-to :math:`t \leq t^{1/4} x_1^{1/4} x_1^{1/4}`, which can be entered in PICOS
-thanks to the function :func:`picos.geomean() <picos.tools.geomean>` :
-
-  >>> t < pic.geomean(t //x[1] //x[1] //1)
-  # geometric mean ineq : t<geomean( [t;x[1];x[1];1.0])#
-
-Inequalities involving geometric means are stored in a temporary object
-of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>`,
-which can be passed to a problem with :func:`add_constraint() <picos.Problem.add_constraint>`:
-
-  >>> geom_ineq = prob.add_constraint(t<pic.geomean(Y[:6]), ret=True)
-
-When the option ``ret = True`` is used to pass an inequality with a geometric mean,
-the object of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>` is returned.
-This object has an attribute ``Ptmp`` which contains all the SOC inequalities that
-are used internally to represent the geometric mean:
-
-  >>> geom_ineq.Ptmp.constraints  #doctest: +NORMALIZE_WHITESPACE
-  [# (1x1)-Rotated SOC constraint: ||u[1:0-1]||^2 < ( Y[:6][0])( Y[:6][1]) #,
-   # (1x1)-Rotated SOC constraint: ||u[1:2-3]||^2 < ( Y[:6][2])( Y[:6][3]) #,
-   # (1x1)-Rotated SOC constraint: ||u[1:4-5]||^2 < ( Y[:6][4])( Y[:6][5]) #,
-   # (1x1)-Rotated SOC constraint: ||u[2:0-3]||^2 < ( u[1:0-1])( u[1:2-3]) #,
-   # (1x1)-Rotated SOC constraint: ||u[2:4-x]||^2 < ( u[1:4-5])( t) #,
-   # (1x1)-Rotated SOC constraint: ||t||^2 < ( u[2:0-3])( u[2:4-x]) #]
-
 Semidefinite Constraints
 -------------------------
 
@@ -613,6 +570,143 @@ which correspond to the lower triangular elements of ``X``.
      So, in the cases where A-B is not implicitely forced to be symmetric, you
      should add a constraint of the form ``A-B==(A-B).T`` in the problem.
 
+Inequalities involving geometric means
+--------------------------------------
+
+It is possible to enter an inequality of the form
+
+.. math::
+   t \leq \prod_{i=1}^n x_i^{1/n}
+
+in PICOS, where :math:`t`
+is a scalar affine expression and :math:`x` is an affine expression
+of dimension :math:`n` (possibly a matrix, in which case
+:math:`x_i` is counted in column major order).
+This inequality is internally converted to an equivalent set of
+second order cone inequalities, by using standard techniques
+(cf. e.g. :ref:`[1] <tuto_refs>`).
+
+Many convex constraints can be formulated using inequalities that involve
+a geometric mean. For example, :math:`t \leq x_1^{2/3}` is equivalent
+to :math:`t \leq t^{1/4} x_1^{1/4} x_1^{1/4}`, which can be entered in PICOS
+thanks to the function :func:`picos.geomean() <picos.tools.geomean>` :
+
+  >>> t < pic.geomean(t //x[1] //x[1] //1)
+  # geometric mean ineq : t<geomean( [t;x[1];x[1];1.0])#
+
+Note that the latter example can also be passed to picos in a more simple way,
+thanks to an overloading of the ``**`` exponentiation operator:
+
+  >>> t < x[1]**(2./3)
+  # pth power ineq : ( x[1])**2/3>t#
+
+Inequalities involving geometric means are stored in a temporary object
+of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>`,
+which can be passed to a problem with :func:`add_constraint() <picos.Problem.add_constraint>`:
+
+  >>> geom_ineq = prob.add_constraint(t<pic.geomean(Y[:6]), ret=True)
+
+When the option ``ret = True`` is used to pass an inequality with a geometric mean,
+the object of the class :class:`GeoMeanConstraint <picos.GeoMeanConstraint>` is returned.
+This object has an attribute ``Ptmp`` which contains all the SOC inequalities that
+are used internally to represent the geometric mean:
+
+  >>> geom_ineq.Ptmp.constraints  #doctest: +NORMALIZE_WHITESPACE
+  [# (1x1)-Rotated SOC constraint: ||u[1:0-1]||^2 < ( Y[:6][0])( Y[:6][1]) #,
+   # (1x1)-Rotated SOC constraint: ||u[1:2-3]||^2 < ( Y[:6][2])( Y[:6][3]) #,
+   # (1x1)-Rotated SOC constraint: ||u[1:4-5]||^2 < ( Y[:6][4])( Y[:6][5]) #,
+   # (1x1)-Rotated SOC constraint: ||u[2:0-3]||^2 < ( u[1:0-1])( u[1:2-3]) #,
+   # (1x1)-Rotated SOC constraint: ||u[2:4-x]||^2 < ( u[1:4-5])( t) #,
+   # (1x1)-Rotated SOC constraint: ||t||^2 < ( u[2:0-3])( u[2:4-x]) #]
+
+
+Inequalities involving real powers or trace of matrix powers
+------------------------------------------------------------
+
+As mentionned above, the ``**`` exponentiation operator has been overloaded
+to support real exponents. A rational approximation of the exponent is used,
+and the inequality are internally reformulated as a set of equivalent SOC inequalities.
+Note that only inequalities defining a convex regions can be passed:
+
+   >>> t**0.6666 > x[0]
+   # pth power ineq : ( t)**2/3>x[0]#
+   >>> t**-0.5 < x[0]
+   # pth power ineq : ( t)**-1/2<x[0]#
+   >>> t**-0.5 > x[0] #doctest: +NORMALIZE_WHITESPACE, ELLIPSIS
+   ...
+   Exception: >= operator can be used only when the function is concave (0<p<=1)
+   >>> t**2 < x[1]+x[2]   
+   # (1x1)-Rotated SOC constraint: ||t||^2 < x[1] + x[2] #
+   
+More generally, inequalities involving trace of matrix powers can be passed to PICOS,
+by using the :func:`picos.tracepow() <picos.tools.tracepow>` function. The following example
+creates the constraint
+   
+   .. math::
+        
+        \operatorname{trace}\ \big(x_0 A_0 A_0^T + x_2 A_2 A_2^T\big)^{2.5} \leq 3.   
+        
+
+
+>>> pic.tracepow(x[0] * A[0]*A[0].T + x[2] * A[2]*A[2].T, 2.5) <= 3
+# trace of pth power ineq : trace( x[0]*A[0]*A[0].T + x[2]*A[2]*A[2].T)**5/2<3.0#
+   
+   .. Warning::
+   
+        when a power expression :math:`x^p` (resp. the trace of matrix power :math:`\operatorname{trace}\ X^p` )
+        is used, the base :math:`x` is forced to be nonnegative (resp. the base :math:`X` is
+        forced to be positive semidefinite) by picos.
+        
+As for geometric means, inequalities involving real powers are 
+stored in a temporary object of the class :class:`TracePow_Constraint <picos.TracePow_Constraint>`,
+which contains a field ``Ptmp`` , a Problem instance with all the SOC or SDP constraints
+used to represent the original inequality.
+
+Inequalities involving generalized p-norm
+-----------------------------------------
+
+Inequalities of the form :math:`\Vert x \Vert_p \leq t` can be entered by using the
+function :func:`picos.norm() <picos.tools.norm>`. This function is also defined for :math:`p < 1`
+by the usual formula :math:`\Vert x \Vert_p :=  \Big(\sum_i |x_i|^p \Big)^{1/p}`.
+The norm function is convex over :math:`\mathbb{R}^n` for all :math:`p\geq 1`, and
+concave over the set of vectors with nonnegative coordinates for :math:`p \leq 1`.
+
+>>> pic.norm(x,3) < t
+# p-norm ineq : norm_3( x)<t#
+>>> pic.norm(x,0.5) > x[0]-x[1]
+# generalized p-norm ineq : norm_1/2( x)>x[0] -x[1]#
+
+.. Warning::
+
+        Note that when a constraint of the form ``norm(x,p) >= t`` is entered (with :math:`p \leq 1` ),
+        PICOS forces the vector ``x`` to be nonnegative (componentwise).
+
+As for geometric means, inequalities involving p-norms are 
+stored in a temporary object of the class :class:`NormP_Constraint <picos.NormP_Constraint>`,
+which contains a field ``Ptmp`` , a Problem instance with all the SOC constraints
+used to represent the original inequality.
+        
+Inequalities involving the nth root of a determinant
+----------------------------------------------------
+
+The function :func:`picos.detrootn() <picos.tools.detrootn>`
+can be used to enter the :math:`n` th root of the determinant of a
+:math:`(n \times n)-`symmetric positive semidefinite matrix:
+
+>>> M = sdp.add_variable('M',(5,5),'symmetric')
+>>> t < pic.detrootn(M)
+# nth root of det ineq : det( M)**1/5>t#
+
+.. Warning::
+
+        Note that when a constraint of the form ``t < pic.detrootn(M)`` is entered (with :math:`p \leq 1` ),
+        PICOS forces the matrix ``M`` to be positive semidefinite.
+        
+As for geometric means, inequalities involving the nth root of a determinant are 
+stored in a temporary object of the class :class:`DetRootN_Constraint <picos.DetRootN_Constraint>`,
+which contains a field ``Ptmp`` , a Problem instance with all the SOC and SDP constraints
+used to represent the original inequality.
+        
 =========================
 Write a Problem to a file
 =========================

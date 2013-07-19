@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -42,7 +42,9 @@ __all__=['Expression',
         '_ConvexExp',
         'GeoMeanExp',
         'NormP_Exp',
-        'Variable'
+        'TracePow_Exp',
+        'DetRootN_Exp',
+        'Variable',
         ]
        
 global INFINITY
@@ -147,11 +149,16 @@ class AffinExp(Expression):
                 :``[.]``: slice of an affine expression
                 :``abs()``: Euclidean norm (Frobenius norm for matrices)
                 :``**``: exponentiation (works with arbitrary powers for constant
-                           affine expressions, and only with the exponent 2
-                           if the affine expression involves some variables)
+                           affine expressions, and any nonzero exponent otherwise).
+                           In the case of a nonconstant affine expression, the exponentiation
+                           returns a quadratic expression if the exponent is 2, or
+                           a :class:`TracePow_Exp<picos.TracePow_Exp>` object for other
+                           exponents. A rational approximation of the exponent is used,
+                           and the power inequality is internally replaced by an equivalent set of second order
+                           cone inequalities.
                 :``&``: horizontal concatenation (with another affine expression)
                 :``//``: vertical concatenation (with another affine expression)
-                :``<``: less **or equal** (than an affine or quadratic expression)
+                #:``<``: less **or equal** (than an affine or quadratic expression)
                 :``>``: greater **or equal** (than an affine or quadratic expression)
                 :``==``: is equal (to another affine expression)
                 :``<<``: less than inequality in the Loewner ordering (linear matrix inequality ⪳)
@@ -822,6 +829,10 @@ class AffinExp(Expression):
                         return exp > self
                 elif isinstance(exp,NormP_Exp):
                         return exp > self
+                elif isinstance(exp,TracePow_Exp):
+                        return exp > self
+                elif isinstance(exp,DetRootN_Exp):
+                        return exp > self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
                         exp2=AffinExp(factors={},constant=term[:],size=self.size,string=termString)
@@ -842,6 +853,8 @@ class AffinExp(Expression):
                 elif isinstance(exp,QuadExp):
                         return exp<self
                 elif isinstance(exp,NormP_Exp):
+                        return exp<self
+                elif isinstance(exp,TracePow_Exp):
                         return exp<self
                 else:                   
                         term,termString=_retrieve_matrix(exp,self.size)
@@ -877,20 +890,23 @@ class AffinExp(Expression):
                                         size=(1,1),string='('+self.string+')**{0}'.format(exponent))
                         else:
                                 raise Exception('type of exponent not handled')
-                if (exponent<>2 or self.size<>(1,1)):
+                if self.size<>(1,1):
                         raise Exception('not implemented')
-                Q=QuadExp({},
-                        AffinExp(),
-                        None,None)
-                qq = self *self
-                Q.quad= qq.quad
-                Q.LR=(self,None)
-                if ('*' in self.affstring()) or ('+' in self.affstring()) or (
-                        '-' in self.affstring()) or ('/' in self.affstring()):
-                        Q.string= '('+self.affstring()+')**2'
+                if (exponent==2):
+                        Q=QuadExp({},
+                                AffinExp(),
+                                None,None)
+                        qq = self *self
+                        Q.quad= qq.quad
+                        Q.LR=(self,None)
+                        if ('*' in self.affstring()) or ('+' in self.affstring()) or (
+                                '-' in self.affstring()) or ('/' in self.affstring()):
+                                Q.string= '('+self.affstring()+')**2'
+                        else:
+                                Q.string= self.affstring()+'**2'
+                        return Q
                 else:
-                        Q.string= self.affstring()+'**2'
-                return Q
+                        return tracepow(self,exponent)
 
         def diag(self,dim):
                 if self.size<>(1,1):
@@ -1619,23 +1635,17 @@ class NormP_Exp(_ConvexExp):
            Use the function :func:`picos.norm() <picos.tools.norm>` to create a instance of this class.
            
            Generalized norms are also defined for :math:`p<1`, by using the usual formula
-           :math:`\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
+           :math:`\operatorname{norm}(\mathbf{x},p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
            is concave (for :math:`p<1`) over the set of vectors with nonnegative coordinates.
-           When a constraint of the form :math:`\operatorname{norm}(x,p) > t` with :math:`p\geq 1` 
-           is entered, PICOS implicitely assume
-           that :math:`x` is a nonnegative vector.
-           
-           
-        
+           When a constraint of the form :math:`\operatorname{norm}(\mathbf{x},p) > t` with :math:`p\leq 1` 
+           is entered, PICOS implicitely forces :math:`\mathbf{x}` to be a nonnegative vector.           
            
            **Overloaded operator**
         
                 :``<``: less **or equal** than (the rhs must be a scalar affine expression, AND
                         p must be greater or equal than 1)
-                :``>``: less **or equal** than (the rhs must be a scalar affine expression, AND
+                :``>``: greater **or equal** than (the rhs must be a scalar affine expression, AND
                         p must be less or equal than 1)
-                
-
         """
         
         def __init__(self,exp,alpha,beta=1):
@@ -1760,13 +1770,301 @@ class NormP_Exp(_ConvexExp):
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>exp1
                 
+class TracePow_Exp(_ConvexExp):
+        """A class storing the pth power of a scalar, or more generally the trace of the power of a symmetric matrix.
+           It derives from :class:`Expression<picos.Expression>`.
+           Use the function :func:`picos.tracepow() <picos.tools.tracepow>` 
+           or simply the overloaded ``**`` exponentiation operator
+           to create an instance of this class.
+           
+           Note that this function is concave for :math:`0<p<1`, and convex for the other values of :math:`p`
+           over the set of nonnegative variables ``exp``
+           (resp. over the set of positive semidefinite matrices ``exp``), and PICOS implicitely forces
+           the constraint ``exp >0`` (resp. ``exp >> 0``) to hold.
+           
+           **Overloaded operator**
+        
+                :``<``: less **or equal** than (the rhs must be a scalar affine expression, AND
+                        p must be either greater or equal than 1 or negative)
+                :``>``: greater **or equal** than (the rhs must be a scalar affine expression, AND
+                        p must be in the range :math:`(0,1]`)
                 
+
+        """
+        
+        def __init__(self,exp,alpha,beta=1):
+                pstr = str(alpha)
+                if beta>1:
+                        pstr+='/'+str(beta)
+                p=float(alpha)/float(beta)
+                if exp.size==(1,1):
+                        _ConvexExp.__init__(self,'( '+exp.string+')**'+pstr,'pth power expression')
+                else:
+                        _ConvexExp.__init__(self,'trace( '+exp.string+')**'+pstr,'trace of pth power expression')
+                
+                
+                if exp.size[0] != exp.size[1]:
+                        raise ValueError('Matrix must be square')
+                self.exp = exp
+                """The affine expression to which the p-norm is applied"""
+                
+                self.numerator = alpha
+                """numerator of p"""
+                
+                self.denominator= beta
+                """denominator of p"""
+                
+                self.dim = exp.size[0]
+                """dimension of ``exp``"""
+                
+        
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                if not isinstance(val,cvx.base.matrix):
+                        val = cvx.matrix(val)
+                ev = np.linalg.eigvalsh(np.matrix(val))
+                p = float(self.numerator)/float(self.denominator)
+                return sum([vi**p for vi in ev])
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        
+        def __lt__(self,exp):
+                p = float(self.numerator)/self.denominator
+                if (p < 1) and (p > 0):
+                        raise Exception('<= operator can be used only when the function is convex (p>=1 or p<0)')
+                if p == 1:
+                        return self.exp < exp
+                elif p == 2:
+                        return (self.exp)**2 < exp
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('upper bound of a tracepow must be scalar')
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        a = self.numerator
+                        b = self.denominator
+                        if self.dim == 1:
+                                idt = new_param('1',1)
+                                varcnt = 0
+                                v=[]
+                        else:
+                                idt = new_param('I',cvx.spdiag([1.]*self.dim))
+                                varcnt = 1
+                                v=[Ptmp.add_variable('v[0]', (self.dim,self.dim),'symmetric')]
+                                        
+                        if a>b:
+                                #x2n < tb x2n-a
+                                pown = int(2**(np.ceil(np.log(a)/np.log(2))))
+                                if self.dim == 1:
+                                        lis = [exp] * b + [self.exp] * (pown-a) + [idt] * (a-b)
+                                else:
+                                        lis = [v[0]] * b + [self.exp] * (pown-a) + [idt] * (a-b)
+                                while len(lis)>2:
+                                        newlis = []
+                                        while lis:
+                                                v1 = lis.pop()
+                                                v2 = lis.pop()
+                                                if v1 is v2:
+                                                        newlis.append(v2)
+                                                else:
+                                                        if self.dim == 1:
+                                                                v0 = Ptmp.add_variable('v['+str(varcnt)+']',1)
+                                                                Ptmp.add_constraint( v0**2 < v1 *v2)
+                                                        else:
+                                                                v0 = Ptmp.add_variable('v['+str(varcnt)+']',
+                                                                  (self.dim,self.dim),'symmetric')
+                                                                Ptmp.add_constraint( ((v1 & v0)//(v0 & v2)) >> 0)
+                                                                
+                                                        varcnt += 1
+                                                        newlis.append(v0)
+                                                        v.append(v0)
+                                        lis = newlis
+                                if self.dim == 1:
+                                        Ptmp.add_constraint( self.exp**2 < lis[0] * lis[1])
+                                else:
+                                        Ptmp.add_constraint( ((lis[0] & self.exp)//(self.exp & lis[1])) >> 0)
+                                        Ptmp.add_constraint( (idt|v[0]) < exp )
+                        else:#p<0
+                                #1 < tb xa
+                                a = abs(a);b=abs(b)
+                                pown = int(2**(np.ceil(np.log(a+b)/np.log(2))))
+                                if self.dim == 1:
+                                        lis = [exp] * b + [self.exp] * a + [idt] * (pown-a-b)
+                                else:
+                                        lis = [v[0]] * b + [self.exp] * a + [idt] * (pown-a-b)
+                                
+                                while len(lis)>2:
+                                        newlis = []
+                                        while lis:
+                                                v1 = lis.pop()
+                                                v2 = lis.pop()
+                                                if v1 is v2:
+                                                        newlis.append(v2)
+                                                else:
+                                                        if self.dim == 1:
+                                                                v0 = Ptmp.add_variable('v['+str(varcnt)+']',1)
+                                                                Ptmp.add_constraint( v0**2 < v1 *v2)
+                                                        else:
+                                                                v0 = Ptmp.add_variable('v['+str(varcnt)+']',
+                                                                  (self.dim,self.dim),'symmetric')
+                                                                Ptmp.add_constraint( ((v1 & v0)//(v0 & v2)) >> 0)
+                                                                
+                                                        varcnt += 1
+                                                        newlis.append(v0)
+                                                        v.append(v0)
+                                        lis = newlis
+                                if self.dim == 1:
+                                        Ptmp.add_constraint( 1 < lis[0] * lis[1])
+                                else:
+                                        Ptmp.add_constraint( ((lis[0] & idt)//(idt & lis[1])) >> 0)
+                                        Ptmp.add_constraint( (idt|v[0]) < exp )
+                                
+                                
+                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '<' + exp.string)
+                                        
+                        
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self<exp1
+                    
+        def __gt__(self,exp):
+                p = float(self.numerator)/self.denominator
+                if (p > 1) or (p < 0):
+                        raise Exception('>= operator can be used only when the function is concave (0<p<=1)')
+                if p == 1:
+                        return self.exp > exp
+                
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('lower bound of a tracepow must be scalar')
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        a = self.numerator
+                        b = self.denominator
+                        if self.dim == 1:
+                                idt = new_param('1',1)
+                        else:
+                                idt = new_param('I',cvx.spdiag([1.]*self.dim))
+                        
+                        #we must have 0<a<b
+                        #t2n < xa t2n-b
+                        
+                        pown = int(2**(np.ceil(np.log(b)/np.log(2))))
+                        if self.dim == 1:
+                                idt = new_param('1',1)
+                                varcnt = 0
+                                v=[]
+                                lis = [self.exp] * a + [exp] * (pown-b) + [idt] * (b-a)
+                        
+                        else:
+                                idt = new_param('I',cvx.spdiag([1.]*self.dim))
+                                varcnt = 1
+                                v=[Ptmp.add_variable('v[0]', (self.dim,self.dim),'symmetric')]
+                                lis = [self.exp] * a + [v[0]] * (pown-b) + [idt] * (b-a)
+                        
+                        while len(lis)>2:
+                                newlis = []
+                                while lis:
+                                        v1 = lis.pop()
+                                        v2 = lis.pop()
+                                        if v1 is v2:
+                                                newlis.append(v2)
+                                        else:
+                                                if self.dim == 1:
+                                                        v0 = Ptmp.add_variable('v['+str(varcnt)+']',1)
+                                                        Ptmp.add_constraint( v0**2 < v1 *v2)
+                                                else:
+                                                        v0 = Ptmp.add_variable('v['+str(varcnt)+']',
+                                                                (self.dim,self.dim),'symmetric')
+                                                        Ptmp.add_constraint( ((v1 & v0)//(v0 & v2)) >> 0)
+                                                        
+                                                varcnt += 1
+                                                newlis.append(v0)
+                                                v.append(v0)
+                                lis = newlis
+                        if self.dim == 1:
+                                Ptmp.add_constraint( exp**2 < lis[0] * lis[1])
+                        else:
+                                Ptmp.add_constraint( ((lis[0] & v[0])//(v[0] & lis[1])) >> 0)
+                                Ptmp.add_constraint( (idt|v[0]) > exp )
+                                
+                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '>' + exp.string)
+                          
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self>exp1
+
+class DetRootN_Exp(_ConvexExp):
+        """A class storing the nth root of the determinant of a positive semidefinite matrix.
+           It derives from :class:`Expression<picos.Expression>`.
+           Use the function :func:`picos.detrootn() <picos.tools.detrootn>` 
+           to create an instance of this class.
+           Note that the matrix :math:`X` is forced to be positive semidefinite
+           when a constraint of the form ``t < pic.detrootn(X)`` is added.
+           
+           **Overloaded operator**
+        
+                :``>``: greater **or equal** than (the rhs must be a scalar affine expression)
+                
+        """
+        
+        def __init__(self,exp):
+                if exp.size[0] != exp.size[1]:
+                        raise ValueError('Matrix must be square')
+                nstr = str(exp.size[0])
+                _ConvexExp.__init__(self,'det( '+exp.string+')**1/'+nstr,'detrootn expression')
+                
+                
+
+                self.exp = exp
+                """The affine expression to which the det-root-n is applied"""
+                                
+                self.dim = exp.size[0]
+                """dimension of ``exp``"""
+                
+        
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                if not isinstance(val,cvx.base.matrix):
+                        val = cvx.matrix(val)
+                return (np.det(np.matrix(val)))**(1./self.dim)
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        
+                    
+        def __gt__(self,exp):
+                
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('lower bound of a detrootn must be scalar')
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        nr = self.dim * (self.dim+1)/2
+                        l = Ptmp.add_variable('l', (nr,1))
+                        L = ltrim1(l,uptri=0)
+                        dl = diag_vect(L)
+                        ddL = diag(dl)
+                        
+                        Ptmp.add_constraint( (self.exp & L) // (L.T & ddL) >> 0 )
+                        Ptmp.add_constraint( exp < geomean(dl) )
+                                
+                        return DetRootN_Constraint(exp,self.exp,Ptmp,self.string + '>' + exp.string)
+                          
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self>exp1
+
+                        
 class Variable(AffinExp):
         """This class stores a variable. It
         derives from :class:`AffinExp<picos.AffinExp>`.
         """
         
-        def __init__(self,name,
+        def __init__(self,parent_problem,
+                          name,
                           size,
                           Id,
                           startIndex,
@@ -1781,6 +2079,9 @@ class Variable(AffinExp):
                                        size=size,
                                        string=name
                                        )
+                
+                self.parent_problem = parent_problem
+                """The Problem instance to which this variable belongs"""
                 
                 self.name=name
                 """The name of the variable (str)"""
@@ -1810,14 +2111,14 @@ class Variable(AffinExp):
                 
                 self._bndtext = ''
                 
+                self.passed = []
+                """list of solvers which are already aware of this variable"""
+                
                 if not(lower is None):
                         self.set_lower(lower)
                         
                 if not(upper is None):
                         self.set_upper(upper)
-                        
-                self.passed = []
-                """list of solvers which are aware of this variable"""
                 
                                         
         def __str__(self):
@@ -1918,6 +2219,9 @@ class Variable(AffinExp):
                 else:
                         if lowexp:
                                 self._bndtext.replace('nonnegative','bounded below')
+                for solver in self.passed:
+                        texteval = 'self.parent_problem.reset_'+solver+'_instance()'
+                        eval(texteval)
                                 
         def set_sparse_lower(self,indices,bnds):
                 """
@@ -1982,6 +2286,10 @@ class Variable(AffinExp):
                         self._bndtext.replace('nonnegative','bounded below')
                 elif ('low' not in self._bndtext):
                         self._bndtext += ', some lower bounds'
+                        
+                for solver in self.passed:
+                        texteval = 'self.parent_problem.reset_'+solver+'_instance()'
+                        eval(texteval)
                 
         def set_upper(self,up):
                 """
@@ -2010,6 +2318,10 @@ class Variable(AffinExp):
                 else:
                         if upexp:
                                 self._bndtext.replace('nonpositive','bounded above')
+                
+                for solver in self.passed:
+                        texteval = 'self.parent_problem.reset_'+solver+'_instance()'
+                        eval(texteval)
                 
         def set_sparse_upper(self,indices,bnds):
                 """
@@ -2060,6 +2372,10 @@ class Variable(AffinExp):
                         self._bndtext.replace('nonpositive','bounded above')
                 elif ('above' not in self._bndtext) and ('upper' not in self._bndtext):
                         self._bndtext += ', some upper bounds'
+                        
+                for solver in self.passed:
+                        texteval = 'self.parent_problem.reset_'+solver+'_instance()'
+                        eval(texteval)
                 
         def eval(self, ind = None):
                 if ind is None:

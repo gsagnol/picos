@@ -51,3 +51,15 @@ NormP_Exp
 
 .. autoclass:: picos.NormP_Exp
     :members:
+    
+TracePow_Exp
+============
+
+.. autoclass:: picos.TracePow_Exp
+    :members:
+    
+DetRootN_Exp
+============
+
+.. autoclass:: picos.DetRootN_Exp
+    :members:

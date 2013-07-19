@@ -6,19 +6,19 @@ Examples from Optimal Experimental Design
 
 Optimal experimental design is a theory
 at the interface of statistics and optimization,
-which studies how to allocate some experimental
-effort within a set of available expeiments.
+which studies how to allocate some statistical trials
+within a set of available design points.
 The goal is to allow for the best possible
 estimation of an unknown parameter :math:`\theta`.
 In what follows, we assume the standard linear model with
-multiresponse experiments: the :math:`i^{\textrm{th}}`
-experiment gives a multidimensional observation that
+multiresponse experiments: a trial in the :math:`i^{\textrm{th}}`
+design point gives a multidimensional observation that
 can be written as :math:`y_i = A_i^T \theta+\epsilon_i`,
 where :math:`y_i` is of dimension :math:`l_i`,
 :math:`A_i` is a :math:`m \times l_i-` matrix,
-and the noise vectors :math:`\epsilon_i` are i.i.d. with a unit variance.
+and the error vectors :math:`\epsilon_i` are i.i.d. with a unit variance.
 
-Several optimization criterions exist, leading to different SDP, SOCP and LP
+Several optimization criteria exist, leading to different SDP, SOCP and LP
 formulations.
 As such, optimal experimental design problens are natural examples for problems
 in conic optimization. For a review of the different formulations
@@ -71,7 +71,7 @@ c-optimality, multi-response: SOCP
 We compute the c-optimal design (``c=[1,2,3,4,5]``)
 for the observation matrices ``A[i].T`` from the variable ``A`` defined above.
 The results below suggest that we should allocate 12.8% of the
-experimental effort on experiment #5, and 87.2% on experiment #7.
+experimental effort on design point #5, and 87.2% on the design point #7.
 
 Primal Problem
 ''''''''''''''
@@ -125,7 +125,7 @@ The SOCP for multiresponse c-optimal design is:
         mu=mu.value
         w=mu/sum(mu) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 Generated output:
@@ -146,7 +146,7 @@ Generated output:
         Σ_{i in [s]} A[i]*z[i] = c
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [...]
@@ -203,7 +203,7 @@ and to provide one additional example in this doc:
         mu = cvx.matrix(mu)
         w=mu/sum(mu) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 Generated output:
@@ -222,7 +222,7 @@ Generated output:
         ||A[i].T*u|| < 1 for all i in [s]
         ---------------------
         
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [...]
@@ -240,21 +240,21 @@ When the observation matrices are row vectors (single-response framework),
 the SOCP above reduces to a simple LP, because the variables
 :math:`z_i` are scalar.
 We solve below the LP for the case where there are 11
-available experiments, corresponding to the columns of the matrices
+available design points, corresponding to the columns of the matrices
 ``A[4]``, ``A[5]``, ``A[6]``, and ``A[7][:,:-1]`` defined in the preambule.
 
-The optimal design allocates 3.37% to experiment #5 (2nd column of ``A[5]``),
-27.9% to experiment #7 (1st column of ``A[6]``),
-11.8% to experiment #8 (2nd column of ``A[6]``),
-27.6% to experiment #9 (3rd column of ``A[6]``),
-and 29.3% to experiment #11 (2nd column of ``A[7]``).
+The optimal design allocates 3.37% to point #5 (2nd column of ``A[5]``),
+27.9% to point #7 (1st column of ``A[6]``),
+11.8% to point #8 (2nd column of ``A[6]``),
+27.6% to point #9 (3rd column of ``A[6]``),
+and 29.3% to point #11 (2nd column of ``A[7]``).
 
 .. testcode::
         
         #create the problem, variables and params
         prob_LP=pic.Problem()
         AA=[cvx.sparse(a[:,i],tc='d') for i in range(3) for a in A[4:]] #12 column vectors
-        AA=AA[:-1] #remove the last experiment (it is the same as the last-but-one)
+        AA=AA[:-1] #remove the last design point (it is the same as the last-but-one)
         s=len(AA)
         AA=pic.new_param('A',AA)
         cc=pic.new_param('c',c)
@@ -283,7 +283,7 @@ and 29.3% to experiment #11 (2nd column of ``A[7]``).
         mu=mu.value
         w=mu/sum(mu) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 Note that there are no cone constraints, because
@@ -306,7 +306,7 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         Σ_{i in [s]} A[i]*z[i] = c
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [...]
@@ -325,7 +325,7 @@ SDP formulation of the c-optimal design problem
 We give below the SDP for c-optimality, in primal and dual
 form. You can observe that we obtain the same results as
 with the SOCP presented earlier:
-12.8% on experiment #5, and 87.2% on experiment #7.
+12.8% on design point #5, and 87.2% on design point #7.
 
 Primal Problem
 ''''''''''''''
@@ -371,7 +371,7 @@ The SDP formulation of the c-optimal design problem is:
         w=mu.value
         w=w/sum(w) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 .. testoutput::
@@ -389,7 +389,7 @@ The SDP formulation of the c-optimal design problem is:
         mu > |0|
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [...]
@@ -445,7 +445,7 @@ and to provide one additional example in this doc:
         mu = cvx.matrix(mu)
         w=mu/sum(mu) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
         print 'and the optimal positive semidefinite matrix X is'
         print X
@@ -466,7 +466,7 @@ and to provide one additional example in this doc:
         X ≽ |0|
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [...]
@@ -489,19 +489,12 @@ A-optimality: SOCP
 We compute the A-optimal design
 for the observation matrices ``A[i].T`` defined in the preambule.
 The optimal design allocates
-24.9% on experiment #3,
-14.2% on experiment #4,
-8.51% on experiment #5,
-12.1% on experiment #6,
-13.2% on experiment #7,
-and 27.0% on experiment #8.
-
-        [ 2.49e-01]
-        [ 1.42e-01]
-        [ 8.51e-02]
-        [ 1.21e-01]
-        [ 1.32e-01]
-        [ 2.70e-01]
+24.9% on design point #3,
+14.2% on point #4,
+8.51% on point #5,
+12.1% on point #6,
+13.2% on point #7,
+and 27.0% on point #8.
 
 Primal Problem
 ''''''''''''''
@@ -553,7 +546,7 @@ The SOCP for the A-optimal design problem is:
         w=mu.value
         w=w/sum(w) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 .. testoutput::
@@ -572,7 +565,7 @@ The SOCP for the A-optimal design problem is:
         Σ_{i in [s]} A[i]*Z[i] = I
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [ 2.49e-01]
@@ -628,7 +621,7 @@ and to provide one additional example in this doc:
         mu = cvx.matrix(mu)
         w=mu/sum(mu) #normalize mu to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 .. testoutput::
@@ -645,7 +638,7 @@ and to provide one additional example in this doc:
         ||A[i].T*U|| < 1 for all i in [s]
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [ 2.49e-01]
@@ -682,8 +675,8 @@ This problem has the following SOCP formulation:
    \end{eqnarray*}
    \end{center}
 
-The optimal solution allocates 29.7% and 20.3% to the experiments #3 and #4,
-and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
+The optimal solution allocates 29.7% and 20.3% to the design points #3 and #4,
+and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the design points #5 to #8:
                           
 .. testcode::
         
@@ -718,7 +711,7 @@ and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
         w=w.value
         w=w/sum(w) #normalize w to get the optimal weights
         print
-        print 'The optimal deign is:'
+        print 'The optimal design is:'
         print w
 
 .. testoutput::
@@ -740,7 +733,7 @@ and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the experiments #5 to #8:
         ||Z[i]||^2 < ( mu[i])( w[i]) for all i in [s]
         ---------------------
 
-        The optimal deign is:
+        The optimal design is:
         [...]
         [...]
         [ 2.97e-01]
@@ -754,8 +747,8 @@ Exact A-optimal design: MISOCP
 ==============================
 
 In the exact version of A-optimality, a number :math:`N \in \mathbb{N}`
-of experiments is given, and the goal is to find the optimal number of times
-:math:`n_i \in \mathbb{N}` that the experiment #i should be performed, 
+of trials is given, and the goal is to find the optimal number of times
+:math:`n_i \in \mathbb{N}` that a trial on design point #i should be performed, 
 with :math:`\sum_i n_i =N`.
 
 The SOCP formulation of A-optimality for constrained designs
@@ -787,7 +780,7 @@ The exact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
         m=AA[0].size[0]
         AA=pic.new_param('A',AA)
         cc=pic.new_param('c',c)
-        N =pic.new_param('N',20) #number of experiments allowed
+        N =pic.new_param('N',20) #number of trials allowed
         I =pic.new_param('I',cvx.spmatrix([1]*m,range(m),range(m),(m,m))) #identity matrix
         Z=[prob_exact_A.add_variable('Z['+str(i)+']',AA[i].T.size) for i in range(s)]
         n=prob_exact_A.add_variable('n',s, vtype='integer')
@@ -869,7 +862,7 @@ this problem to PICOS with the function :func:`picos.geomean() <picos.tools.geom
 which reformulates the geometric mean inequality as a set of equivalent second order cone
 constraints.
 The example below allocates respectively 22.7%, 3.38%, 1.65%, 5.44%, 31.8% and 35.1%
-to the experiments #3 to #8.
+to the design points #3 to #8.
 
 .. testcode::
         
@@ -1082,6 +1075,173 @@ we obtain the following N-exact D-optimal design:
         [ 7.00e+00]
 
 
+Former MAXDET formulation of the D-optimal design: SDP
+======================================================
+
+A so-called MAXDET Programming formulation of the D-optimal design
+has been known since the late 90's :ref:`[3] <optdes_refs>`, and
+can be reformulated as a SDP thanks to the :func:`detrootn() <picos.tools.detrootn>` function.
+The following code finds the same design as the SOCP approach presented above.
+
+.. testcode::
+        
+        #problem, variables and parameters
+        prob_D = pic.Problem()
+        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
+        s=len(AA)
+        m=AA[0].size[0]
+        AA=pic.new_param('A',AA)
+        w = prob_D.add_variable('w',s,lower=0)
+        t = prob_D.add_variable('t',1)
+        
+        #constraint and objective
+        prob_D.add_constraint(1|w < 1)
+        Mw = pic.sum([w[i]*AA[i]*AA[i].T for i in range(s)],'i')
+        prob_D.add_constraint(t < pic.detrootn(Mw))
+        prob_D.set_objective('max',t)
+        
+        #solve and display
+        print prob_D
+        prob_D.solve(verbose=0)
+        print w
+
+.. testoutput::
+        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        
+        ---------------------
+        optimization problem  (ConeP):
+        29 variables, 1 affine constraints, 18 vars in 6 SO cones, 55 vars in 1 SD cones
+
+        t   : (1, 1), continuous
+        w   : (8, 1), continuous, nonnegative
+
+                maximize t
+        such that
+        〈 |1| | w 〉 < 1.0
+        det( Σ_i w[i]*A[i]*A[i].T)**1/5>t
+        ---------------------
+        [ ...]
+        [ ...]
+        [ 2.27e-01]
+        [ 3.38e-02]
+        [ 1.65e-02]
+        [ 5.44e-02]
+        [ 3.18e-01]
+        [ 3.51e-01]
+
+General Phi_p optimal design Problem: SDP
+=========================================
+
+The A- and D-optimal design problems presented above can be obtained as special cases of the general
+Kiefer :math:`\Phi_p-` optimal design problem, where :math:`p` is a real in :math:`(-\infty,1]` :
+
+.. math::
+   :nowrap:   
+
+   \begin{center}
+   \begin{eqnarray*}
+   &\underset{w \in \mathbb{R}^s}{\mbox{maximize}}
+                      &\quad \left( \frac{1}{m} \operatorname{trace}\ \big(\sum_{i=1}^s w_i A_i A_i^T \big)^p \right)^{1/p} \\
+   &\textrm{subject to} &\quad w\geq0,\ \sum_{i=1}^s w_i \leq 1.
+   \end{eqnarray*}
+   
+   \end{center}
+   
+These problems are easy to enter in PICOS, thanks to the :func:`tracepow() <picos.tools.tracepow>` function,
+that automatically replaces inequalities involving trace of matrix powers as a set of equivalent linear matrix
+inequalities (SDP) (cf. :ref:`[4] <optdes_refs>` ). Below are two examples with :math:`p=0.2` and :math:`p=-3`,
+allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and
+(24.8%, 16.6%, 10.8%, 14.1%, 7.84%, 26.0%) of the trials to the design points 3 to 8.
+
+.. testcode::
+        
+        #problems, variables and parameters
+        prob_0dot2  = pic.Problem()
+        probminus3 = pic.Problem()
+        AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
+        s=len(AA)
+        m=AA[0].size[0]
+        AA=pic.new_param('A',AA)
+        
+        w02 = prob_0dot2.add_variable('w',s,lower=0)
+        wm3 = probminus3.add_variable('w',s,lower=0)
+        
+        t02 = prob_0dot2.add_variable('t',1)
+        tm3 = probminus3.add_variable('t',1)
+        
+        
+        #constraint and objective
+        prob_0dot2.add_constraint(1|w02 < 1)
+        probminus3.add_constraint(1|wm3 < 1)
+        
+        Mw02 = pic.sum([w02[i]*AA[i]*AA[i].T for i in range(s)],'i')
+        prob_0dot2.add_constraint(t02 < pic.tracepow(Mw02,0.2))
+        prob_0dot2.set_objective('max',t02)
+        
+        Mwm3 = pic.sum([wm3[i]*AA[i]*AA[i].T for i in range(s)],'i')
+        probminus3.add_constraint(tm3 > pic.tracepow(Mwm3,-3))
+        probminus3.set_objective('min',tm3)
+        
+        #solve and display
+        prob_0dot2.solve(verbose=0)
+        probminus3.solve(verbose=0)
+        
+        print '*** p=0.2 ***'
+        print prob_0dot2
+        print w02
+        
+        print '*** p= -3 ***'
+        print probminus3
+        print wm3
+
+.. testoutput::
+        :options: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        
+        *** p=0.2 ***
+        ---------------------
+        optimization problem  (SDP):
+        54 variables, 2 affine constraints, 165 vars in 3 SD cones
+
+        t   : (1, 1), continuous
+        w   : (8, 1), continuous, nonnegative
+
+                maximize t
+        such that
+        〈 |1| | w 〉 < 1.0
+        trace( Σ_i w[i]*A[i]*A[i].T)**1/5>t
+        ---------------------
+        [ ...]
+        [ ...]
+        [ 2.06e-01]
+        [ ...]
+        [ ...]
+        [ 9.20e-03]
+        [ 4.08e-01]
+        [ 3.77e-01]
+
+        *** p= -3 ***
+        ---------------------
+        optimization problem  (SDP):
+        39 variables, 2 affine constraints, 110 vars in 2 SD cones
+
+        t   : (1, 1), continuous
+        w   : (8, 1), continuous, nonnegative
+
+                minimize t
+        such that
+        〈 |1| | w 〉 < 1.0
+        trace( Σ_i w[i]*A[i]*A[i].T)**-3<t
+        ---------------------
+        [ ...]
+        [ ...]
+        [ 2.48e-01]
+        [ 1.66e-01]
+        [ 1.08e-01]
+        [ 1.41e-01]
+        [ 7.83e-02]
+        [ 2.60e-01]
+
+        
 .. _optdes_refs:
 
 References
@@ -1092,5 +1252,15 @@ References
            *Journal of Statistical Planning and Inference*,
            141(5), p. *1684-1708*, 2011.
 
-        2. "`SOC-representability of the D-criterion of optimal experimental design`",
-           R. Harman and G. Sagnol, Draft.
+        2. "`Computing exact D-optimal designs by mixed integer second order cone
+           programming <http://arxiv.org/abs/1307.4953>`_", 
+           G. Sagnol and R. Harman, Submitted: arXiv:1307.4953.
+           
+        3. "`Determinant maximization with linear matrix inequality
+           constraints <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.38.7483&rep=rep1&type=pdf>`_",
+           L. Vandenberghe, S. Boyd and S.P. Wu, *SIAM journal on matrix analysis and applications*,
+           19(2), 499-533, 1998.
+           
+        4. "`On the semidefinite representations of real functions applied to symmetric
+           matrices <http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751>`_", G. Sagnol,
+           Submitted, ZIB Report 12-50, 2012.

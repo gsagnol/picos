@@ -31,3 +31,28 @@ v0.1.3, 17.04.13
      * Minor bugs corrected (access to the duals of fixed variables with CPLEX,
        evaluation of constant affine expressions with a zero coefficient appearing
        in the dict of linear terms, number of constraints is now updated in remove_constraint() )
+       
+v1.0.0, 19.07.13
+     * Semidefinite Programming Interface for MOSEK 7.0 !!!
+     * New options ``handleBarVars`` and ``handleConeVars`` to customize how SOCP and SDPs are passed to MOSEK
+       (When these options are set to ``True`` , PICOS tries to minimize the number of variables of the
+       MOSEK instance).
+     * The function dualize() returns the Lagrangian dual of a Problem.
+     * The option ``solve_via_dual`` allows the user to pass the dual
+       of a problem to a solver, instead of the primal problem itself. This can yield important speed-up for
+       certain problems.
+     * In addition to the geometric mean function picos.geomean(), it is now possible
+       to pass rational powers of affine expressions (through an overload of the ``**`` operator), trace of
+       matrix powers with picos.tracepow(), (generalized) p-norms
+       with picos.norm(), and nth root of a determinant with
+       picos.detrootn(). These functions automatically reformulate the entered inequalities
+       as a set of equivalent SOCP or SDP constraints.
+     * It is now possible to specify variable bounds directly (rather than adding constraints of the type ``x >= 0`` ).
+       This can be done with the Keywords ``lower`` and ``upper`` of the function add_variable() ,
+       or by the methods set_lower(), set_upper(), set_sparse_lower(), and set_sparse_upper() of the class Variable.
+     * It is now more efficient to update a Problem and resolve it. This is done thanks to the attribute ``passed``
+       of the classes Constraint and Variable ,
+       that stores which solvers are already aware of a constraint / variable. There is also an
+       attribute ``obj_passed`` of the class Problem that lists the solver instances
+       where the objective function has already been passed. The option ``onlyChangeObjective`` has been
+       deprecated.

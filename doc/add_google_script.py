@@ -1,4 +1,4 @@
-files = ['index.html','api.html','variable.html',
+files = ['index.html','api.html',
          'examples.html','constraint.html','expression.html',
          'intro.html','tools.html','problem.html',
          'download.html','graphs.html','tuto.html','optdes.html']

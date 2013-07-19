@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 0.1.4 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -58,7 +58,8 @@ __all__=['_retrieve_matrix',
         '_flatten',
         '_remove_in_lil',
         'norm',
-        '_read_sdpa'
+        '_read_sdpa',
+        'tracepow',
 ]
 
 
@@ -167,7 +168,7 @@ def geomean(exp):
         Note that geometric mean inequalities are internally reformulated as a
         set of SOC inequalities.
         
-        ** Example: **
+        ** Example:**
         
         >>> import picos as pic
         >>> prob = pic.Problem()
@@ -199,7 +200,7 @@ def norm(exp,num=2,denom=1):
         or directly by a float ``p`` given as second argument. In the latter case a rational
         approximation of ``p`` will be used.
         
-        **Examples: **
+        **Example:**
         
         >>> import picos as pic
         >>> prob = pic.Problem()
@@ -225,8 +226,67 @@ def norm(exp,num=2,denom=1):
         frac = Fraction(p).limit_denominator(1000)
         return NormP_Exp(exp,frac.numerator,frac.denominator)
         
+def tracepow(exp,num=1,denom=1):
+        """returns a :class:`TracePow_Exp <picos.TracePow_Exp>` object representing the trace of the pth-power of the symmetric matrix ``exp``.
+        This can be used to enter constraints of the form :math:`\operatorname{trace} X^p \leq t` with :math:`p\geq1` or :math:`p < 0`, or :math:`\operatorname{trace} X^p \geq t` with :math:`0 \leq p \leq 1`.
+        Note that :math:`X` is forced to be positive semidefinite when a constraint of this form is entered in PICOS.
+        Trace of power inequalities are internally reformulated as a set of Linear Matrix Inequalities (SDP),
+        or second order cone inequalities if ``exp`` is a scalar.
         
+        The exponent :math:`p` of the norm must be specified either by
+        a couple numerator (2d argument) / denominator (3d arguments),
+        or directly by a float ``p`` given as second argument. In the latter case a rational
+        approximation of ``p`` will be used.
         
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> X = prob.add_variable('X',(3,3),'symmetric')
+        >>> t = prob.add_variable('t',1)
+        >>> pic.tracepow(X,7,3) < t
+        # trace of pth power ineq : trace( X)**7/3<t#
+        >>> pic.tracepow(X,0.6) > t
+        # trace of pth power ineq : trace( X)**3/5>t#
+        
+        """
+        from .expression import AffinExp
+        from .expression import TracePow_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        if num == denom:
+                return exp
+        p = float(num)/float(denom)
+        if p==0:
+                raise Exception('undefined for p=0')
+        from fractions import Fraction
+        frac = Fraction(p).limit_denominator(1000)
+        return TracePow_Exp(exp,frac.numerator,frac.denominator)
+        
+def detrootn(exp):
+        """returns a :class:`DetRootN_Exp <picos.DetRootN_Exp>` object representing the determinant of the
+        :math:`n` th-root of the symmetric matrix ``exp``, where :math:`n` is the dimension of the matrix.
+        This can be used to enter constraints of the form :math:`(\operatorname{det} X)^{1/n} \geq t`.
+        Note that :math:`X` is forced to be positive semidefinite when a constraint of this form is entered in PICOS.
+        Determinant inequalities are internally reformulated as a set of Linear Matrix Inequalities (SDP).
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> X = prob.add_variable('X',(3,3),'symmetric')
+        >>> t = prob.add_variable('t',1)
+        >>> t < pic.detrootn(X)
+        # nth root of det ineq : det( X)**1/3>t#
+        
+        """
+        from .expression import AffinExp
+        from .expression import DetRootN_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return DetRootN_Exp(exp)
         
         
 def allIdent(lst):
@@ -873,28 +933,62 @@ def svecm1(vec,triu=False):
         return cvx.spmatrix(V,I,J,(n,n))
              
                 
-def ltrim1(vec):
+def ltrim1(vec,uptri = True):
+        """
+        If ``vec`` is a vector or an affine expression of size n(n+1)/2, ltrim1(vec) returns a (n,n) matrix with
+        the elements of vec in the lower triangle.
+        If ``uptri == False``, the upper triangle is 0, otherwise the upper triangle is the symmetric of the lower one.
+        """
         if vec.size[1]>1:
                 raise ValueError('should be a column vector')
+        from .expression import AffinExp
         v=vec.size[0]
         n=int(np.sqrt(1+8*v)-1)/2
         if n*(n+1)/2 != v:
                 raise ValueError('vec should be of dimension n(n+1)/2')
-        if not isinstance(vec,cvx.matrix):
-                vec=cvx.matrix(vec)
-        M = cvx.matrix(0.,(n,n))
-        r = 0
-        c = 0
-        for v in vec:
-                if r==n:
-                        c+=1
-                        r=c
-                M[r,c]=v
-                if r>c:
-                        M[c,r]=v
-                r+=1
+        if isinstance(vec,cvx.matrix) or isinstance(vec,cvx.spmatrix):
+                if not isinstance(vec,cvx.matrix):
+                        vec=cvx.matrix(vec)
+                M = cvx.matrix(0.,(n,n))
+                r = 0
+                c = 0
+                for v in vec:
+                        if r==n:
+                                c+=1
+                                r=c
+                        M[r,c]=v
+                        if r>c and uptri:
+                                M[c,r]=v
+                        r+=1
 
-        return M
+                return M
+        elif isinstance(vec,AffinExp):
+                I,J,V=[],[],[]
+                r = 0
+                c = 0
+                for i in range(v):
+                        if r==n:
+                                c+=1
+                                r=c
+                        I.append(r+n*c)
+                        J.append(i)
+                        V.append(1)
+                        if r>c and uptri:
+                                I.append(c+n*r)
+                                J.append(i)
+                                V.append(1)
+                        r+=1
+                H = cvx.spmatrix(V,I,J,(n**2,v))
+                Hvec = H*vec
+                newfacs = Hvec.factors
+                newcons = Hvec.constant
+                if uptri:
+                        return AffinExp(newfacs,newcons,(n,n),'ltrim1_sym('+vec.string+')')
+                else:
+                        return AffinExp(newfacs,newcons,(n,n),'ltrim1('+vec.string+')')
+        else:
+                raise Exception('expected a cvx vector or an affine expression')
+        
         
 def lowtri(exp):
         r"""
@@ -1241,7 +1335,7 @@ def _copy_dictexp_to_new_vars(dct,cvars):
         return D
 
 def _copy_exp_to_new_vars(exp,cvars):
-        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp,NormP_Exp
+        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp,NormP_Exp,TracePow_Exp,DetRootN_Exp
         import copy
         if isinstance(exp,Variable):
                 return cvars[exp.name]
@@ -1271,7 +1365,13 @@ def _copy_exp_to_new_vars(exp,cvars):
                 return GeoMeanExp(newexp)
         elif isinstance(exp,NormP_Exp):
                 newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
-                return NormP_Exp(newexp)
+                return NormP_Exp(newexp,exp.numerator,exp.denominator)
+        elif isinstance(exp,TracePow_Exp):
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                return TracePow_Exp(newexp,exp.numerator,exp.denominator)
+        elif isinstance(exp,DetRootN_Exp):
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                return DetRootN_Exp(newexp)
         elif exp is None:
                 return None
         else:
