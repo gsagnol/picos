@@ -632,7 +632,7 @@ Note that only inequalities defining a convex regions can be passed:
    # pth power ineq : ( t)**2/3>x[0]#
    >>> t**-0.5 < x[0]
    # pth power ineq : ( t)**-1/2<x[0]#
-   >>> t**-0.5 > x[0] #doctest: +NORMALIZE_WHITESPACE, ELLIPSIS
+   >>> t**-0.5 > x[0] #doctest: +NORMALIZE_WHITESPACE
    ...
    Exception: >= operator can be used only when the function is concave (0<p<=1)
    >>> t**2 < x[1]+x[2]   
