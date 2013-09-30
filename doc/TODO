@@ -1,4 +1,4 @@
-
+add new contributors
 solve_via_dual avec cvxopt -- something special to do (finir primalize())
 probleme qd solve problems 2 times in a row (test_cutting_plane.py avec mosek6, but only at zib (?))
 problem avec duals de gurobi pour probleme dsocp de test_picos.py (faire testSOCP5 ?). Bug gurobi -> min example ?
