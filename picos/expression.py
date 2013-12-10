@@ -29,6 +29,7 @@
 import cvxopt as cvx
 import numpy as np
 import sys
+from itertools import izip
 
 from .tools import *
 from .constraint import *
@@ -467,14 +468,30 @@ class AffinExp(Expression):
                                 fac,facString=_retrieve_matrix(fact,None)
                         else: #normal matrix multiplication, we expect a size        
                                 fac,facString=_retrieve_matrix(fact,self.size[1])
+                
+                #fast scalar mult
+                if fac.size==(1,1):
+                        alpha = fac[0]
+                        newfacs = {}
+                        for k,M in self.factors.iteritems():
+                                newfacs[k] = cvx.spmatrix(alpha * M.V,M.I,M.J,M.size)
+                        if self.constant is None:
+                                newcons = None
+                        else:
+                                newcons = alpha * self.cons
+                        sstring = self.affstring()
+                        if ('+' in sstring) or ('-' in sstring):
+                                sstring='( '+sstring+' )'
+                        return AffinExp(newfacs,newcons,self.size,facString+'*'+sstring)
+                        
                 selfcopy=self.copy()
                 
-                if fac.size==(1,1) and selfcopy.size[1]<>1:
-                        fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[1])
                 if self.size==(1,1) and fac.size[0]<>1:
                         oldstring=selfcopy.string
                         selfcopy=selfcopy.diag(fac.size[0])
                         selfcopy.string=oldstring
+                
+                
                 prod=(self.T.__rmul__(fac.T)).T
                 prod._size=(selfcopy.size[0],fac.size[1])
                 #the following removes 'I' from the string when a matrix is multiplied
@@ -722,53 +739,41 @@ class AffinExp(Expression):
                                 ss+=indexstr(sli.step)
                         return ss
                 
-                if isinstance(index,Expression):
-                        if index.__index__()==-1:#(-1,0) does not work
-                                index=slice(index,None,None)
+                if isinstance(index,Expression) or isinstance(index,int):
+                        ind = index.__index__()
+                        if ind==-1:#(-1,0) does not work
+                                index=slice(ind,None,None)
                         else:
-                                index=slice(index,index+1,None)                                
-                elif isinstance(index,int):
-                        if index==-1: #(-1,0) does not work
-                                index=slice(index,None,None)
-                        else:
-                                index=slice(index,index+1,None)
+                                index=slice(ind,ind+1,None)                                
                 if isinstance(index,slice):
                         idx=index.indices(self.size[0]*self.size[1])
                         rangeT=range(idx[0],idx[1],idx[2])
-                        newfacs={}
-                        for k in self.factors:
-                                newfacs[k]=self.factors[k][rangeT,:]
-                        if not self.constant is None:
-                                newcons=self.constant[rangeT]
-                        else:
-                                newcons=None
+                        #newfacs={}
+                        #for k in self.factors:
+                                #newfacs[k]=self.factors[k][rangeT,:]
+                        #if not self.constant is None:
+                                #newcons=self.constant[rangeT]
+                        #else:
+                                #newcons=None
                         newsize=(len(rangeT),1)
                         indstr=slicestr(index)
                 elif isinstance(index,tuple):
-                        if isinstance(index[0],Expression):
-                                if index[0].__index__()==-1:
-                                        index=(slice(index[0],None,None),index[1])
+                        if isinstance(index[0],Expression) or isinstance(index[0],int):
+                                ind = index[0].__index__()
+                                if ind==-1:
+                                        index=(slice(ind,None,None),index[1])
                                 else:
-                                        index=(slice(index[0],index[0]+1,None),index[1])
-                        elif isinstance(index[0],int):
-                                if index[0]==-1:
-                                        index=(slice(index[0],None,None),index[1])
+                                        index=(slice(ind,ind+1,None),index[1])
+                        if isinstance(index[1],Expression) or isinstance(index[1],int):
+                                ind = index[1].__index__()
+                                if ind==-1:
+                                        index=(index[0],slice(ind,None,None))
                                 else:
-                                        index=(slice(index[0],index[0]+1,None),index[1])
-                        if isinstance(index[1],Expression):
-                                if index[1].__index__()==-1:
-                                        index=(index[0],slice(index[1],None,None))
-                                else:
-                                        index=(index[0],slice(index[1],index[1]+1,None))
-                        elif isinstance(index[1],int):
-                                if index[1]==-1:
-                                        index=(index[0],slice(index[1],None,None))
-                                else:
-                                        index=(index[0],slice(index[1],index[1]+1,None))
+                                        index=(index[0],slice(ind,ind+1,None))
                         idx0=index[0].indices(self.size[0])
                         idx1=index[1].indices(self.size[1])
-                        rangei=range(idx0[0],idx0[1],idx0[2])
-                        rangej=range(idx1[0],idx1[1],idx1[2])
+                        rangei=xrange(idx0[0],idx0[1],idx0[2])
+                        rangej=xrange(idx1[0],idx1[1],idx1[2])
                         rangeT=[]
                         for j in rangej:
                                 rangei_translated=[]
@@ -776,15 +781,34 @@ class AffinExp(Expression):
                                         rangei_translated.append(
                                                 vi+(j*self.size[0]))
                                 rangeT.extend(rangei_translated)
-                        newfacs={}
-                        for k in self.factors:
-                                newfacs[k]=self.factors[k][rangeT,:]
-                        if not self.constant is None:       
-                                newcons=self.constant[rangeT]
-                        else:
-                                newcons=None
-                        newsize=(len(rangei),len(rangej))
+                        
+                        #newfacs={}
+                        #for k in self.factors:
+                                #newfacs[k]=self.factors[k][rangeT,:]
+                        #if not self.constant is None:       
+                                #newcons=self.constant[rangeT]
+                        #else:
+                                #newcons=None
+                        newsize=(len(range(*idx0)),len(range(*idx1)))
                         indstr=slicestr(index[0])+','+slicestr(index[1])
+                        
+                newfacs={}
+                for k in self.factors:
+                        Ridx,J,V = self.factors[k].T.CCS #fast row slicing
+                        II,VV,JJ = [],[],[]
+                        for l,i in enumerate(rangeT):
+                                idx = xrange(Ridx[i],Ridx[i+1])
+                                for j in idx:
+                                        II.append(l)
+                                        JJ.append(J[j])
+                                        VV.append(V[j])
+                        newfacs[k] = cvx.spmatrix(VV,II,JJ,(len(rangeT),self.factors[k].size[1]))
+                
+                if not self.constant is None:
+                        newcons=self.constant[rangeT]
+                else:
+                        newcons=None
+        
                 if ('*' in self.affstring()) or ('+' in self.affstring()) or (
                         '-' in self.affstring()) or ('/' in self.affstring()):
                         newstr='( '+self.string+' )['+indstr+']'
@@ -2250,7 +2274,6 @@ class Variable(AffinExp):
                  4: (0.0, None),
                  5: (0.0, None)}
                 """
-                from itertools import izip
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2336,7 +2359,6 @@ class Variable(AffinExp):
                 .. Warning:: This function does not modify the existing bounds on elements other
                              than those specified in ``indices``.
                 """
-                from itertools import izip
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2423,5 +2445,126 @@ class Variable(AffinExp):
                 * The problem involving the variable has been solved,
                   and the ``value`` attribute stores the optimal value
                   of this variable.
-             
         """
+        
+        def __getitem__(self,index):
+                """faster implementation of getitem for variable"""
+                if self.vtype=='symmetric':
+                        return AffinExp.__getitem__(self,index)
+                
+                def indexstr(idx):
+                        if isinstance(idx,int):
+                                return str(idx)
+                        elif isinstance(idx,Expression):
+                                return idx.string
+                def slicestr(sli):
+                        #single element
+                        if not (sli.start is None or sli.stop is None):
+                                sta=sli.start
+                                sto=sli.stop
+                                if isinstance(sta,int):
+                                        sta=new_param(str(sta),sta)
+                                if isinstance(sto,int):
+                                        sto=new_param(str(sto),sto)
+                                if (sto.__index__()==sta.__index__()+1):
+                                        return sta.string
+                        #single element -1 (Expression)
+                        if (isinstance(sli.start,Expression) and sli.start.__index__()==-1
+                           and sli.stop is None and sli.step is None):
+                                return sli.start.string
+                        #single element -1
+                        if (isinstance(sli.start,int) and sli.start==-1
+                           and sli.stop is None and sli.step is None):
+                                return '-1'
+                        ss=''
+                        if not sli.start is None:
+                                ss+=indexstr(sli.start)
+                        ss+=':'
+                        if not sli.stop is None:
+                                ss+=indexstr(sli.stop)
+                        if not sli.step is None:
+                                ss+=':'
+                                ss+=indexstr(sli.step)
+                        return ss
+                
+                if isinstance(index,Expression) or isinstance(index,int):
+                        ind = index.__index__()
+                        if ind<0:
+                                rangeT=[self.size[0]*self.size[1]+ind]
+                        else:
+                                rangeT=[ind]
+                        newsize=(1,1)
+                        indstr=indexstr(index)
+                elif isinstance(index,slice):
+                        idx=index.indices(self.size[0]*self.size[1])
+                        rangeT=range(idx[0],idx[1],idx[2])
+                        newsize=(len(rangeT),1)
+                        indstr=slicestr(index)
+                elif isinstance(index,tuple):
+                        #simple common cases for fast implementation
+                        if isinstance(index[0],int) and isinstance(index[1],int): #element
+                                ind0 = index[0]
+                                ind1 = index[1]
+                                if ind0<0: ind0 = self.size[0]+ind0
+                                if ind1<0: ind1 = self.size[1]+ind1
+                                rangeT=[ind1*self.size[0]+ind0]
+                                newsize=(1,1)
+                                indstr=indexstr(index[0])+','+indexstr(index[1])
+                        elif isinstance(index[0],int) and index[1]==slice(None,None,None): #row
+                                ind0 = index[0]
+                                if ind0<0: ind0 = self.size[0]+ind0
+                                rangeT=range(ind0,self.size[0]*self.size[1],self.size[0])
+                                newsize=(1,self.size[1])
+                                indstr=indexstr(index[0])+',:'
+                                
+                        elif isinstance(index[1],int) and index[0]==slice(None,None,None): #column
+                                ind1 = index[1]
+                                if ind1<0: ind1 = self.size[1]+ind1
+                                rangeT=range(ind1*self.size[0],(ind1+1)*self.size[0])
+                                newsize=(self.size[0],1)
+                                indstr=':,'+indexstr(index[1])
+                        else:
+                                if isinstance(index[0],Expression) or isinstance(index[0],int):
+                                        ind = index[0].__index__()
+                                        if ind==-1:
+                                                index=(slice(ind,None,None),index[1])
+                                        else:
+                                                index=(slice(ind,ind+1,None),index[1])
+                                if isinstance(index[1],Expression) or isinstance(index[1],int):
+                                        ind = index[1].__index__()
+                                        if ind==-1:
+                                                index=(index[0],slice(ind,None,None))
+                                        else:
+                                                index=(index[0],slice(ind,ind+1,None))
+                                idx0=index[0].indices(self.size[0])
+                                idx1=index[1].indices(self.size[1])
+                                rangei=xrange(idx0[0],idx0[1],idx0[2])
+                                rangej=xrange(idx1[0],idx1[1],idx1[2])
+                                rangeT=[]
+                                for j in rangej:
+                                        rangei_translated=[]
+                                        for vi in rangei:
+                                                rangei_translated.append(
+                                                        vi+(j*self.size[0]))
+                                        rangeT.extend(rangei_translated)
+                                
+                                newsize=(len(rangei),len(rangej))
+                                indstr=slicestr(index[0])+','+slicestr(index[1])
+                        
+                sz = self.size[0] * self.size[1]
+                nsz = len(rangeT)
+                newfacs={}
+                II = range(nsz)
+                JJ = rangeT
+                VV = [1.]*nsz
+                newfacs = {self:cvx.spmatrix(VV,II,JJ,(nsz,sz))}
+                if not self.constant is None:
+                        newcons=self.constant[rangeT]
+                else:
+                        newcons=None
+                newstr=self.string+'['+indstr+']'
+                #check size
+                if newsize[0] == 0 or newsize[1] == 0:
+                        raise IndexError('slice of zero-dimension')
+                return AffinExp(newfacs,newcons,newsize,newstr)
+             
