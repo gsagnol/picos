@@ -3195,7 +3195,8 @@ class Problem(object):
 
                 if not(self.is_continuous()) and self.options['hotstart']:
                         # Set status of all variables to unknown
-                        task.makesolutionstatusunknown(mosek.soltype.itg);
+                        if not version7:
+                                task.makesolutionstatusunknown(mosek.soltype.itg);
                         jj = []
                         sv = []
                         for kvar,variable in self.variables.iteritems():

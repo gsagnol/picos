@@ -478,7 +478,7 @@ class AffinExp(Expression):
                         if self.constant is None:
                                 newcons = None
                         else:
-                                newcons = alpha * self.cons
+                                newcons = alpha * self.constant
                         sstring = self.affstring()
                         if ('+' in sstring) or ('-' in sstring):
                                 sstring='( '+sstring+' )'
