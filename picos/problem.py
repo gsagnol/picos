@@ -1136,6 +1136,9 @@ class Problem(object):
                 ---------------------
 
                 """
+                if not(lst):
+                        return
+                
                 firstCons=self.countCons
                 thisconsnums = []
                 for ks in lst:
