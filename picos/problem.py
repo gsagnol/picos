@@ -6464,11 +6464,11 @@ class Problem(object):
                 real = Problem()
                 cvars={}
                 for (iv,v) in sorted([(v.startIndex,v) for v in self.variables.values()]):
-                        if v.vtype == hermitian:
+                        if v.vtype == 'hermitian':
                                 cvars[v.name]=real.add_variable(v.name+'_real',(2*v.size[0],2*v.size[1]),'symmetric')
                         else:
                                 cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
-                #TODO here in fact, call a modified version of 'copy' that calls  _cplx_mat_to_real_mat
+                
                 for c in self.constraints:
                         """old version doesnt handle conevars and bounded vars
                         c2=copy.deepcopy(c)
@@ -6482,15 +6482,15 @@ class Problem(object):
                         E2=_copy_exp_to_new_vars(c.Exp2,cvars)
                         E3=_copy_exp_to_new_vars(c.Exp3,cvars)
                         c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
-                        cop.add_constraint(c2,c.key)
-                obj=_copy_exp_to_new_vars(self.objective[1],cvars)
-                cop.set_objective(self.objective[0],obj)
+                        real.add_constraint(c2,c.key)
+                obj=_copy_exp_to_new_vars(self.objective[1],cvars)#problem:_because of constant? _or cons TT(X)>>0 special?
+                real.set_objective(self.objective[0],obj)
                 
-                cop.consNumbering=copy.deepcopy(self.consNumbering)
-                cop.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
-                cop._options=_NonWritableDict(self.options)
+                real.consNumbering=copy.deepcopy(self.consNumbering)
+                real.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
+                real._options=_NonWritableDict(self.options)
                 
-                return cop
+                return real
                 
                 
         def dualize(self):

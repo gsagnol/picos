@@ -1355,7 +1355,10 @@ def _copy_dictexp_to_new_vars(dct,cvars):
                 if isinstance(var,tuple):#quad
                         D[cvars[var[0].name],cvars[var[1].name]] = copy.copy(value)
                 else:
-                        D[cvars[var.name]] = copy.copy(value)
+                        if var.vtype == 'hermitian' and value.size[1] == var.size[0] * var.size[1]:
+                                D[cvars[var.name]] = _cplx_mat_to_real_mat(value)
+                        else:
+                                D[cvars[var.name]] = copy.copy(value)
         return D
 
 def _copy_exp_to_new_vars(exp,cvars):
