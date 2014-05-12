@@ -439,7 +439,7 @@ class Problem(object):
                         if optimalvar:
                                 self.number_solutions=max(self.number_solutions,1)
                 else:
-                        if self.variables[name].vtype=='symmetric':
+                        if self.variables[name].vtype in ('symmetric','hermitian'):
                                 valuemat=svec(valuemat)        
                         self.variables[name].value_alt[ind]=valuemat
                         if optimalvar:
@@ -807,6 +807,8 @@ class Problem(object):
                                 
                                 * ``'symmetric'``: symmetric matrix
                                 
+                                * ``'hermitian'``: complex hermitian matrix
+                                
                                 * ``'semicont'``: 0 or continuous variable satisfying its bounds
                                 
                                 * ``'semiint'``: 0 or integer variable satisfying its bounds
@@ -857,7 +859,7 @@ class Problem(object):
                 countvar=self.countVar
                 numbervar=self.numberOfVars
                 
-                if vtype=='symmetric':
+                if vtype in ('symmetric','hermitian'):
                         if size[0]!=size[1]:
                                 raise ValueError('symmetric variables must be square')
                         s0=size[0]
@@ -922,7 +924,7 @@ class Problem(object):
                 for nam in self.varNames:
                         var = self.variables[nam]
                         var._startIndex=ind
-                        if var.vtype=='symmetric':
+                        if var.vtype in ('symmetric','hermitian'):
                                 ind+=int((var.size[0]*(var.size[0]+1))/2)
                         else:
                                 ind+=var.size[0]*var.size[1]
@@ -2100,7 +2102,7 @@ class Problem(object):
         def is_continuous(self):
                 """ Returns ``True`` if there are only continuous variables"""
                 for kvar in self.variables.keys():
-                        if self.variables[kvar].vtype not in ['continuous','symmetric']:
+                        if self.variables[kvar].vtype not in ['continuous','symmetric','hermitian']:
                                 return False
                 return True
                 
@@ -3993,6 +3995,17 @@ class Problem(object):
                 if isinstance(self.objective[1],GeneralFun):
                         return self._sqpsolve(options)
                 
+                #transform the problem in case of a complex SDP
+                if (self.numberSDPConstraints>0 and (
+                        'hermitian' in [x.vtype for x in self.variables.values()]) #TODO or a complex mat factor in a semidef cons
+                    ):
+                        if self.options['verbose']>0:
+                                print '*** Making the problem real...  ***'
+                        realP = self.to_real()
+                        pass#TODO
+                
+                
+                #do we pass the primal or the dual to the solver ?
                 solve_via_dual = self.options['solve_via_dual']
                 if solve_via_dual is None:
                         if (self.numberSDPConstraints>0 and
@@ -4002,6 +4015,7 @@ class Problem(object):
                         else:
                                 solve_via_dual = False
                                 
+                #solve the dual problem instead
                 if solve_via_dual:
                         converted = False
                         raiseexp = False
@@ -4053,12 +4067,12 @@ class Problem(object):
                                                         if i<end:
                                                                 varvect.append(x)
                                                         else:
-                                                                if var.vtype=='symmetric':
+                                                                if var.vtype in ('symmetric','hermitian'):
                                                                         varvect=svecm1(cvx.matrix(varvect))
                                                                 primals[var.name]=cvx.matrix(varvect,var.size)
                                                                 varvect = [x]
                                                                 (start,end,var) = indices.pop()
-                                                if var.vtype=='symmetric':
+                                                if var.vtype in ('symmetric','hermitian'):
                                                         varvect=svecm1(cvx.matrix(varvect))
                                                 primals[var.name]=cvx.matrix(varvect,var.size)
                                 
@@ -4356,7 +4370,7 @@ class Problem(object):
                                         si=var.startIndex
                                         ei=var.endIndex
                                         varvect=sol['x'][si:ei]
-                                        if var.vtype=='symmetric':
+                                        if var.vtype in ('symmetric','hermitian'):
                                                 varvect=svecm1(varvect) #varvect was the svec
                                                                         #representation of X
                                         
@@ -4670,7 +4684,7 @@ class Problem(object):
                                                 name = var.name + '_' + str(i)
                                                 value.append(c.solution.get_values(name))
                                         
-                                        if var.vtype=='symmetric':
+                                        if var.vtype in ('symmetric','hermitian'):
                                                 value=svecm1(cvx.matrix(value)) #varvect was the svec
                                                                                 #representation of X
                                         primals[var.name] = cvx.matrix(value,var.size)
@@ -4683,7 +4697,7 @@ class Problem(object):
                                                         for i in range(sz_var):
                                                                 name = var.name + '_' + str(i)
                                                                 value.append(c.solution.pool.get_values(ind,name))
-                                                        if var.vtype=='symmetric':
+                                                        if var.vtype in ('symmetric','hermitian'):
                                                                 value=svecm1(cvx.matrix(value)) #varvect was the svec
                                                                                                 #representation of X
                                                         primals[(ii,var.name)] = cvx.matrix(value,var.size)
@@ -5016,7 +5030,7 @@ class Problem(object):
                                                 name = var.name + '_' + str(i)
                                                 xi=m.getVarByName(name)
                                                 value.append(xi.X)
-                                        if var.vtype=='symmetric':
+                                        if var.vtype in ('symmetric','hermitian'):
                                                 value=svecm1(cvx.matrix(value)) #value was the svec
                                                                                 #representation of X
                                                                                     
@@ -5368,7 +5382,7 @@ class Problem(object):
                                                 scaledx = [(j,v) for (j,v) in self.msk_scaledcols.iteritems() if j>=si and j<ei]
                                                 for (j,v) in scaledx: #do the change of variable the other way around.
                                                         xx[j-si]/=v
-                                                if var.vtype=='symmetric':
+                                                if var.vtype in ('symmetric','hermitian'):
                                                         xx=svecm1(cvx.matrix(xx))
                                                 primals[var.name]=cvx.matrix(xx,var.size)
                                 
@@ -5382,7 +5396,7 @@ class Problem(object):
                                         si=self.variables[var].startIndex
                                         ei=self.variables[var].endIndex
                                         varvect=xx[si:ei]
-                                        if self.variables[var].vtype=='symmetric':
+                                        if self.variables[var].vtype in ('symmetric','hermitian'):
                                                 varvect=svecm1(cvx.matrix(varvect)) #varvect was the svec
                                                                                 #representation of X
                                         primals[var]=cvx.matrix(varvect, self.variables[var].size)
@@ -5637,7 +5651,7 @@ class Problem(object):
                                         ei=self.variables[var].endIndex
                                         varvect=self.scip_vars[si:ei]
                                         value = [val[v] for v in varvect]
-                                        if self.variables[var].vtype=='symmetric':
+                                        if self.variables[var].vtype in ('symmetric','hermitian'):
                                                 value=svecm1(cvx.matrix(value)) #value was the svec
                                                                                     #representation of X
                                         primals[var]=cvx.matrix(value,
@@ -5748,7 +5762,7 @@ class Problem(object):
                 
         def what_type(self):
                 
-                iv= [v for v in self.variables.values() if v.vtype not in ('continuous','symmetric') ]
+                iv= [v for v in self.variables.values() if v.vtype not in ('continuous','symmetric','hermitian') ]
                 #continuous problem
                 if len(iv)==0:
                         #general convex
@@ -6441,7 +6455,44 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print 'done.'
                                 
-                            
+        def to_real(self):
+                """
+                Returns an equivalent problem,
+                where the n x n- hermitian matrices have been replaced by 
+                symmetric matrices of size 2n x 2n.
+                """
+                real = Problem()
+                cvars={}
+                for (iv,v) in sorted([(v.startIndex,v) for v in self.variables.values()]):
+                        if v.vtype == hermitian:
+                                cvars[v.name]=real.add_variable(v.name+'_real',(2*v.size[0],2*v.size[1]),'symmetric')
+                        else:
+                                cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
+                #TODO here in fact, call a modified version of 'copy' that calls  _cplx_mat_to_real_mat
+                for c in self.constraints:
+                        """old version doesnt handle conevars and bounded vars
+                        c2=copy.deepcopy(c)
+                        c2.Exp1=_copy_exp_to_new_vars(c2.Exp1,cvars)
+                        c2.Exp2=_copy_exp_to_new_vars(c2.Exp2,cvars)
+                        c2.Exp3=_copy_exp_to_new_vars(c2.Exp3,cvars)
+                        if c.semidefVar:
+                                c2.semidefVar = cvars[c.semidefVar.name]
+                        """
+                        E1=_copy_exp_to_new_vars(c.Exp1,cvars)
+                        E2=_copy_exp_to_new_vars(c.Exp2,cvars)
+                        E3=_copy_exp_to_new_vars(c.Exp3,cvars)
+                        c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
+                        cop.add_constraint(c2,c.key)
+                obj=_copy_exp_to_new_vars(self.objective[1],cvars)
+                cop.set_objective(self.objective[0],obj)
+                
+                cop.consNumbering=copy.deepcopy(self.consNumbering)
+                cop.groupsOfConstraints=copy.deepcopy(self.groupsOfConstraints)
+                cop._options=_NonWritableDict(self.options)
+                
+                return cop
+                
+                
         def dualize(self):
                 """
                 Returns a Problem containing the Lagrangian dual of the current problem ``self``.

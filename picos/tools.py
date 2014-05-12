@@ -60,6 +60,7 @@ __all__=['_retrieve_matrix',
         'norm',
         '_read_sdpa',
         'tracepow',
+        '_cplx_mat_to_real_mat'        
 ]
 
 
@@ -682,30 +683,48 @@ def _retrieve_matrix(mat,exSize=None):
                 else:
                         retmat=cvx.matrix(mat.value)
         elif isinstance(mat,np.ndarray):
-                retmat=cvx.matrix(mat,tc='d')
+                if any(np.iscomplex(mat)):
+                        retmat=cvx.matrix(mat,tc='z')
+                else:
+                        retmat=cvx.matrix(mat,tc='d')
         elif isinstance(mat,cvx.base.matrix):
                 if mat.typecode=='d':
+                        retmat=mat
+                elif mat.typecode=='z':
                         retmat=mat
                 else:
                         retmat=cvx.matrix(mat,tc='d')
         elif isinstance(mat,cvx.base.spmatrix):
                 retmat=mat
         elif isinstance(mat,list):
-                if (isinstance(exSize,tuple)
+                if any([isinstance(v,complex) for v in mat]):
+                        tc = 'z'
+                else:
+                        tc = 'd'
+                if (isinstance(exSize,tuple) #it matches the expected size
                     and len(exSize)==2 
                     and not(exSize[0] is None)
                     and not(exSize[1] is None)
                     and len(mat)==exSize[0]*exSize[1]):
-                        retmat=cvx.matrix(np.array(mat),exSize,tc='d')
+                        retmat=cvx.matrix(np.array(mat),exSize,tc=tc)
+                else:                        #no possible match
+                        retmat=cvx.matrix(np.array(mat),tc=tc)
+        elif (isinstance(mat,float) or isinstance(mat,int) or isinstance(mat,np.float64) or
+              isinstance(mat,np.int64) or isinstance(mat,np.complex128) or isinstance(mat,complex)):
+                if 'complex' in str(type(mat)):
+                        mat=complex(mat)
+                        if mat.imag:
+                                tc='z'
+                        else:
+                                mat = mat.real
+                                tc='d'
                 else:
-                        retmat=cvx.matrix(np.array(mat),tc='d')
-        elif (isinstance(mat,float) or isinstance(mat,int) or isinstance(mat,np.float64) ):
-                if isinstance(mat,np.float64):
                         mat=float(mat)
-                if mat==0:
+                        tc='d'
+                if not mat:# ==0
                         if exSize is None:
                                 #no exSize-> scalar
-                                retmat=cvx.matrix(0,(1,1))
+                                retmat=cvx.matrix(0.,(1,1))
                         elif isinstance(exSize,int):
                                 #exSize is an int -> 0 * identity matrix
                                 retmat=cvx.spmatrix([],[],[], (exSize,exSize) )
@@ -716,7 +735,7 @@ def _retrieve_matrix(mat,exSize=None):
                 else:
                         if exSize is None:
                                 #no exSize-> scalar
-                                retmat=cvx.matrix(mat,(1,1))
+                                retmat=cvx.matrix(mat,(1,1),tc=tc)
                         elif isinstance(exSize,int):
                                 #exSize is an int -> alpha * identity matrix
                                 retmat=mat*cvx.spdiag([1.]*exSize)
@@ -752,7 +771,12 @@ def _retrieve_matrix(mat,exSize=None):
                         i2=mat.find('|',i1+1)
                         if i2<0:
                                 raise Exception('There should be a 2d bar')
-                        fact=float(mat[i1+1:i2])
+                        if 'j' in mat[i1+1:i2]:
+                                fact = complex(mat[i1+1:i2])
+                                if not fact.imag:
+                                        fact = fact.real
+                        else:
+                                fact=float(mat[i1+1:i2])
                         i1=mat.find('(')
                         if i1>=0:
                                 i2=mat.find(')')
@@ -852,7 +876,7 @@ def _retrieve_matrix(mat,exSize=None):
         elif retmat.size==(1,1):
                 retstr=str(retmat[0])
         elif (len(retmat.V) == retmat.size[0]*retmat.size[1]) and (
-              max(retmat.V)==min(retmat.V)): #|alpha|
+              all([v==retmat.V[0] for v in retmat.V])): #|alpha|
                 if retmat[0]==0:
                         retstr='|0|'
                 elif retmat[0]==1:
@@ -1068,7 +1092,7 @@ def _svecm1_identity(vtype,size):
         row wise svec-1 transformation of the
         identity matrix of size size[0]*size[1]
         """
-        if vtype=='symmetric':
+        if vtype in ('symmetric','hermitian'):
                 s0=size[0]
                 if size[1]!=s0:
                         raise ValueError('should be square')
@@ -1132,7 +1156,7 @@ def new_param(name,value):
         """
         from .expression import AffinExp
         if isinstance(value,list):
-                if all([isinstance(x,int) or isinstance(x,float) for x in value]):
+                if all([isinstance(x,int) or isinstance(x,float) or isinstance(x,complex) for x in value]):
                         #list with numeric data
                         term,termString=_retrieve_matrix(value,None)
                         return AffinExp({},constant=term[:],size=term.size,string=name)
@@ -1375,39 +1399,21 @@ def _copy_exp_to_new_vars(exp,cvars):
         elif exp is None:
                 return None
         else:
-                raise Exception('unknown type of expression')          
-        
-def _copy_exp_to_new_vars_old(exp,cvars):#TOREM
-        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun
-        import copy
-        ex2=copy.deepcopy(exp)
-        if isinstance(exp,Variable):
-                return cvars[exp.name]
-        if isinstance(exp,AffinExp):
-                for f in ex2.factors.keys():
-                        mat=ex2.factors[f]
-                        ex2.factors[cvars[f.name]]=mat
-                        del ex2.factors[f]
-                return ex2
-        elif isinstance(exp,Norm):
-                ex2.exp=_copy_exp_to_new_vars(ex2.exp,cvars)
-                return ex2
-        elif isinstance(exp,LogSumExp) or isinstance (exp,GeneralFun):
-                ex2.Exp=_copy_exp_to_new_vars(ex2.Exp,cvars)
-                return ex2
-        elif isinstance(exp,QuadExp): 
-                ex2.aff=_copy_exp_to_new_vars(ex2.aff,cvars)
-                for (f,g) in ex2.quad.keys():
-                        mat=ex2.quad[(f,g)]
-                        ex2.quad[(cvars[f.name],cvars[g.name])]=mat
-                        del ex2.quad[(f,g)]
-                return ex2
-        elif exp is None:
-                return None
-        else:
                 raise Exception('unknown type of expression')
-                
-                
+
+def _cplx_mat_to_real_mat(M):
+        """
+        if M = A +iB,
+        return the block matrix [A,-B;B,A]
+        """
+        if not( isinstance(M,cvx.base.spmatrix) or isinstance(M,cvx.base.matrix)):
+                raise NameError('unexpected matrix type')
+        
+        A = M.real()
+        B = M.imag()
+        return cvx.sparse([[A,B],[-B,A]])
+        
+        
 def _read_sdpa(filename):
                 """TODO, remove dependence; currently relies on smcp sdpa_read
                 cone constraints ||x||<t are recognized if they have the arrow form [t,x';x,t*I]>>0

@@ -2120,7 +2120,7 @@ class Variable(AffinExp):
                 """end position in the global vector of all variables"""
                 
                 
-                if vtype=='symmetric':
+                if vtype in ('symmetric','hermitian'):
                         self._endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
                 else:
                         self._endIndex=startIndex+size[0]*size[1] #end position +1
@@ -2184,6 +2184,7 @@ class Variable(AffinExp):
                      * 'binary'     (binary 0/1 variable)
                      * 'integer'    (integer variable)
                      * 'symmetric'  (symmetric matrix variable)
+                     * 'hermitian'  (complex hermitian matrix variable)
                      * 'semicont'   (semicontinuous variable 
                                     [can take the value 0 or any 
                                     other admissible value])
@@ -2195,11 +2196,11 @@ class Variable(AffinExp):
          
         @vtype.setter
         def vtype(self, value):
-                if not(value in ['symmetric','continuous','binary','integer','semicont','semiint']):
+                if not(value in ['symmetric','hermitian','continuous','binary','integer','semicont','semiint']):
                         raise ValueError('unknown variable type')
-                if self._vtype <> 'symmetric' and value == 'symmetric':
+                if self._vtype not in ('symmetric','hermitian') and value in ('symmetric','hermitian'):
                         raise Exception('change to symmetric is forbiden because of sym-vectorization')
-                if self._vtype == 'symmetric' and value <> 'symmetric':
+                if self._vtype in ('symmetric','hermitian') and value not  in ('symmetric','hermitian'):
                         raise Exception('change from symmetric is forbiden because of sym-vectorization')
                 self._vtype = value
                 
@@ -2222,7 +2223,7 @@ class Variable(AffinExp):
                 Entries smaller than -INFINITY = -1e16 are ignored
                 """
                 lowexp = _retrieve_matrix(lo,self.size)[0]
-                if self.vtype=='symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         lowexp = svec(lowexp)
                 for i in range(lowexp.size[0] * lowexp.size[1]):
                         li = lowexp[i]
@@ -2281,7 +2282,7 @@ class Variable(AffinExp):
                 for idx,lo in izip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
-                        if self.vtype == 'symmetric':
+                        if self.vtype in ('symmetric','hermitian'):
                                 (i,j) = idx
                                 if i>j:
                                         ii.append(i)
@@ -2298,7 +2299,7 @@ class Variable(AffinExp):
                         jj.append(idx[1])
                         vv.append(lo)
                 spLO = cvx.spmatrix(vv,ii,jj,self.size)
-                if self.vtype == 'symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         spLO = svec(spLO)
                 for i,j,v in izip(spLO.I,spLO.J,spLO.V):
                         ii = s0*j + i
@@ -2321,7 +2322,7 @@ class Variable(AffinExp):
                 Entries larger than INFINITY = 1e16 are ignored
                 """
                 upexp = _retrieve_matrix(up,self.size)[0]
-                if self.vtype=='symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         upexp = svec(upexp)
                 for i in range(upexp.size[0] * upexp.size[1]):
                         ui = upexp[i]
@@ -2366,7 +2367,7 @@ class Variable(AffinExp):
                 for idx,up in izip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
-                        if self.vtype == 'symmetric':
+                        if self.vtype in ('symmetric','hermitian'):
                                 (i,j) = idx
                                 if i>j:
                                         ii.append(i)
@@ -2384,7 +2385,7 @@ class Variable(AffinExp):
                                 jj.append(idx[1])
                                 vv.append(up)
                 spUP = cvx.spmatrix(vv,ii,jj,self.size)
-                if self.vtype == 'symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         spUP = svec(spUP)
                 for i,j,v in izip(spUP.I,spUP.J,spUP.V):
                         ii = s0*j + i
@@ -2404,13 +2405,13 @@ class Variable(AffinExp):
                         if self._value is None:
                                 raise Exception(self.name+' is not valued')
                         else:
-                                if self.vtype=='symmetric':
+                                if self.vtype in ('symmetric','hermitian'):
                                         return cvx.matrix(svecm1(self._value))
                                 else:
                                         return cvx.matrix(self._value)
                 else:
                         if ind in self.value_alt:
-                                if self.vtype=='symmetric':
+                                if self.vtype in ('symmetric','hermitian'):
                                         return cvx.matrix(svecm1(self.value_alt[ind]))
                                 else:
                                         return cvx.matrix(self.value_alt[ind])
@@ -2422,7 +2423,7 @@ class Variable(AffinExp):
                 valuemat,valueString = _retrieve_matrix(value,self.size)
                 if valuemat.size != self.size:
                         raise Exception('should be of size {0}'.format(self.size))
-                if self.vtype == 'symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         valuemat=svec(valuemat)
                 self._value = valuemat
 
@@ -2449,7 +2450,7 @@ class Variable(AffinExp):
         
         def __getitem__(self,index):
                 """faster implementation of getitem for variable"""
-                if self.vtype=='symmetric':
+                if self.vtype in ('symmetric','hermitian'):
                         return AffinExp.__getitem__(self,index)
                 
                 def indexstr(idx):
