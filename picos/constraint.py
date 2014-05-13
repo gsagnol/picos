@@ -323,7 +323,19 @@ class _Convex_Constraint(Constraint):
            
         def __repr__(self):
                 return '# '+self.constypestr+' : ' + self.constring() + '#'   
-           
+
+class _Flow_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass a flow constraint.
+        This class derives from :class:`Constraint <picos.Constraint>`.
+        """
+        def __init__(self,G, Ptmp,constring):
+					self.graph = G
+					_Convex_Constraint.__init__(self,Ptmp,constring,'flow constraint')
+					self.prefix='_flow'
+					"""prefix to be added to the names of the temporary variables when add_constraint() is called"""   
+        def draw(self):
+					from .tools import drawGraph
+					drawGraph(self.graph)
            
 class GeoMeanConstraint(_Convex_Constraint):
         """ A temporary object used to pass geometric mean inequalities.

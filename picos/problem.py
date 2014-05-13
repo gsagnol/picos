@@ -826,8 +826,9 @@ class Problem(object):
                               :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`.
                 
                 :returns: An instance of the class :class:`Variable <picos.Variable>`.
-                #TODOC tutorial examples with bounds and sparse bounds
                 """
+                
+                #TODOC tutorial examples with bounds and sparse bounds
 
                 if name in self.variables:
                         raise Exception('this variable already exists')
@@ -1196,8 +1197,8 @@ class Problem(object):
                         del self.groupsOfConstraints[goc]
                 if ret:
                         return lst
-         
 
+        
         def get_valued_variable(self,name):
                 """
                 Returns the value of the variable (as an :func:`cvxopt matrix <cvxopt:cvxopt.matrix>`)

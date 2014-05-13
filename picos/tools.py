@@ -29,6 +29,8 @@
 import cvxopt as cvx
 import numpy as np
 import sys, os
+import matplotlib.pyplot as plt
+import networkx as nx
 
 __all__=['_retrieve_matrix',
         '_svecm1_identity',
@@ -1498,6 +1500,66 @@ def _read_sdpa(filename):
                 #objective
                 P.set_objective('min',bb.T*x)
                 return P      
+
+
+def flow_Constraint(G, f=[], capacity='capacity', flowValue = 1, graphName='', S='S', T='T'):
+	"""Returns an object of class _Flow_Constraint."""
+	# checking that we have the good number of variables
+	if len(f)!=len(G.edges()):
+		print 'Error: The number of variables does not match with the number of edges.'
+		return False
+
+	from .problem import Problem
+	Ptmp = Problem()
+
+	# Adding Edge capacities
+	cap = [ed[2][capacity] for ed in G.edges(data=True)]
+
+	c={}
+	for i,e in enumerate(G.edges()):
+		c[e]=cap[i]
+	
+
+	# Generates the flow
+	#f={}
+	#for e in G.edges():
+	#	f[e]=self.add_variable('f[{0}]'.format(e),1)
+
+	cc=new_param('c',c)
+
+	# Adding the capacity constraint
+	Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
+
+	# Adding the flow conservation
+	Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if i!=T and i!=S], 'i','nodes-(s,t)')
+
+	# Define the flow Value
+	#Ptmp.add_list_of_constraints([sum([f[i,j] for j in G.successors(i)],'j','succ1(i)')==flowValue for i in G.nodes() if i==S or i==T], 'i','flow Value='+str(flowValue))
+	
+ 	# Source flow at S
+	Ptmp.add_constraint(sum([f[p,S] for p in G.predecessors(S)],'p','pred(s)') + flowValue == sum([f[S,j] for j in G.successors(S)],'j','succ(s)'))
+
+
+	# Sink flow at T
+	Ptmp.add_constraint(sum([f[p,T] for p in G.predecessors(T)],'p','pred(t)') == sum([f[T,j] for j in G.successors(T)],'j','succ(t)') + flowValue)
+
+	# nonnegativity of the flows
+	Ptmp.add_list_of_constraints([f[e]>0 for e in G.edges()], [('e',2)], 'edges')
+
+	from .constraint import _Flow_Constraint
+	if graphName=='':
+		comment = "Flow conservation"
+	else:
+		comment = "Flow conservation on "+str(graphName)
+	return _Flow_Constraint(G, Ptmp,comment)
+
+def drawGraph(G, capacity='capacity'):
+	""""Draw a given Graph"""
+	pos=nx.spring_layout(G)
+	edge_labels=dict([((u,v,),d[capacity]) for u,v,d in G.edges(data=True)])
+	nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+	nx.draw(G,pos)
+	plt.show()
 
 
 

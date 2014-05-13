@@ -31,3 +31,6 @@ from constraint import *
 from tools import sum,lse,new_param,diag,diag_vect,geomean,norm,tracepow,detrootn,QuadAsSocpError,NotAppropriateSolverError,NonConvexError
 
 __all__=['tools','constraint','expression','problem']
+
+__version_info__ = ('1', '0', '1')
+__version__ = '.'.join(__version_info__)
