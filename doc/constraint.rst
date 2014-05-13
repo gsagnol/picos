@@ -18,6 +18,9 @@ Constraint
 .. autoclass:: picos.TracePow_Constraint
     :members:
     :inherited-members: slack
+
+.. autoclass:: picos.Flow_Constraint
+    :members:
     
 .. autoclass:: picos.DetRootN_Constraint
     :members:

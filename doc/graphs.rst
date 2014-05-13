@@ -28,9 +28,13 @@ the output. We also use a kind of arbitrary sequence for the edge capacities.
         G=nx.DiGraph(G) #edges are bidirected
 
         #generate edge capacities
+        i=0
         c={}
-        for i,e in enumerate(G.edges()):
-                c[e]=((-2)**i)%17 #an arbitrary sequence of numbers
+        for e in G.edges(data=True):
+	           val = ((-2)**i)%17
+			     e[2]['capacity'] = val
+           	  c[(e[0], e[1])] = val
+ 	           i=i+1
 
 
 Max-flow, Min-cut (LP)
@@ -141,6 +145,49 @@ we solve below for ``s=16`` and ``t=10``:
         f[e] > 0 for all e in edges
         ---------------------
         The optimal flow has value 15.0
+
+
+A equivalent and faster way to solve this problem is to use the flow_Constraint Class:
+
+.. testcode::
+        maxflow=pic.Problem()
+        # Flow variable
+        f={}
+        for e in G.edges():
+                f[e]=maxflow.add_variable('f[{0}]'.format(e),1)
+
+        # Flow value
+        F=maxflow.add_variable('F',1)
+
+        # Creating a flow Constraint
+	flowCons = pic.tools.flow_Constraint(G, f, flowValue = F, graphName='G', S=16, T=10)
+	maxflow.addConstraint(flowCons)
+
+	# Objective
+	maxflow.set_objective('max',F)
+
+	# Solve the problem
+	maxflow.solve(verbose=0)
+
+	print maxflow
+	print 'The optimal flow has value {0}'.format(F)
+
+.. testoutput::
+	:options: +NORMALIZE_WHITESPACE
+        
+	---------------------
+	optimization problem  (LP):
+	61 variables, 140 affine constraints
+
+	f 	: dict of 60 variables, (1, 1), continuous
+	F 	: (1, 1), continuous
+
+		maximize F
+	such that
+	  Flow conservation on G
+	---------------------
+	The optimal flow has value 15.0
+
 
 Let us now draw the maximum flow:
 
