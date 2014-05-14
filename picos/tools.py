@@ -1364,7 +1364,7 @@ def _copy_dictexp_to_new_vars(dct,cvars):
         return D
 
 def _copy_exp_to_new_vars(exp,cvars):
-        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp,NormP_Exp,TracePow_Exp,DetRootN_Exp
+        from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp, NormP_Exp,TracePow_Exp,DetRootN_Exp
         import copy
         if isinstance(exp,Variable):
                 return cvars[exp.name]

@@ -6471,20 +6471,17 @@ class Problem(object):
                                 cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
                 
                 for c in self.constraints:
-                        """old version doesnt handle conevars and bounded vars
-                        c2=copy.deepcopy(c)
-                        c2.Exp1=_copy_exp_to_new_vars(c2.Exp1,cvars)
-                        c2.Exp2=_copy_exp_to_new_vars(c2.Exp2,cvars)
-                        c2.Exp3=_copy_exp_to_new_vars(c2.Exp3,cvars)
-                        if c.semidefVar:
-                                c2.semidefVar = cvars[c.semidefVar.name]
-                        """
-                        E1=_copy_exp_to_new_vars(c.Exp1,cvars)
-                        E2=_copy_exp_to_new_vars(c.Exp2,cvars)
-                        E3=_copy_exp_to_new_vars(c.Exp3,cvars)
-                        c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
-                        real.add_constraint(c2,c.key)
-                obj=_copy_exp_to_new_vars(self.objective[1],cvars)#problem:_because of constant? _or cons TT(X)>>0 special?
+                        if c.typeOfConstraint.startswith('sdp'):
+                                #TODO
+                                #_or cons TT(X)>>0 special -> yes todo TT operator on a LMI stored in svec, caution bug imag() for sparse?
+                                pass
+                        else:
+                                E1=_copy_exp_to_new_vars(c.Exp1,cvars)
+                                E2=_copy_exp_to_new_vars(c.Exp2,cvars)
+                                E3=_copy_exp_to_new_vars(c.Exp3,cvars)
+                                c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
+                                real.add_constraint(c2,c.key)
+                obj=_copy_exp_to_new_vars(self.objective[1],cvars)
                 real.set_objective(self.objective[0],obj)
                 
                 real.consNumbering=copy.deepcopy(self.consNumbering)
