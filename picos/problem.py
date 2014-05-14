@@ -6474,7 +6474,12 @@ class Problem(object):
                         if c.typeOfConstraint.startswith('sdp'):
                                 #TODO
                                 #_or cons TT(X)>>0 special -> yes todo TT operator on a LMI stored in svec, caution bug imag() for sparse?
-                                pass
+                                for var,value in c.Exp1.factors:
+                                        if var.vtype == 'hermitian' and value.size[1] == var.size[0] * var.size[1]:
+                                                D[cvars[var.name]] = _cplx_mat_to_real_mat(value)
+                                        else:
+                                                D[cvars[var.name]] = copy.copy(value)
+                                AffinExp(newfacs,copy.copy(exp.constant),exp.size,exp.string)
                         else:
                                 E1=_copy_exp_to_new_vars(c.Exp1,cvars)
                                 E2=_copy_exp_to_new_vars(c.Exp2,cvars)

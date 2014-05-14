@@ -610,8 +610,11 @@ class AffinExp(Expression):
                         if self.constant is None and term.constant is None:
                                 pass
                         else:
-                                newCons=cvx.matrix(0.,self.size)[:]
                                 if self.constant is None:
+                                        if not(term.constant is None) and term.constant.typecode=='z':
+                                                newCons=cvx.matrix(0.,self.size,'z')[:]
+                                        else:
+                                                newCons=cvx.matrix(0.,self.size,'d')[:]
                                         self.constant=newCons
                                 if not term.constant is None:
                                         if (isinstance(self.constant,cvx.spmatrix)
