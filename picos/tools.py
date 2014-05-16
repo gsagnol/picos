@@ -1616,10 +1616,15 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 		# Sink flow at T
 		Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(t)') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + flow_value)
 
-		if graphName=='':
-			comment = "Flow conservation from "+str(source)+" to "+str(sink)+" with value:\n\t "+str(flow_value)
+		if hasattr(flow_value, 'string'):
+			fv = flow_value.string
 		else:
-			comment = "Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink)+" with value:\n\t "+str(flow_value)
+			fv = str(flow_value)
+
+		if graphName=='':
+			comment = "Flow conservation from "+str(source)+" to "+str(sink)+" with value "+fv
+		else:
+			comment = "Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink)+" with value "+fv
 
 	# 
 	# One Source, Multiple sink
@@ -1644,10 +1649,15 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 			# Sink flow at T
 			Ptmp.add_constraint(sum([f[p,sink[k]] for p in G.predecessors(sink[k])],'p','pred('+str(sink[k])+')') == sum([f[sink[k],j] for j in G.successors(sink[k])],'j','succ(t)') + flow_value[k])
 
-			if graphName=='':
-				comment = comment + "  Flow conservation from "+str(source)+" to "+str(sink[k])+" with value:\n\t "+str(flow_value[k]) + "\n"
+			if hasattr(flow_value[k], 'string'):
+				fv = flow_value[k].string
 			else:
-				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink[k])+" with value:\n\t "+str(flow_value[k]) + "\n"
+				fv = str(flow_value[k])
+
+			if graphName=='':
+				comment = comment + "  Flow conservation from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
+			else:
+				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
 
 	# 
 	# Multiple source, One Sink
@@ -1672,10 +1682,15 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 			#Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred('+str(source[k])+')') == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ(t)') + flow_value[k])
 			Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred(s)') + flow_value[k] == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ('+str(source[k])+')'))
 
-			if graphName=='':
-				comment = comment + "  Flow conservation from "+str(source[k])+" to "+str(sink)+" with value:\n\t "+str(flow_value[k]) + "\n"
+			if hasattr(flow_value[k], 'string'):
+				fv = flow_value[k].string
 			else:
-				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink)+" with value:\n\t "+str(flow_value[k]) + "\n"
+				fv = str(flow_value[k])
+
+			if graphName=='':
+				comment = comment + "  Flow conservation from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
+			else:
+				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
 
 	# 
 	# Handle errors
