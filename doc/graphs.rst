@@ -163,7 +163,7 @@ An equivalent and faster way to define this problem is to use the _Flow_Constrai
 	F=maxflow2.add_variable('F',1)
 
 	# Creating a flow Constraint
-	flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=F, graphName='G', S=16, T=10)
+	flowCons = pic.flow_Constraint(G, f, source=16, sink=10, capacity='capacity', flow_value=F, graphName='G')
 	maxflow2.addConstraint(flowCons)
 
 	# Objective
@@ -187,8 +187,7 @@ An equivalent and faster way to define this problem is to use the _Flow_Constrai
 
 		maximize F
 	such that
-	    Flow conservation in G from 16 to 10 with value:
-         	# variable F:(1 x 1),continuous #
+	    Flow conservation in G from 16 to 10 with value F
 	---------------------
 	The optimal flow has value 15.0
 

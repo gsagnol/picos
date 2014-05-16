@@ -484,7 +484,7 @@ Flow constraints in graphs are entered using a Networkx_ Graph. The following ex
   >>> # A variable for the value of the flow
   >>> F = pb.add_variable('F',1)
   >>> # Creating the flow constraint
-  >>> flowCons = pic.flow_Constraint(G, f, source='S',sink='T', capacity='capacity', flow_value= F, graphName='G')
+  >>> flowCons = pic.flow_Constraint(G, f, source='S', sink='T', capacity='capacity', flow_value= F, graphName='G')
   >>> pb.addConstraint(flowCons)
   >>> pb.set_objective('max',F)
   >>> sol = pb.solve(verbose=0)
@@ -520,7 +520,7 @@ Just add a list of sinks and a list of flows instead.
         F1=pbMultipleSinks.add_variable('F1',1)
         F2=pbMultipleSinks.add_variable('F2',1)
 
-        flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources='S', Sinks=['T1','T2'])
+        flowCons = pic.flow_Constraint(G, f, source='S', sink=['T1','T2'], capacity='capacity', flow_value=[F1, F2], graphName='G')
         pbMultipleSinks.addConstraint(flowCons)
 
         pbMultipleSinks.set_objective('max',F1+F2)
@@ -547,10 +547,8 @@ Just add a list of sinks and a list of flows instead.
                   maximize F1 + F2
         such that
           ** One Source, Multiple Sinks ** 
-          Flow conservation in G from S to T1 with value:
-                   # variable F1:(1 x 1),continuous #
-          Flow conservation in G from S to T2 with value:
-                   # variable F2:(1 x 1),continuous #
+          Flow conservation in G from S to T1 with value F1
+          Flow conservation in G from S to T2 with value F2
 
         ---------------------
         The optimal flow F1 has value 2.0
@@ -579,7 +577,7 @@ A similar syntax can be used for multiple sources-single sink flows.
                 F1=pbMultipleSources.add_variable('F1',1)
                 F2=pbMultipleSources.add_variable('F2',1)
 
-                flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources=['S1', 'S2'], Sinks='T')
+                flowCons = pic.flow_Constraint(G, f, source=['S1', 'S2'], sink='T', capacity='capacity', flowValue=[F1, F2], graphName='G')
                 pbMultipleSources.addConstraint(flowCons)
 
                 pbMultipleSources.set_objective('max',F1+F2)
@@ -605,10 +603,8 @@ A similar syntax can be used for multiple sources-single sink flows.
                         maximize F1 + F2
                 such that
                 ** Multiple Sources, One Sink **
-                Flow conservation in G from S1 to T with value:
-                        # variable F1:(1 x 1),continuous #
-                Flow conservation in G from S2 to T with value:
-                        # variable F2:(1 x 1),continuous #
+                Flow conservation in G from S1 to T with value F1
+                Flow conservation in G from S2 to T with value F2
 
                 ---------------------
                 The optimal flow F1 has value 1.0
