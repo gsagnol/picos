@@ -466,6 +466,29 @@ Similarly, the constraint ``Y > |0|`` can be accessed by
 ``prob.get_constraint((0,0))`` (first constraint of the first group), or
 ``prob.get_constraint((0,))`` (unique constraint of the first group).
 
+Graph flow constraints
+----------------------
+
+Graph flow constraints are entered using a Networkx_ Graph. The following trivial example finds a compatible flow from 'S' to 'T'
+
+.. _Networkx: https://networkx.github.io/
+
+  >>> import networkx as nx
+  >>> G = nx.DiGraph()
+  >>> G.add_edge('S','A', capacity=1); G.add_edge('A','B', capacity=1); G.add_edge('B','T', capacity=1)
+  >>> pb = pic.Problem()
+  >>> # Adding the flow variables
+  >>> f={}
+  >>> for e in G.edges():
+  ...      f[e]=pb.add_variable('f[{0}]'.format(e),1)
+  >>> # Creating the flow constraint
+  >>> flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=1, graphName='G', S='S', T='T')
+  >>> pb.addConstraint(flowCons)  
+  >>> pb.solve()
+  >>> print pb
+  >>> flow = pic.tools.eval_dict(f)
+  >>> print "solution: " + str(flow)
+
 Quadratic constraints
 ---------------------
 
@@ -480,27 +503,6 @@ Note that PICOS does not check the convexity of convex constraints.
 It is the solver which will raise an Exception if it does not support
 non-convex quadratics.
 
-Graph flow constraints
-----------------------
-
-Graph flow constraints are entered using a Networkx_ Graph. The following trivial example finds a compatible flow from 'S' to 'T'
-
-.. _Networkx: https://networkx.github.io/
-
-  >>> import networkx as nx
-  >>> G = nx.DiGraph()
-  >>> G.add_node('S'); G.add_node('T'); G.add_node('A'); G.add_node('B')
-  >>> G.add_edge('S','A', capacity=1); G.add_edge('A','B', capacity=1); G.add_edge('B','T', capacity=1)
-  # Adding the flow variables
-  >>> pb = pic.Problem()
-  >>> f={}
-  >>> for e in G.edges():
-  ...      f[e]=pb.add_variable('f[{0}]'.format(e),1)
-  >>> flowCons = pic.tools.flow_Constraint(G, f, graphName='G')
-  >>> pb.addConstraint(flowCons)  
-  >>> pb.solve()
-  >>> flow = [f[e].value[0] for e in G.edges()]
-  >>> print "solution: " + str(flow)
 
 Second Order Cone Constraints
 -----------------------------
