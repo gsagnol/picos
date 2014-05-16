@@ -1575,8 +1575,8 @@ def _read_sdpa(filename):
 
 
 def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName=''):
-	"""Returns an object of the class :class:``_Flow_Constraint <picos.Constraint._Flow_Constraint>`` that can be passed to a 
-	problem with :func:``add_constraint() <picos.Problem.add_constraint>``.
+	"""Returns an object of the class :class:`_Flow_Constraint <picos.Constraint._Flow_Constraint>` that can be passed to a 
+	problem with :func:`add_constraint() <picos.Problem.add_constraint>`.
 	
 	``f`` must be a dictionary of variables indexed by the edges of ``G``
 	

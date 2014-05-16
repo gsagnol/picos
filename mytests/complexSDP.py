@@ -63,7 +63,30 @@ Z = c3.add_variable('Z',(3,3),'hermitian')
 c3.set_objective('max','I'|Z)
 c3.add_constraint(((P*P.H & Z) // (Z & Q*Q.H))>>0 )
 
+#in fact, Z itself must not be hermitian !
+c3b = pic.Problem()
+Zr = c3b.add_variable('Zr',(3,3),'continuous')
+Zi = c3b.add_variable('Zi',(3,3),'continuous')
+c3b.set_objective('max','I'|Zr)
+c3b.add_constraint(((P & (Zr+1j*Zi)) // ((Zr.T-1j*Zi.T) & Q))>>0 )
+c3b.solve()
 
+exp = ((P & (Zr+1j*Zi)) // ((Zr.T-1j*Zi.T) & Q))
+
+import picos as pic
+import cvxopt as cvx
+P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+P = P*P.H
+C = pic.Problem()
+Z = C.add_variable('Z',(3,3),'continuous')
+print(cvx.matrix((P & (1j*Z)).factors[Z][:,6],(3,6)))
+
+         0 3 6 
+         1 4 7
+         2 5 8
+-0 -1 -2 
+-3 -4 -5
+-6 -7 -8
 
 r3 = pic.Problem()
 X = r3.add_variable('X',(3,3),'symmetric')
@@ -72,16 +95,30 @@ r3.set_objective('max','I'|X)
 Pr,Pi = (P*P.H).real(), (P*P.H).imag()
 Qr,Qi = (Q*Q.H).real(), (Q*Q.H).imag()
 r3.add_constraint( ((Pr & X & -Pi & -Y)//
-                   (X  & Qr& -Y  &-Qi)//
-                   (Pi & Y & Pr  & X )//
-                   (Y  & Qi& X   & Qr))>>0)
-
-
+                    (X  & Qr& -Y  &-Qi)//
+                    (Pi & Y & Pr  & X )//
+                    (Y  & Qi& X   & Qr))>>0)
 
 rl = c3.to_real()
 Zr = rl.get_variable('Z_RE')
 Zi = rl.get_variable('Z_IM')
 
+r3l = c3b.to_real()
+Zr = r3l.get_variable('Zr')
+Zi = r3l.get_variable('Zi')
+
+
+r3b = pic.Problem()
+Xb = r3b.add_variable('X',(3,3))
+Yb = r3b.add_variable('Y',(3,3))
+r3b.set_objective('max','I'|Xb)
+Pr,Pi = P.real(), P.imag()
+Qr,Qi = Q.real(), Q.imag()
+r3b.add_constraint( ((Pr & Xb & -Pi & -Yb)//
+                   (Xb.T  & Qr& Yb.T  &-Qi)//
+                   (Pi    & Yb & Pr  & Xb )//
+                   (-Yb.T & Qi& Xb.T  & Qr))>>0)
+                   
 """ Debug
 print cvx.matrix(rl.constraints[-1].Exp1.constant,(12,12))
 print cvx.matrix(r3.constraints[-1].Exp1.constant,(12,12))
@@ -90,6 +127,12 @@ print cvx.matrix(r3.constraints[-1].Exp1.factors[X][:,0].(12,12))
 
 max(rl.constraints[-1].Exp1.factors[Zr]-r3.constraints[-1].Exp1.factors[X])
 max(rl.constraints[-1].Exp1.factors[Zi]-r3.constraints[-1].Exp1.factors[Y])
+
+max(r3l.constraints[-1].Exp1.factors[Zr]-r3b.constraints[-1].Exp1.factors[Xb])
+max(r3l.constraints[-1].Exp1.factors[Zi]-r3b.constraints[-1].Exp1.factors[Yb])
+
+I,J,V = r3l.constraints[-1].Exp1.factors[Zi].I,r3l.constraints[-1].Exp1.factors[Zi].J,r3l.constraints[-1].Exp1.factors[Zi].V
+Ib,Jb,Vb = r3b.constraints[-1].Exp1.factors[Yb].I,r3b.constraints[-1].Exp1.factors[Yb].J,r3b.constraints[-1].Exp1.factors[Yb].V
 """
 
 #complex version of maxcut
@@ -108,3 +151,7 @@ Z.value=Z0
 PP = P[0:2,:]
 print (PP*Z0).H
 print (PP*Z).H
+
+
+[A  X]*     [A* X ]
+[X* B]   =  [X* B*]

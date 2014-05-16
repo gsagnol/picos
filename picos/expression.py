@@ -1040,7 +1040,7 @@ class AffinExp(Expression):
                                         s2=exp.factors[k].size[1]
                                         if exp.factors[k].typecode == 'z':#it seems there is a bug with sparse with complex inputs
                                                 newfac=(cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].real()]]) +
-                                                        1j * cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].real()]]))
+                                                        1j * cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].imag()]]))
                                         else:
                                                 newfac=cvx.sparse([[cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k]]])
                                         self.factors[k]=newfac
@@ -1146,7 +1146,7 @@ class AffinExp(Expression):
                                         s2=exp.factors[k].size[1]
                                         if exp.factors[k].typecode == 'z':#it seems there is a bug with sparse with complex inputs
                                                 newfac=(cvx.sparse([cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].real()]) +
-                                                        1j * cvx.sparse([cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].real()]))
+                                                        1j * cvx.sparse([cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k].imag()]))
                                         else:
                                                 newfac=cvx.sparse([cvx.spmatrix([],[],[],(s1,s2)),exp.factors[k]])
                                         self.factors[k]=newfac
