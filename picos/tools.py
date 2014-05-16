@@ -1485,7 +1485,7 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
                 for i in range(M.size[1]):
                         v=M[:,i]
                         A = cvx.matrix(v,(m,m))
-                        vvv = _cplx_mat_to_real_mat(A)[:]
+                        vvv = _cplx_mat_to_real_mat(A)[:] #TODO 0.5*(A+A.H) instead ?
                         vv.append([vvv])
         
         return cvx.sparse(vv)
@@ -1575,7 +1575,25 @@ def _read_sdpa(filename):
 
 
 def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName=''):
-	"""Returns an object of class _Flow_Constraint."""
+	"""Returns an object of the class :class:``_Flow_Constraint <picos.Constraint._Flow_Constraint>`` that can be passed to a 
+	problem with :func:``add_constraint() <picos.Problem.add_constraint>``.
+	
+	``f`` must be a dictionary of variables indexed by the edges of ``G``
+	
+	``source`` can be eiter a node of ``G``, or a list of nodes in case of a multisource-single sink flow
+	
+	``sink`` can be eiter a node of ``G``, or a list of nodes in case of a single source-multising flow
+	
+        ``flow_value`` is the value of the flow, or a list of values in case of a single source - multisink flow. In the latter case,
+        the values represent the demands of each sink (resp. of each source for a multisource - single sink flow). The values
+        can be either constants or :class:`AffinExp <picos.AffinExp>`.
+
+	``capacity`` must be either ``None`` or a string. If this is a string, it indicates the key of the edge
+	dictionaries of ``G`` that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.
+	
+	``graphName`` is a string used in the string representation of the constraint.
+	
+	"""
 	# checking that we have the good number of variables
 	if len(f)!=len(G.edges()):
 		print 'Error: The number of variables does not match with the number of edges.'

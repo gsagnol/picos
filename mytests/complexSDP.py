@@ -52,6 +52,9 @@ c2.add_constraint('I'|Z==1)
 #c2.add_constraint(Z>>0)
 
 
+#affinity between 2 operators
+import picos as pic
+import cvxopt as cvx
 P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
 Q = cvx.normal(3,3) + 1j*cvx.normal(3,3)
 
@@ -74,13 +77,20 @@ r3.add_constraint( ((Pr & X & -Pi & -Y)//
                    (Y  & Qi& X   & Qr))>>0)
 
 
-r3.add_constraint((P.real()|X)-(P.imag()|Y)>1)
-re3.add_constraint((Q.real()|X)-(Q.imag()|Y)>1)
-re3.add_constraint(((X & -Y)// (Y & X))>>0)
-re3.set_objective('min',I|X)
 
+rl = c3.to_real()
+Zr = rl.get_variable('Z_RE')
+Zi = rl.get_variable('Z_IM')
 
+""" Debug
+print cvx.matrix(rl.constraints[-1].Exp1.constant,(12,12))
+print cvx.matrix(r3.constraints[-1].Exp1.constant,(12,12))
 
+print cvx.matrix(r3.constraints[-1].Exp1.factors[X][:,0].(12,12))
+
+max(rl.constraints[-1].Exp1.factors[Zr]-r3.constraints[-1].Exp1.factors[X])
+max(rl.constraints[-1].Exp1.factors[Zi]-r3.constraints[-1].Exp1.factors[Y])
+"""
 
 #complex version of maxcut
 c4 = pic.Problem()
