@@ -741,6 +741,128 @@ are blue or green depending on the partition they belong to.
 
 .. _graph_refs:
 
+
+Multiple Sources and/or Sinks
+=============================
+
+Picos 1.0.1 allows you to define single Source multiple Sinks problems. You can use the same syntax as for a single source and single sink problem. Just add a list of sink and a list of flows instead. 
+
+import picos as pic
+import networkx as nx
+
+.. testcode::
+
+	import picos as pic
+	import networkx as nx
+
+	G=nx.DiGraph()
+	G.add_edge('S','A', capacity=2); G.add_edge('S','B', capacity=2)
+	G.add_edge('A','T1', capacity=2); G.add_edge('B','T2', capacity=2)
+
+	pbMultipleSinks=pic.Problem()
+	# Flow variable
+	f={}
+	for e in G.edges():
+		  f[e]=pbMultipleSinks.add_variable('f[{0}]'.format(e),1)
+
+	# Flow value
+	F1=pbMultipleSinks.add_variable('F1',1)
+	F2=pbMultipleSinks.add_variable('F2',1)
+
+	flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources='S', Sinks=['T1','T2'])
+	pbMultipleSinks.addConstraint(flowCons)
+
+	pbMultipleSinks.set_objective('max',F1+F2)
+
+	# Solve the problem
+	pbMultipleSinks.solve(verbose=0)
+
+	print pbMultipleSinks
+	print 'The optimal flow F1 has value {0}'.format(F1)
+	print 'The optimal flow F2 has value {0}'.format(F2)
+
+
+.. testoutput::
+	:options: +NORMALIZE_WHITESPACE
+        
+	---------------------
+	optimization problem  (LP):
+	6 variables, 13 affine constraints
+
+	f       : dict of 4 variables, (1, 1), continuous
+	F1      : (1, 1), continuous
+	F2      : (1, 1), continuous
+
+		  maximize F1 + F2
+	such that
+	  ** One Source, Multiple Sinks ** 
+	  Flow conservation in G from S to T1 with value:
+		   # variable F1:(1 x 1),continuous #
+	  Flow conservation in G from S to T2 with value:
+		   # variable F2:(1 x 1),continuous #
+
+	---------------------
+	The optimal flow F1 has value 2.0
+	The optimal flow F2 has value 2.0
+
+
+The same type of problem can be defined with multiple Sources and a single Sink.
+
+.. testcode::
+
+	import picos as pic
+	import networkx as nx
+
+	G=nx.DiGraph()
+	G.add_edge('S1','A', capacity=1); G.add_edge('S2','B', capacity=2)
+	G.add_edge('A','T', capacity=2); G.add_edge('B','T', capacity=2)
+
+	pbMultipleSources=pic.Problem()
+	# Flow variable
+	f={}
+	for e in G.edges():
+		  f[e]=pbMultipleSources.add_variable('f[{0}]'.format(e),1)
+
+	# Flow value
+	F1=pbMultipleSources.add_variable('F1',1)
+	F2=pbMultipleSources.add_variable('F2',1)
+
+	flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources=['S1', 'S2'], Sinks='T')
+	pbMultipleSources.addConstraint(flowCons)
+
+	pbMultipleSources.set_objective('max',F1+F2)
+
+	# Solve the problem
+	pbMultipleSources.solve(verbose=0)
+
+	print pbMultipleSources
+	print 'The optimal flow F1 has value {0}'.format(F1)
+	print 'The optimal flow F2 has value {0}'.format(F2)
+
+.. testoutput::
+	:options: +NORMALIZE_WHITESPACE
+        
+	---------------------
+	optimization problem  (LP):
+	6 variables, 13 affine constraints
+
+	F1      : (1, 1), continuous
+	F2      : (1, 1), continuous
+	f       : dict of 4 variables, (1, 1), continuous
+
+		  maximize F1 + F2
+	such that
+	  ** Multiple Sources, One Sink **
+	  Flow conservation in G from S1 to T with value:
+		   # variable F1:(1 x 1),continuous #
+	  Flow conservation in G from S2 to T with value:
+		   # variable F2:(1 x 1),continuous #
+
+	---------------------
+	The optimal flow F1 has value 1.0
+	The optimal flow F2 has value 2.0
+
+
 References
 ==========
 
