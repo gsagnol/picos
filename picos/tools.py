@@ -1502,7 +1502,7 @@ def _read_sdpa(filename):
                 return P      
 
 
-def flow_Constraint(G, f=[], capacity='capacity', flowValue = 1, graphName='', S='S', T='T'):
+def flow_Constraint(G, f=[], capacity='none', flowValue = 1, graphName='', S='S', T='T'):
 	"""Returns an object of class _Flow_Constraint."""
 	# checking that we have the good number of variables
 	if len(f)!=len(G.edges()):
@@ -1513,22 +1513,18 @@ def flow_Constraint(G, f=[], capacity='capacity', flowValue = 1, graphName='', S
 	Ptmp = Problem()
 
 	# Adding Edge capacities
-	cap = [ed[2][capacity] for ed in G.edges(data=True)]
+	if capacity!='none':
+		cap = [ed[2][capacity] for ed in G.edges(data=True)]
 
-	c={}
-	for i,e in enumerate(G.edges()):
-		c[e]=cap[i]
+		c={}
+		for i,e in enumerate(G.edges()):
+			c[e]=cap[i]
 	
-
-	# Generates the flow
-	#f={}
-	#for e in G.edges():
-	#	f[e]=self.add_variable('f[{0}]'.format(e),1)
-
 	cc=new_param('c',c)
 
 	# Adding the capacity constraint
-	Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
+	if capacity!='none':
+		Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
 
 	# Adding the flow conservation
 	Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if i!=T and i!=S], 'i','nodes-(s,t)')
@@ -1548,9 +1544,9 @@ def flow_Constraint(G, f=[], capacity='capacity', flowValue = 1, graphName='', S
 
 	from .constraint import _Flow_Constraint
 	if graphName=='':
-		comment = "Flow conservation"
+		comment = "Flow conservation from "+str(S)+" to "+str(T)+" with value:\n\t "+str(flowValue)
 	else:
-		comment = "Flow conservation on "+str(graphName)
+		comment = "Flow conservation in "+str(graphName)+" from "+str(S)+" to "+str(T)+" with value:\n\t "+str(flowValue)
 	return _Flow_Constraint(G, Ptmp,comment)
 
 def drawGraph(G, capacity='capacity'):

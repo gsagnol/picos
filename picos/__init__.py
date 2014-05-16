@@ -28,7 +28,7 @@
 from problem import *
 from expression import *
 from constraint import *
-from tools import sum,lse,new_param,diag,diag_vect,geomean,norm,tracepow,detrootn,QuadAsSocpError,NotAppropriateSolverError,NonConvexError
+from tools import sum,lse,new_param,diag,diag_vect,geomean,norm,tracepow,detrootn,QuadAsSocpError,NotAppropriateSolverError,NonConvexError,flow_Constraint
 
 __all__=['tools','constraint','expression','problem']
 
