@@ -62,7 +62,8 @@ __all__=['_retrieve_matrix',
         'norm',
         '_read_sdpa',
         'tracepow',
-        '_cplx_mat_to_real_mat'        
+        '_cplx_mat_to_real_mat',
+        '_cplx_vecmat_to_real_vecmat'
 ]
 
 
@@ -911,14 +912,14 @@ def svec(mat):
         
         s0=mat.size[0]
         if s0!=mat.size[1]:
-                raise ValueError('mat but be symmetric')
+                raise ValueError('mat must be symmetric')
         
         I=[]
         J=[]
         V=[]
         for (i,j,v) in zip((mat.I),(mat.J),(mat.V)):
                 if abs(mat[j,i]-v)>1e-6:
-                        raise ValueError('mat but be symmetric')
+                        raise ValueError('mat must be symmetric')
                 if i<=j:
                         isvec=j*(j+1)/2+i
                         J.append(0)
@@ -1094,7 +1095,7 @@ def _svecm1_identity(vtype,size):
         row wise svec-1 transformation of the
         identity matrix of size size[0]*size[1]
         """
-        if vtype in ('symmetric','hermitian'):
+        if vtype in ('symmetric',):
                 s0=size[0]
                 if size[1]!=s0:
                         raise ValueError('should be square')
@@ -1355,10 +1356,28 @@ def _copy_dictexp_to_new_vars(dct,cvars):
         import copy
         for var,value in dct.iteritems():
                 if isinstance(var,tuple):#quad
+                        if var[0].vtype == 'hermitian' or var[1].vtype == 'hermitian':
+                                raise Exception('quadratic form involving hermitian variable')
                         D[cvars[var[0].name],cvars[var[1].name]] = copy.copy(value)
                 else:
-                        if var.vtype == 'hermitian' and value.size[1] == var.size[0] * var.size[1]:
-                                D[cvars[var.name]] = _cplx_mat_to_real_mat(value)
+                        if var.vtype == 'hermitian' and (var.name+'_RE') in cvars:
+                                if value.typecode=='z':
+                                        vr = value.real()
+                                        D[cvars[var.name+'_IM']] = value.imag() #no minus because 
+                                                                                #value.imag()=-value.H.imag()
+                                else:
+                                        vr = value
+                                
+                                n = int(vr.size[1]**(0.5))
+                                vv = []
+                                for i in range(vr.size[0]):
+                                        v=vr[i,:]
+                                        AA = cvx.matrix(v,(n,n))
+                                        AA = (AA + AA.T)/2.#symmetrize
+                                        vv.append([svec(AA).T])
+                                        
+                                D[cvars[var.name+'_RE']] = cvx.sparse(vv)
+                                
                         else:
                                 D[cvars[var.name]] = copy.copy(value)
         return D
@@ -1413,12 +1432,58 @@ def _cplx_mat_to_real_mat(M):
         """
         if not( isinstance(M,cvx.base.spmatrix) or isinstance(M,cvx.base.matrix)):
                 raise NameError('unexpected matrix type')
-        
-        A = M.real()
-        B = M.imag()
+        if M.typecode=='z':
+                A = M.real()
+                B = M.imag()
+        else:
+                A = M
+                B = cvx.spmatrix([],[],[],A.size)
         return cvx.sparse([[A,B],[-B,A]])
+
+
+def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
+        """
+        if the columns of M are vectorizations of matrices of the form A +iB:
+        * if times_i is False (default), return vectorizations of the block matrix [A,-B;B,A]
+          otherwise, return vectorizations of the block matrix [-B,-A;A,-B]
+        * if sym=True, returns the columns with respect to the sym-vectorization of the variables of the LMI
+        """
+        if not( isinstance(M,cvx.base.spmatrix) or isinstance(M,cvx.base.matrix)):
+                raise NameError('unexpected matrix type')
         
+        if times_i:
+                M = M * 1j
         
+        nn = M.size[0]
+        n = nn**0.5
+        if int(n)<>n:
+                raise NameError('first dimension must be a perfect square')
+        n=int(n)
+        
+        vv = []
+        if sym:
+                for k in range(n*(n+1)/2):
+                        j=int(np.sqrt(1+8*k)-1)/2
+                        i=k-j*(j+1)/2
+                        if i==j:
+                                v=M[:,n*i+i]
+                        else:
+                                i1 = n*i+j
+                                i2 = n*j+i
+                                v=(M[:,i1] + M[:,i2])/(2**0.5)
+                        vvv = _cplx_mat_to_real_mat(cvx.matrix(v,(n,n)))[:]
+                        vv.append([vvv])        
+                        
+        else:
+                for i in range(M.size[1]):
+                        v=M[:,i]
+                        A = cvx.matrix(v,(n,n))
+                        vvv = _cplx_mat_to_real_mat(A)[:]
+                        vv.append([vvv])
+        
+        return cvx.sparse(vv)
+        
+
 def _read_sdpa(filename):
                 """TODO, remove dependence; currently relies on smcp sdpa_read
                 cone constraints ||x||<t are recognized if they have the arrow form [t,x';x,t*I]>>0

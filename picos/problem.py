@@ -439,7 +439,7 @@ class Problem(object):
                         if optimalvar:
                                 self.number_solutions=max(self.number_solutions,1)
                 else:
-                        if self.variables[name].vtype in ('symmetric','hermitian'):
+                        if self.variables[name].vtype in ('symmetric',):
                                 valuemat=svec(valuemat)        
                         self.variables[name].value_alt[ind]=valuemat
                         if optimalvar:
@@ -925,7 +925,7 @@ class Problem(object):
                 for nam in self.varNames:
                         var = self.variables[nam]
                         var._startIndex=ind
-                        if var.vtype in ('symmetric','hermitian'):
+                        if var.vtype in ('symmetric',):
                                 ind+=int((var.size[0]*(var.size[0]+1))/2)
                         else:
                                 ind+=var.size[0]*var.size[1]
@@ -2107,6 +2107,17 @@ class Problem(object):
                                 return False
                 return True
                 
+                
+        def is_complex(self):
+                if self.numberSDPConstraints>0:
+                        if 'hermitian' in [x.vtype for x in self.variables.values()]:
+                                return True
+                        for c in self.constraints:
+                                if c.typeOfConstraint.startswith('sdp'):
+                                      if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
+                                              return True
+                return False
+                    
                 
         def _make_cplex_instance(self):
                 """
@@ -3996,28 +4007,61 @@ class Problem(object):
                 if isinstance(self.objective[1],GeneralFun):
                         return self._sqpsolve(options)
                 
+                #is it a complex SDP that we must transform to a real problem ?
+                complexSDP=self.is_complex()
+                    
+                
+                if not complexSDP:
+                        #do we pass the primal or the dual to the solver ?
+                        solve_via_dual = self.options['solve_via_dual']
+                        if solve_via_dual is None:
+                                if (self.numberSDPConstraints>0 and
+                                len([1 for v in self.variables.values() if v.semiDef]) < 0.3 * self.numberSDPConstraints
+                                ):  #thats empirical !
+                                        solve_via_dual = True
+                                else:
+                                        solve_via_dual = False
+                
                 #transform the problem in case of a complex SDP
-                if (self.numberSDPConstraints>0 and (
-                        'hermitian' in [x.vtype for x in self.variables.values()]) #TODO or a complex mat factor in a semidef cons
-                    ):
+                if complexSDP:
                         if self.options['verbose']>0:
                                 print '*** Making the problem real...  ***'
-                        realP = self.to_real()
-                        pass#TODO
-                
-                
-                #do we pass the primal or the dual to the solver ?
-                solve_via_dual = self.options['solve_via_dual']
-                if solve_via_dual is None:
-                        if (self.numberSDPConstraints>0 and
-                            len([1 for v in self.variables.values() if v.semiDef]) < 0.3 * self.numberSDPConstraints
-                            ):  #thats empirical !
-                                solve_via_dual = True
+                        
+                        #try first without forcing antysymmetry of the imaginary part
+                        nosym = False
+                        for force_sym in [False,True]:
+                                realP = self.to_real(force_sym = force_sym)
+                                if self.options['verbose']>0:
+                                        print '*** OK, solve the real problem and transform the solution as in the original problem...  ***'
+                                sol = realP.solve()
+                                obj = sol['obj']
+                                if 'noprimals' in self.options and self.options['noprimals']:
+                                        break
+                                else:
+                                        primals = {}
+                                        for var in self.variables.values():
+                                                if var.vtype == 'hermitian':
+                                                        Zi = realP.get_valued_variable(var.name+'_IM')
+                                                        if max(Zi+Zi.T)>1e-5 or min(Zi+Zi.T)<-1e-5:#force symmetry
+                                                                print ("\033[1;31m a matrix was not Hermitian. Now I force symmetry. \033[0m")
+                                                                nosym = True
+                                                                continue
+                                                        primals[var.name] = realP.get_valued_variable(var.name+'_RE') + 1j * Zi
+                                                else:
+                                                        primals[var.name] = realP.get_valued_variable(var.name)
+                                        if nosym:
+                                                nosym = False
+                                                continue
+                                        break #do not force symmetry if Z is already hermitian
+                        
+                        #TODO here retrieve duals
+                        if 'noduals' in self.options and self.options['noduals']:
+                                        pass
                         else:
-                                solve_via_dual = False
-                                
+                                duals = []
+                
                 #solve the dual problem instead
-                if solve_via_dual:
+                elif solve_via_dual:
                         converted = False
                         raiseexp = False
                         try:
@@ -4044,7 +4088,12 @@ class Problem(object):
                                         #raise QuadAsSocpError('Try to convert the quadratic constraints as cone constraints '+
                                                 #'with the function convert_quad_to_socp().')
                                 if raiseexp:
-                                        raise(ex)
+                                        #raise(ex)
+                                        print ("\033[1;31m Error raised when dualizing the problem: \033[0m")
+                                        print ex
+                                        print ('I retry to solve without dualizing')
+                                        return self.solve(solve_via_dual=False) 
+                                        
                                 sol = dual.solve()
                                 obj = -sol['obj']
                                 if 'noprimals' in self.options and self.options['noprimals']:
@@ -4068,12 +4117,12 @@ class Problem(object):
                                                         if i<end:
                                                                 varvect.append(x)
                                                         else:
-                                                                if var.vtype in ('symmetric','hermitian'):
+                                                                if var.vtype in ('symmetric',):
                                                                         varvect=svecm1(cvx.matrix(varvect))
                                                                 primals[var.name]=cvx.matrix(varvect,var.size)
                                                                 varvect = [x]
                                                                 (start,end,var) = indices.pop()
-                                                if var.vtype in ('symmetric','hermitian'):
+                                                if var.vtype in ('symmetric',):
                                                         varvect=svecm1(cvx.matrix(varvect))
                                                 primals[var.name]=cvx.matrix(varvect,var.size)
                                 
@@ -4371,7 +4420,7 @@ class Problem(object):
                                         si=var.startIndex
                                         ei=var.endIndex
                                         varvect=sol['x'][si:ei]
-                                        if var.vtype in ('symmetric','hermitian'):
+                                        if var.vtype in ('symmetric',):
                                                 varvect=svecm1(varvect) #varvect was the svec
                                                                         #representation of X
                                         
@@ -4685,7 +4734,7 @@ class Problem(object):
                                                 name = var.name + '_' + str(i)
                                                 value.append(c.solution.get_values(name))
                                         
-                                        if var.vtype in ('symmetric','hermitian'):
+                                        if var.vtype in ('symmetric',):
                                                 value=svecm1(cvx.matrix(value)) #varvect was the svec
                                                                                 #representation of X
                                         primals[var.name] = cvx.matrix(value,var.size)
@@ -4698,7 +4747,7 @@ class Problem(object):
                                                         for i in range(sz_var):
                                                                 name = var.name + '_' + str(i)
                                                                 value.append(c.solution.pool.get_values(ind,name))
-                                                        if var.vtype in ('symmetric','hermitian'):
+                                                        if var.vtype in ('symmetric',):
                                                                 value=svecm1(cvx.matrix(value)) #varvect was the svec
                                                                                                 #representation of X
                                                         primals[(ii,var.name)] = cvx.matrix(value,var.size)
@@ -5031,7 +5080,7 @@ class Problem(object):
                                                 name = var.name + '_' + str(i)
                                                 xi=m.getVarByName(name)
                                                 value.append(xi.X)
-                                        if var.vtype in ('symmetric','hermitian'):
+                                        if var.vtype in ('symmetric',):
                                                 value=svecm1(cvx.matrix(value)) #value was the svec
                                                                                 #representation of X
                                                                                     
@@ -5383,7 +5432,7 @@ class Problem(object):
                                                 scaledx = [(j,v) for (j,v) in self.msk_scaledcols.iteritems() if j>=si and j<ei]
                                                 for (j,v) in scaledx: #do the change of variable the other way around.
                                                         xx[j-si]/=v
-                                                if var.vtype in ('symmetric','hermitian'):
+                                                if var.vtype in ('symmetric',):
                                                         xx=svecm1(cvx.matrix(xx))
                                                 primals[var.name]=cvx.matrix(xx,var.size)
                                 
@@ -5397,7 +5446,7 @@ class Problem(object):
                                         si=self.variables[var].startIndex
                                         ei=self.variables[var].endIndex
                                         varvect=xx[si:ei]
-                                        if self.variables[var].vtype in ('symmetric','hermitian'):
+                                        if self.variables[var].vtype in ('symmetric',):
                                                 varvect=svecm1(cvx.matrix(varvect)) #varvect was the svec
                                                                                 #representation of X
                                         primals[var]=cvx.matrix(varvect, self.variables[var].size)
@@ -5652,7 +5701,7 @@ class Problem(object):
                                         ei=self.variables[var].endIndex
                                         varvect=self.scip_vars[si:ei]
                                         value = [val[v] for v in varvect]
-                                        if self.variables[var].vtype in ('symmetric','hermitian'):
+                                        if self.variables[var].vtype in ('symmetric',):
                                                 value=svecm1(cvx.matrix(value)) #value was the svec
                                                                                     #representation of X
                                         primals[var]=cvx.matrix(value,
@@ -6456,34 +6505,66 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print 'done.'
                                 
-        def to_real(self):
+        def to_real(self, force_sym = False):
                 """
                 Returns an equivalent problem,
                 where the n x n- hermitian matrices have been replaced by 
                 symmetric matrices of size 2n x 2n.
                 """
+                import copy
                 real = Problem()
                 cvars={}
                 for (iv,v) in sorted([(v.startIndex,v) for v in self.variables.values()]):
                         if v.vtype == 'hermitian':
-                                cvars[v.name]=real.add_variable(v.name+'_real',(2*v.size[0],2*v.size[1]),'symmetric')
+                                #cvars[v.name]=real.add_variable(v.name+'_full',(2*v.size[0],2*v.size[1]),'symmetric')
+                                cvars[v.name+'_RE']=real.add_variable(v.name+'_RE',(v.size[0],v.size[1]),'symmetric')
+                                cvars[v.name+'_IM']=real.add_variable(v.name+'_IM',(v.size[0],v.size[1]))
+                                #real.add_constraint((cvars[v.name+'RE'] & -cvars[v.name+'IM'])//(cvars[v.name+'IM'] & cvars[v.name+'RE']) == cvars[v.name])
+                                if force_sym:
+                                        real.add_constraint(cvars[v.name+'_IM'] == -cvars[v.name+'_IM'].T)
                         else:
                                 cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
                 
                 for c in self.constraints:
                         if c.typeOfConstraint.startswith('sdp'):
-                                #TODO
-                                #_or cons TT(X)>>0 special -> yes todo TT operator on a LMI stored in svec, caution bug imag() for sparse?
-                                for var,value in c.Exp1.factors:
-                                        if var.vtype == 'hermitian' and value.size[1] == var.size[0] * var.size[1]:
-                                                D[cvars[var.name]] = _cplx_mat_to_real_mat(value)
+                                D = {}
+                                exp1=c.Exp1
+                                for var,value in exp1.factors.iteritems():
+                                        if var.vtype == 'hermitian':
+                                                D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
+                                                D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
                                         else:
-                                                D[cvars[var.name]] = copy.copy(value)
-                                AffinExp(newfacs,copy.copy(exp.constant),exp.size,exp.string)
+                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)#TODO check!
+                                if exp1.constant is None:
+                                        cst = None
+                                else:
+                                        cst = _cplx_vecmat_to_real_vecmat(exp1.constant,sym=False)
+                                E1 = AffinExp(D,cst,(2*exp1.size[0],2*exp1.size[1]),exp1.string)
+                                #import pdb;pdb.set_trace()
+                                
+                                D = {}
+                                exp2=c.Exp2
+                                for var,value in exp2.factors.iteritems():
+                                        if var.vtype == 'hermitian':
+                                                D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
+                                                D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
+                                        else:
+                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)#TODO check!
+                                if exp2.constant is None:
+                                        cst = None
+                                else:
+                                        cst = _cplx_vecmat_to_real_vecmat(exp2.constant,sym=False)
+                                E2 = AffinExp(D,cst,(2*exp2.size[0],2*exp2.size[1]),exp2.string)
+                                
+                                if c.typeOfConstraint[3]=='<':
+                                        real.add_constraint(E1 << E2)
+                                else:
+                                        real.add_constraint(E1 >> E2)
                         else:
                                 E1=_copy_exp_to_new_vars(c.Exp1,cvars)
                                 E2=_copy_exp_to_new_vars(c.Exp2,cvars)
                                 E3=_copy_exp_to_new_vars(c.Exp3,cvars)
+                                
                                 c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
                                 real.add_constraint(c2,c.key)
                 obj=_copy_exp_to_new_vars(self.objective[1],cvars)
@@ -6509,6 +6590,11 @@ class Problem(object):
                         raise DualizationError('Mixed integer problems cannot be dualized by picos')
                 if self.numberQuadConstraints>0:
                         raise QuadAsSocpError('try to convert the quads as socp before dualizing')
+                
+                if self.is_complex():
+                        raise Exception('dualization of complex SDPs is not supported (yet). Try to convert '+
+                                        'the problem to an equivalent real-valued problem with to_real() first')
+                
                 dual = Problem()
                 self._make_cvxopt_instance(hard_coded_bounds = True)
                 cc = new_param('cc',self.cvxoptVars['c'])

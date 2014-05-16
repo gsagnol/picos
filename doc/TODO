@@ -1,5 +1,12 @@
+dualize does not work on cplxsdp
+solve re3 with solveviadual (pb matrice pas symmetrique)
+check problem with a mu/dualform
+peux pas creer le real counterpart of c3
+
+
 add new contributors (?)
 document slicing problem
+document <AX> = real(<AX>) for Hermitian
 flow constraints (simple, single_source, multicommodity)
 trace (AM^p)
 SDP complex

@@ -118,12 +118,12 @@ class Constraint(object):
                         if len(fac1)==1:
                                 var = fac1.keys()[0]
                                 mat = fac1[var]
-                                if var.vtype in ('symmetric','hermitian'):
+                                if var.vtype in ('symmetric',):
                                         idty = _svecm1_identity('symmetric',var.size)
                                 if ( not(self.Exp1.constant) and
                                      self.Exp2.is0() and
                                      self.typeOfConstraint[3]=='>' and
-                                     var.vtype in ('symmetric','hermitian') and
+                                     var.vtype in ('symmetric',) and
                                      list(mat.I) == list(idty.I) and
                                      list(mat.J) == list(idty.J) and
                                      list(mat.V) == list(idty.V)
@@ -135,7 +135,7 @@ class Constraint(object):
                                 if ( not(self.Exp2.constant) and
                                      self.Exp1.is0() and
                                      self.typeOfConstraint[3]=='<' and
-                                     var.vtype in ('symmetric','hermitian')):
+                                     var.vtype in ('symmetric',)):
                                         self.semidefVar = var
 
         def __str__(self):

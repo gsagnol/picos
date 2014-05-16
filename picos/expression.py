@@ -365,6 +365,56 @@ class AffinExp(Expression):
                 raise AttributeError("attribute 'T' of 'AffinExp' is not writable")
         
         T = property(transpose,setT,delT,"transposition")
+        
+
+        def inplace_Htranspose(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_transpose should not be called on a Variable object')
+                for k in self.factors:
+                        if k.vtype=='hermitian':
+                                bsize=self.size[0]
+                                bsize2=self.size[1]
+                                vsize=k.size[0]
+                                vsize2=k.size[1]
+                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                                J0=[(j/vsize)+(j%vsize)*vsize2 for j in self.factors[k].J]
+                                V0=[v.conjugate() for v in self.factors[k].V]
+                                self.factors[k]=cvx.spmatrix(V0,I0,J0,self.factors[k].size)
+                        else:
+                                bsize=self.size[0]
+                                bsize2=self.size[1]
+                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                                J=self.factors[k].J
+                                V=self.factors[k].V
+                                self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                        
+                if not (self.constant is None):
+                        if self.constant.typecode=='z':
+                                self.constant=cvx.matrix(self.constant,
+                                        self.size).H[:]
+                        else:
+                                self.constant=cvx.matrix(self.constant,
+                                        self.size).T[:]
+                self._size=(self.size[1],self.size[0])
+                if ( ('*' in self.affstring()) or ('/' in self.affstring())
+                        or ('+' in self.affstring()) or ('-' in self.affstring()) ):
+                        self.string='( '+self.string+' ).H'
+                else:
+                        self.string+='.H'
+                
+        def Htranspose(self):
+                selfcopy=self.copy()
+                selfcopy.inplace_Htranspose()
+                return selfcopy
+                
+        def setH(self,value):
+                raise AttributeError("attribute 'H' of 'AffinExp' is not writable")
+        
+        def delH(self):
+                raise AttributeError("attribute 'H' of 'AffinExp' is not writable")
+        
+        H = property(Htranspose,setH,delH,"Hermitian transposition")
+        """Transposition"""
         """Transposition"""
 
         def __rmul__(self,fact):
@@ -520,7 +570,7 @@ class AffinExp(Expression):
                         elif self.isconstant():
                                 return fact.__ror__(self)       
                         else:
-                                dotp = self[:].T*fact[:]
+                                dotp = self[:].H*fact[:]
                                 dotp.string='〈 '+self.string+' | '+fact.string+' 〉'
                                 return dotp
                                 #raise Exception('not implemented')
@@ -528,7 +578,7 @@ class AffinExp(Expression):
                         fac,facString=_retrieve_matrix(fact,self.size)
                 if selfcopy.size<>fac.size:
                         raise Exception('incompatible dimensions')
-                cfac=fac[:].T
+                cfac=fac[:].H
                 for k in selfcopy.factors:
                         newfac=cfac*selfcopy.factors[k]
                         selfcopy.factors[k]=newfac
@@ -553,7 +603,7 @@ class AffinExp(Expression):
                         if fact.isconstant():
                                 fac,facString=cvx.sparse(fact.eval()),fact.string
                         else:
-                                dotp = fact.T * self
+                                dotp = fact.H * self
                                 dotp.string='〈 '+fact.string+' | '+self.string+' 〉'
                                 return dotp
                                 #raise Exception('not implemented')
@@ -561,7 +611,7 @@ class AffinExp(Expression):
                         fac,facString=_retrieve_matrix(fact,self.size)
                 if selfcopy.size<>fac.size:
                         raise Exception('incompatible dimensions')
-                cfac=fac[:].T
+                cfac=fac[:].H
                 for k in selfcopy.factors:
                         newfac=cfac*selfcopy.factors[k]
                         selfcopy.factors[k]=newfac
@@ -2123,7 +2173,7 @@ class Variable(AffinExp):
                 """end position in the global vector of all variables"""
                 
                 
-                if vtype in ('symmetric','hermitian'):
+                if vtype in ('symmetric',):
                         self._endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
                 else:
                         self._endIndex=startIndex+size[0]*size[1] #end position +1
@@ -2201,9 +2251,9 @@ class Variable(AffinExp):
         def vtype(self, value):
                 if not(value in ['symmetric','hermitian','continuous','binary','integer','semicont','semiint']):
                         raise ValueError('unknown variable type')
-                if self._vtype not in ('symmetric','hermitian') and value in ('symmetric','hermitian'):
+                if self._vtype not in ('symmetric',) and value in ('symmetric',):
                         raise Exception('change to symmetric is forbiden because of sym-vectorization')
-                if self._vtype in ('symmetric','hermitian') and value not  in ('symmetric','hermitian'):
+                if self._vtype in ('symmetric',) and value not  in ('symmetric',):
                         raise Exception('change from symmetric is forbiden because of sym-vectorization')
                 self._vtype = value
                 
@@ -2226,8 +2276,10 @@ class Variable(AffinExp):
                 Entries smaller than -INFINITY = -1e16 are ignored
                 """
                 lowexp = _retrieve_matrix(lo,self.size)[0]
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         lowexp = svec(lowexp)
+                if self.vtype in ('hermitian',):
+                        raise Exception('lower bound not supported for hermitian variables')
                 for i in range(lowexp.size[0] * lowexp.size[1]):
                         li = lowexp[i]
                         if li>-INFINITY:
@@ -2278,6 +2330,8 @@ class Variable(AffinExp):
                  4: (0.0, None),
                  5: (0.0, None)}
                 """
+                if self.vtype in ('hermitian',):
+                        raise Exception('lower bound not supported for hermitian variables')
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2285,7 +2339,7 @@ class Variable(AffinExp):
                 for idx,lo in izip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
-                        if self.vtype in ('symmetric','hermitian'):
+                        if self.vtype in ('symmetric',):
                                 (i,j) = idx
                                 if i>j:
                                         ii.append(i)
@@ -2302,7 +2356,7 @@ class Variable(AffinExp):
                         jj.append(idx[1])
                         vv.append(lo)
                 spLO = cvx.spmatrix(vv,ii,jj,self.size)
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         spLO = svec(spLO)
                 for i,j,v in izip(spLO.I,spLO.J,spLO.V):
                         ii = s0*j + i
@@ -2325,8 +2379,10 @@ class Variable(AffinExp):
                 Entries larger than INFINITY = 1e16 are ignored
                 """
                 upexp = _retrieve_matrix(up,self.size)[0]
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         upexp = svec(upexp)
+                if self.vtype in ('hermitian',):
+                        raise Exception('lower bound not supported for hermitian variables')
                 for i in range(upexp.size[0] * upexp.size[1]):
                         ui = upexp[i]
                         if ui<INFINITY:
@@ -2363,6 +2419,8 @@ class Variable(AffinExp):
                 .. Warning:: This function does not modify the existing bounds on elements other
                              than those specified in ``indices``.
                 """
+                if self.vtype in ('hermitian',):
+                        raise Exception('lower bound not supported for hermitian variables')
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2370,7 +2428,7 @@ class Variable(AffinExp):
                 for idx,up in izip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
-                        if self.vtype in ('symmetric','hermitian'):
+                        if self.vtype in ('symmetric',):
                                 (i,j) = idx
                                 if i>j:
                                         ii.append(i)
@@ -2388,7 +2446,7 @@ class Variable(AffinExp):
                                 jj.append(idx[1])
                                 vv.append(up)
                 spUP = cvx.spmatrix(vv,ii,jj,self.size)
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         spUP = svec(spUP)
                 for i,j,v in izip(spUP.I,spUP.J,spUP.V):
                         ii = s0*j + i
@@ -2408,13 +2466,13 @@ class Variable(AffinExp):
                         if self._value is None:
                                 raise Exception(self.name+' is not valued')
                         else:
-                                if self.vtype in ('symmetric','hermitian'):
+                                if self.vtype in ('symmetric',):
                                         return cvx.matrix(svecm1(self._value))
                                 else:
                                         return cvx.matrix(self._value)
                 else:
                         if ind in self.value_alt:
-                                if self.vtype in ('symmetric','hermitian'):
+                                if self.vtype in ('symmetric',):
                                         return cvx.matrix(svecm1(self.value_alt[ind]))
                                 else:
                                         return cvx.matrix(self.value_alt[ind])
@@ -2426,7 +2484,7 @@ class Variable(AffinExp):
                 valuemat,valueString = _retrieve_matrix(value,self.size)
                 if valuemat.size != self.size:
                         raise Exception('should be of size {0}'.format(self.size))
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         valuemat=svec(valuemat)
                 self._value = valuemat
 
@@ -2453,7 +2511,7 @@ class Variable(AffinExp):
         
         def __getitem__(self,index):
                 """faster implementation of getitem for variable"""
-                if self.vtype in ('symmetric','hermitian'):
+                if self.vtype in ('symmetric',):
                         return AffinExp.__getitem__(self,index)
                 
                 def indexstr(idx):
