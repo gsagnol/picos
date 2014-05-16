@@ -3,7 +3,7 @@ import cvxopt as cvx
 
 P = cvx.matrix([[1,2-1j,3],[2+1j,4,-1-2j],[3,-1+2j,5]])
 Q = cvx.matrix([[1,1-4j,3-1j],[1+4j,2,-3j],[3+1j,3j,1]])
-R = cvx.matrix([[1,2-4j,8-1j],[1-5j,2,-4j],[3+1j,1+3j,1]])
+R = cvx.matrix([[1,2-4j,8-1j],[1-5j,2,-4j],[3+1j,1+3j,1]])#not hermitian
 
 cpl = pic.Problem()
 Z = cpl.add_variable('Z',(3,3),'hermitian')
@@ -51,10 +51,36 @@ c2.add_constraint(R*Z+Z*R.H>>0)
 c2.add_constraint('I'|Z==1)
 #c2.add_constraint(Z>>0)
 
+
+P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+Q = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+
 c3 = pic.Problem()
 Z = c3.add_variable('Z',(3,3),'hermitian')
-c3.set_objective('min','I'|Z)
-c3.add_constraint(((P & Z) // (Z.H & Q))>>0 )
+c3.set_objective('max','I'|Z)
+c3.add_constraint(((P*P.H & Z) // (Z & Q*Q.H))>>0 )
+
+
+
+r3 = pic.Problem()
+X = r3.add_variable('X',(3,3),'symmetric')
+Y = r3.add_variable('Y',(3,3))
+r3.set_objective('max','I'|X)
+Pr,Pi = (P*P.H).real(), (P*P.H).imag()
+Qr,Qi = (Q*Q.H).real(), (Q*Q.H).imag()
+r3.add_constraint( ((Pr & X & -Pi & -Y)//
+                   (X  & Qr& -Y  &-Qi)//
+                   (Pi & Y & Pr  & X )//
+                   (Y  & Qi& X   & Qr))>>0)
+
+
+r3.add_constraint((P.real()|X)-(P.imag()|Y)>1)
+re3.add_constraint((Q.real()|X)-(Q.imag()|Y)>1)
+re3.add_constraint(((X & -Y)// (Y & X))>>0)
+re3.set_objective('min',I|X)
+
+
+
 
 #complex version of maxcut
 c4 = pic.Problem()

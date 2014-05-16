@@ -469,7 +469,7 @@ Similarly, the constraint ``Y > |0|`` can be accessed by
 Flow constraints in Graphs
 --------------------------
 
-flow constraints in graphs are entered using a Networkx_ Graph. The following example finds a (trivial) maximal flow from 'S' to 'T'
+Flow constraints in graphs are entered using a Networkx_ Graph. The following example finds a (trivial) maximal flow from ``'S'`` to ``'T'`` in ``G``.
 
 .. _Networkx: https://networkx.github.io/
 
@@ -484,11 +484,137 @@ flow constraints in graphs are entered using a Networkx_ Graph. The following ex
   >>> # A variable for the value of the flow
   >>> F = pb.add_variable('F',1)
   >>> # Creating the flow constraint
-  >>> flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue= F, graphName='G', S='S', T='T')
+  >>> flowCons = pic.flow_Constraint(G, f, source='S',sink='T', capacity='capacity', flow_value= F, graphName='G')
   >>> pb.addConstraint(flowCons)
   >>> pb.set_objective('max',F)
-  >>> pb.solve()
+  >>> sol = pb.solve(verbose=0)
   >>> flow = pic.tools.eval_dict(f)
+
+
+
+Picos allows you to define single source - multiple sinks problems.
+You can use the same syntax as for a single source - single sink problems.
+Just add a list of sinks and a list of flows instead.
+
+.. warning::
+        The function :func:`flow_Constraint() <picos.tools.flow_Constraint>`
+        cannot take both multiple sources and multiple sinks.
+        Multicommodity flows will be supported in the next release.
+
+.. testcode::
+
+        import picos as pic
+        import networkx as nx
+
+        G=nx.DiGraph()
+        G.add_edge('S','A', capacity=2); G.add_edge('S','B', capacity=2)
+        G.add_edge('A','T1', capacity=2); G.add_edge('B','T2', capacity=2)
+
+        pbMultipleSinks=pic.Problem()
+        # Flow variable
+        f={}
+        for e in G.edges():
+                  f[e]=pbMultipleSinks.add_variable('f[{0}]'.format(e),1)
+
+        # Flow value
+        F1=pbMultipleSinks.add_variable('F1',1)
+        F2=pbMultipleSinks.add_variable('F2',1)
+
+        flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources='S', Sinks=['T1','T2'])
+        pbMultipleSinks.addConstraint(flowCons)
+
+        pbMultipleSinks.set_objective('max',F1+F2)
+
+        # Solve the problem
+        pbMultipleSinks.solve(verbose=0)
+
+        print pbMultipleSinks
+        print 'The optimal flow F1 has value {0}'.format(F1)
+        print 'The optimal flow F2 has value {0}'.format(F2)
+
+
+.. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+        
+        ---------------------
+        optimization problem  (LP):
+        6 variables, 13 affine constraints
+
+        f       : dict of 4 variables, (1, 1), continuous
+        F1      : (1, 1), continuous
+        F2      : (1, 1), continuous
+
+                  maximize F1 + F2
+        such that
+          ** One Source, Multiple Sinks ** 
+          Flow conservation in G from S to T1 with value:
+                   # variable F1:(1 x 1),continuous #
+          Flow conservation in G from S to T2 with value:
+                   # variable F2:(1 x 1),continuous #
+
+        ---------------------
+        The optimal flow F1 has value 2.0
+        The optimal flow F2 has value 2.0
+
+
+A similar syntax can be used for multiple sources-single sink flows.
+
+..
+        .. testcode::
+
+                import picos as pic
+                import networkx as nx
+
+                G=nx.DiGraph()
+                G.add_edge('S1','A', capacity=1); G.add_edge('S2','B', capacity=2)
+                G.add_edge('A','T', capacity=2); G.add_edge('B','T', capacity=2)
+
+                pbMultipleSources=pic.Problem()
+                # Flow variable
+                f={}
+                for e in G.edges():
+                        f[e]=pbMultipleSources.add_variable('f[{0}]'.format(e),1)
+
+                # Flow value
+                F1=pbMultipleSources.add_variable('F1',1)
+                F2=pbMultipleSources.add_variable('F2',1)
+
+                flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=[F1, F2], graphName='G', Sources=['S1', 'S2'], Sinks='T')
+                pbMultipleSources.addConstraint(flowCons)
+
+                pbMultipleSources.set_objective('max',F1+F2)
+
+                # Solve the problem
+                pbMultipleSources.solve(verbose=0)
+
+                print pbMultipleSources
+                print 'The optimal flow F1 has value {0}'.format(F1)
+                print 'The optimal flow F2 has value {0}'.format(F2)
+
+        .. testoutput::
+                :options: +NORMALIZE_WHITESPACE
+                
+                ---------------------
+                optimization problem  (LP):
+                6 variables, 13 affine constraints
+
+                F1      : (1, 1), continuous
+                F2      : (1, 1), continuous
+                f       : dict of 4 variables, (1, 1), continuous
+
+                        maximize F1 + F2
+                such that
+                ** Multiple Sources, One Sink **
+                Flow conservation in G from S1 to T with value:
+                        # variable F1:(1 x 1),continuous #
+                Flow conservation in G from S2 to T with value:
+                        # variable F2:(1 x 1),continuous #
+
+                ---------------------
+                The optimal flow F1 has value 1.0
+                The optimal flow F2 has value 2.0
+
+
 
 Quadratic constraints
 ---------------------
@@ -660,7 +786,7 @@ Note that only inequalities defining a convex regions can be passed:
    >>> try:
    ...      t**-0.5 > x[0]
    ... except Exception as ex:
-   ...      print ex #doctest: +NORMALIZE_WHITESPACE
+   ...      print 'Exception: '+str(ex) #doctest: +NORMALIZE_WHITESPACE
    Exception: >= operator can be used only when the function is concave (0<p<=1)
    >>> t**2 < x[1]+x[2]   
    # (1x1)-Rotated SOC constraint: ||t||^2 < x[1] + x[2] #

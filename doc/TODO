@@ -1,7 +1,8 @@
 dualize does not work on cplxsdp
 solve re3 with solveviadual (pb matrice pas symmetrique)
-check problem with a mu/dualform
 peux pas creer le real counterpart of c3
+problem de rang avec cvxopt: remove constraints redondantes ?
+print probleme avec variable flow value: should display var.name, not str(var)
 
 
 add new contributors (?)
