@@ -242,7 +242,7 @@ When a scalar is added/substracted to a matrix or a vector, we interprete it
 as an elementwise addition of the scalar to every element of the matrix or vector.
 
    >>> 5*x - alpha
-   # (4 x 1)-affine expression: 5*x + |-alpha| #
+   # (4 x 1)-affine expression: 5.0*x + |-alpha| #
 
 .. Warning::
         Note that the string representation ``'|-alpha|'`` does not stand for the
@@ -328,7 +328,7 @@ In the case where the affine expression is a matrix, ``abs()`` returns its
 Frobenius norm, defined as :math:`\Vert M \Vert_F := \sqrt{\operatorname{trace} (M^T M)}`.
 
   >>> abs(Z[1]-2*A[0].T)
-  # norm of a (4 x 2)- expression: ||Z[1] -2*A[0].T|| #
+  # norm of a (4 x 2)- expression: ||Z[1] -2.0*A[0].T|| #
 
 Note that the absolute value of a scalar expression is stored as a norm:
 
@@ -466,10 +466,10 @@ Similarly, the constraint ``Y > |0|`` can be accessed by
 ``prob.get_constraint((0,0))`` (first constraint of the first group), or
 ``prob.get_constraint((0,))`` (unique constraint of the first group).
 
-Graph flow constraints
-----------------------
+Flow constraints in Graphs
+--------------------------
 
-Graph flow constraints are entered using a Networkx_ Graph. The following trivial example finds a compatible flow from 'S' to 'T'
+flow constraints in graphs are entered using a Networkx_ Graph. The following example finds a (trivial) maximal flow from 'S' to 'T'
 
 .. _Networkx: https://networkx.github.io/
 
@@ -481,13 +481,14 @@ Graph flow constraints are entered using a Networkx_ Graph. The following trivia
   >>> f={}
   >>> for e in G.edges():
   ...      f[e]=pb.add_variable('f[{0}]'.format(e),1)
+  >>> # A variable for the value of the flow
+  >>> F = pb.add_variable('F',1)
   >>> # Creating the flow constraint
-  >>> flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue=1, graphName='G', S='S', T='T')
-  >>> pb.addConstraint(flowCons)  
+  >>> flowCons = pic.flow_Constraint(G, f, capacity='capacity', flowValue= F, graphName='G', S='S', T='T')
+  >>> pb.addConstraint(flowCons)
+  >>> pb.set_objective('max',F)
   >>> pb.solve()
-  >>> print pb
   >>> flow = pic.tools.eval_dict(f)
-  >>> print "solution: " + str(flow)
 
 Quadratic constraints
 ---------------------
@@ -656,8 +657,10 @@ Note that only inequalities defining a convex regions can be passed:
    # pth power ineq : ( t)**2/3>x[0]#
    >>> t**-0.5 < x[0]
    # pth power ineq : ( t)**-1/2<x[0]#
-   >>> t**-0.5 > x[0] #doctest: +NORMALIZE_WHITESPACE
-   ...
+   >>> try:
+   ...      t**-0.5 > x[0]
+   ... except Exception as ex:
+   ...      print ex #doctest: +NORMALIZE_WHITESPACE
    Exception: >= operator can be used only when the function is concave (0<p<=1)
    >>> t**2 < x[1]+x[2]   
    # (1x1)-Rotated SOC constraint: ||t||^2 < x[1] + x[2] #

@@ -686,7 +686,7 @@ def _retrieve_matrix(mat,exSize=None):
                 else:
                         retmat=cvx.matrix(mat.value)
         elif isinstance(mat,np.ndarray):
-                if any(np.iscomplex(mat)):
+                if np.iscomplex(mat).any():
                         retmat=cvx.matrix(mat,tc='z')
                 else:
                         retmat=cvx.matrix(mat,tc='d')
@@ -1567,7 +1567,7 @@ def _read_sdpa(filename):
                 return P      
 
 
-def flow_Constraint(G, f=[], capacity='none', flowValue = 1, graphName='', S='S', T='T'):
+def flow_Constraint(G, f, S, T, flowValue, capacity = None, graphName=''):
 	"""Returns an object of class _Flow_Constraint."""
 	# checking that we have the good number of variables
 	if len(f)!=len(G.edges()):
@@ -1578,7 +1578,7 @@ def flow_Constraint(G, f=[], capacity='none', flowValue = 1, graphName='', S='S'
 	Ptmp = Problem()
 
 	# Adding Edge capacities
-	if capacity!='none':
+	if not capacity is None:
 		cap = [ed[2][capacity] for ed in G.edges(data=True)]
 
 		c={}
@@ -1588,7 +1588,7 @@ def flow_Constraint(G, f=[], capacity='none', flowValue = 1, graphName='', S='S'
 	cc=new_param('c',c)
 
 	# Adding the capacity constraint
-	if capacity!='none':
+	if not capacity is None:
 		Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
 
 	# Adding the flow conservation
