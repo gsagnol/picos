@@ -334,12 +334,20 @@ Author and contributors
                 
                   `Guillaume Sagnol <http://www.zib.de/sagnol>`_, <sagnol( a t )zib.de>
 
-        * Contributors: People who contributed to Picos and their contributions
-          (in no particular order) are:
-
-                        * `Warren Schudy <http://cs.brown.edu/~ws/>`_
-
+        * Contributors: People who actively contributed to the code of Picos (in no particular order)
+        
+                        * Paul Fournel
+                        
                         * Bertrand Omont
+        
+        * Contributors: People who contributed to the improvement of Picos by sending
+          their comments, ideas, questions, ... (in no particular order):
 
+                        * `Dan Stahlke <http://www.stahlke.org/>`_
+
+                        * `Matteo Seminaroti <http://www.cwi.nl/people/2683/>`_
+                        
+                        * `Warren Schudy <http://cs.brown.edu/~ws/>`_
+                        
                         * `Elmar Swarat <http://www.zib.de/swarat>`_
           

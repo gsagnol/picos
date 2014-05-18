@@ -466,6 +466,8 @@ Similarly, the constraint ``Y > |0|`` can be accessed by
 ``prob.get_constraint((0,0))`` (first constraint of the first group), or
 ``prob.get_constraint((0,))`` (unique constraint of the first group).
 
+.. _flowcons:
+
 Flow constraints in Graphs
 --------------------------
 
@@ -521,7 +523,7 @@ Just add a list of sinks and a list of flows instead.
         F2=pbMultipleSinks.add_variable('F2',1)
 
         flowCons = pic.flow_Constraint(G, f, source='S', sink=['T1','T2'], capacity='capacity', flow_value=[F1, F2], graphName='G')
-        pbMultipleSinks.addConstraint(flowCons)
+        import pdb;pdb.set_trace()
 
         pbMultipleSinks.set_objective('max',F1+F2)
 

@@ -57,11 +57,13 @@ import picos as pic
 import cvxopt as cvx
 P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
 Q = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+P = P*P.H
+Q = Q*Q.H
 
 c3 = pic.Problem()
 Z = c3.add_variable('Z',(3,3),'hermitian')
 c3.set_objective('max','I'|Z)
-c3.add_constraint(((P*P.H & Z) // (Z & Q*Q.H))>>0 )
+c3.add_constraint(((P & Z) // (Z & Q))>>0 )
 
 #in fact, Z itself must not be hermitian !
 c3b = pic.Problem()
@@ -71,29 +73,19 @@ c3b.set_objective('max','I'|Zr)
 c3b.add_constraint(((P & (Zr+1j*Zi)) // ((Zr.T-1j*Zi.T) & Q))>>0 )
 c3b.solve()
 
-exp = ((P & (Zr+1j*Zi)) // ((Zr.T-1j*Zi.T) & Q))
+#Or with the new cplex vtype
+c3f = pic.Problem()
+Z = c3f.add_variable('Z',(3,3),'complex')
+c3f.set_objective('max','I'|0.5*(Z+Z.H))
+c3f.add_constraint(((P & Z) // (Z.H & Q))>>0 )
 
-import picos as pic
-import cvxopt as cvx
-P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
-P = P*P.H
-C = pic.Problem()
-Z = C.add_variable('Z',(3,3),'continuous')
-print(cvx.matrix((P & (1j*Z)).factors[Z][:,6],(3,6)))
-
-         0 3 6 
-         1 4 7
-         2 5 8
--0 -1 -2 
--3 -4 -5
--6 -7 -8
 
 r3 = pic.Problem()
 X = r3.add_variable('X',(3,3),'symmetric')
 Y = r3.add_variable('Y',(3,3))
 r3.set_objective('max','I'|X)
-Pr,Pi = (P*P.H).real(), (P*P.H).imag()
-Qr,Qi = (Q*Q.H).real(), (Q*Q.H).imag()
+Pr,Pi = P.real(), P.imag()
+Qr,Qi = Q.real(), Q.imag()
 r3.add_constraint( ((Pr & X & -Pi & -Y)//
                     (X  & Qr& -Y  &-Qi)//
                     (Pi & Y & Pr  & X )//
@@ -144,6 +136,23 @@ c4.add_constraint(Z[0,0]<1)
 c4.add_constraint(Z[1,1]<1)
 c4.add_constraint(Z[2,2]<1)
 
+import picos as pic
+import cvxopt as cvx
+P = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+Q = cvx.normal(3,3) + 1j*cvx.normal(3,3)
+P = P*P.H
+Q = Q*Q.H
+
+c4 = pic.Problem()
+Z = c4.add_variable('Z',(3,3),'hermitian')
+c4.set_objective('max',P|Z)
+c4.add_constraint(Z>>0)
+#c4.add_constraint(pic.tools.diag_vect(Z) == 1) ...fatal error ?
+c4.add_constraint(Z[0,0]==1)
+c4.add_constraint(Z[1,1]==1)
+c4.add_constraint(Z[2,2]==1)
+
+
 
 #test Htranspose
 Z0 = cvx.matrix([1,2+1j,0,2-1j,4,0,0,0,2],(3,3))
@@ -155,3 +164,25 @@ print (PP*Z).H
 
 [A  X]*     [A* X ]
 [X* B]   =  [X* B*]
+
+#test scalar product
+import cvxopt as cvx
+import picos as pic
+import numpy as np
+P = pic.Problem()
+X = P.add_variable('X',(3,3),'hermitian')
+Z = P.add_variable('Z',(3,3),'complex')
+A = cvx.normal(3,3) + 1j * cvx.normal(3,3)
+B = cvx.normal(3,3) + 1j * cvx.normal(3,3)
+Z.value = B
+X.value = (A + A.H)
+print B | X
+np.trace ((A+A.H).H*B)
+print X|B
+np.trace (B.H * (A+A.H))
+
+print A | Z
+np.trace (B.H * A)
+print Z|A
+np.trace (A.H * B)
+

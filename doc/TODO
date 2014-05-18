@@ -1,14 +1,13 @@
+website: ask Paul how to make redirections ?
 dualize does not work on cplxsdp
 solve re3 with solveviadual (pb matrice pas symmetrique -> but OK with A+A.H/2: check)
 problem de rang avec cvxopt: remove constraints redondantes ?
 
 
-add new contributors (?)
+add new contributors (Marco Dalai, Peter Wittek ?)
 document slicing problem
-document <AX> = real(<AX>) for Hermitian
-flow constraints (simple, single_source, multicommodity)
+flow constraints (multicommodity)
 trace (AM^p)
-SDP complex
 robust -- uncertainty sets
 read solution partially
 fix some variables as constant
@@ -47,7 +46,7 @@ generaliser les inplace operators (avoid seelfcopy as much as possible)
 lancer script add_google_script
 Changer CHANGE file
 Creer dist file (python setup.py sdist)
-move to /www and change root-index with 3 <meta tags> and $sed -i 's/href="/href="v013\//g' index.html
+move to /www, and change root-index with 3 <meta tags> and $sed -i 's/href="/href="v013\//g' index.html
 Register on pypi (python setup.py register, username guillaume.sagnol)
 sed -i 's/Picos 0\.1\.0/Picos 0\.1\.1/g' picos/*.py
-et change version num dans conf.py and setup.py 
+et change version num dans conf.py and setup.py and __init__.py

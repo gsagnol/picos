@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.1.dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.1 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -65,7 +65,8 @@ __all__=['_retrieve_matrix',
         '_read_sdpa',
         'tracepow',
         '_cplx_mat_to_real_mat',
-        '_cplx_vecmat_to_real_vecmat'
+        '_cplx_vecmat_to_real_vecmat',
+        '_is_idty'
 ]
 
 
@@ -1381,7 +1382,16 @@ def _copy_dictexp_to_new_vars(dct,cvars):
                                 D[cvars[var.name+'_RE']] = cvx.sparse(vv)
                                 
                         else:
-                                D[cvars[var.name]] = copy.copy(value)
+                                if value.typecode=='z':
+                                        vr = value.real()
+                                        vi = value.imag()
+                                else:
+                                        vr = copy.copy(value)
+                                        vi = 0
+                                if vi:
+                                        D[cvars[var.name]] = vr + 1j * vi
+                                else:
+                                        D[cvars[var.name]] = vr
         return D
 
 def _copy_exp_to_new_vars(exp,cvars):
@@ -1491,6 +1501,15 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
         return cvx.sparse(vv)
         
 
+def _is_idty(mat):
+        if (mat.size[0] == mat.size[1]):
+                n = mat.size[0]
+                if (list(mat.I) == range(n) and
+                    list(mat.J) == range(n) and
+                    list(mat.V) == [1.]*n):
+                        return True
+        return False
+
 def _read_sdpa(filename):
                 """TODO, remove dependence; currently relies on smcp sdpa_read
                 cone constraints ||x||<t are recognized if they have the arrow form [t,x';x,t*I]>>0
@@ -1578,20 +1597,23 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 	"""Returns an object of the class :class:`_Flow_Constraint <picos.Constraint._Flow_Constraint>` that can be passed to a 
 	problem with :func:`add_constraint() <picos.Problem.add_constraint>`.
 	
-	``f`` must be a dictionary of variables indexed by the edges of ``G``
-	
-	``source`` can be eiter a node of ``G``, or a list of nodes in case of a multisource-single sink flow
-	
-	``sink`` can be eiter a node of ``G``, or a list of nodes in case of a single source-multising flow
-	
-        ``flow_value`` is the value of the flow, or a list of values in case of a single source - multisink flow. In the latter case,
-        the values represent the demands of each sink (resp. of each source for a multisource - single sink flow). The values
-        can be either constants or :class:`AffinExp <picos.AffinExp>`.
+                ``G`` a directed graph (class DiGraph of `networkx <http://networkx.lanl.gov/index.html>`_)
+                
+                ``f`` must be a dictionary of variables indexed by the edges of ``G``
+                
+                ``source`` can be eiter a node of ``G``, or a list of nodes in case of a multisource-single sink flow
+                
+                ``sink`` can be eiter a node of ``G``, or a list of nodes in case of a single source-multising flow
+                
+                ``flow_value`` is the value of the flow, or a list of values in case of a single source - multisink flow. In the latter case,
+                the values represent the demands of each sink (resp. of each source for a multisource - single sink flow). The values
+                can be either constants or :class:`AffinExp <picos.AffinExp>`.
 
-	``capacity`` must be either ``None`` or a string. If this is a string, it indicates the key of the edge
-	dictionaries of ``G`` that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.
+                ``capacity`` must be either ``None`` or a string. If this is a string, it indicates the key of the edge
+                dictionaries of ``G`` that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.
+                
+                ``graphName`` is a string used in the string representation of the constraint.
 	
-	``graphName`` is a string used in the string representation of the constraint.
 	
 	"""
 	# checking that we have the good number of variables
@@ -1661,7 +1683,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 		# Source flow at S
 		Ptmp.add_constraint(sum([f[p,source] for p in G.predecessors(source)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[source,j] for j in G.successors(source)],'j','succ('+str(source)+')'))
 
-		comment = "** One Source, Multiple sink **\n"
+		comment = "** One Source, Multiple Sinks **\n"
 		for k in range(0, len(sink)):
 
 			# Sink flow at T
@@ -1693,7 +1715,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 		Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred('+str(sink)+')') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + sum([fv for fv in flow_value], 'fv', 'flows'))
 
 
-		comment = "** Multiple source, One Sink **\n"
+		comment = "** Multiple Sources, One Sink **\n"
 		for k in range(0, len(source)):
 
 			# Source flow at T

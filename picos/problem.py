@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.1.dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.1 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -807,6 +807,8 @@ class Problem(object):
                                 
                                 * ``'symmetric'``: symmetric matrix
                                 
+                                * ``'complex'``: complex matrix variable
+                                
                                 * ``'hermitian'``: complex hermitian matrix
                                 
                                 * ``'semicont'``: 0 or continuous variable satisfying its bounds
@@ -865,6 +867,31 @@ class Problem(object):
                                 raise ValueError('symmetric variables must be square')
                         s0=size[0]
                         self.numberOfVars+=s0*(s0+1)/2
+                elif vtype== 'complex':
+                        l=None
+                        lr,li,ur,ui = None,None,None,None
+                        if l:
+                                l = _retrieve_matrix(l,size)[0]
+                                if l.typecode=='z':
+                                        lr = l.real()
+                                        li = l.imag()
+                                else:
+                                        lr = l
+                                        li = None
+                        u=None
+                        if u:
+                                u = _retrieve_matrix(u,size)[0]
+                                if u.typecode=='z':
+                                        ur = u.real()
+                                        ui = u.imag()
+                                else:
+                                        ur = u
+                                        ui = None
+                        Zr = self.add_variable(name+'_RE',size, vtype = 'continuous',lower = lr,upper =ur)
+                        Zi = self.add_variable(name+'_IM',size, vtype = 'continuous',lower = li,upper =ui)
+                        exp = Zr + 1j * Zi
+                        exp.string = name
+                        return exp 
                 else:
                         self.numberOfVars+=size[0]*size[1]
                 self.varNames.append(name)
@@ -1275,8 +1302,14 @@ class Problem(object):
                                                 key=ind
                                 rvar[key]=self.variables[var+'['+ind+']']
                         return rvar
-                else:
+                elif var+'_IM' in self.variables and var+'_RE' in self.variables:#complex
+                        exp = self.variables[var+'_RE'] + 1j * self.variables[var+'_IM']
+                        exp.string = var
+                        return exp
+                elif var in self.variables:
                         return self.variables[var]
+                else:
+                        raise Exception('no such variable')
                         
 
 
@@ -2103,14 +2136,15 @@ class Problem(object):
         def is_continuous(self):
                 """ Returns ``True`` if there are only continuous variables"""
                 for kvar in self.variables.keys():
-                        if self.variables[kvar].vtype not in ['continuous','symmetric','hermitian']:
+                        if self.variables[kvar].vtype not in ['continuous','symmetric','hermitian','complex']:
                                 return False
                 return True
                 
                 
         def is_complex(self):
                 if self.numberSDPConstraints>0:
-                        if 'hermitian' in [x.vtype for x in self.variables.values()]:
+                        tps = [x.vtype for x in self.variables.values()]
+                        if 'hermitian' in tps or 'complex' in tps:
                                 return True
                         for c in self.constraints:
                                 if c.typeOfConstraint.startswith('sdp'):
@@ -4043,10 +4077,15 @@ class Problem(object):
                                                 if var.vtype == 'hermitian':
                                                         Zi = realP.get_valued_variable(var.name+'_IM')
                                                         if max(Zi+Zi.T)>1e-5 or min(Zi+Zi.T)<-1e-5:#force symmetry
-                                                                print ("\033[1;31m a matrix was not Hermitian. Now I force symmetry. \033[0m")
+                                                                if self.options['verbose']>0:
+                                                                        print ("\033[1;31m a matrix was not Hermitian. Now I force symmetry. \033[0m")
                                                                 nosym = True
                                                                 continue
                                                         primals[var.name] = realP.get_valued_variable(var.name+'_RE') + 1j * Zi
+                                                elif var.vtype == 'complex':
+                                                        Zr = realP.get_valued_variable(var.name+'_RE')
+                                                        Zi = realP.get_valued_variable(var.name+'_IM')
+                                                        primals[var.name] = Zr + 1j * Zi
                                                 else:
                                                         primals[var.name] = realP.get_valued_variable(var.name)
                                         if nosym:
@@ -4089,9 +4128,10 @@ class Problem(object):
                                                 #'with the function convert_quad_to_socp().')
                                 if raiseexp:
                                         #raise(ex)
-                                        print ("\033[1;31m Error raised when dualizing the problem: \033[0m")
-                                        print ex
-                                        print ('I retry to solve without dualizing')
+                                        if self.options['verbose']>0:
+                                                print ("\033[1;31m Error raised when dualizing the problem: \033[0m")
+                                                print ex
+                                                print ('I retry to solve without dualizing')
                                         return self.solve(solve_via_dual=False) 
                                         
                                 sol = dual.solve()
@@ -5812,7 +5852,7 @@ class Problem(object):
                 
         def what_type(self):
                 
-                iv= [v for v in self.variables.values() if v.vtype not in ('continuous','symmetric','hermitian') ]
+                iv= [v for v in self.variables.values() if v.vtype not in ('continuous','symmetric','hermitian','complex') ]
                 #continuous problem
                 if len(iv)==0:
                         #general convex
@@ -6534,7 +6574,7 @@ class Problem(object):
                                                 D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
                                                 D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
                                         else:
-                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)#TODO check!
+                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
                                 if exp1.constant is None:
                                         cst = None
                                 else:
@@ -6549,7 +6589,7 @@ class Problem(object):
                                                 D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
                                                 D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
                                         else:
-                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)#TODO check!
+                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
                                 if exp2.constant is None:
                                         cst = None
                                 else:
@@ -6568,6 +6608,17 @@ class Problem(object):
                                 c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
                                 real.add_constraint(c2,c.key)
                 obj=_copy_exp_to_new_vars(self.objective[1],cvars)
+                ##take real part
+                #import pdb;pdb.set_trace()
+                #if obj[1]:
+                        #for k,m in obj[1].factors.iteritems():
+                                #if m.typecode == 'z':
+                                        #obj[1].factors[k] = m.real()
+                        #if obj[1].constant:
+                                #m = obj[1].constant
+                                #if m.typecode == 'z':
+                                        #obj[1].constant = m.real()
+                
                 real.set_objective(self.objective[0],obj)
                 
                 real.consNumbering=copy.deepcopy(self.consNumbering)

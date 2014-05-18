@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.1.dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.1 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -273,14 +273,115 @@ class AffinExp(Expression):
                 return cvx.matrix(val,self.size)
                 
         def set_value(self,value):
+                #is it a complex variable?
+                if (len(self.factors)==2):
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                Zr=facs[0]
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        Zi=facs[1]
+                                        value = _retrieve_matrix(value,self.size)[0]
+                                        Zr.value = value.real()
+                                        if value.typecode == 'z':
+                                                Zi.value = value.imag()
+                                        else:
+                                                Zi.value = 0
+                                        return
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                Zr=facs[1]
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        Zi=facs[0]
+                                        value = _retrieve_matrix(value,self.size)[0]
+                                        Zr.value = value.real()
+                                        if value.typecode == 'z':
+                                                Zi.value = value.imag()
+                                        else:
+                                                Zi.value = 0
+                                        return
                 raise ValueError('set_value can only be called on a Variable')
                 
         def del_simple_var_value(self):
+                #is it a complex variable?
+                if (len(self.factors)==2):
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                Zr=facs[0]
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        Zi=facs[1]
+                                        del Zi.value
+                                        del Zr.value
+                                        return
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                Zr=facs[1]
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        Zi=facs[0]
+                                        del Zi.value
+                                        del Zr.value
+                                        return
                 raise ValueError('del_simple_var_value can only be called on a Variable')
         
         value = property(eval,set_value,del_simple_var_value,"value of the affine expression")
-
+        
+        
+        def get_type(self):
+                if (len(self.factors)==2):#is it a complex variable ?
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        return 'complex'
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        return 'complex'
+                raise ValueError('get_type can only be called on a Variable')
+        
+        def set_type(self,value):
+                raise ValueError('set_type can only be called on a Variable')
+                
+        def del_type(self):
+                raise ValueError('vtype cannot be deleted')
+        
+        vtype = property(get_type,set_type,del_type,"vype (for complex variables)")
+        
+        
+        def get_real(self):
+                if (len(self.factors)==2):#is it a complex variable ?
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        return facs[0]
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        return facs[1]
+                else:
+                        return 0.5*(self + self.conj)
+        
+        def set_real(self,value):
+                raise ValueError('real is not writable')
+                
+        def del_real(self):
+                raise ValueError('real is not writable')
            
+        real = property(get_real,set_real,del_real,"real part (for complex expressions)")
+
+        def get_imag(self):
+                if (len(self.factors)==2):#is it a complex variable ?
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        return facs[1]
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        return facs[0]
+                else:
+                        return -1j*0.5*(self - self.conj)
+        
+        def set_imag(self,value):
+                raise ValueError('imag is not writable')
+                
+        def del_imag(self):
+                raise ValueError('imag is not writable')
+           
+        imag = property(get_imag,set_imag,del_imag,"imaginary part (for complex expressions)")
         
         def is_valued(self, ind = None):
                 
@@ -366,6 +467,37 @@ class AffinExp(Expression):
         
         T = property(transpose,setT,delT,"transposition")
         
+        def conjugate(self):
+                selfcopy=self.copy()
+                selfcopy.inplace_conjugate()
+                return selfcopy
+                
+        def inplace_conjugate(self):
+                for k in self.factors:
+                        if self.factors[k].typecode=='z':
+                                Fr = self.factors[k].real()
+                                Fi = self.factors[k].imag()
+                                self.factors[k] = Fr -1j *Fi
+                if not self.constant is None:
+                        if self.constant.typecode=='z':
+                                Fr = self.constant.real()
+                                Fi = self.constant.imag()
+                                self.constant = Fr -1j *Fi
+
+                if ( ('*' in self.affstring()) or ('/' in self.affstring())
+                        or ('+' in self.affstring()) or ('-' in self.affstring()) ):
+                        self.string='( '+self.string+' ).conj'
+                else:
+                        self.string+='.conj'
+                        
+                
+        def setconj(self,value):
+                raise AttributeError("attribute 'conj' of 'AffinExp' is not writable")
+        
+        def delconj(self):
+                raise AttributeError("attribute 'conj' of 'AffinExp' is not writable")
+        
+        conj = property(conjugate,setconj,delconj,"complex conjugate")
 
         def inplace_Htranspose(self):
                 if isinstance(self,Variable):
@@ -381,12 +513,13 @@ class AffinExp(Expression):
                                 V0=[v.conjugate() for v in self.factors[k].V]
                                 self.factors[k]=cvx.spmatrix(V0,I0,J0,self.factors[k].size)
                         else:
+                                F = self.factors[k] 
                                 bsize=self.size[0]
                                 bsize2=self.size[1]
-                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
-                                J=self.factors[k].J
-                                V=self.factors[k].V
-                                self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in F.I]
+                                J=F.J
+                                V=[v.conjugate() for v in F.V]
+                                self.factors[k]=cvx.spmatrix(V,I0,J,F.size)
                         
                 if not (self.constant is None):
                         if self.constant.typecode=='z':
@@ -562,73 +695,47 @@ class AffinExp(Expression):
                         prod.string=selfcopy.string
                 return prod
         
+        
         def __or__(self,fact):#scalar product
                 selfcopy=self.copy()
-                if isinstance(fact,AffinExp):
-                        if fact.isconstant():
-                                fac,facString=cvx.sparse(fact.constant),fact.string
-                        elif self.isconstant():
-                                return fact.__ror__(self)       
-                        else:
-                                dotp = self[:].H*fact[:]
-                                dotp.string='〈 '+self.string+' | '+fact.string+' 〉'
-                                return dotp
-                                #raise Exception('not implemented')
-                else:           
+                if not(isinstance(fact,AffinExp)):
                         fac,facString=_retrieve_matrix(fact,self.size)
-                if selfcopy.size<>fac.size:
+                        fact=AffinExp({},constant=fac[:],size=fac.size,string=facString)
+
+                #now we must have an AffinExp
+                if self.size<>fact.size:
                         raise Exception('incompatible dimensions')
-                cfac=fac[:].H
-                for k in selfcopy.factors:
-                        newfac=cfac*selfcopy.factors[k]
-                        selfcopy.factors[k]=newfac
-                if selfcopy.constant is None:
-                        newfac=None
-                else:
-                        newfac=cfac*selfcopy.constant
-                selfcopy.constant=newfac
-                selfcopy._size=(1,1)
+                
+                dotp = fact[:].H * self[:]
+                facString = fact.string
                 if facString[-1]=='I' and (len(facString)==1
                                  or facString[-2].isdigit() or facString[-2]=='.'):
-                        selfcopy.string=facString[:-1]+'trace( '+selfcopy.string+' )'
+                        dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        #selfcopy.string= u'\u2329 '+selfcopy.string+' | '+facString+u' \u232a'
-                        selfcopy.string='〈 '+selfcopy.string+' | '+facString+' 〉'
-                        #'\xe2\x8c\xa9 '+selfcopy.string+' | '+facString+' \xe2\x8c\xaa'
-                return selfcopy
-
-        def __ror__(self,fact):
+                        dotp.string='〈 '+self.string+' | '+facString+' 〉'
+                
+                return dotp
+                
+        def __ror__(self,fact):#scalar product
                 selfcopy=self.copy()
-                if isinstance(fact,AffinExp):
-                        if fact.isconstant():
-                                fac,facString=cvx.sparse(fact.eval()),fact.string
-                        else:
-                                dotp = fact.H * self
-                                dotp.string='〈 '+fact.string+' | '+self.string+' 〉'
-                                return dotp
-                                #raise Exception('not implemented')
-                else:           
+                if not(isinstance(fact,AffinExp)):
                         fac,facString=_retrieve_matrix(fact,self.size)
-                if selfcopy.size<>fac.size:
+                        fact=AffinExp({},constant=fac[:],size=fac.size,string=facString)
+
+                #now we must have an AffinExp
+                if self.size<>fact.size:
                         raise Exception('incompatible dimensions')
-                cfac=fac[:].H
-                for k in selfcopy.factors:
-                        newfac=cfac*selfcopy.factors[k]
-                        selfcopy.factors[k]=newfac
-                if selfcopy.constant is None:
-                        newfac=None
-                else:
-                        newfac=cfac*selfcopy.constant
-                selfcopy.constant=newfac
-                selfcopy._size=(1,1)
+                
+                dotp = self[:].H * fact[:]
+                facString = fact.string
                 if facString[-1]=='I' and (len(facString)==1
                                  or facString[-2].isdigit() or facString[-2]=='.'):
-                        selfcopy.string=facString[:-1]+'trace( '+selfcopy.string+' )'
+                        dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        #selfcopy.string=u'\u2329 '+facString+' | '+selfcopy.string+u' \u232a'
-                        selfcopy.string='〈 '+facString+' | '+selfcopy.string+' 〉'
-                return selfcopy
-
+                        dotp.string='〈 '+facString+' | '+self.string+' 〉'
+                
+                return dotp
+                
         def __add__(self,term):
                 selfcopy=self.copy()
                 selfcopy+=term
@@ -2316,6 +2423,7 @@ class Variable(AffinExp):
                      * 'binary'     (binary 0/1 variable)
                      * 'integer'    (integer variable)
                      * 'symmetric'  (symmetric matrix variable)
+                     * 'complex'    (complex matrix variable)
                      * 'hermitian'  (complex hermitian matrix variable)
                      * 'semicont'   (semicontinuous variable 
                                     [can take the value 0 or any 
@@ -2328,7 +2436,7 @@ class Variable(AffinExp):
          
         @vtype.setter
         def vtype(self, value):
-                if not(value in ['symmetric','hermitian','continuous','binary','integer','semicont','semiint']):
+                if not(value in ['symmetric','hermitian','complex','continuous','binary','integer','semicont','semiint']):
                         raise ValueError('unknown variable type')
                 if self._vtype not in ('symmetric',) and value in ('symmetric',):
                         raise Exception('change to symmetric is forbiden because of sym-vectorization')
@@ -2357,8 +2465,8 @@ class Variable(AffinExp):
                 lowexp = _retrieve_matrix(lo,self.size)[0]
                 if self.vtype in ('symmetric',):
                         lowexp = svec(lowexp)
-                if self.vtype in ('hermitian',):
-                        raise Exception('lower bound not supported for hermitian variables')
+                if self.vtype in ('hermitian','complex'):
+                        raise Exception('lower bound not supported for complex variables')
                 for i in range(lowexp.size[0] * lowexp.size[1]):
                         li = lowexp[i]
                         if li>-INFINITY:
@@ -2409,8 +2517,8 @@ class Variable(AffinExp):
                  4: (0.0, None),
                  5: (0.0, None)}
                 """
-                if self.vtype in ('hermitian',):
-                        raise Exception('lower bound not supported for hermitian variables')
+                if self.vtype in ('hermitian','complex'):
+                        raise Exception('lower bound not supported for complex variables')
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2460,8 +2568,8 @@ class Variable(AffinExp):
                 upexp = _retrieve_matrix(up,self.size)[0]
                 if self.vtype in ('symmetric',):
                         upexp = svec(upexp)
-                if self.vtype in ('hermitian',):
-                        raise Exception('lower bound not supported for hermitian variables')
+                if self.vtype in ('hermitian','complex'):
+                        raise Exception('lower bound not supported for complex variables')
                 for i in range(upexp.size[0] * upexp.size[1]):
                         ui = upexp[i]
                         if ui<INFINITY:
@@ -2498,8 +2606,8 @@ class Variable(AffinExp):
                 .. Warning:: This function does not modify the existing bounds on elements other
                              than those specified in ``indices``.
                 """
-                if self.vtype in ('hermitian',):
-                        raise Exception('lower bound not supported for hermitian variables')
+                if self.vtype in ('hermitian','complex'):
+                        raise Exception('lower bound not supported for complex variables')
                 s0 = self.size[0]
                 vv = []
                 ii = []
@@ -2568,7 +2676,7 @@ class Variable(AffinExp):
                 self._value = valuemat
 
         def del_var_value(self):
-                var._value = None
+                self._value = None
                        
         value = property(eval,set_value,del_var_value,"value of the variable")
         """value of the variable. The value of a variable is

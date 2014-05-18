@@ -9,4 +9,5 @@ Examples
 
    optdes.rst
    graphs.rst
+   complex.rst
 
