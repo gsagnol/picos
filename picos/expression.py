@@ -213,6 +213,8 @@ class AffinExp(Expression):
         def size(self):
                 """size of the affine expression"""
                 return self._size
+	      
+	
                 
         def __str__(self):
                 if self.is_valued():
