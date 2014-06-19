@@ -1673,6 +1673,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 		if(len(sink)!=len(flow_value)):
 			print 'Error: The number sink must match with the number of flows values.'
 			return False
+		# (Arno): makes no sense to me!
 		if type(source) is list:
 			print 'Error: use the fonction multiflow_Constraint for handling multiple flows.'
 			return False
@@ -1733,11 +1734,108 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
 
 	# 
-	# Handle errors
+	# Multiple source, Multiple Sink
 	#
 	elif type(sink) is list and type(source) is list:
-		print 'Error: use the fonction multiflow_Constraint for handling multiple flows.'
-		return False
+		if(len(sorce)!=len(flow_value)):
+			print 'Error: The number of sinks must match with the number of flow values.'
+			return False
+		if(len(sink)!=len(source)):
+			print 'Error: The number of sinks must macht with the number of sources.'
+			return False
+		if(len(sink)!=len(flow_value)):
+			print 'Error: The number of sinks must match with the numver of flow values.'
+			return False
+
+
+		comment = "** Multiple Sources, Multiple Sinks **\n"
+
+		#looks if more sinks or sources are the same
+		tempsink = 0
+		tempsource = 0
+		for e in G.nodes():
+			tempc = source.count(e)
+			if tempc > 0:
+				tempsource += (tempc-1)
+			tempc = sink.count(e)
+			if tempc > 0:
+				tempsink += (tempc-1)
+
+		if tempsource >= tempsink:
+			for e in G.nodes():
+				first = True
+				while source.count(e) > 0:
+					tempindex = source.index(e)
+					if first:
+						tsource = source.pop(tempindex)
+						first = False
+					else:
+						source.pop(tempindex)
+					tsink.append(len(tsink), sink.pop(tempindex))
+					tflow_value.append(len(tflow_value), flow_value.pop(tempindex))
+				
+				# checks if at least one edge was in source then a copy of single soucre multi sinks
+				# Adding the flow conservation
+				Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in tsink and i!=tsource], 'i','nodes-(s,t)')
+
+				# Source flow at S
+				Ptmp.add_constraint(sum([f[p,tsource] for p in G.predecessors(tsource)],'p','pred(s)') + sum([fv for fv in tflow_value], 'fv', 'flows') == sum([f[tsource,j] for j in G.successors(tsource)],'j','succ('+str(tsource)+')'))
+
+				for k in range(0, len(tsink)):
+
+					# Sink flow at T
+					Ptmp.add_constraint(sum([f[p,tsink[k]] for p in G.predecessors(tsink[k])],'p','pred('+str(tsink[k])+')') == sum([f[tsink[k],j] for j in G.successors(tsink[k])],'j','succ(t)') + tflow_value[k])
+
+					if hasattr(tflow_value[k], 'string'):
+						fv = tflow_value[k].string
+					else:
+						fv = str(tflow_value[k])
+
+					if graphName=='':
+						comment = comment + "  Flow conservation from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
+					else:
+						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
+		else
+			for e in G.nodes():
+				first = True
+				while sink.count(e) > 0:
+					tempindex = sink.index(e)
+					if first:
+						tsink = sink.pop(tempindex)
+						first = False
+					else:
+						sink.pop(tempindex)
+					tsource.append(len(tsource), source.pop(tempindex))
+					tflow_value.append(len(tflow_value), flow_value.pop(tempindex))
+				
+				# checks if at least one edge was in source then a copy of single sink multi sources
+				# Adding the flow conservation
+				Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in tsource and i!=tsink], 'i','nodes-(s,t)')
+
+				# Sink flow at S
+				#Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[sink,j] for j in G.successors(sink)],'j','succ('+str(sink)+')'))
+				Ptmp.add_constraint(sum([f[p,tsink] for p in G.predecessors(tsink)],'p','pred('+str(tsink)+')') == sum([f[tsink,j] for j in G.successors(tsink)],'j','succ(t)') + sum([fv for fv in tflow_value], 'fv', 'flows'))
+
+
+				for k in range(0, len(tsource)):
+
+				# Source flow at T
+				#Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred('+str(source[k])+')') == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ(t)') + flow_value[k])
+					Ptmp.add_constraint(sum([f[p,tsource[k]] for p in G.predecessors(tsource[k])],'p','pred(s)') + tflow_value[k] == sum([f[tsource[k],j] for j in G.successors(tsource[k])],'j','succ('+str(tsource[k])+')'))
+
+					if hasattr(tflow_value[k], 'string'):
+						fv = tflow_value[k].string
+					else:
+						fv = str(tflow_value[k])
+
+					if graphName=='':
+						comment = comment + "  Flow conservation from "+str(tsource[k])+" to "+str(tsink)+" with value "+fv+ "\n"
+					else:
+						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource[k])+" to "+str(tsink)+" with value "+fv+ "\n"
+	
+	# 
+	# Handle errors
+	#
 	else:
 		print 'Error: unexpected error.'
 		return False
