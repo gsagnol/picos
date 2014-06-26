@@ -1761,16 +1761,19 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 
 		if tempsource >= tempsink:
 			for e in G.nodes():
+
 				first = True
 				while source.count(e) > 0:
 					tempindex = source.index(e)
 					if first:
 						tsource = source.pop(tempindex)
 						first = False
+						tsink = []
+						tflow_value = []
 					else:
 						source.pop(tempindex)
-					tsink.append(len(tsink), sink.pop(tempindex))
-					tflow_value.append(len(tflow_value), flow_value.pop(tempindex))
+					tsink.append(sink.pop(tempindex))
+					tflow_value.append(flow_value.pop(tempindex))
 				
 				# checks if at least one edge was in source then a copy of single soucre multi sinks
 				# Adding the flow conservation
@@ -1793,7 +1796,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 						comment = comment + "  Flow conservation from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
 					else:
 						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
-		else:
+		else
 			for e in G.nodes():
 				first = True
 				while sink.count(e) > 0:
@@ -1801,10 +1804,12 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 					if first:
 						tsink = sink.pop(tempindex)
 						first = False
+						tsource = []
+						tflow_value= []
 					else:
 						sink.pop(tempindex)
-					tsource.append(len(tsource), source.pop(tempindex))
-					tflow_value.append(len(tflow_value), flow_value.pop(tempindex))
+					tsource.append(source.pop(tempindex))
+					tflow_value.append(flow_value.pop(tempindex))
 				
 				# checks if at least one edge was in source then a copy of single sink multi sources
 				# Adding the flow conservation
