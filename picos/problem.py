@@ -4620,18 +4620,6 @@ class Problem(object):
                         raise ValueError('a cplex instance should have been created before')
                 
                 
-                if not self.options['timelimit'] is None:
-                        import cplex_callbacks
-                        import time
-                        timelim_cb = c.register_callback(cplex_callbacks.TimeLimitCallback)
-                        timelim_cb.starttime = time.time()
-                        timelim_cb.timelimit = self.options['timelimit']
-                        if not self.options['acceptable_gap_at_timelimit'] is None:
-                                timelim_cb.acceptablegap =100*self.options['acceptable_gap_at_timelimit']
-                        else:
-                                timelim_cb.acceptablegap = None
-                        timelim_cb.aborted = 0
-                        #c.parameters.tuning.timelimit.set(self.options['timelimit']) #DOES NOT WORK LIKE THIS ?
                 if not self.options['treememory'] is None:
                         c.parameters.mip.limits.treememory.set(self.options['treememory'])
                 if not self.options['gaplim'] is None:
@@ -4687,6 +4675,58 @@ class Problem(object):
                         #nbsol_cb.nbsol = self.options['nbsol']
                 
                 
+                if ( (not self.options['timelimit'] is None) or
+                     (not self.options['uboundlimit'] is None) or
+                     (not self.options['lboundlimit'] is None) or
+                     (self.options['boundMonitor'])):
+                        import cplex_callbacks
+                        picos_cb = c.register_callback(cplex_callbacks.PicosInfoCallback)
+                        picos_cb.aborted = 0
+                        picos_cb.ub = INFINITY
+                        picos_cb.lb = -INFINITY
+                        
+                        if (not self.options['timelimit'] is None) or self.options['boundMonitor']:
+                                import time
+                                picos_cb.starttime = time.time()
+                                
+                        if (not self.options['timelimit'] is None):
+                                picos_cb.timelimit = self.options['timelimit']
+                                if not self.options['acceptable_gap_at_timelimit'] is None:
+                                        picos_cb.acceptablegap =100*self.options['acceptable_gap_at_timelimit']
+                                else:
+                                        picos_cb.acceptablegap = None
+                        else:
+                                picos_cb.timelimit = None
+                        
+                        if not self.options['uboundlimit'] is None:
+                                picos_cb.ubound = self.options['uboundlimit']
+                        else:
+                                picos_cb.ubound = None
+                                
+                        if not self.options['lboundlimit'] is None:
+                                picos_cb.lbound = self.options['lboundlimit']
+                        else:
+                                picos_cb.lbound = None
+                   
+                        if self.options['boundMonitor']:
+                                picos_cb.bounds = []
+                        else:
+                                picos_cb.bounds = None
+                
+                """ old version, was not possible to use several callbacks at a time?
+                if not self.options['timelimit'] is None:
+                        import cplex_callbacks
+                        import time
+                        timelim_cb = c.register_callback(cplex_callbacks.TimeLimitCallback)
+                        timelim_cb.starttime = time.time()
+                        timelim_cb.timelimit = self.options['timelimit']
+                        if not self.options['acceptable_gap_at_timelimit'] is None:
+                                timelim_cb.acceptablegap =100*self.options['acceptable_gap_at_timelimit']
+                        else:
+                                timelim_cb.acceptablegap = None
+                        timelim_cb.aborted = 0
+                        #c.parameters.tuning.timelimit.set(self.options['timelimit']) #DOES NOT WORK LIKE THIS ?
+                
                 if not self.options['uboundlimit'] is None:
                         import cplex_callbacks
                         bound_cb =  c.register_callback(cplex_callbacks.uboundCallback)
@@ -4707,7 +4747,7 @@ class Problem(object):
                         monitor_cb = c.register_callback(cplex_callbacks.boundMonitorCallback)
                         monitor_cb.starttime = time.time()
                         monitor_cb.bounds = []
-                        
+                """
                    
                 #other cplex parameters
                 for par,val in self.options['cplex_params'].iteritems():
@@ -4985,7 +5025,7 @@ class Problem(object):
                 
                 sol = {'cplex_solution':c.solution,'status':status,'time':(tend - tstart)}
                 if self.options['boundMonitor']:
-                        sol['bounds_monitor'] = monitor_cb.bounds
+                        sol['bounds_monitor'] = picos_cb.bounds#monitor_cb.bounds
                 return (primals,duals,obj,sol)
                 
         def  _gurobi_solve(self):

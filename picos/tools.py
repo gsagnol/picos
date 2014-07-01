@@ -1796,7 +1796,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
 						comment = comment + "  Flow conservation from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
 					else:
 						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
-		else
+		else:
 			for e in G.nodes():
 				first = True
 				while sink.count(e) > 0:
