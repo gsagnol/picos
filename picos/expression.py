@@ -2819,21 +2819,3 @@ class Variable(AffinExp):
                         raise IndexError('slice of zero-dimension')
                 return AffinExp(newfacs,newcons,newsize,newstr)
 
-class Affine_Uncertainty(Expression):
-        """
-        Affine expression with respect to :class:`Uparams<picos.Uparam>`.
-        This class derives from :class:`Expression<picos.Expression>`.
-        
-        
-        TODO: copy from Affine expression, but keys of the factor dictionary should be instances of Uparam instead of Variable
-        """
-        
-class UParam(Affine_Uncertainty):
-        """
-	Test: I hope you see this
-        An uncertainty parameter
-        This class derives from :class:`Affine_Uncertainty<picos.Affine_Uncertainty>`.
-       
-        
-        TODO: copy from Variable, the idea is that a Uparam 'u' should be stored as I*u + 0
-        """
