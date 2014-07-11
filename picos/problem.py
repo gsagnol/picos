@@ -2447,6 +2447,7 @@ class Problem(object):
                                     newcons.iteritems())
                 
                 irow=0
+                
                 for constrKey,constr in allcons:
                         if 'cplex' in constr.passed:
                                 continue
@@ -2484,7 +2485,13 @@ class Problem(object):
                                         rhstmp = rhstmp-constant1
                                 if not constant2 is None:
                                         rhstmp = rhstmp+constant2
-                                                
+                                   
+                                #constraint of the form 0*x==a
+                                if len(itojv)<>szcons:
+                                        for i in (set(range(szcons)) - set(itojv.keys())):
+                                                if rhstmp[i]<>0:
+                                                        raise Exception('you try to add a constraint of the form 0 * x == 1')
+                                    
                                 for i,jv in itojv.iteritems():
                                         r=rhstmp[i]
                                         if len(jv)==1:
