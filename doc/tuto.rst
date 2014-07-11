@@ -523,9 +523,9 @@ Just add a list of sinks and a list of flows instead.
         F2=pbMultipleSinks.add_variable('F2',1)
 
         flowCons = pic.flow_Constraint(G, f, source='S', sink=['T1','T2'], capacity='capacity', flow_value=[F1, F2], graphName='G')
-        import pdb;pdb.set_trace()
 
         pbMultipleSinks.set_objective('max',F1+F2)
+		pbMultipleSinks.addConstraint(flowCons)
 
         # Solve the problem
         pbMultipleSinks.solve(verbose=0)
