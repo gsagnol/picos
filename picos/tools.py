@@ -1592,9 +1592,9 @@ def _read_sdpa(filename):
 
 
 def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName=''):
-	"""Returns an object of the class :class:`_Flow_Constraint <picos.Constraint._Flow_Constraint>` that can be passed to a 
-	problem with :func:`add_constraint() <picos.Problem.add_constraint>`.
-	
+        """Returns an object of the class :class:`_Flow_Constraint <picos.Constraint._Flow_Constraint>` that can be passed to a 
+        problem with :func:`add_constraint() <picos.Problem.add_constraint>`.
+        
                 ``G`` a directed graph (class DiGraph of `networkx <http://networkx.lanl.gov/index.html>`_)
                 
                 ``f`` must be a dictionary of variables indexed by the edges of ``G``
@@ -1611,240 +1611,195 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
                 dictionaries of ``G`` that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.
                 
                 ``graphName`` is a string used in the string representation of the constraint.
-	
-	
-	"""
-	# checking that we have the good number of variables
-	if len(f)!=len(G.edges()):
-		print 'Error: The number of variables does not match with the number of edges.'
-		return False
+        
+        
+        """
+        # checking that we have the good number of variables
+        if len(f)!=len(G.edges()):
+                print 'Error: The number of variables does not match with the number of edges.'
+                return False
 
-	from .problem import Problem
-	Ptmp = Problem()
-	
-	# Adding Edge capacities
-	if not capacity is None:
-		cap = [ed[2][capacity] for ed in G.edges(data=True)]
+        from .problem import Problem
+        Ptmp = Problem()
+        
+        if not capacity is None:
+                # Adding Edge capacities
+                cap = [ed[2][capacity] for ed in G.edges(data=True)]
 
-		c={}
-		for i,e in enumerate(G.edges()):
-			c[e]=cap[i]
-	
-	cc=new_param('c',c)
+                c={}
+                for i,e in enumerate(G.edges()):
+                        c[e]=cap[i]
+        
+                cc=new_param('c',c)
 
-	# Adding the capacity constraint
-	if not capacity is None:
-		Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
+                # Adding the capacity constraint
+                Ptmp.add_list_of_constraints([f[e]<cc[e] for e in G.edges()], [('e',2)], 'edges')
 
-	
-	# nonnegativity of the flows
-	Ptmp.add_list_of_constraints([f[e]>0 for e in G.edges()], [('e',2)], 'edges')
-	
-	# 
-	# One Source, One Sink
-	#
-	if not type(source) is list and not type(sink) is list:
-		# Adding the flow conservation
-		Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if i!=sink and i!=source], 'i','nodes-(s,t)')
+        
+        # nonnegativity of the flows
+        Ptmp.add_list_of_constraints([f[e]>0 for e in G.edges()], [('e',2)], 'edges')
+        
+        # 
+        # One Source, One Sink
+        #
+        if not type(source) is list and not type(sink) is list:
+                # Adding the flow conservation
+                Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if i!=sink and i!=source], 'i','nodes-(s,t)')
 
-	 	# Source flow at S
-		Ptmp.add_constraint(sum([f[p,source] for p in G.predecessors(source)],'p','pred(s)') + flow_value == sum([f[source,j] for j in G.successors(source)],'j','succ(s)'))
+                # Source flow at S
+                Ptmp.add_constraint(sum([f[p,source] for p in G.predecessors(source)],'p','pred(s)') + flow_value == sum([f[source,j] for j in G.successors(source)],'j','succ(s)'))
 
+                
+                #this constraint was redundant
+                # Sink flow at T
+                #Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(t)') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + flow_value)
 
-		# Sink flow at T
-		Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(t)') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + flow_value)
+                if hasattr(flow_value, 'string'):
+                        fv = flow_value.string
+                else:
+                        fv = str(flow_value)
 
-		if hasattr(flow_value, 'string'):
-			fv = flow_value.string
-		else:
-			fv = str(flow_value)
+                if graphName=='':
+                        comment = "Flow conservation from "+str(source)+" to "+str(sink)+" with value "+fv
+                else:
+                        comment = "Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink)+" with value "+fv
 
-		if graphName=='':
-			comment = "Flow conservation from "+str(source)+" to "+str(sink)+" with value "+fv
-		else:
-			comment = "Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink)+" with value "+fv
-
-	# 
-	# One Source, Multiple sink
-	#
-	elif not type(source) is list:
-		if(len(sink)!=len(flow_value)):
-			print 'Error: The number sink must match with the number of flows values.'
-			return False
-		# (Arno): makes no sense to me!
-		if type(source) is list:
-			print 'Error: use the fonction multiflow_Constraint for handling multiple flows.'
-			return False
-
-		# Adding the flow conservation
-		Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in sink and i!=source], 'i','nodes-(s,t)')
-
-		# Source flow at S
-		Ptmp.add_constraint(sum([f[p,source] for p in G.predecessors(source)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[source,j] for j in G.successors(source)],'j','succ('+str(source)+')'))
-
-		comment = "** One Source, Multiple Sinks **\n"
-		for k in range(0, len(sink)):
-
-			# Sink flow at T
-			Ptmp.add_constraint(sum([f[p,sink[k]] for p in G.predecessors(sink[k])],'p','pred('+str(sink[k])+')') == sum([f[sink[k],j] for j in G.successors(sink[k])],'j','succ(t)') + flow_value[k])
-
-			if hasattr(flow_value[k], 'string'):
-				fv = flow_value[k].string
-			else:
-				fv = str(flow_value[k])
-
-			if graphName=='':
-				comment = comment + "  Flow conservation from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
-			else:
-				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
-
-	# 
-	# Multiple source, One Sink
-	#
-	elif not type(sink) is list:
-		if(len(source)!=len(flow_value)):
-			print 'Error: The number sink must match with the number of flows values.'
-			return False
-
-		# Adding the flow conservation
-		Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in source and i!=sink], 'i','nodes-(s,t)')
-
-		# Sink flow at S
-		#Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[sink,j] for j in G.successors(sink)],'j','succ('+str(sink)+')'))
-		Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred('+str(sink)+')') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + sum([fv for fv in flow_value], 'fv', 'flows'))
+        # 
+        # One Source, Multiple sink
+        #
+        elif not type(source) is list:
+                if(len(sink)!=len(flow_value)):
+                        print 'Error: The number sink must match with the number of flows values.'
+                        return False
 
 
-		comment = "** Multiple Sources, One Sink **\n"
-		for k in range(0, len(source)):
+                # Adding the flow conservation
+                Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in sink and i!=source], 'i','nodes-(s,t)')
 
-			# Source flow at T
-			#Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred('+str(source[k])+')') == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ(t)') + flow_value[k])
-			Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred(s)') + flow_value[k] == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ('+str(source[k])+')'))
+                #this constraint was redundant
+                # Source flow at S
+                #Ptmp.add_constraint(sum([f[p,source] for p in G.predecessors(source)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[source,j] for j in G.successors(source)],'j','succ('+str(source)+')'))
 
-			if hasattr(flow_value[k], 'string'):
-				fv = flow_value[k].string
-			else:
-				fv = str(flow_value[k])
+                comment = "** One Source, Multiple Sinks **\n"
+                for k in range(0, len(sink)):
 
-			if graphName=='':
-				comment = comment + "  Flow conservation from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
-			else:
-				comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
+                        # Sink flow at T
+                        Ptmp.add_constraint(sum([f[p,sink[k]] for p in G.predecessors(sink[k])],'p','pred('+str(sink[k])+')') == sum([f[sink[k],j] for j in G.successors(sink[k])],'j','succ(t)') + flow_value[k])
 
-	# 
-	# Multiple source, Multiple Sink
-	#
-	elif type(sink) is list and type(source) is list:
-		if(len(sorce)!=len(flow_value)):
-			print 'Error: The number of sinks must match with the number of flow values.'
-			return False
-		if(len(sink)!=len(source)):
-			print 'Error: The number of sinks must macht with the number of sources.'
-			return False
-		if(len(sink)!=len(flow_value)):
-			print 'Error: The number of sinks must match with the numver of flow values.'
-			return False
+                        if hasattr(flow_value[k], 'string'):
+                                fv = flow_value[k].string
+                        else:
+                                fv = str(flow_value[k])
 
+                        if graphName=='':
+                                comment = comment + "  Flow conservation from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
+                        else:
+                                comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source)+" to "+str(sink[k])+" with value "+fv+ "\n"
 
-		comment = "** Multiple Sources, Multiple Sinks **\n"
+        # 
+        # Multiple source, One Sink
+        #
+        elif not type(sink) is list:
+                if(len(source)!=len(flow_value)):
+                        print 'Error: The number sink must match with the number of flows values.'
+                        return False
 
-		#looks if more sinks or sources are the same
-		tempsink = 0
-		tempsource = 0
-		for e in G.nodes():
-			tempc = source.count(e)
-			if tempc > 0:
-				tempsource += (tempc-1)
-			tempc = sink.count(e)
-			if tempc > 0:
-				tempsink += (tempc-1)
+                # Adding the flow conservation
+                Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in source and i!=sink], 'i','nodes-(s,t)')
 
-		if tempsource >= tempsink:
-			for e in G.nodes():
-
-				first = True
-				while source.count(e) > 0:
-					tempindex = source.index(e)
-					if first:
-						tsource = source.pop(tempindex)
-						first = False
-						tsink = []
-						tflow_value = []
-					else:
-						source.pop(tempindex)
-					tsink.append(sink.pop(tempindex))
-					tflow_value.append(flow_value.pop(tempindex))
-				
-				# checks if at least one edge was in source then a copy of single soucre multi sinks
-				# Adding the flow conservation
-				Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in tsink and i!=tsource], 'i','nodes-(s,t)')
-
-				# Source flow at S
-				Ptmp.add_constraint(sum([f[p,tsource] for p in G.predecessors(tsource)],'p','pred(s)') + sum([fv for fv in tflow_value], 'fv', 'flows') == sum([f[tsource,j] for j in G.successors(tsource)],'j','succ('+str(tsource)+')'))
-
-				for k in range(0, len(tsink)):
-
-					# Sink flow at T
-					Ptmp.add_constraint(sum([f[p,tsink[k]] for p in G.predecessors(tsink[k])],'p','pred('+str(tsink[k])+')') == sum([f[tsink[k],j] for j in G.successors(tsink[k])],'j','succ(t)') + tflow_value[k])
-
-					if hasattr(tflow_value[k], 'string'):
-						fv = tflow_value[k].string
-					else:
-						fv = str(tflow_value[k])
-
-					if graphName=='':
-						comment = comment + "  Flow conservation from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
-					else:
-						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource)+" to "+str(tsink[k])+" with value "+fv+ "\n"
-		else:
-			for e in G.nodes():
-				first = True
-				while sink.count(e) > 0:
-					tempindex = sink.index(e)
-					if first:
-						tsink = sink.pop(tempindex)
-						first = False
-						tsource = []
-						tflow_value= []
-					else:
-						sink.pop(tempindex)
-					tsource.append(source.pop(tempindex))
-					tflow_value.append(flow_value.pop(tempindex))
-				
-				# checks if at least one edge was in source then a copy of single sink multi sources
-				# Adding the flow conservation
-				Ptmp.add_list_of_constraints([sum([f[p,i] for p in G.predecessors(i)],'p','pred(i)')==sum([f[i,j] for j in G.successors(i)],'j','succ(i)') for i in G.nodes() if not i in tsource and i!=tsink], 'i','nodes-(s,t)')
-
-				# Sink flow at S
-				#Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[sink,j] for j in G.successors(sink)],'j','succ('+str(sink)+')'))
-				Ptmp.add_constraint(sum([f[p,tsink] for p in G.predecessors(tsink)],'p','pred('+str(tsink)+')') == sum([f[tsink,j] for j in G.successors(tsink)],'j','succ(t)') + sum([fv for fv in tflow_value], 'fv', 'flows'))
+                #this constraint was redundant
+                # Sink flow at S
+                #Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred(s)') + sum([fv for fv in flow_value], 'fv', 'flows') == sum([f[sink,j] for j in G.successors(sink)],'j','succ('+str(sink)+')'))
+                #Ptmp.add_constraint(sum([f[p,sink] for p in G.predecessors(sink)],'p','pred('+str(sink)+')') == sum([f[sink,j] for j in G.successors(sink)],'j','succ(t)') + sum([fv for fv in flow_value], 'fv', 'flows'))
 
 
-				for k in range(0, len(tsource)):
+                comment = "** Multiple Sources, One Sink **\n"
+                for k in range(0, len(source)):
 
-				# Source flow at T
-				#Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred('+str(source[k])+')') == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ(t)') + flow_value[k])
-					Ptmp.add_constraint(sum([f[p,tsource[k]] for p in G.predecessors(tsource[k])],'p','pred(s)') + tflow_value[k] == sum([f[tsource[k],j] for j in G.successors(tsource[k])],'j','succ('+str(tsource[k])+')'))
+                        # Source flow at T
+                        #Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred('+str(source[k])+')') == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ(t)') + flow_value[k])
+                        Ptmp.add_constraint(sum([f[p,source[k]] for p in G.predecessors(source[k])],'p','pred(s)') + flow_value[k] == sum([f[source[k],j] for j in G.successors(source[k])],'j','succ('+str(source[k])+')'))
 
-					if hasattr(tflow_value[k], 'string'):
-						fv = tflow_value[k].string
-					else:
-						fv = str(tflow_value[k])
+                        if hasattr(flow_value[k], 'string'):
+                                fv = flow_value[k].string
+                        else:
+                                fv = str(flow_value[k])
 
-					if graphName=='':
-						comment = comment + "  Flow conservation from "+str(tsource[k])+" to "+str(tsink)+" with value "+fv+ "\n"
-					else:
-						comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(tsource[k])+" to "+str(tsink)+" with value "+fv+ "\n"
-	
-	# 
-	# Handle errors
-	#
-	else:
-		print 'Error: unexpected error.'
-		return False
+                        if graphName=='':
+                                comment = comment + "  Flow conservation from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
+                        else:
+                                comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink)+" with value "+fv+ "\n"
 
-	from .constraint import _Flow_Constraint
-	return _Flow_Constraint(G, Ptmp,comment)
+        # 
+        # Multiple source, Multiple Sink
+        #
+        elif type(sink) is list and type(source) is list:
+                if(len(source)!=len(flow_value)):
+                        print 'Error: The number of sinks must match with the number of flow values.'
+                        return False
+                if(len(sink)!=len(source)):
+                        print 'Error: The number of sinks must macht with the number of sources.'
+                        return False
+                if(len(sink)!=len(flow_value)):
+                        print 'Error: The number of sinks must match with the numver of flow values.'
+                        return False
+
+
+                comment = "** Multiple Sources, Multiple Sinks **\n"
+                
+                SS = list(set(source))
+                TT = list(set(sink))
+                
+                if len(SS) <= len(TT):
+                        
+                        ftmp = {}
+                        for s in SS:
+                                ftmp[s] ={}
+                                sinks_from_s = [t for (i,t) in enumerate(sink) if source[i]==s]
+                                values_from_s = [v for (i,v) in enumerate(flow_value) if source[i]==s]                                
+                                for e in G.edges():
+                                        ftmp[s][e] = Ptmp.add_variable('f[{0}][{1}]'.format(s,e),1)
+                                Ptmp.add_constraint(flow_Constraint(G, ftmp[s], source=s, sink=sinks_from_s,
+                                                          flow_value=values_from_s, graphName='G'))
+                        
+                        Ptmp.add_list_of_constraints( [ f[e] == sum([ ftmp[s][e] for s in SS],'s','sources')
+                                                       for e in G.edges()], 'e','E')
+                
+                else:
+                        ftmp = {}
+                        for t in TT:
+                                ftmp[t] ={}
+                                sources_to_t = [s for (i,s) in enumerate(source) if sink[i]==t]
+                                values_to_t = [v for (i,v) in enumerate(flow_value) if sink[i]==t] 
+                                for e in G.edges():
+                                        ftmp[t][e] = Ptmp.add_variable('f[{0}][{1}]'.format(t,e),1)
+                                Ptmp.add_constraint(flow_Constraint(G, ftmp[t], source=sources_to_t, sink=t,
+                                                          flow_value=values_to_t, graphName='G'))
+                        
+                        Ptmp.add_list_of_constraints( [ f[e] == sum([ ftmp[t][e] for t in TT],'t','sinks')
+                                                        for e in G.edges()], 'e','E')
+
+                # comments
+                for k in range(0, len(source)):
+                        if hasattr(flow_value[k], 'string'):
+                                fv = flow_value[k].string
+                        else:
+                                fv = str(flow_value[k])
+                        if graphName=='':
+                                comment = comment + "  Flow conservation from "+str(source[k])+" to "+str(sink[k])+" with value "+fv+ "\n"
+                        else:
+                                comment = comment + "  Flow conservation in "+str(graphName)+" from "+str(source[k])+" to "+str(sink[k])+" with value "+fv+ "\n"
+
+                
+        # 
+        # Handle errors
+        #
+        else:
+                print 'Error: unexpected error.'
+                return False
+
+        from .constraint import _Flow_Constraint
+        return _Flow_Constraint(G, Ptmp,comment)
 
 def drawGraph(G, capacity='capacity'):
 	""""Draw a given Graph"""
