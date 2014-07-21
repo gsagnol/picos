@@ -2012,7 +2012,9 @@ class Problem(object):
                                 #constraint of the form 0*x==a
                                 if len(itojv)<>szcons:
                                         for i in (set(range(szcons)) - set(itojv.keys())):
-                                                if rhstmp[i]<>0:
+                                                if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i]<0) or
+                                                    (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i]>0) or
+                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i]<>0)):
                                                         raise Exception('you try to add a constraint of the form 0 * x == 1')
                                 
                                 for i,jv in itojv.iteritems():
@@ -2495,7 +2497,9 @@ class Problem(object):
                                 #constraint of the form 0*x==a
                                 if len(itojv)<>szcons:
                                         for i in (set(range(szcons)) - set(itojv.keys())):
-                                                if rhstmp[i]<>0:
+                                                if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i]<0) or
+                                                    (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i]>0) or
+                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i]<>0)):
                                                         raise Exception('you try to add a constraint of the form 0 * x == 1')
                                     
                                 for i,jv in itojv.iteritems():
