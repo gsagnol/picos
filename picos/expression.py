@@ -162,8 +162,8 @@ class AffinExp(Expression):
                 #:``<``: less **or equal** (than an affine or quadratic expression)
                 :``>``: greater **or equal** (than an affine or quadratic expression)
                 :``==``: is equal (to another affine expression)
-                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality ⪳)
-                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality ⪴)
+                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality âª³)
+                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality âª´)
                 
         .. Warning::
                 
@@ -616,18 +616,7 @@ class AffinExp(Expression):
                                         linpart=linpart+self*fact.constant
                                 if not ((fact.constant is None) or (self.constant is None)):
                                         linpart=linpart-self.constant.T*fact.constant
-                                """if not ( self.constant is None or fact.constant is None):
-                                        linpart.constant=self.constant.T*fact.constant
-                                if not fact.constant is None:                           
-                                        for k in self.factors:
-                                                linpart.factors[k]=fact.constant.T*self.factors[k]
-                                if not self.constant is None:
-                                        for k in fact.factors:
-                                                if k in linpart.factors:
-                                                        linpart.factors[k]+=self.constant.T*fact.factors[k]
-                                                else:
-                                                        linpart.factors[k]=self.constant.T*fact.factors[k]
-                                """
+
                                 quadpart={}
                                 for i in self.factors:
                                         for j in fact.factors:
@@ -714,7 +703,7 @@ class AffinExp(Expression):
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        dotp.string='〈 '+self.string+' | '+facString+' 〉'
+                        dotp.string='â© '+self.string+' | '+facString+' âª'
                 
                 return dotp
                 
@@ -734,7 +723,7 @@ class AffinExp(Expression):
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        dotp.string='〈 '+facString+' | '+self.string+' 〉'
+                        dotp.string='â© '+facString+' | '+self.string+' âª'
                 
                 return dotp
                 

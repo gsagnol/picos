@@ -20,7 +20,7 @@
 #For any information, please contact:
 #Guillaume Sagnol
 #sagnol@zib.de
-#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
+#Konrad Zuse Zentrum fÃ¼r Informationstechnik Berlin (ZIB)
 #Takustrasse 7
 #D-14195 Berlin-Dahlem
 #Germany 
@@ -64,7 +64,7 @@ __all__=['_retrieve_matrix',
         'tracepow',
         '_cplx_mat_to_real_mat',
         '_cplx_vecmat_to_real_vecmat',
-        '_is_idty'
+        '_is_idty',
 ]
 
 
@@ -158,7 +158,9 @@ def sum(lst,it=None,indices=None):
                 except Exception:
                   indstr='['+str(len(lst))+' expressions (first: '+lst[0].string+')]'
                 sumstr+=' '+indstr
-                sigma='Σ' #'u'\u03A3'.encode('utf-8')
+                sigma= u'\u03A3'.encode('utf-8')
+                #sigma='Σ' #'u'\u03A3'.encode('utf-8')
+                import pdb;pdb.set_trace()
                 affSum.string=sigma+sumstr
         return affSum
 
@@ -688,9 +690,16 @@ def _retrieve_matrix(mat,exSize=None):
                         retmat=cvx.matrix(mat.value)
         elif isinstance(mat,np.ndarray):
                 if np.iscomplex(mat).any():
-                        retmat=cvx.matrix(mat,tc='z')
+                        try:
+                                retmat=cvx.matrix(mat,tc='z')
+                        except:
+                                retmat=cvx.matrix(np.matrix(mat),tc='z')
                 else:
-                        retmat=cvx.matrix(mat,tc='d')
+                        try:
+                                retmat=cvx.matrix(mat,tc='d')
+                        except:
+                                retmat=cvx.matrix(np.matrix(mat).real.tolist(),tc='d')
+        
         elif isinstance(mat,cvx.base.matrix):
                 if mat.typecode=='d':
                         retmat=mat
@@ -902,6 +911,7 @@ def _retrieve_matrix(mat,exSize=None):
         if retmat.size==(1,1) and (exSize not in [(1,1),1,None]):
                 return _retrieve_matrix(retmat[0],exSize)
         return retmat,retstr
+
 
 def svec(mat):
         """

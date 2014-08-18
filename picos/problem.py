@@ -1357,21 +1357,21 @@ class Problem(object):
                 <BLANKLINE>
                     find vars
                 such that
-                  〈 |1| | x[i] 〉 < y[i] for all i in [5]
+                  â© |1| | x[i] âª < y[i] for all i in [5]
                   y > |0|
                 ---------------------
                 >>> prob.get_constraint(1)                              #2d constraint (numbered from 0)
-                # (1x1)-affine constraint: 〈 |1| | x[1] 〉 < y[1] #
+                # (1x1)-affine constraint: â© |1| | x[1] âª < y[1] #
                 >>> prob.get_constraint((0,3))                          #4th consraint from the 1st group
-                # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #
+                # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #
                 >>> prob.get_constraint((1,))                           #unique constraint of the 2d 'group'
                 # (5x1)-affine constraint: y > |0| #
                 >>> prob.get_constraint((0,))                           #list of constraints of the 1st group #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[1] 〉 < y[1] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[4] 〉 < y[4] #]
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #,
+                 # (1x1)-affine constraint: â© |1| | x[1] âª < y[1] #,
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
+                 # (1x1)-affine constraint: â© |1| | x[4] âª < y[4] #]
                 >>> prob.get_constraint(5)                              #6th constraint
                 # (5x1)-affine constraint: y > |0| #
                 
@@ -1437,10 +1437,10 @@ class Problem(object):
                 ... [x[i]<2 for i in range(3)], 'i', '[3]')
                 >>> prob.add_constraint(x[3]<1)
                 >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[1] 〉 < y[1] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #,
+                 # (1x1)-affine constraint: â© |1| | x[1] âª < y[1] #,
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
                  # (4x1)-affine constraint: y > |0| #,
                  # (2x1)-affine constraint: x[0] < |2.0| #,
                  # (2x1)-affine constraint: x[1] < |2.0| #,
@@ -1448,9 +1448,9 @@ class Problem(object):
                  # (2x1)-affine constraint: x[3] < |1| #]
                 >>> prob.remove_constraint(1)                           #2d constraint (numbered from 0) deleted
                 >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #, 
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #, 
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
                  # (4x1)-affine constraint: y > |0| #,
                  # (2x1)-affine constraint: x[0] < |2.0| #,
                  # (2x1)-affine constraint: x[1] < |2.0| #,
@@ -1458,26 +1458,26 @@ class Problem(object):
                  # (2x1)-affine constraint: x[3] < |1| #]
                 >>> prob.remove_constraint((1,))                        #2d 'group' of constraint deleted, i.e. the single constraint y>|0|
                 >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #,
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
                  # (2x1)-affine constraint: x[0] < |2.0| #,
                  # (2x1)-affine constraint: x[1] < |2.0| #,
                  # (2x1)-affine constraint: x[2] < |2.0| #,
                  # (2x1)-affine constraint: x[3] < |1| #]
                 >>> prob.remove_constraint((2,))                        #3d 'group' of constraint deleted, (originally the 4th group, i.e. x[3]<|1|)
                 >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #,
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
                  # (2x1)-affine constraint: x[0] < |2.0| #,
                  # (2x1)-affine constraint: x[1] < |2.0| #,
                  # (2x1)-affine constraint: x[2] < |2.0| #]
                 >>> prob.remove_constraint((1,1))                       #2d constraint of the 2d group (originally the 3rd group), i.e. x[1]<|2|
                 >>> prob.constraints #doctest: +NORMALIZE_WHITESPACE
-                [# (1x1)-affine constraint: 〈 |1| | x[0] 〉 < y[0] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[2] 〉 < y[2] #,
-                 # (1x1)-affine constraint: 〈 |1| | x[3] 〉 < y[3] #,
+                [# (1x1)-affine constraint: â© |1| | x[0] âª < y[0] #,
+                 # (1x1)-affine constraint: â© |1| | x[2] âª < y[2] #,
+                 # (1x1)-affine constraint: â© |1| | x[3] âª < y[3] #,
                  # (2x1)-affine constraint: x[0] < |2.0| #,
                  # (2x1)-affine constraint: x[2] < |2.0| #]
 
