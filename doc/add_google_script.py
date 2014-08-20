@@ -1,12 +1,10 @@
-files = ['index.html','api.html',
-         'examples.html','constraint.html','expression.html',
-         'intro.html','tools.html','problem.html',
-         'download.html','graphs.html','tuto.html','optdes.html']
 import os
+files = os.popen('ls full_html/last/*.html').readlines()
+files = [f[:-1] for f in files if f[:6] not in ('search','py-mod','genind')]
 
 for f in files:
-        fi=open('_build/html/'+f,'r')
-        fitmp=open('_build/html/'+f+'tmp','w')
+        fi=open(f,'r')
+        fitmp=open(f+'tmp','w')
         line = fi.readline()
         while '</head>' not in line:
                 fitmp.write(line)
@@ -43,5 +41,5 @@ for f in files:
                 
         fi.close()
         fitmp.close()
-        os.system('mv _build/html/'+f+'tmp _build/html/'+f)
+        os.system('mv '+f+'tmp '+f)
         

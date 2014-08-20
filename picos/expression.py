@@ -159,7 +159,7 @@ class AffinExp(Expression):
                            cone inequalities.
                 :``&``: horizontal concatenation (with another affine expression)
                 :``//``: vertical concatenation (with another affine expression)
-                #:``<``: less **or equal** (than an affine or quadratic expression)
+                :``<``: less **or equal** (than an affine or quadratic expression)
                 :``>``: greater **or equal** (than an affine or quadratic expression)
                 :``==``: is equal (to another affine expression)
                 :``<<``: less than inequality in the Loewner ordering (linear matrix inequality âª³)

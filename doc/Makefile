@@ -6,6 +6,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
+RSYNC         = rsync
+LASTDIR       = full_html/last
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -45,6 +47,9 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo "Sync-ing with the /last directory"
+	$(RSYNC) -uzvr $(BUILDDIR)/html/* $(LASTDIR)
+	@echo "Done. The last build is in $(LASTDIR)"
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml

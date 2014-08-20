@@ -163,7 +163,8 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {}
+#html_sidebars = {}
+html_sidebars = {'**': ['globaltoc.html','localtoc2.html']}
 #html_sidebars = {'**': ['globaltoc.html','localtoc2.html','relations.html',  'sourcelink.html', 'download.html', 'searchbox.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -292,3 +293,6 @@ print 'copying dist files...'
 #os.system('cp -v ../dist/* _build/html/dist')
 os.system('rsync -uzvr ../dist/* _build/html/dist')
 print 'done.'
+#print 'copy in /last'
+#os.system('rsync -uzvr _build/html/* full_html/last')
+#print 'done.'
