@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>picos.tools &mdash; picos 0.1.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="picos 0.1.3 documentation" href="index.html" />
+    <link rel="up" title="The PICOS Reference" href="api.html" />
+    <link rel="next" title="Expression" href="expression.html" />
+    <link rel="prev" title="Problem" href="problem.html" /> 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+  </head>
+<body><div class="admonition warning"><p class="first admonition-title">Warning</p><p class="last">You are consulting the doc of a former version of PICOS.The latest version is <a href="../index.html">HERE</a>. </p></div>    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="expression.html" title="Expression"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="problem.html" title="Problem"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-picos.tools">
+<span id="picos-tools"></span><span id="tools"></span><h1>picos.tools<a class="headerlink" href="#module-picos.tools" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="picos.tools.available_solvers">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">available_solvers</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.tools.available_solvers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists all available solvers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.diag">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">diag</tt><big>(</big><em>exp</em>, <em>dim=1</em><big>)</big><a class="headerlink" href="#picos.tools.diag" title="Permalink to this definition">¶</a></dt>
+<dd><p>if <tt class="docutils literal"><span class="pre">exp</span></tt> is an affine expression of size (n,m),
+<tt class="docutils literal"><span class="pre">diag(exp,dim)</span></tt> returns a diagonal matrix of size <tt class="docutils literal"><span class="pre">dim*n*m</span></tt> <img class="math" src="_images/math/bac4dbe1c696d11e8dc43dd7f613199b2120daa1.png" alt="\times"/> <tt class="docutils literal"><span class="pre">dim*n*m</span></tt>,
+with <tt class="docutils literal"><span class="pre">dim</span></tt> copies of the vectorized expression <tt class="docutils literal"><span class="pre">exp[:]</span></tt> on the diagonal.</p>
+<p>In particular:</p>
+<blockquote>
+<div><ul class="simple">
+<li>when <tt class="docutils literal"><span class="pre">exp</span></tt> is scalar, <tt class="docutils literal"><span class="pre">diag(exp,n)</span></tt> returns a diagonal
+matrix of size <img class="math" src="_images/math/c3d38f82f48ef9e81c04d49354293305b0067afc.png" alt="n \times n"/>, with all diagonal elements equal to <tt class="docutils literal"><span class="pre">exp</span></tt>.</li>
+<li>when <tt class="docutils literal"><span class="pre">exp</span></tt> is a vector of size <img class="math" src="_images/math/174fadd07fd54c9afe288e96558c92e0c1da733a.png" alt="n"/>, <tt class="docutils literal"><span class="pre">diag(exp)</span></tt> returns the diagonal
+matrix of size <img class="math" src="_images/math/c3d38f82f48ef9e81c04d49354293305b0067afc.png" alt="n \times n"/> with the vector <tt class="docutils literal"><span class="pre">exp</span></tt> on the diagonal</li>
+</ul>
+</div></blockquote>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="go"># (4 x 4)-affine expression: Diag(x -y) #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">x</span><span class="o">//</span><span class="n">y</span><span class="p">)</span>
+<span class="go"># (2 x 2)-affine expression: Diag([x;y]) #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.diag_vect">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">diag_vect</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.diag_vect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vector with the diagonal elements of the matrix expression <tt class="docutils literal"><span class="pre">exp</span></tt></p>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">diag_vect</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="go"># (3 x 1)-affine expression: diag(X) #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.eval_dict">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">eval_dict</tt><big>(</big><em>dict_of_variables</em><big>)</big><a class="headerlink" href="#picos.tools.eval_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>if <tt class="docutils literal"><span class="pre">dict_of_variables</span></tt> is a dictionary
+mapping variable names (strings) to <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">variables</span></tt></a>,
+this function returns the dictionary <tt class="docutils literal"><span class="pre">names</span> <span class="pre">-&gt;</span> <span class="pre">variable</span> <span class="pre">values</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.lse">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">lse</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.lse" title="Permalink to this definition">¶</a></dt>
+<dd><p>shorter name for the constructor of the class <a class="reference internal" href="expression.html#picos.LogSumExp" title="picos.LogSumExp"><tt class="xref py py-class docutils literal"><span class="pre">LogSumExp</span></tt></a></p>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">lse</span><span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span>
+<span class="go"># (2x1)-Geometric Programming constraint LSE[ A*x ] &lt; 0 #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.new_param">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">new_param</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#picos.tools.new_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Declare a parameter for the problem, that will be stored
+as a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>.
+It is possible to give a list or a dictionary of parameters.
+The function returns a constant <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> 
+(or a <tt class="docutils literal"><span class="pre">list</span></tt> or a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>) representing this parameter.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Declaring parameters is optional, since the expression can
+as well be given by using normal variables. (see Example below).
+However, if you use this function to declare your parameters,
+the names of the parameters will be displayed when you <strong>print</strong>
+an <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a> or a <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str.</em>) &#8211; The name given to this parameter.</li>
+<li><strong>value</strong> &#8211; The value (resp <tt class="docutils literal"><span class="pre">list</span></tt> of values, <tt class="docutils literal"><span class="pre">dict</span></tt> of values) of the parameter.
+The type of <strong>value</strong> (resp. the elements of the <tt class="docutils literal"><span class="pre">list</span></tt> <strong>value</strong>,
+the values of the <tt class="docutils literal"><span class="pre">dict</span></tt> <strong>value</strong>) should be understandable by
+the function <a class="reference internal" href="#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>)
+(resp. a <tt class="docutils literal"><span class="pre">list</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> of the same length as <strong>value</strong>,
+a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> indexed by the keys of <strong>value</strong>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;foo&#39;</span><span class="p">:</span><span class="mf">17.4</span><span class="p">,</span><span class="s">&#39;matrix&#39;</span><span class="p">:</span><span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]]),</span><span class="s">&#39;ones&#39;</span><span class="p">:</span><span class="s">&#39;|1|(4,1)&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="p">[</span><span class="s">&#39;matrix&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">B</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+<span class="go"># (2 x 1)-affine expression: [ 2 x 3 MAT ]*x + |17.4| #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">#(in the string above, |17.4| represents the 2-dim vector [17.4,17.4])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span><span class="n">B</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">#now that B is a param, we have a nicer display:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">B</span><span class="p">[</span><span class="s">&#39;matrix&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">B</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+<span class="go"># (2 x 1)-affine expression: B[matrix]*x + |B[foo]| #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.sum">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">sum</tt><big>(</big><em>lst</em>, <em>it=None</em>, <em>indices=None</em><big>)</big><a class="headerlink" href="#picos.tools.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>sum of a list of affine expressions.
+This fonction can be used with python list comprehensions
+(see the example below).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lst</strong> &#8211; list of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>.</li>
+<li><strong>it</strong> (<em>None or str or list.</em>) &#8211; Description of the letters which should
+be used to replace the dummy indices.
+The function tries to find a template
+for the string representations of the
+affine expressions in the list.
+If several indices change in the
+list, their letters should be given as a
+list of strings, in their order of appearance in
+the resulting string. For example, if three indices
+change in the summands, and you want them to be
+named <tt class="docutils literal"><span class="pre">'i'</span></tt>, <tt class="docutils literal"><span class="pre">'j'</span></tt> and <tt class="docutils literal"><span class="pre">'k'</span></tt>, set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">['i','j','k']</span></tt>.
+You can also group two indices which always appear together,
+e.g. if <tt class="docutils literal"><span class="pre">'i'</span></tt> always appear next to <tt class="docutils literal"><span class="pre">'j'</span></tt> you
+could set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">[('ij',2),'k']</span></tt>. Here, the number 2
+indicates that <tt class="docutils literal"><span class="pre">'ij'</span></tt> replaces 2 indices.
+If <tt class="docutils literal"><span class="pre">it</span></tt> is set to <tt class="docutils literal"><span class="pre">None</span></tt>, or if the function is not
+able to find a template, the string of
+the first summand will be used for
+the string representation of the sum.</li>
+<li><strong>indices</strong> (<em>str.</em>) &#8211; a string to denote the set where the indices belong to.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">,</span><span class="s">&#39;bar&#39;</span><span class="p">,</span><span class="s">&#39;baz&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+<span class="gp">... </span>  <span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span> <span class="s">&#39;x[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> 
+<span class="go">{&#39;baz&#39;: # variable x[baz]:(3 x 5),continuous #,</span>
+<span class="go"> &#39;foo&#39;: # variable x[foo]:(3 x 5),continuous #,</span>
+<span class="go"> &#39;bar&#39;: # variable x[bar]:(3 x 5),continuous #}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">],</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="s">&#39;names&#39;</span><span class="p">)</span>
+<span class="go"># (3 x 5)-affine expression: Σ_{n in names} x[n] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">)],[</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;n&#39;</span><span class="p">],</span><span class="s">&#39;[3] x names&#39;</span><span class="p">)</span> <span class="c">#two indices</span>
+<span class="go"># (3 x 5)-affine expression: Σ_{i,n in [3] x names} i*x[n] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IJ</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">][</span><span class="n">ij</span><span class="p">]</span> <span class="k">for</span> <span class="n">ij</span> <span class="ow">in</span> <span class="n">IJ</span><span class="p">],[(</span><span class="s">&#39;ij&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">)],</span><span class="s">&#39;IJ&#39;</span><span class="p">)</span> <span class="c">#double index</span>
+<span class="go"># (1 x 1)-affine expression: Σ_{ij in IJ} x[foo][ij] #</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools.geomean">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">geomean</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.geomean" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <a class="reference internal" href="expression.html#picos.GeoMeanExp" title="picos.GeoMeanExp"><tt class="xref py py-class docutils literal"><span class="pre">GeoMeanExp</span></tt></a> object representing the geometric mean of the entries of <tt class="docutils literal"><span class="pre">exp[:]</span></tt>.
+This can be used to enter inequalities of the form <tt class="docutils literal"><span class="pre">t</span> <span class="pre">&lt;=</span> <span class="pre">geomean(x)</span></tt>.
+Note that geometric mean inequalities are internally reformulated as a
+set of SOC inequalities.</p>
+<p>** Example: **</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># the following line adds the constraint x &lt;= (y0*y1*y2)**(1./3) in the problem:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">x</span><span class="o">&lt;</span><span class="n">pic</span><span class="o">.</span><span class="n">geomean</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="picos.tools._retrieve_matrix">
+<tt class="descclassname">picos.tools.</tt><tt class="descname">_retrieve_matrix</tt><big>(</big><em>mat</em>, <em>exSize=None</em><big>)</big><a class="headerlink" href="#picos.tools._retrieve_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>parses the variable <em>mat</em> and convert it to a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>.
+If the variable <strong>exSize</strong> is provided, the function tries
+to return a matrix that matches this expected size, or raise an
+error.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If there is a conflit between the size of <strong>mat</strong> and
+the expected size <strong>exsize</strong>, the function might still
+return something without raising an error !</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mat</strong> &#8211; <p>The value to be converted into a cvx.spmatrix.
+The function will try to parse this variable and
+format it to a vector/matrix. <em>mat</em> can be of one
+of the following types:</p>
+<blockquote>
+<div><ul>
+<li><tt class="docutils literal"><span class="pre">list</span></tt> [creates a vecor of dimension len(list)]</li>
+<li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.matrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt></a></li>
+<li><a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a></li>
+<li><a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html#numpy.array" title="(in NumPy v1.7)"><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">real</span></tt> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
+whith all entries equal to <strong>mat</strong>.</li>
+<li>following strings:<blockquote>
+<div><ul class="simple">
+<li>&#8216;<tt class="docutils literal"><span class="pre">|a|</span></tt>&#8216; for a matrix with all terms equal to a</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">|a|(n,m)</span></tt>&#8216; for a matrix forced to be of size n x m, with all terms equal to a</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">e_i(n,m)</span></tt>&#8216; matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">e_i,j(n,m)</span></tt>&#8216; matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">I</span></tt>&#8216; for the identity matrix</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">I(n)</span></tt>&#8216; for the identity matrix, forced to be of size n x n.</li>
+<li>&#8216;<tt class="docutils literal"><span class="pre">a%s</span></tt>&#8216;, where <tt class="docutils literal"><span class="pre">%s</span></tt> is one of the above string: the matrix that 
+should be returned when <strong>mat</strong> == <tt class="docutils literal"><span class="pre">%s</span></tt>, multiplied by the scalar a.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of the form (<strong>M</strong>, <strong>s</strong>), where <strong>M</strong> is the conversion of <strong>mat</strong> into a
+<a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>, and <strong>s</strong>
+is a string representation of <strong>mat</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">(&lt;3x1 sparse matrix, tc=&#39;d&#39;, nnz=3&gt;, &#39;[ 3 x 1 MAT ]&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_5(7,1)&#39;</span><span class="p">)</span>
+<span class="go">(&lt;7x1 sparse matrix, tc=&#39;d&#39;, nnz=1&gt;, &#39;e_5&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;e_11(7,2)&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        1.00e+00]</span>
+<span class="go">[   0        0       ]</span>
+<span class="go">[   0        0       ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">_retrieve_matrix</span><span class="p">(</span><span class="s">&#39;5.3I&#39;</span><span class="p">,(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">(&lt;2x2 sparse matrix, tc=&#39;d&#39;, nnz=2&gt;, &#39;5.3I&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">The PICOS Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="problem.html">Problem</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">picos.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html">Expression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html">Constraint</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="problem.html"
+                        title="previous chapter">Problem</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="expression.html"
+                        title="next chapter">Expression</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tools.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+
+  <h3><a href="download.html">Download</a></h3>
+  <ul class="this-page-menu">
+    <li><a href="dist/PICOS-0.1.3.tar.gz" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version013']);" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version013']);">Latest Version (0.1.3)</a></li>
+  </ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="expression.html" title="Expression"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="problem.html" title="Problem"
+             >previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" >The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Guillaume Sagnol.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

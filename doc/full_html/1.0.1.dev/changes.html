@@ -1,0 +1,224 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Change History &mdash; picos 1.0.1.dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="picos 1.0.1.dev documentation" href="index.html" />
+    <link rel="prev" title="Download" href="download.html" /> 
+  </head>
+<body><div class="admonition warning"><p class="first admonition-title">Warning</p><p class="last">You are consulting the doc of a former version of PICOS.The latest version is <a href="../index.html">HERE</a>. </p></div>    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="download.html" title="Download"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="change-history">
+<span id="changes"></span><h1>Change History<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><ul>
+<li><p class="first">18 May 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1.dev</em></a> <strong>Released</strong> <br />
+Major Release with following changes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
+<li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
+<li>Improved implementation of <tt class="docutils literal"><span class="pre">__getitem__</span></tt> for affine expressions. The slicing of affine expressions
+was slowing down (a lot!) the processing of the optimization problem.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">19 Jul. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.0</em></a> <strong>Released</strong> <br />
+Major Release with following changes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Semidefinite Programming Interface for MOSEK 7.0 !!!</li>
+<li>New options <tt class="docutils literal"><span class="pre">handleBarVars</span></tt> and <tt class="docutils literal"><span class="pre">handleConeVars</span></tt> to customize how SOCP and SDPs are passed to MOSEK
+(When these options are set to <tt class="docutils literal"><span class="pre">True</span></tt> , PICOS tries to minimize the number of variables of the
+MOSEK instance, see the doc in <a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>).</li>
+<li>The function <a class="reference internal" href="problem.html#picos.Problem.dualize" title="picos.Problem.dualize"><tt class="xref py py-func docutils literal"><span class="pre">dualize()</span></tt></a> returns the Lagrangian dual of a Problem.</li>
+<li>The option <tt class="docutils literal"><span class="pre">solve_via_dual</span></tt> (documented in
+<a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a> ) allows the user to pass
+the dual of a problem to a solver, instead of the primal problem itself. This can yield important speed-up for
+certain problems.</li>
+<li>In addition to the geometric mean function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></tt></a> , it is now possible
+to pass rational powers of affine expressions (through an overload of the <tt class="docutils literal"><span class="pre">**</span></tt> operator), trace of
+matrix powers with <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a> , (generalized) p-norms
+with <a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">picos.norm()</span></tt></a>, and nth root of a determinant with
+<a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">picos.detrootn()</span></tt></a>. These functions automatically reformulate the entered inequalities as a set of equivalent SOCP or SDP constraints.</li>
+<li>It is now possible to specify variable bounds directly (rather than adding constraints of the type <tt class="docutils literal"><span class="pre">x</span> <span class="pre">&gt;=</span> <span class="pre">0</span></tt> ).
+This can be done with the Keywords <tt class="docutils literal"><span class="pre">lower</span></tt> and <tt class="docutils literal"><span class="pre">upper</span></tt> of the function
+<a class="reference internal" href="problem.html#picos.Problem.add_variable" title="picos.Problem.add_variable"><tt class="xref py py-func docutils literal"><span class="pre">add_variable()</span></tt></a> ,
+or by the methods <a class="reference internal" href="expression.html#picos.Variable.set_lower" title="picos.Variable.set_lower"><tt class="xref py py-func docutils literal"><span class="pre">set_lower()</span></tt></a> ,
+<a class="reference internal" href="expression.html#picos.Variable.set_upper" title="picos.Variable.set_upper"><tt class="xref py py-func docutils literal"><span class="pre">set_upper()</span></tt></a> ,
+<a class="reference internal" href="expression.html#picos.Variable.set_sparse_lower" title="picos.Variable.set_sparse_lower"><tt class="xref py py-func docutils literal"><span class="pre">set_sparse_lower()</span></tt></a> , and
+<a class="reference internal" href="expression.html#picos.Variable.set_sparse_upper" title="picos.Variable.set_sparse_upper"><tt class="xref py py-func docutils literal"><span class="pre">set_sparse_upper()</span></tt></a> of the class <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>.</li>
+<li>It is now more efficient to update a Problem and resolve it. This is done thanks to the attribute <tt class="docutils literal"><span class="pre">passed</span></tt>
+of the classes <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a> and <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a> ,
+that stores which solvers are already aware of a constraint / variable. There is also an
+attribute <tt class="docutils literal"><span class="pre">obj_passed</span></tt> of the class <a class="reference internal" href="problem.html#picos.Problem" title="picos.Problem"><tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt></a> , that lists the solver instances
+where the objective function has already been passed. The option <tt class="docutils literal"><span class="pre">onlyChangeObjective</span></tt> has been
+deprecated.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">17 Apr. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>0.1.3</em></a> <strong>Released</strong> <br />
+Major changes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></tt></a> implemented, to handle inequalities involving
+a geometric mean and reformulate them automatically as a set of SOCP constraints.</li>
+<li>Some options were added for the function <a class="reference internal" href="problem.html#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> ,
+to tell CPLEX to stop the computation as soon as a given value for the
+upper bound (or lower bound) is reached (see the options <tt class="docutils literal"><span class="pre">uboundlimit</span></tt> and <tt class="docutils literal"><span class="pre">lboundlimit</span></tt>
+documented in <a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>).</li>
+<li>The time used by the solver is now stored in the dictionary
+returned by <a class="reference internal" href="problem.html#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a>.</li>
+<li>The option <tt class="docutils literal"><span class="pre">boundMonitor</span></tt> of the function <a class="reference internal" href="problem.html#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a>
+gives access to the values of the lower and upper bounds over time with cplex.
+(this option is documented in <a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>).</li>
+<li>The weak inequalities operators <tt class="docutils literal"><span class="pre">&lt;=</span></tt> and <tt class="docutils literal"><span class="pre">&gt;=</span></tt> can now be used (but strict inequalities are
+still interpreted as weak inequalities !).</li>
+<li>Minor bugs corrected (access to the duals of fixed variables with CPLEX,
+evaluation of constant affine expressions with a zero coefficient appearing
+in the dict of linear terms, number of constraints is now updated in
+<a class="reference internal" href="problem.html#picos.Problem.remove_constraint" title="picos.Problem.remove_constraint"><tt class="xref py py-func docutils literal"><span class="pre">remove_constraint()</span></tt></a>).</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">10 Jan. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>0.1.2</em></a> <strong>Released</strong> <br />
+bug-fix release, correcting:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file()</span></tt></a>
+function for sparse SDPA files. The function was writing the
+coefficients of the lower triangular part of the constraint matrices
+instead of the upper triangle.</li>
+<li>An <tt class="docutils literal"><span class="pre">IndexError</span></tt> occuring with the function
+<a class="reference internal" href="problem.html#picos.Problem.remove_constraint" title="picos.Problem.remove_constraint"><tt class="xref py py-func docutils literal"><span class="pre">remove_constraint()</span></tt></a>.</li>
+</ul>
+</div></blockquote>
+<p>Thanks to Warren Schudy for pointing out these bugs of the previous release !</p>
+</li>
+<li><p class="first">08 Dec. 12: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>0.1.1</em></a> <strong>Released</strong> <br />
+Major changes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Picos now interfaces GUROBI !</li>
+<li>You can specify an initial solution to <em>warm-start</em> mixed integer optimizers.
+(see the option <tt class="docutils literal"><span class="pre">hotstart</span></tt> documented in
+<a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>)</li>
+<li>Minor bugs with quadratic expressions corrected</li>
+<li>It&#8217;s possible to return a reference to a constraint added
+with add_constraint()</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Change History</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="download.html"
+                        title="previous chapter">Download</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/changes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+
+  <h3><a href="download.html">Download</a></h3>
+  <ul class="this-page-menu">
+    <li><a href="dist/PICOS-1.0.1.dev.tar.gz">Latest Version (1.0.1.dev)</a></li>
+  </ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="download.html" title="Download"
+             >previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Guillaume Sagnol.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
