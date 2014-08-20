@@ -30,7 +30,7 @@ sys.setdefaultencoding("UTF-8")
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
-	      'sphinx.ext.intersphinx',
+	      #'sphinx.ext.intersphinx', #COMMENT TO BUILD FASTER, BUT UNCOMMENT FOR THE FINAL RELEASE !
 	      'sphinx.ext.todo',
 	      'sphinx.ext.doctest',
 	      'sphinx.ext.pngmath',
@@ -112,12 +112,22 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+#html_theme = 'default'
+#html_theme_options = {'stickysidebar':True}
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#html_theme_options = {}
+#read the doc theme
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_options = {'sticky_navigation':True}
+
+#readibility theme
+#import sphinxtheme
+#readability_path = os.path.dirname(os.path.abspath(sphinxtheme.__file__))
+#relative_path = os.path.relpath(readability_path, os.path.abspath('.'))
+#html_theme = 'readability'
+#html_theme_path = [relative_path]
+
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -132,7 +142,7 @@ html_short_title = 'PICOS'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = './picos_small_trans.gif'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -153,8 +163,8 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
-html_sidebars = {'**': ['globaltoc.html','localtoc2.html','relations.html',  'sourcelink.html', 'download.html', 'searchbox.html']}
+html_sidebars = {}
+#html_sidebars = {'**': ['globaltoc.html','localtoc2.html','relations.html',  'sourcelink.html', 'download.html', 'searchbox.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -212,7 +222,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+latex_logo = './picos.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
@@ -275,8 +285,10 @@ def setup(app):
 #copying files
 import os
 print 'copying pyplots files...'
-os.system('cp -v pyplots/*.py _build/html/pyplots/')
+#os.system('cp -v pyplots/*.py _build/html/pyplots/')
+os.system('rsync -uzvr pyplots/*.py _build/html/pyplots/')
 print 'done.'
 print 'copying dist files...'
-os.system('cp -v ../dist/* _build/html/dist')
+#os.system('cp -v ../dist/* _build/html/dist')
+os.system('rsync -uzvr ../dist/* _build/html/dist')
 print 'done.'

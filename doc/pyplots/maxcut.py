@@ -43,7 +43,7 @@ maxcut.add_constraint(X>>0)
 #objective
 maxcut.set_objective('max',L|X)
 
-print maxcut
+#print maxcut
 maxcut.solve(verbose = 0)
 
 #Cholesky factorization
@@ -71,9 +71,9 @@ while (count <100 or obj<.878*obj_sdp):
 S1=[n for n in range(N) if x[n]<0]
 S2=[n for n in range(N) if x[n]>0]
         
-print 'partition of the nodes:'
-print 'S1: {0}'.format(S1)
-print 'S2: {0}'.format(S2)
+#print 'partition of the nodes:'
+#print 'S1: {0}'.format(S1)
+#print 'S2: {0}'.format(S2)
 
 cut = [(i,j) for (i,j) in G.edges() if x[i]*x[j]<0]
 

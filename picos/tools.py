@@ -20,7 +20,7 @@
 #For any information, please contact:
 #Guillaume Sagnol
 #sagnol@zib.de
-#Konrad Zuse Zentrum fÃ¼r Informationstechnik Berlin (ZIB)
+#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
 #Takustrasse 7
 #D-14195 Berlin-Dahlem
 #Germany 
@@ -129,7 +129,10 @@ def sum(lst,it=None,indices=None):
         if not(all([isinstance(exi,Expression) for exi in lst])):
                 import __builtin__
                 return __builtin__.sum(lst)
-        affSum=new_param('',cvx.matrix(0.,lst[0].size))
+        if 'z' in [m.typecode for exp in lst for m in exp.factors.values()]: #complex expression
+                affSum=new_param('',cvx.matrix(0.,lst[0].size,tc='z'))
+        else:
+                affSum=new_param('',cvx.matrix(0.,lst[0].size,tc='d'))
         for lsti in lst:
                 affSum+=lsti
         if not it is None:
@@ -158,9 +161,7 @@ def sum(lst,it=None,indices=None):
                 except Exception:
                   indstr='['+str(len(lst))+' expressions (first: '+lst[0].string+')]'
                 sumstr+=' '+indstr
-                sigma= u'\u03A3'.encode('utf-8')
-                #sigma='Σ' #'u'\u03A3'.encode('utf-8')
-                import pdb;pdb.set_trace()
+                sigma='Σ' #'u'\u03A3'.encode('utf-8')
                 affSum.string=sigma+sumstr
         return affSum
 
@@ -1808,8 +1809,8 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
                 print 'Error: unexpected error.'
                 return False
 
-        from .constraint import _Flow_Constraint
-        return _Flow_Constraint(G, Ptmp,comment)
+        from .constraint import Flow_Constraint
+        return Flow_Constraint(G, Ptmp,comment)
 
 def drawGraph(G, capacity='capacity'):
 	""""Draw a given Graph"""

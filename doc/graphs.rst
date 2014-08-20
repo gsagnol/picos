@@ -8,7 +8,7 @@ The code below initializes the graph used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
 The packages `networkx <http://networkx.lanl.gov/index.html>`_
 and `matplotlib <http://matplotlib.sourceforge.net>`_
-are recquired.
+are required.
 
 .. note::
         
@@ -16,7 +16,7 @@ are recquired.
         (i.e., a `networkx <http://networkx.lanl.gov/index.html>`_ object)
         with the function
         :func:`flow_Constraint() <picos.tools.flow_Constraint>`. It creates an object of the class
-        :class:`_Flow_Constraint <picos.constraints._Flow_Constraint>` that can be passed to a problem
+        :class:`Flow_Constraint <picos.constraints.Flow_Constraint>` that can be passed to a problem
         with :func:`add_constraint() <picos.Problem.add_constraint>`.
         This automatically inserts a constraint for the flow conservation at each node
         and the capacity  constraints for each edge. We have included an example

@@ -5,8 +5,6 @@ problem de rang avec cvxopt: remove constraints redondantes ?
 
 
 add new contributors (Marco Dalai, Peter Wittek ?)
-document slicing problem
-flow constraints (multicommodity)
 trace (AM^p)
 robust -- uncertainty sets
 read solution partially

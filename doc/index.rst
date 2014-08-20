@@ -10,6 +10,10 @@
 PICOS: A Python Interface for Conic Optimization Solvers
 ========================================================
 
+
+.. image:: picos_big_trans.gif
+
+
 .. _contents:
 
 **News**

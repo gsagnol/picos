@@ -703,7 +703,7 @@ class AffinExp(Expression):
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        dotp.string='â© '+self.string+' | '+facString+' âª'
+                        dotp.string='〈 '+self.string+' | '+facString+' 〉'
                 
                 return dotp
                 
@@ -723,7 +723,7 @@ class AffinExp(Expression):
                                  or facString[-2].isdigit() or facString[-2]=='.'):
                         dotp.string=facString[:-1]+'trace( '+self.string+' )'
                 else:
-                        dotp.string='â© '+facString+' | '+self.string+' âª'
+                        dotp.string='〈 '+facString+' | '+self.string+' 〉'
                 
                 return dotp
                 
@@ -752,7 +752,13 @@ class AffinExp(Expression):
                                 raise Exception('incompatible dimension in the sum')
                         for k in term.factors:
                                 if k in self.factors:
-                                        self.factors[k]+=term.factors[k]
+                                        try:
+                                                self.factors[k]+=term.factors[k]
+                                        except TypeError as ex:
+                                                if str(ex).startswith('incompatible'):#incompatible typecodes
+                                                        self.factors[k]= self.factors[k] + term.factors[k]
+                                                else:
+                                                        raise
                                 else:
                                         self.factors[k]=term.factors[k]
                         if self.constant is None and term.constant is None:
@@ -1628,7 +1634,13 @@ class QuadExp(Expression):
                 if isinstance(term,QuadExp):
                         for ij in self.quad:
                                 if ij in term.quad:
-                                        self.quad[ij]+=term.quad[ij]
+                                        try:
+                                                self.quad[ij]+=term.quad[ij]
+                                        except TypeError as ex:
+                                                if str(ex).startswith('incompatible'):#incompatible typecodes
+                                                        self.quad[ij]= self.quad[ij] + term.quad[ij]
+                                                else:
+                                                        raise
                         for ij in term.quad:
                                 if not (ij in self.quad):
                                         self.quad[ij]=term.quad[ij]

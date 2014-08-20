@@ -60,7 +60,7 @@ mincut.set_objective('min',
                              [('e',2)],'edges')
                      )
         
-print mincut
+#print mincut
 mincut.solve(verbose=0)
 
 cut=[e for e in G.edges() if d[e].value[0]==1]

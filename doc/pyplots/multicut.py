@@ -72,11 +72,11 @@ multicut.set_objective('min',
                         [('e',2)],'edges')
                 )
                 
-print multicut
+#print multicut
 multicut.solve(verbose=0)
 
 
-print 'The minimal multicut has capacity {0}'.format(multicut.obj_value())
+#print 'The minimal multicut has capacity {0}'.format(multicut.obj_value())
 
 cut=[e for e in G.edges() if y[e].value[0]==1]
 

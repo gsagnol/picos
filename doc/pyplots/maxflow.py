@@ -71,7 +71,7 @@ maxflow.add_list_of_constraints(
 #objective
 maxflow.set_objective('max',F)
         
-print maxflow
+#print maxflow
 maxflow.solve(verbose=0)
 
 

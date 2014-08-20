@@ -214,9 +214,9 @@ affine expressions with them.
    >>> t/b[1][3] - D['Bob']                     #division by a scalar and substraction
    # (1 x 1)-affine expression: t / b[1][3] -D[Bob] #
    >>> ( b[2] | x )                             #dot product
-   # (1 x 1)-affine expression: 〈 b[2] | x 〉 #
+   # (1 x 1)-affine expression: 〈 b[2] | x 〉 #
    >>> ( A[3] | Y )                             #generalized dot product for matrices: (A|B)=trace(A*B.T)
-   # (1 x 1)-affine expression: 〈 A[3] | Y 〉 #
+   # (1 x 1)-affine expression: 〈 A[3] | Y 〉 #
 
 We can also take some subelements of affine expressions, by using
 the standard syntax of python slices:
@@ -305,7 +305,7 @@ and the second argument should be a scalar expression:
     Y   : (2, 4), continuous
     x   : (4, 1), integer
     <BLANKLINE>
-        maximize 〈 A[0] | Y 〉 -t
+        maximize 〈 A[0] | Y 〉 -t
     such that
       []
     ---------------------
@@ -357,7 +357,7 @@ Quadratic expressions can be formed in several ways:
   >>> Y[0,:]*x                                             #Row vector multiplied by column vector
   #quadratic expression: Y[0,:]*x #
   >>> (x +2 | Z[1][:,1])                                   #scalar product of affine expressions
-  #quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #
+  #quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #
   >>> abs(x)**2                                            #recall that abs(x) is the euclidean norm of x
   #quadratic expression: ||x||**2 #
   >>> (t & alpha) * A[1] * x                               #quadratic form
@@ -379,7 +379,7 @@ Linear (in)equalities are understood elementwise. **The strict operators**
 and *larger or equal than*). For example:
 
    >>> (1|x) < 2                                                        #sum of the x[i] less or equal than 2
-   # (1x1)-affine constraint: 〈 |1| | x 〉 < 2.0 #
+   # (1x1)-affine constraint: 〈 |1| | x 〉 < 2.0 #
    >>> Z[0] * A[0] > b[1]*b[2].T                                        #A 4x4-elementwise inequality
    # (4x4)-affine constraint: Z[0]*A[0] > b[1]*b[2].T #
    >>> pic.sum([A[i]*Z[i] for i in range(5)],'i','[5]') == 0            #A 2x2 equality. The RHS is the all-zero matrix
@@ -401,7 +401,7 @@ Constraints can be added in the problem with the function
   Y   : (2, 4), continuous
   x   : (4, 1), integer
   <BLANKLINE>
-      maximize 〈 A[0] | Y 〉 -t
+      maximize 〈 A[0] | Y 〉 -t
   such that
     Z[1] = Z[0] + Y.T
     Z[2] = Z[1] + Y.T
@@ -445,7 +445,7 @@ which works similarly as the function :func:`sum() <picos.tools.sum>`.
     Y   : (2, 4), continuous
     x   : (4, 1), integer
     <BLANKLINE>
-        maximize 〈 A[0] | Y 〉 -t
+        maximize 〈 A[0] | Y 〉 -t
     such that
       Y > |0|
       Z[i] = Z[i-1] + Y.T for all i in 1...4
@@ -622,7 +622,7 @@ Quadratic inequalities are entered in the following way:
   >>> t**2 > 2*t - alpha + x[1]*x[2]
   #Quadratic constraint -t**2 + 2.0*t -alpha + x[1]*x[2] < 0 #
   >>> (t & alpha) * A[1] * x + (x +2 | Z[1][:,1]) < 3*(1|Y)-alpha
-  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
+  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
 
 Note that PICOS does not check the convexity of convex constraints.
 It is the solver which will raise an Exception if it does not support
@@ -643,7 +643,7 @@ There are two types of second order cone constraints supported in PICOS.
   * The constraints of the type :math:`\Vert x \Vert^2 \leq t u,\ t \geq 0`, where
     :math:`t` and :math:`u` are scalar affine expressions and
     :math:`x` is a multidimensional affine expression, which constrain
-    the vector :math:`[x,t,u]` inside a rotated version of the Lorretz cone.
+    the vector :math:`[x,t,u]` inside a rotated version of the Lorrentz cone.
     When a constraint of the form ``abs(x)**2 < t*u`` is passed to PICOS, **it
     is implicitely assumed that** ``t`` **is nonnegative**, and the constraint is
     handled as the equivalent, standard ice-cream cone constraint
@@ -652,7 +652,7 @@ There are two types of second order cone constraints supported in PICOS.
 A few examples:
 
   >>> abs(x) < (2|x-1)                                                                  #A simple ice-cream cone constraint
-  # (4x1)-SOC constraint: ||x|| < 〈 |2.0| | x -|1| 〉 #
+  # (4x1)-SOC constraint: ||x|| < 〈 |2.0| | x -|1| 〉 #
   >>> abs(Y+Z[0].T) < t+alpha                                                           #SOC constraint with Frobenius norm
   # (2x4)-SOC constraint: ||Y + Z[0].T|| < t + alpha #
   >>> abs(Z[1][:,0])**2 < (2*t-alpha)*(x[2]-x[-1])                                      #Rotated SOC constraint
@@ -675,11 +675,11 @@ Linear matrix inequalities (LMI) can be entered thanks to an overload of the ope
    \sum_{i=0}^3 x_i b_i b_i^T \succeq b_4 b_4^T,
    \end{equation*}
 
-where :math:`\succeq` is used to denote the Löwner ordering,
+where :math:`\succeq` is used to denote the LÃ¶wner ordering,
 is passed to PICOS by writing:
 
   >>> pic.sum([x[i]*b[i]*b[i].T for i in range(4)],'i','0...3') >> b[4]*b[4].T
-  # (4x4)-LMI constraint Σ_{i in 0...3} x[i]*b[i]*b[i].T ≽ b[4]*b[4].T #
+  # (4x4)-LMI constraint Σ_{i in 0...3} x[i]*b[i]*b[i].T Ã¢ÂÂ½ b[4]*b[4].T #
 
 Note the difference with
 
@@ -706,7 +706,7 @@ of its lower triangular elements only.
     <BLANKLINE>
         find vars
     such that
-      X ≽ |0|
+      X Ã¢ÂÂ½ |0|
     ---------------------
 
 In this example, you see indeed that the problem has 10=(4*5)/2 variables,
@@ -1115,6 +1115,7 @@ and semidefinite constraints can be written under the form:
                      & \Vert A^s_i \mathbf{x} + \mathbf{b^s_i} \Vert &\leq \mathbf{f^s_i}^T \mathbf{x} +d^s_i, & \forall i \in I\\
                      & \Vert A^r_j \mathbf{x} + \mathbf{b^r_j} \Vert^2 &\leq (\mathbf{f^{r_1}_j}^T \mathbf{x} +d^{r_1}_j) (\mathbf{f^{r_2}_j}^T \mathbf{x} +d^{r_2}_j), & \forall j \in J\\
                      & 0        & \leq \mathbf{f^{r_1}_j}^T \mathbf{x} +d^{r_1}_j, & \forall j \in J\\
+                     & 0        & \leq \mathbf{f^{r_2}_j}^T \mathbf{x} +d^{r_2}_j, & \forall j \in J\\
                      & \sum_{i=1}^n x_i M_i & \succeq M_0
    \end{array}$
    \end{center}
@@ -1162,6 +1163,7 @@ Its dual problem can be written as:
                      & \Vert \mathbf{z^s_i} \Vert \leq \lambda_i, &\forall i \in I\\
                      & \Vert \mathbf{z^r_j} \Vert^2 \leq 4 \alpha_j \beta_j, &\forall j \in J\\
                      & \ \ 0 \ \ \ \leq \alpha_j, &\forall j \in J\\
+                     & \ \ 0 \ \ \ \leq \beta_j, &\forall j \in J\\
                      & X \succeq 0
    \end{array}$
    \end{center}

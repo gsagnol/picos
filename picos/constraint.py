@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','_Convex_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint']
+__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint']
 
 class Constraint(object):
         """A class for describing a constraint.
@@ -52,7 +52,7 @@ class Constraint(object):
                         * ``lse`` : Geometric Programming constraint ``LogSumExp(Exp1)<0``
                         * ``quad``: scalar quadratic constraint ``Exp1 < 0``.
                         * ``sdp<`` or ``sdp>``: semidefinite constraint
-                          ``Exp1 ⪳ Exp2`` or ``Exp1 ⪴ Exp2``.
+                          ``Exp1 ≼ Exp2`` or ``Exp1 ≽ Exp2``.
                 """
 
                 self.Exp1=Exp1
@@ -228,9 +228,9 @@ class Constraint(object):
                 if self.typeOfConstraint[:3]=='sdp':
                         #sense=' '+self.typeOfConstraint[-1]+' '
                         if self.typeOfConstraint[-1]=='<':
-                                sense = ' ≼ ' #≺,≼,⊰
+                                sense = ' ≼ '
                         else:
-                                sense = ' ≽ ' #≻,≽,⊱
+                                sense = ' ≽ '
                         #if self.Exp2.is0():
                         #        return self.Exp1.affstring()+sense+'0'
                         #elif self.Exp1.is0():
@@ -324,7 +324,7 @@ class _Convex_Constraint(Constraint):
         def __repr__(self):
                 return '# '+self.constypestr+' : ' + self.constring() + '#'   
 
-class _Flow_Constraint(_Convex_Constraint):
+class Flow_Constraint(_Convex_Constraint):
         """ A temporary object used to pass a flow constraint.
         This class derives from :class:`Constraint <picos.Constraint>`.
         """

@@ -20,7 +20,7 @@
 #For any information, please contact:
 #Guillaume Sagnol
 #sagnol@zib.de
-#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
+#Konrad Zuse Zentrum für Informationstechnik Berlin (ZIB)
 #Takustrasse 7
 #D-14195 Berlin-Dahlem
 #Germany 
