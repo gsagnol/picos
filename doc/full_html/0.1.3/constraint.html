@@ -1,0 +1,263 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Constraint &mdash; picos 0.1.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="picos 0.1.3 documentation" href="index.html" />
+    <link rel="up" title="The PICOS Reference" href="api.html" />
+    <link rel="next" title="Download" href="download.html" />
+    <link rel="prev" title="Expression" href="expression.html" /> 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+  </head>
+<body><div class="admonition warning"><p class="first admonition-title">Warning</p><p class="last">You are consulting the doc of a former version of PICOS.The latest version is <a href="../index.html">HERE</a>. </p></div>    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="download.html" title="Download"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="expression.html" title="Expression"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="constraint">
+<span id="id1"></span><h1>Constraint<a class="headerlink" href="#constraint" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="picos.Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Constraint</tt><big>(</big><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#picos.Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for describing a constraint.</p>
+<dl class="attribute">
+<dt id="picos.Constraint.Exp1">
+<tt class="descname">Exp1</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp1" title="Permalink to this definition">¶</a></dt>
+<dd><p>LHS</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Exp2">
+<tt class="descname">Exp2</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>RHS
+(ignored for constraints of type <tt class="docutils literal"><span class="pre">lse</span></tt> and <tt class="docutils literal"><span class="pre">quad</span></tt>, where
+<tt class="docutils literal"><span class="pre">Exp2</span></tt> is set to <tt class="docutils literal"><span class="pre">0</span></tt>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Exp3">
+<tt class="descname">Exp3</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Second factor of the RHS for <tt class="docutils literal"><span class="pre">RScone</span></tt> constraints
+(see <a class="reference internal" href="#picos.Constraint.typeOfConstraint" title="picos.Constraint.typeOfConstraint"><tt class="xref py py-attr docutils literal"><span class="pre">typeOfConstraint</span></tt></a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Id">
+<tt class="descname">Id</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Id" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer identifier</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.dual">
+<tt class="descname">dual</tt><a class="headerlink" href="#picos.Constraint.dual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value of the dual variable associated to this constraint</p>
+<p>See the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> in the tutorial
+for more information.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.key">
+<tt class="descname">key</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string to give a key name to the constraint</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.slack">
+<tt class="descname">slack</tt><a class="headerlink" href="#picos.Constraint.slack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value of the slack variable associated to this constraint
+(should be nonnegative/zero if the inequality/equality
+is satisfied: for an inequality of the type <tt class="docutils literal"><span class="pre">lhs&lt;rhs</span></tt>,
+the slack is <tt class="docutils literal"><span class="pre">rhs-lhs</span></tt>, and for <tt class="docutils literal"><span class="pre">lhs&gt;rhs</span></tt>
+the slack is <tt class="docutils literal"><span class="pre">lhs-rhs</span></tt>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.typeOfConstraint">
+<tt class="descname">typeOfConstraint</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.typeOfConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string from the following values,
+indicating the type of constraint:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">lin&lt;</span></tt>, <tt class="docutils literal"><span class="pre">lin=</span></tt> or <tt class="docutils literal"><span class="pre">lin&gt;</span></tt> : Linear (in)equality
+<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≤</span> <span class="pre">Exp2</span></tt>, <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">=</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≥</span> <span class="pre">Exp2</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">SOcone</span></tt> : Second Order Cone constraint <tt class="docutils literal"><span class="pre">||Exp1||</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">RScone</span></tt> : Rotated Cone constraint
+<tt class="docutils literal"><span class="pre">||Exp1||**2</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span> <span class="pre">*</span> <span class="pre">Exp3</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">lse</span></tt> : Geometric Programming constraint <tt class="docutils literal"><span class="pre">LogSumExp(Exp1)&lt;0</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">quad</span></tt>: scalar quadratic constraint <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">&lt;</span> <span class="pre">0</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">sdp&lt;</span></tt> or <tt class="docutils literal"><span class="pre">sdp&gt;</span></tt>: semidefinite constraint
+<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">⪳</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">⪴</span> <span class="pre">Exp2</span></tt>.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.GeoMeanConstraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">GeoMeanConstraint</tt><big>(</big><em>expaff</em>, <em>expgeo</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.GeoMeanConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass geometric mean inequalities</p>
+<dl class="attribute">
+<dt id="picos.GeoMeanConstraint.slack">
+<tt class="descname">slack</tt><a class="headerlink" href="#picos.GeoMeanConstraint.slack" title="Permalink to this definition">¶</a></dt>
+<dd><p>value of the slack of the geometric mean inequality constraint
+(for <tt class="docutils literal"><span class="pre">t&lt;geomean(x)</span></tt>, returns the value of <tt class="docutils literal"><span class="pre">geomean(x)-t</span></tt>).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">The PICOS Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="problem.html">Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">picos.tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html">Expression</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Constraint</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="expression.html"
+                        title="previous chapter">Expression</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="download.html"
+                        title="next chapter">Download</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/constraint.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+
+  <h3><a href="download.html">Download</a></h3>
+  <ul class="this-page-menu">
+    <li><a href="dist/PICOS-0.1.3.tar.gz" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version013']);" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version013']);">Latest Version (0.1.3)</a></li>
+  </ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="download.html" title="Download"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="expression.html" title="Expression"
+             >previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" >The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Guillaume Sagnol.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

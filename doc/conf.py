@@ -61,6 +61,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+projectname = u'picos_tututu'
 project = u'picos'
 copyright = u'2012, Guillaume Sagnol'
 
@@ -140,9 +141,8 @@ html_theme_options = {'sticky_navigation':True}
 #html_short_title = None
 html_short_title = 'PICOS'
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = './picos_small_trans.gif'
+# The name of an image file (relative to this directory) stored in the _static directory
+html_logo = 'picos_big_trans.gif'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -164,6 +164,7 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {}
+#html_sidebars = {'**': ['globaltoc.html','localtoc2.html']}
 #html_sidebars = {'**': ['globaltoc.html','localtoc2.html','relations.html',  'sourcelink.html', 'download.html', 'searchbox.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -292,3 +293,6 @@ print 'copying dist files...'
 #os.system('cp -v ../dist/* _build/html/dist')
 os.system('rsync -uzvr ../dist/* _build/html/dist')
 print 'done.'
+#print 'copy in /last'
+#os.system('rsync -uzvr _build/html/* full_html/last')
+#print 'done.'

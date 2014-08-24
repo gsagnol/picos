@@ -1,0 +1,836 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Expression &mdash; picos 1.0.1.dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="picos 1.0.1.dev documentation" href="index.html" />
+    <link rel="up" title="The PICOS Reference" href="api.html" />
+    <link rel="next" title="Constraint" href="constraint.html" />
+    <link rel="prev" title="picos.tools" href="tools.html" /> 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+  </head>
+<body><div class="admonition warning"><p class="first admonition-title">Warning</p><p class="last">You are consulting the doc of a former version of PICOS.The latest version is <a href="../index.html">HERE</a>. </p></div>    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraint.html" title="Constraint"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tools.html" title="picos.tools"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="expression">
+<span id="id1"></span><h1>Expression<a class="headerlink" href="#expression" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="picos.Expression">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Expression</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#picos.Expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parent class of <a class="reference internal" href="#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>
+(which is the parent class of <a class="reference internal" href="#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>),
+<a class="reference internal" href="#picos.Norm" title="picos.Norm"><tt class="xref py py-class docutils literal"><span class="pre">Norm</span></tt></a>,
+<a class="reference internal" href="#picos.LogSumExp" title="picos.LogSumExp"><tt class="xref py py-class docutils literal"><span class="pre">LogSumExp</span></tt></a>, and
+<a class="reference internal" href="#picos.QuadExp" title="picos.QuadExp"><tt class="xref py py-class docutils literal"><span class="pre">QuadExp</span></tt></a>.</p>
+</dd></dl>
+
+<div class="section" id="affinexp">
+<h2>AffinExp<a class="headerlink" href="#affinexp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.AffinExp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">AffinExp</tt><big>(</big><em>factors=None</em>, <em>constant=None</em>, <em>size=(1</em>, <em>1)</em>, <em>string='0'</em><big>)</big><a class="headerlink" href="#picos.AffinExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for defining vectorial (or matrix) affine expressions.
+It derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.</p>
+<p><strong>Overloaded operators</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">+</span></tt>:</th><td class="field-body">sum            (with an affine or quadratic expression)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">+=</span></tt>:</th><td class="field-body">in-place sum  (with an affine or quadratic expression)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">-</span></tt>:</th><td class="field-body">substraction   (with an affine or quadratic expression) or unitary minus</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">*</span></tt>:</th><td class="field-body">multiplication (by another affine expression or a scalar)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">/</span></tt>:</th><td class="field-body">division       (by a scalar)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">|</span></tt>:</th><td class="field-body">scalar product (with another affine expression)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">[.]</span></tt>:</th><td class="field-body">slice of an affine expression</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">abs()</span></tt>:</th><td class="field-body">Euclidean norm (Frobenius norm for matrices)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">**</span></tt>:</th><td class="field-body">exponentiation (works with arbitrary powers for constant
+affine expressions, and any nonzero exponent otherwise).
+In the case of a nonconstant affine expression, the exponentiation
+returns a quadratic expression if the exponent is 2, or
+a <a class="reference internal" href="#picos.TracePow_Exp" title="picos.TracePow_Exp"><tt class="xref py py-class docutils literal"><span class="pre">TracePow_Exp</span></tt></a> object for other
+exponents. A rational approximation of the exponent is used,
+and the power inequality is internally replaced by an equivalent set of second order
+cone inequalities.</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">&amp;</span></tt>:</th><td class="field-body">horizontal concatenation (with another affine expression)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">//</span></tt>:</th><td class="field-body">vertical concatenation (with another affine expression)</td>
+</tr>
+</tbody>
+</table>
+<p>#:<tt class="docutils literal"><span class="pre">&lt;</span></tt>: less <strong>or equal</strong> (than an affine or quadratic expression)
+:<tt class="docutils literal"><span class="pre">&gt;</span></tt>: greater <strong>or equal</strong> (than an affine or quadratic expression)
+:<tt class="docutils literal"><span class="pre">==</span></tt>: is equal (to another affine expression)
+:<tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>: less than inequality in the Loewner ordering (linear matrix inequality ⪳)
+:<tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>: greater than inequality in the Loewner ordering (linear matrix inequality ⪴)</p>
+</div></blockquote>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>We recall here the implicit assumptions that are made
+when using relation operator overloads, in the following
+two situations:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>the rotated second order cone constraint
+<tt class="docutils literal"><span class="pre">abs(exp1)**2</span> <span class="pre">&lt;</span> <span class="pre">exp2</span> <span class="pre">*</span> <span class="pre">exp3</span></tt> implicitely
+assumes that the scalar expression <tt class="docutils literal"><span class="pre">exp2</span></tt> (and hence <tt class="docutils literal"><span class="pre">exp3</span></tt>)
+<strong>is nonnegative</strong>.</li>
+<li>the linear matrix inequality <tt class="docutils literal"><span class="pre">exp1</span> <span class="pre">&gt;&gt;</span> <span class="pre">exp2</span></tt> only tells picos
+that the symmetric matrix whose lower triangular elements
+are those of <tt class="docutils literal"><span class="pre">exp1-exp2</span></tt> is positive semidefinite. The
+matrix <tt class="docutils literal"><span class="pre">exp1-exp2</span></tt> <strong>is not constrained to be symmetric</strong>.
+Hence, you should manually add the constraint 
+<tt class="docutils literal"><span class="pre">exp1-exp2</span> <span class="pre">==</span> <span class="pre">(exp1-exp2).T</span></tt> if it is not clear from the data
+that this matrix is symmetric.</li>
+</ul>
+</div></blockquote>
+</div>
+<dl class="attribute">
+<dt id="picos.AffinExp.H">
+<tt class="descname">H</tt><a class="headerlink" href="#picos.AffinExp.H" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transposition</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.T">
+<tt class="descname">T</tt><a class="headerlink" href="#picos.AffinExp.T" title="Permalink to this definition">¶</a></dt>
+<dd><p>transposition</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.conj">
+<tt class="descname">conj</tt><a class="headerlink" href="#picos.AffinExp.conj" title="Permalink to this definition">¶</a></dt>
+<dd><p>complex conjugate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.constant">
+<tt class="descname">constant</tt><em class="property"> = None</em><a class="headerlink" href="#picos.AffinExp.constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>constant of the affine expression,
+stored as a <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/matrices.html#cvxopt.spmatrix" title="(in CVXOPT v1.1.1)"><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.factors">
+<tt class="descname">factors</tt><em class="property"> = None</em><a class="headerlink" href="#picos.AffinExp.factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary storing the matrix of coefficients of the linear
+part of the affine expressions. The matrices of coefficients
+are always stored with respect to vectorized variables (for the
+case of matrix variables), and are indexed by instances
+of the class <a class="reference internal" href="#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.imag">
+<tt class="descname">imag</tt><a class="headerlink" href="#picos.AffinExp.imag" title="Permalink to this definition">¶</a></dt>
+<dd><p>imaginary part (for complex expressions)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.AffinExp.is0">
+<tt class="descname">is0</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.AffinExp.is0" title="Permalink to this definition">¶</a></dt>
+<dd><p>is the expression equal to 0 ?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.AffinExp.isconstant">
+<tt class="descname">isconstant</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.AffinExp.isconstant" title="Permalink to this definition">¶</a></dt>
+<dd><p>is the expression constant (no variable involved) ?</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.real">
+<tt class="descname">real</tt><a class="headerlink" href="#picos.AffinExp.real" title="Permalink to this definition">¶</a></dt>
+<dd><p>real part (for complex expressions)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.size">
+<tt class="descname">size</tt><a class="headerlink" href="#picos.AffinExp.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>size of the affine expression</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.value">
+<tt class="descname">value</tt><a class="headerlink" href="#picos.AffinExp.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>value of the affine expression</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.AffinExp.vtype">
+<tt class="descname">vtype</tt><a class="headerlink" href="#picos.AffinExp.vtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>vype (for complex variables)</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="variable">
+<h3>Variable<a class="headerlink" href="#variable" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="id2"></span><dl class="class">
+<dt id="picos.Variable">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Variable</tt><big>(</big><em>parent_problem</em>, <em>name</em>, <em>size</em>, <em>Id</em>, <em>startIndex</em>, <em>vtype='continuous'</em>, <em>lower=None</em>, <em>upper=None</em><big>)</big><a class="headerlink" href="#picos.Variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class stores a variable. It
+derives from <a class="reference internal" href="#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="picos.Variable.Id">
+<tt class="descname">Id</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Variable.Id" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer index (obsolete)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.bnd">
+<tt class="descname">bnd</tt><a class="headerlink" href="#picos.Variable.bnd" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">var.bnd[i]</span></tt> returns a tuple <tt class="docutils literal"><span class="pre">(lo,up)</span></tt> of lower and upper bounds for the
+ith element of the variable <tt class="docutils literal"><span class="pre">var</span></tt>. None means +/- infinite.
+if <tt class="docutils literal"><span class="pre">var.bnd[i]</span></tt> is not defined, then <tt class="docutils literal"><span class="pre">var[i]</span></tt> is unbounded.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.endIndex">
+<tt class="descname">endIndex</tt><a class="headerlink" href="#picos.Variable.endIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>end position in the global vector of all variables</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Variable.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the variable (str)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.parent_problem">
+<tt class="descname">parent_problem</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Variable.parent_problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Problem instance to which this variable belongs</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.passed">
+<tt class="descname">passed</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Variable.passed" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of solvers which are already aware of this variable</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.semiDef">
+<tt class="descname">semiDef</tt><a class="headerlink" href="#picos.Variable.semiDef" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this is a sym. variable X subject to X&gt;&gt;0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.Variable.set_lower">
+<tt class="descname">set_lower</tt><big>(</big><em>lo</em><big>)</big><a class="headerlink" href="#picos.Variable.set_lower" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets a lower bound to the variable
+(lo may be scalar or a matrix of the same size as the variable <tt class="docutils literal"><span class="pre">self</span></tt>).
+Entries smaller than -INFINITY = -1e16 are ignored</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.Variable.set_sparse_lower">
+<tt class="descname">set_sparse_lower</tt><big>(</big><em>indices</em>, <em>bnds</em><big>)</big><a class="headerlink" href="#picos.Variable.set_sparse_lower" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets the lower bound bnds[i] to the index indices[i] of the variable.
+For a symmetric matrix variable, bounds on elements in the upper triangle are ignored.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>indices</strong> (<tt class="docutils literal"><span class="pre">list</span></tt>) &#8211; list of indices, given as integers (column major order) or tuples (i,j).</li>
+<li><strong>bnds</strong> &#8211; list of lower bounds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This function does not modify the existing bounds on elements other
+than those specified in <tt class="docutils literal"><span class="pre">indices</span></tt>.</p>
+</div>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">lower</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="o">.</span><span class="n">set_sparse_upper</span><span class="p">([</span><span class="mi">0</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="o">.</span><span class="n">bnd</span> 
+<span class="go">{0: (0.0, 1.0),</span>
+<span class="go"> 1: (0.0, 0.0),</span>
+<span class="go"> 2: (0.0, None),</span>
+<span class="go"> 3: (0.0, 2.0),</span>
+<span class="go"> 4: (0.0, None),</span>
+<span class="go"> 5: (0.0, None)}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.Variable.set_sparse_upper">
+<tt class="descname">set_sparse_upper</tt><big>(</big><em>indices</em>, <em>bnds</em><big>)</big><a class="headerlink" href="#picos.Variable.set_sparse_upper" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets the upper bound bnds[i] to the index indices[i] of the variable.
+For a symmetric matrix variable, bounds on elements in the upper triangle are ignored.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>indices</strong> (<tt class="docutils literal"><span class="pre">list</span></tt>) &#8211; list of indices, given as integers (column major order) or tuples (i,j).</li>
+<li><strong>bnds</strong> &#8211; list of upper bounds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This function does not modify the existing bounds on elements other
+than those specified in <tt class="docutils literal"><span class="pre">indices</span></tt>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="picos.Variable.set_upper">
+<tt class="descname">set_upper</tt><big>(</big><em>up</em><big>)</big><a class="headerlink" href="#picos.Variable.set_upper" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets an upper bound to the variable
+(up may be scalar or a matrix of the same size as the variable <tt class="docutils literal"><span class="pre">self</span></tt>).
+Entries larger than INFINITY = 1e16 are ignored</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.startIndex">
+<tt class="descname">startIndex</tt><a class="headerlink" href="#picos.Variable.startIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>starting position in the global vector of all variables</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.value">
+<tt class="descname">value</tt><a class="headerlink" href="#picos.Variable.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>value of the variable. The value of a variable is
+defined in the following two situations:</p>
+<ul class="simple">
+<li>The user has assigned a value to the variable,
+by using either the present <tt class="docutils literal"><span class="pre">value</span></tt> attribute,
+or the function
+<a class="reference internal" href="problem.html#picos.Problem.set_var_value" title="picos.Problem.set_var_value"><tt class="xref py py-func docutils literal"><span class="pre">set_var_value()</span></tt></a> of the class
+<a class="reference internal" href="problem.html#picos.Problem" title="picos.Problem"><tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt></a>. Note that manually
+giving a value to a variable can be useful, e.g. to
+provide a solver with an initial solution (see
+the option <tt class="docutils literal"><span class="pre">hotstart</span></tt> documented in
+<a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>)</li>
+<li>The problem involving the variable has been solved,
+and the <tt class="docutils literal"><span class="pre">value</span></tt> attribute stores the optimal value
+of this variable.</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Variable.vtype">
+<tt class="descname">vtype</tt><a class="headerlink" href="#picos.Variable.vtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>one of the following strings:</p>
+<ul>
+<li><p class="first">&#8216;continuous&#8217; (continuous variable)</p>
+</li>
+<li><p class="first">&#8216;binary&#8217;     (binary 0/1 variable)</p>
+</li>
+<li><p class="first">&#8216;integer&#8217;    (integer variable)</p>
+</li>
+<li><p class="first">&#8216;symmetric&#8217;  (symmetric matrix variable)</p>
+</li>
+<li><p class="first">&#8216;complex&#8217;    (complex matrix variable)</p>
+</li>
+<li><p class="first">&#8216;hermitian&#8217;  (complex hermitian matrix variable)</p>
+</li>
+<li><dl class="first docutils">
+<dt>&#8216;semicont&#8217;   (semicontinuous variable </dt>
+<dd><p class="first last">[can take the value 0 or any 
+other admissible value])</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>&#8216;semiint&#8217;    (semi integer variable </dt>
+<dd><p class="first last">[can take the value 0 or any
+other integer admissible value])</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="norm">
+<h2>Norm<a class="headerlink" href="#norm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.Norm">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Norm</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.Norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Euclidean (or Frobenius) norm of an Affine Expression.
+This class derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.</p>
+<p><strong>Overloaded operators</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">**</span></tt>:</th><td class="field-body">exponentiation (only implemented when the exponent is 2)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</th><td class="field-body">less <strong>or equal</strong> (than a scalar affine expression)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.Norm.exp">
+<tt class="descname">exp</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Norm.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine expression of which we take the norm</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="quadexp">
+<h2>QuadExp<a class="headerlink" href="#quadexp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.QuadExp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">QuadExp</tt><big>(</big><em>quad</em>, <em>aff</em>, <em>string</em>, <em>LR=None</em><big>)</big><a class="headerlink" href="#picos.QuadExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quadratic expression.
+This class derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.</p>
+<p><strong>Overloaded operators</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">+</span></tt>:</th><td class="field-body">addition (with an affine or a quadratic expression)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">-</span></tt>:</th><td class="field-body">substraction (with an affine or a quadratic expression) or unitary minus</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">*</span></tt>:</th><td class="field-body">multiplication (by a scalar or a constant affine expression)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</th><td class="field-body">less <strong>or equal</strong> than (another quadratic or affine expression).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</th><td class="field-body">greater <strong>or equal</strong> than (another quadratic or affine expression).</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.QuadExp.LR">
+<tt class="descname">LR</tt><em class="property"> = None</em><a class="headerlink" href="#picos.QuadExp.LR" title="Permalink to this definition">¶</a></dt>
+<dd><p>stores a factorization of the quadratic expression, if the
+expression was entered in a factorized form. We have:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">LR=None</span></tt> when no factorization is known</li>
+<li><tt class="docutils literal"><span class="pre">LR=(aff,None)</span></tt> when the expression is equal to <tt class="docutils literal"><span class="pre">||aff||**2</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">LR=(aff1,aff2)</span></tt> when the expression is equal to <tt class="docutils literal"><span class="pre">aff1*aff2</span></tt>.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.QuadExp.aff">
+<tt class="descname">aff</tt><em class="property"> = None</em><a class="headerlink" href="#picos.QuadExp.aff" title="Permalink to this definition">¶</a></dt>
+<dd><p>affine expression representing the affine part of the quadratic expression</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.QuadExp.quad">
+<tt class="descname">quad</tt><em class="property"> = None</em><a class="headerlink" href="#picos.QuadExp.quad" title="Permalink to this definition">¶</a></dt>
+<dd><p>dictionary of quadratic forms,
+stored as matrices representing bilinear forms
+with respect to two vectorized variables,
+and indexed by tuples of
+instances of the class <a class="reference internal" href="#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="logsumexp">
+<h2>LogSumExp<a class="headerlink" href="#logsumexp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.LogSumExp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">LogSumExp</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.LogSumExp" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Log-Sum-Exp applied to an affine expression.</dt>
+<dd>If the affine expression <tt class="docutils literal"><span class="pre">z</span></tt> is of size <img class="math" src="_images/math/fc97ef67268cd4e91bacdf12b8901d7036c9a056.png" alt="N"/>,
+with elements <img class="math" src="_images/math/930b741f3f6a8ddb8d01a6b649666bacfbdec7c2.png" alt="z_1, z_2, \ldots, z_N"/>,
+then LogSumExp(z) represents the expression
+<img class="math" src="_images/math/94f22fca0dc0c33f83098b8aa265bc1b21a7276c.png" alt="\log ( \sum_{i=1}^n e^{z_i} )"/>.
+This class derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.</dd>
+</dl>
+<p><strong>Overloaded operator</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</th><td class="field-body">less <strong>or equal</strong> than (the rhs <strong>must be 0</strong>, for geometrical programming)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.LogSumExp.value">
+<tt class="descname">value</tt><a class="headerlink" href="#picos.LogSumExp.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>value of the logsumexp expression</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="geomeanexp">
+<h2>GeoMeanExp<a class="headerlink" href="#geomeanexp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.GeoMeanExp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">GeoMeanExp</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.GeoMeanExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class storing the geometric mean of a multidimensional expression.
+It derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.</p>
+<p><strong>Overloaded operator</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</th><td class="field-body">greater <strong>or equal</strong> than (the rhs must be a scalar affine expression)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.GeoMeanExp.exp">
+<tt class="descname">exp</tt><em class="property"> = None</em><a class="headerlink" href="#picos.GeoMeanExp.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine expression to which the geomean is applied</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="normp-exp">
+<h2>NormP_Exp<a class="headerlink" href="#normp-exp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.NormP_Exp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">NormP_Exp</tt><big>(</big><em>exp</em>, <em>alpha</em>, <em>beta=1</em><big>)</big><a class="headerlink" href="#picos.NormP_Exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class storing the p-norm of a multidimensional expression.
+It derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.
+Use the function <a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">picos.norm()</span></tt></a> to create a instance of this class.</p>
+<p>Generalized norms are also defined for <img class="math" src="_images/math/82473b5f261338d5d3312b6e73b8166787090c53.png" alt="p&lt;1"/>, by using the usual formula
+<img class="math" src="_images/math/bf206b4dfcf30e2e9457d2bf3e9419f969272688.png" alt="\operatorname{norm}(\mathbf{x},p) := \Big(\sum_i x_i^p\Big)^{1/p}"/>. Note that this function
+is concave (for <img class="math" src="_images/math/82473b5f261338d5d3312b6e73b8166787090c53.png" alt="p&lt;1"/>) over the set of vectors with nonnegative coordinates.
+When a constraint of the form <img class="math" src="_images/math/3c27d74cebf437f4dd272496439ce6f9ed95335e.png" alt="\operatorname{norm}(\mathbf{x},p) &gt; t"/> with <img class="math" src="_images/math/e90b513f27851665de9989aa5dda101abb0ebb1c.png" alt="p\leq 1"/> 
+is entered, PICOS implicitely forces <img class="math" src="_images/math/5f61118f2ae912f86e683687c005145b5eb54aec.png" alt="\mathbf{x}"/> to be a nonnegative vector.</p>
+<p><strong>Overloaded operator</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</th><td class="field-body">less <strong>or equal</strong> than (the rhs must be a scalar affine expression, AND
+p must be greater or equal than 1)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</th><td class="field-body">greater <strong>or equal</strong> than (the rhs must be a scalar affine expression, AND
+p must be less or equal than 1)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.NormP_Exp.denominator">
+<tt class="descname">denominator</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Exp.denominator" title="Permalink to this definition">¶</a></dt>
+<dd><p>denominator of p</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.NormP_Exp.exp">
+<tt class="descname">exp</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Exp.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine expression to which the p-norm is applied</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.NormP_Exp.numerator">
+<tt class="descname">numerator</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Exp.numerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>numerator of p</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="tracepow-exp">
+<h2>TracePow_Exp<a class="headerlink" href="#tracepow-exp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.TracePow_Exp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">TracePow_Exp</tt><big>(</big><em>exp</em>, <em>alpha</em>, <em>beta=1</em><big>)</big><a class="headerlink" href="#picos.TracePow_Exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class storing the pth power of a scalar, or more generally the trace of the power of a symmetric matrix.
+It derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.
+Use the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a> 
+or simply the overloaded <tt class="docutils literal"><span class="pre">**</span></tt> exponentiation operator
+to create an instance of this class.</p>
+<p>Note that this function is concave for <img class="math" src="_images/math/d06652754ade022b1e3a8151dd89493fef33a5c1.png" alt="0&lt;p&lt;1"/>, and convex for the other values of <img class="math" src="_images/math/36f73fc1312ee0349b3f3a0f3bd9eb5504339011.png" alt="p"/>
+over the set of nonnegative variables <tt class="docutils literal"><span class="pre">exp</span></tt>
+(resp. over the set of positive semidefinite matrices <tt class="docutils literal"><span class="pre">exp</span></tt>), and PICOS implicitely forces
+the constraint <tt class="docutils literal"><span class="pre">exp</span> <span class="pre">&gt;0</span></tt> (resp. <tt class="docutils literal"><span class="pre">exp</span> <span class="pre">&gt;&gt;</span> <span class="pre">0</span></tt>) to hold.</p>
+<p><strong>Overloaded operator</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&lt;</span></tt>:</th><td class="field-body">less <strong>or equal</strong> than (the rhs must be a scalar affine expression, AND
+p must be either greater or equal than 1 or negative)</td>
+</tr>
+<tr class="field-even field"><th class="field-name"><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</th><td class="field-body">greater <strong>or equal</strong> than (the rhs must be a scalar affine expression, AND
+p must be in the range <img class="math" src="_images/math/101678300d1aa11009468da8419aaf2c57b795bd.png" alt="(0,1]"/>)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.TracePow_Exp.denominator">
+<tt class="descname">denominator</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Exp.denominator" title="Permalink to this definition">¶</a></dt>
+<dd><p>denominator of p</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.TracePow_Exp.dim">
+<tt class="descname">dim</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Exp.dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>dimension of <tt class="docutils literal"><span class="pre">exp</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.TracePow_Exp.exp">
+<tt class="descname">exp</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Exp.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine expression to which the p-norm is applied</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.TracePow_Exp.numerator">
+<tt class="descname">numerator</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Exp.numerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>numerator of p</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="detrootn-exp">
+<h2>DetRootN_Exp<a class="headerlink" href="#detrootn-exp" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="picos.DetRootN_Exp">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">DetRootN_Exp</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.DetRootN_Exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class storing the nth root of the determinant of a positive semidefinite matrix.
+It derives from <a class="reference internal" href="#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.
+Use the function <a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">picos.detrootn()</span></tt></a> 
+to create an instance of this class.
+Note that the matrix <img class="math" src="_images/math/6a47ca0fe7cb276abc022af6ac88ddae1a9d6894.png" alt="X"/> is forced to be positive semidefinite
+when a constraint of the form <tt class="docutils literal"><span class="pre">t</span> <span class="pre">&lt;</span> <span class="pre">pic.detrootn(X)</span></tt> is added.</p>
+<p><strong>Overloaded operator</strong></p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name"><tt class="docutils literal"><span class="pre">&gt;</span></tt>:</th><td class="field-body">greater <strong>or equal</strong> than (the rhs must be a scalar affine expression)</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<dl class="attribute">
+<dt id="picos.DetRootN_Exp.dim">
+<tt class="descname">dim</tt><em class="property"> = None</em><a class="headerlink" href="#picos.DetRootN_Exp.dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>dimension of <tt class="docutils literal"><span class="pre">exp</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.DetRootN_Exp.exp">
+<tt class="descname">exp</tt><em class="property"> = None</em><a class="headerlink" href="#picos.DetRootN_Exp.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine expression to which the det-root-n is applied</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuto.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">The PICOS Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="problem.html">Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">picos.tools</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Expression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html">Constraint</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+  <h3><a href="index.html">Contents of this page</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Expression</a><ul>
+<li><a class="reference internal" href="#affinexp">AffinExp</a><ul>
+<li><a class="reference internal" href="#variable">Variable</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#norm">Norm</a></li>
+<li><a class="reference internal" href="#quadexp">QuadExp</a></li>
+<li><a class="reference internal" href="#logsumexp">LogSumExp</a></li>
+<li><a class="reference internal" href="#geomeanexp">GeoMeanExp</a></li>
+<li><a class="reference internal" href="#normp-exp">NormP_Exp</a></li>
+<li><a class="reference internal" href="#tracepow-exp">TracePow_Exp</a></li>
+<li><a class="reference internal" href="#detrootn-exp">DetRootN_Exp</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tools.html"
+                        title="previous chapter">picos.tools</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="constraint.html"
+                        title="next chapter">Constraint</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/expression.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+
+  <h3><a href="download.html">Download</a></h3>
+  <ul class="this-page-menu">
+    <li><a href="dist/PICOS-1.0.1.dev.tar.gz" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version101']);" onClick="javascript: _gaq.push(['_trackPageview', '/downloads/version101']);">Latest Version (1.0.1.dev)</a></li>
+  </ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraint.html" title="Constraint"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tools.html" title="picos.tools"
+             >previous</a> |</li>
+        <li><a href="index.html">PICOS</a> &raquo;</li>
+          <li><a href="api.html" >The PICOS Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Guillaume Sagnol.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

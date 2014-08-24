@@ -1,0 +1,10 @@
+[Dolphin]
+AdditionalInfoV2=CustomizedDetails,Details_Size,Details_Date,Details_Type
+ShowPreview=true
+Sorting=6
+Timestamp=2013,1,10,15,44,43
+Version=2
+ViewMode=1
+
+[Settings]
+ShowDotFiles=true
