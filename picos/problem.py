@@ -2158,6 +2158,9 @@ class Problem(object):
                                 if c.typeOfConstraint.startswith('sdp'):
                                       if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
                                               return True
+                                      if (c.Exp1-c.Exp2).constant.typecode=='z':
+                                              return True
+                                      
                 return False
                     
                 
@@ -4110,11 +4113,23 @@ class Problem(object):
                                                 continue
                                         break #do not force symmetry if Z is already hermitian
                         
-                        #TODO here retrieve duals
                         if 'noduals' in self.options and self.options['noduals']:
                                         pass
                         else:
                                 duals = []
+                                for cst in realP.constraints:
+                                        if cst.typeOfConstraint.startswith('sdp'):
+                                                n =  int(cst.dual.size[0] / 2.)
+                                                if cst.dual.size[1] <> cst.dual.size[0]:
+                                                        raise Exception('Dual must be square matrix')
+                                                if cst.dual.size[1] <> 2*n:
+                                                        raise Exception('dims must be even numbers')
+                                                F1  = cst.dual[:n,:n]
+                                                F1a = cst.dual[n:,n:]
+                                                F2a = cst.dual[:n,n:]
+                                                duals.append((F1 + 1j*F2a) + (F1a + 1j*F2a).H)
+                                        else:
+                                                duals.append(cst.dual)
                 
                 #solve the dual problem instead
                 elif solve_via_dual:
@@ -4814,7 +4829,10 @@ class Problem(object):
                 else:
                         #primals
                         try:
-                                numsol = c.solution.pool.get_num()
+                                if self.options['pool_size'] is None:
+                                        numsol = 0
+                                else:
+                                        numsol = c.solution.pool.get_num()
                                 if numsol>1:
                                         objvals=[]
                                         for i in range(numsol):
@@ -4825,17 +4843,20 @@ class Problem(object):
                                                 indsols.append(ind)
                                 
                                 for var in self.variables.values():
-                                        value = []
-                                        sz_var = var.endIndex-var.startIndex
-                                        for i in range(sz_var):
-                                                name = var.name + '_' + str(i)
-                                                value.append(c.solution.get_values(name))
+                                        value = c.solution.get_values(var.startIndex,var.endIndex-1)
+                                        
+                                        ###much slowlier !
+                                        #value = []
+                                        #sz_var = var.endIndex-var.startIndex
+                                        #for i in range(sz_var):
+                                                #name = var.name + '_' + str(i)
+                                                #value.append(c.solution.get_values(name))
                                         
                                         if var.vtype in ('symmetric',):
                                                 value=svecm1(cvx.matrix(value)) #varvect was the svec
                                                                                 #representation of X
                                         primals[var.name] = cvx.matrix(value,var.size)
-                                
+                                        
                                 if numsol>1:
                                         for ii,ind in enumerate(indsols):
                                                 for var in self.variables.values():
@@ -6627,11 +6648,15 @@ class Problem(object):
                                 D = {}
                                 exp1=c.Exp1
                                 for var,value in exp1.factors.iteritems():
-                                        if var.vtype == 'hermitian':
-                                                D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
-                                                D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
-                                        else:
-                                                D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
+                                        try:
+                                                if var.vtype == 'hermitian':
+                                                        D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
+                                                        D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
+                                                else:
+                                                        D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
+                                        except Exception as ex:
+                                                import pdb;pdb.set_trace()
+                                                _cplx_vecmat_to_real_vecmat(value,sym=False)
                                 if exp1.constant is None:
                                         cst = None
                                 else:

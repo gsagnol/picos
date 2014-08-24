@@ -1475,19 +1475,20 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
         if times_i:
                 M = M * 1j
         
-        nn = M.size[1]
-        n = nn**0.5
         mm = M.size[0]
         m = mm**0.5
         if int(m)<>m:
                 raise NameError('first dimension must be a perfect square')
-        if int(n)<>n:
-                raise NameError('2d dimension must be a perfect square')
-        n=int(n)
         m=int(m)
         
         vv = []
         if sym:
+                nn = M.size[1]
+                n = nn**0.5
+                if int(n)<>n:
+                        raise NameError('2d dimension must be a perfect square')
+                n=int(n)
+
                 for k in range(n*(n+1)/2):
                         j=int(np.sqrt(1+8*k)-1)/2
                         i=k-j*(j+1)/2
