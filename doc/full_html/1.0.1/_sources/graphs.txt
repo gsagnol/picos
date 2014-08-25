@@ -1,3 +1,5 @@
+# coding: utf-8
+
 .. _graphs:
 
 **********************
@@ -8,7 +10,7 @@ The code below initializes the graph used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
 The packages `networkx <http://networkx.lanl.gov/index.html>`_
 and `matplotlib <http://matplotlib.sourceforge.net>`_
-are required.
+are recquired.
 
 .. note::
         
@@ -16,7 +18,7 @@ are required.
         (i.e., a `networkx <http://networkx.lanl.gov/index.html>`_ object)
         with the function
         :func:`flow_Constraint() <picos.tools.flow_Constraint>`. It creates an object of the class
-        :class:`Flow_Constraint <picos.constraints.Flow_Constraint>` that can be passed to a problem
+        :class:`_Flow_Constraint <picos.constraints._Flow_Constraint>` that can be passed to a problem
         with :func:`add_constraint() <picos.Problem.add_constraint>`.
         This automatically inserts a constraint for the flow conservation at each node
         and the capacity  constraints for each edge. We have included an example
@@ -633,7 +635,6 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 0.878 times the optimum. Below is a simple implementation of their algorithm:
 
 .. testcode::
-
         import cvxopt as cvx
         import cvxopt.lapack
         import numpy as np

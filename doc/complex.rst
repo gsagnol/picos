@@ -232,7 +232,7 @@ This problem can be implemented as follows using Picos:
 
         U       : (8, 8), hermitian
 
-                minimize âŒ© U | M âŒª
+                minimize 〈 U | M 〉
         such that
         U[i,i] = 1.0 for all i
         U ≽ |0|

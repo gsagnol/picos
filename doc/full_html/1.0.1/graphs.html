@@ -134,7 +134,8 @@
 </div>
           <div role="main" class="document">
             
-  <div class="section" id="cut-problems-in-graphs">
+  <p># coding: utf-8</p>
+<div class="section" id="cut-problems-in-graphs">
 <span id="graphs"></span><h1>Cut problems in graphs<a class="headerlink" href="#cut-problems-in-graphs" title="Permalink to this headline">¶</a></h1>
 <p>The code below initializes the graph used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
@@ -713,11 +714,7 @@ rank-one constraint on <img class="math" src="_images/math/f026aecf11ec7f6141ab8
 </div><p>Then, Goemans and Williamson have shown that if we project the solution <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/>
 onto a random hyperplan, we obtain a cut whose expected capacity is at least
 0.878 times the optimum. Below is a simple implementation of their algorithm:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
-<span class="kn">import</span> <span class="nn">cvxopt.lapack</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-
-<span class="c">#make G undirected</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#make G undirected</span>
 <span class="n">G</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
 
 <span class="c">#allocate weights to the edges</span>

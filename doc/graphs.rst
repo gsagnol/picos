@@ -143,7 +143,7 @@ we solve below for ``s=16`` and ``t=10``:
         
         ---------------------
         optimization problem  (LP):
-        61 variables, 140 affine constraints
+        61 variables, 139 affine constraints
 
         f   : dict of 60 variables, (1, 1), continuous
         F   : (1, 1), continuous
@@ -633,7 +633,6 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 0.878 times the optimum. Below is a simple implementation of their algorithm:
 
 .. testcode::
-
         import cvxopt as cvx
         import cvxopt.lapack
         import numpy as np
