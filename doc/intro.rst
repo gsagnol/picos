@@ -211,7 +211,7 @@ This generates the output:
     mu  : (3, 1), continuous
     Z   : list of 3 variables, different sizes, continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
     such that
       Σ_{i in [s]} A[i]*Z[i] = K
       ||Z[i]|| < mu[i] for all i in [s]

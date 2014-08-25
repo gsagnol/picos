@@ -214,9 +214,9 @@ affine expressions with them.
    >>> t/b[1][3] - D['Bob']                     #division by a scalar and substraction
    # (1 x 1)-affine expression: t / b[1][3] -D[Bob] #
    >>> ( b[2] | x )                             #dot product
-   # (1 x 1)-affine expression: 〈 b[2] | x 〉 #
+   # (1 x 1)-affine expression: 〈 b[2] | x 〉 #
    >>> ( A[3] | Y )                             #generalized dot product for matrices: (A|B)=trace(A*B.T)
-   # (1 x 1)-affine expression: 〈 A[3] | Y 〉 #
+   # (1 x 1)-affine expression: 〈 A[3] | Y 〉 #
 
 We can also take some subelements of affine expressions, by using
 the standard syntax of python slices:
@@ -305,7 +305,7 @@ and the second argument should be a scalar expression:
     Y   : (2, 4), continuous
     x   : (4, 1), integer
     <BLANKLINE>
-        maximize 〈 A[0] | Y 〉 -t
+        maximize 〈 A[0] | Y 〉 -t
     such that
       []
     ---------------------
@@ -357,7 +357,7 @@ Quadratic expressions can be formed in several ways:
   >>> Y[0,:]*x                                             #Row vector multiplied by column vector
   #quadratic expression: Y[0,:]*x #
   >>> (x +2 | Z[1][:,1])                                   #scalar product of affine expressions
-  #quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #
+  #quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #
   >>> abs(x)**2                                            #recall that abs(x) is the euclidean norm of x
   #quadratic expression: ||x||**2 #
   >>> (t & alpha) * A[1] * x                               #quadratic form
@@ -379,7 +379,7 @@ Linear (in)equalities are understood elementwise. **The strict operators**
 and *larger or equal than*). For example:
 
    >>> (1|x) < 2                                                        #sum of the x[i] less or equal than 2
-   # (1x1)-affine constraint: 〈 |1| | x 〉 < 2.0 #
+   # (1x1)-affine constraint: 〈 |1| | x 〉 < 2.0 #
    >>> Z[0] * A[0] > b[1]*b[2].T                                        #A 4x4-elementwise inequality
    # (4x4)-affine constraint: Z[0]*A[0] > b[1]*b[2].T #
    >>> pic.sum([A[i]*Z[i] for i in range(5)],'i','[5]') == 0            #A 2x2 equality. The RHS is the all-zero matrix
@@ -401,7 +401,7 @@ Constraints can be added in the problem with the function
   Y   : (2, 4), continuous
   x   : (4, 1), integer
   <BLANKLINE>
-      maximize 〈 A[0] | Y 〉 -t
+      maximize 〈 A[0] | Y 〉 -t
   such that
     Z[1] = Z[0] + Y.T
     Z[2] = Z[1] + Y.T
@@ -445,7 +445,7 @@ which works similarly as the function :func:`sum() <picos.tools.sum>`.
     Y   : (2, 4), continuous
     x   : (4, 1), integer
     <BLANKLINE>
-        maximize 〈 A[0] | Y 〉 -t
+        maximize 〈 A[0] | Y 〉 -t
     such that
       Y > |0|
       Z[i] = Z[i-1] + Y.T for all i in 1...4
@@ -523,8 +523,8 @@ Just add a list of sinks and a list of flows instead.
         F2=pbMultipleSinks.add_variable('F2',1)
 
         flowCons = pic.flow_Constraint(G, f, source='S', sink=['T1','T2'], capacity='capacity', flow_value=[F1, F2], graphName='G')
-        import pdb;pdb.set_trace()
-
+        
+        pbMultipleSinks.add_constraint(flowCons)
         pbMultipleSinks.set_objective('max',F1+F2)
 
         # Solve the problem
@@ -540,7 +540,7 @@ Just add a list of sinks and a list of flows instead.
         
         ---------------------
         optimization problem  (LP):
-        6 variables, 13 affine constraints
+        6 variables, 12 affine constraints
 
         f       : dict of 4 variables, (1, 1), continuous
         F1      : (1, 1), continuous
@@ -622,7 +622,7 @@ Quadratic inequalities are entered in the following way:
   >>> t**2 > 2*t - alpha + x[1]*x[2]
   #Quadratic constraint -t**2 + 2.0*t -alpha + x[1]*x[2] < 0 #
   >>> (t & alpha) * A[1] * x + (x +2 | Z[1][:,1]) < 3*(1|Y)-alpha
-  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
+  #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
 
 Note that PICOS does not check the convexity of convex constraints.
 It is the solver which will raise an Exception if it does not support
@@ -652,7 +652,7 @@ There are two types of second order cone constraints supported in PICOS.
 A few examples:
 
   >>> abs(x) < (2|x-1)                                                                  #A simple ice-cream cone constraint
-  # (4x1)-SOC constraint: ||x|| < 〈 |2.0| | x -|1| 〉 #
+  # (4x1)-SOC constraint: ||x|| < 〈 |2.0| | x -|1| 〉 #
   >>> abs(Y+Z[0].T) < t+alpha                                                           #SOC constraint with Frobenius norm
   # (2x4)-SOC constraint: ||Y + Z[0].T|| < t + alpha #
   >>> abs(Z[1][:,0])**2 < (2*t-alpha)*(x[2]-x[-1])                                      #Rotated SOC constraint
