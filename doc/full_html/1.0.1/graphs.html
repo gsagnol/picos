@@ -134,8 +134,7 @@
 </div>
           <div role="main" class="document">
             
-  <p># coding: utf-8</p>
-<div class="section" id="cut-problems-in-graphs">
+  <div class="section" id="cut-problems-in-graphs">
 <span id="graphs"></span><h1>Cut problems in graphs<a class="headerlink" href="#cut-problems-in-graphs" title="Permalink to this headline">¶</a></h1>
 <p>The code below initializes the graph used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
@@ -262,7 +261,7 @@ we solve below for <code class="docutils literal"><span class="pre">s=16</span><
 </div>
 <div class="highlight-none"><div class="highlight"><pre>---------------------
 optimization problem  (LP):
-61 variables, 140 affine constraints
+61 variables, 139 affine constraints
 
 f   : dict of 60 variables, (1, 1), continuous
 F   : (1, 1), continuous
@@ -305,7 +304,7 @@ function <a class="reference internal" href="tools.html#picos.tools.flow_Constra
 </div>
 <div class="highlight-none"><div class="highlight"><pre>---------------------
 optimization problem  (LP):
-61 variables, 140 affine constraints
+61 variables, 139 affine constraints
 
 f       : dict of 60 variables, (1, 1), continuous
 F       : (1, 1), continuous
@@ -726,7 +725,8 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 <span class="n">X</span><span class="o">=</span><span class="n">maxcut</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="n">N</span><span class="p">,</span><span class="n">N</span><span class="p">),</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
 
 <span class="c">#Laplacian of the graph</span>
-<span class="n">L</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mf">4.</span><span class="o">*</span><span class="n">nx</span><span class="o">.</span><span class="n">laplacian</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+<span class="n">LL</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mf">4.</span><span class="o">*</span><span class="n">nx</span><span class="o">.</span><span class="n">laplacian_matrix</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+<span class="n">L</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">LL</span><span class="p">)</span>
 
 <span class="c">#ones on the diagonal</span>
 <span class="n">maxcut</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">diag_vect</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span>
@@ -784,7 +784,7 @@ optimization problem  (SDP):
 
 X   : (20, 20), symmetric
 
-        maximize 〈 L | X 〉
+        maximize 〈 L | X 〉
 such that
 diag(X) = |1|
 X ≽ |0|

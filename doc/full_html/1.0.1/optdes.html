@@ -255,7 +255,7 @@ optimization problem  (SOCP):
 z   : list of 8 variables, (3, 1), continuous
 mu  : (8, 1), continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
 such that
 ||z[i]|| &lt; mu[i] for all i in [s]
 Σ_{i in [s]} A[i]*z[i] = c
@@ -323,7 +323,7 @@ optimization problem  (SOCP):
 
 u   : (5, 1), continuous
 
-        maximize 〈 c | u 〉
+        maximize 〈 c | u 〉
 such that
 ||A[i].T*u|| &lt; 1 for all i in [s]
 ---------------------
@@ -400,7 +400,7 @@ optimization problem  (LP):
 z   : list of 11 variables, (1, 1), continuous
 mu  : (11, 1), continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
 such that
 ||z[i]|| &lt; mu[i] for all i in [s]
 Σ_{i in [s]} A[i]*z[i] = c
@@ -474,7 +474,7 @@ optimization problem  (SDP):
 
 mu  : (8, 1), continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
 such that
 Σ_{i in [s]} mu[i]*A[i]*A[i].T ≽ c*c.T
 mu &gt; |0|
@@ -544,7 +544,7 @@ X   : (5, 5), symmetric
 
         maximize c.T*X*c
 such that
-〈 A[i]*A[i].T | X 〉 &lt; 1.0 for all i in [s]
+〈 A[i]*A[i].T | X 〉 &lt; 1.0 for all i in [s]
 X ≽ |0|
 ---------------------
 
@@ -632,7 +632,7 @@ optimization problem  (SOCP):
 Z   : list of 8 variables, (3, 5), continuous
 mu  : (8, 1), continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
 such that
 ||Z[i]|| &lt; mu[i] for all i in [s]
 Σ_{i in [s]} A[i]*Z[i] = I
@@ -781,11 +781,11 @@ Z   : list of 8 variables, (3, 5), continuous
 mu  : (8, 1), continuous
 w   : (8, 1), continuous
 
-        minimize 〈 |1| | mu 〉
+        minimize 〈 |1| | mu 〉
 such that
 Σ_{i in [s]} A[i]*Z[i] = I
-〈 |1| | w[:4] 〉 &lt; 0.5
-〈 |1| | w[4:] 〉 &lt; 0.5
+〈 |1| | w[:4] 〉 &lt; 0.5
+〈 |1| | w[4:] 〉 &lt; 0.5
 ||Z[i]||^2 &lt; ( mu[i])( w[i]) for all i in [s]
 ---------------------
 
@@ -866,11 +866,11 @@ Z       : list of 8 variables, (3, 5), continuous
 n       : (8, 1), integer
 t       : (8, 1), continuous
 
-        minimize 〈 |1| | t 〉
+        minimize 〈 |1| | t 〉
 such that
 ||Z[i]||^2 &lt; ( n[i])( t[i]) for all i in [s]
 Σ_{i in [s]} A[i]*Z[i] = I
-〈 |1| | n 〉 &lt; N
+〈 |1| | n 〉 &lt; N
 ---------------------
 [...]
 [...]
@@ -956,7 +956,7 @@ such that
 L = Σ_{i in [s]} A[i]*V[i]
 L[i,j] = 0 for all (i,j) in upper triangle
 ||V[i]|| &lt; (m)**0.5*w[i] for all i in [s]
-〈 |1| | w 〉 &lt; 1.0
+〈 |1| | w 〉 &lt; 1.0
 t&lt;geomean( diag(L))
 ---------------------
 [...]
@@ -1055,8 +1055,8 @@ such that
 L = Σ_{i in [s]} A[i]*V[i]
 L[i,j] = 0 for all (i,j) in upper triangle
 ||V[i][:,k]||^2 &lt; ( n[i] / N)( T[i,k]) for all (i,k)
-〈 |1| | T[:,k] 〉 &lt; 1.0 for all k
-〈 |1| | n 〉 &lt; N
+〈 |1| | T[:,k] 〉 &lt; 1.0 for all k
+〈 |1| | n 〉 &lt; N
 t&lt;geomean( diag(L))
 ---------------------
 [...]
@@ -1106,7 +1106,7 @@ w   : (8, 1), continuous, nonnegative
 
         maximize t
 such that
-〈 |1| | w 〉 &lt; 1.0
+〈 |1| | w 〉 &lt; 1.0
 det( Σ_i w[i]*A[i]*A[i].T)**1/5&gt;t
 ---------------------
 [ ...]
@@ -1188,7 +1188,7 @@ w   : (8, 1), continuous, nonnegative
 
         maximize t
 such that
-〈 |1| | w 〉 &lt; 1.0
+〈 |1| | w 〉 &lt; 1.0
 trace( Σ_i w[i]*A[i]*A[i].T)**1/5&gt;t
 ---------------------
 [ ...]
@@ -1210,7 +1210,7 @@ w   : (8, 1), continuous, nonnegative
 
         minimize t
 such that
-〈 |1| | w 〉 &lt; 1.0
+〈 |1| | w 〉 &lt; 1.0
 trace( Σ_i w[i]*A[i]*A[i].T)**-3&lt;t
 ---------------------
 [ ...]

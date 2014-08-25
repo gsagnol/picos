@@ -334,9 +334,9 @@ affine expressions with them.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">/</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">D</span><span class="p">[</span><span class="s">&#39;Bob&#39;</span><span class="p">]</span>                     <span class="c">#division by a scalar and substraction</span>
 <span class="go"># (1 x 1)-affine expression: t / b[1][3] -D[Bob] #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">|</span> <span class="n">x</span> <span class="p">)</span>                             <span class="c">#dot product</span>
-<span class="go"># (1 x 1)-affine expression: 〈 b[2] | x 〉 #</span>
+<span class="go"># (1 x 1)-affine expression: 〈 b[2] | x 〉 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span> <span class="n">A</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">|</span> <span class="n">Y</span> <span class="p">)</span>                             <span class="c">#generalized dot product for matrices: (A|B)=trace(A*B.T)</span>
-<span class="go"># (1 x 1)-affine expression: 〈 A[3] | Y 〉 #</span>
+<span class="go"># (1 x 1)-affine expression: 〈 A[3] | Y 〉 #</span>
 </pre></div>
 </div>
 <p>We can also take some subelements of affine expressions, by using
@@ -425,7 +425,7 @@ and the second argument should be a scalar expression:</p>
 <span class="go">Y   : (2, 4), continuous</span>
 <span class="go">x   : (4, 1), integer</span>
 
-<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
 <span class="go">such that</span>
 <span class="go">  []</span>
 <span class="go">---------------------</span>
@@ -473,7 +473,7 @@ whose all values are <code class="docutils literal"><span class="pre">t</span></
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">*</span><span class="n">x</span>                                             <span class="c">#Row vector multiplied by column vector</span>
 <span class="go">#quadratic expression: Y[0,:]*x #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">x</span> <span class="o">+</span><span class="mi">2</span> <span class="o">|</span> <span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">])</span>                                   <span class="c">#scalar product of affine expressions</span>
-<span class="go">#quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #</span>
+<span class="go">#quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>                                            <span class="c">#recall that abs(x) is the euclidean norm of x</span>
 <span class="go">#quadratic expression: ||x||**2 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">t</span> <span class="o">&amp;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span>                               <span class="c">#quadratic form</span>
@@ -491,7 +491,7 @@ whose all values are <code class="docutils literal"><span class="pre">t</span></
 <code class="docutils literal"><span class="pre">&lt;</span></code> <strong>and</strong> <code class="docutils literal"><span class="pre">&gt;</span></code> <strong>denote weak inequalities</strong> (<em>less or equal than</em>
 and <em>larger or equal than</em>). For example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>                                                        <span class="c">#sum of the x[i] less or equal than 2</span>
-<span class="go"># (1x1)-affine constraint: 〈 |1| | x 〉 &lt; 2.0 #</span>
+<span class="go"># (1x1)-affine constraint: 〈 |1| | x 〉 &lt; 2.0 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>                                        <span class="c">#A 4x4-elementwise inequality</span>
 <span class="go"># (4x4)-affine constraint: Z[0]*A[0] &gt; b[1]*b[2].T #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[5]&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>            <span class="c">#A 2x2 equality. The RHS is the all-zero matrix</span>
@@ -513,7 +513,7 @@ and <em>larger or equal than</em>). For example:</p>
 <span class="go">Y   : (2, 4), continuous</span>
 <span class="go">x   : (4, 1), integer</span>
 
-<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
 <span class="go">such that</span>
 <span class="go">  Z[1] = Z[0] + Y.T</span>
 <span class="go">  Z[2] = Z[1] + Y.T</span>
@@ -557,7 +557,7 @@ which works similarly as the function <a class="reference internal" href="tools.
 <span class="go">Y   : (2, 4), continuous</span>
 <span class="go">x   : (4, 1), integer</span>
 
-<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
 <span class="go">such that</span>
 <span class="go">  Y &gt; |0|</span>
 <span class="go">  Z[i] = Z[i-1] + Y.T for all i in 1...4</span>
@@ -626,8 +626,8 @@ Multicommodity flows will be supported in the next release.</p>
 <span class="n">F2</span><span class="o">=</span><span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;F2&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="n">flowCons</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">flow_Constraint</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s">&#39;S&#39;</span><span class="p">,</span> <span class="n">sink</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;T1&#39;</span><span class="p">,</span><span class="s">&#39;T2&#39;</span><span class="p">],</span> <span class="n">capacity</span><span class="o">=</span><span class="s">&#39;capacity&#39;</span><span class="p">,</span> <span class="n">flow_value</span><span class="o">=</span><span class="p">[</span><span class="n">F1</span><span class="p">,</span> <span class="n">F2</span><span class="p">],</span> <span class="n">graphName</span><span class="o">=</span><span class="s">&#39;G&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">pdb</span><span class="p">;</span><span class="n">pdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
 
+<span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">flowCons</span><span class="p">)</span>
 <span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">F1</span><span class="o">+</span><span class="n">F2</span><span class="p">)</span>
 
 <span class="c"># Solve the problem</span>
@@ -640,7 +640,7 @@ Multicommodity flows will be supported in the next release.</p>
 </div>
 <div class="highlight-none"><div class="highlight"><pre>---------------------
 optimization problem  (LP):
-6 variables, 13 affine constraints
+6 variables, 12 affine constraints
 
 f       : dict of 4 variables, (1, 1), continuous
 F1      : (1, 1), continuous
@@ -665,7 +665,7 @@ The optimal flow F2 has value 2.0
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">t</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 <span class="go">#Quadratic constraint -t**2 + 2.0*t -alpha + x[1]*x[2] &lt; 0 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">t</span> <span class="o">&amp;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span><span class="mi">2</span> <span class="o">|</span> <span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">Y</span><span class="p">)</span><span class="o">-</span><span class="n">alpha</span>
-<span class="go">#Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) &lt; 0 #</span>
+<span class="go">#Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) &lt; 0 #</span>
 </pre></div>
 </div>
 <p>Note that PICOS does not check the convexity of convex constraints.
@@ -695,7 +695,7 @@ handled as the equivalent, standard ice-cream cone constraint
 </div></blockquote>
 <p>A few examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">|</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>                                                                  <span class="c">#A simple ice-cream cone constraint</span>
-<span class="go"># (4x1)-SOC constraint: ||x|| &lt; 〈 |2.0| | x -|1| 〉 #</span>
+<span class="go"># (4x1)-SOC constraint: ||x|| &lt; 〈 |2.0| | x -|1| 〉 #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">Y</span><span class="o">+</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">t</span><span class="o">+</span><span class="n">alpha</span>                                                           <span class="c">#SOC constraint with Frobenius norm</span>
 <span class="go"># (2x4)-SOC constraint: ||Y + Z[0].T|| &lt; t + alpha #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">t</span><span class="o">-</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>                                      <span class="c">#Rotated SOC constraint</span>
