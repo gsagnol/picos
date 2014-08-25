@@ -140,7 +140,7 @@ Generated output:
         z   : list of 8 variables, (3, 1), continuous
         mu  : (8, 1), continuous
 
-                minimize 〈 |1| | mu 〉
+                minimize 〈 |1| | mu 〉
         such that
         ||z[i]|| < mu[i] for all i in [s]
         Σ_{i in [s]} A[i]*z[i] = c
@@ -217,7 +217,7 @@ Generated output:
 
         u   : (5, 1), continuous
 
-                maximize 〈 c | u 〉
+                maximize 〈 c | u 〉
         such that
         ||A[i].T*u|| < 1 for all i in [s]
         ---------------------
@@ -300,7 +300,7 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         z   : list of 11 variables, (1, 1), continuous
         mu  : (11, 1), continuous
 
-                minimize 〈 |1| | mu 〉
+                minimize 〈 |1| | mu 〉
         such that
         ||z[i]|| < mu[i] for all i in [s]
         Σ_{i in [s]} A[i]*z[i] = c
@@ -383,7 +383,7 @@ The SDP formulation of the c-optimal design problem is:
 
         mu  : (8, 1), continuous
 
-                minimize 〈 |1| | mu 〉
+                minimize 〈 |1| | mu 〉
         such that
         Σ_{i in [s]} mu[i]*A[i]*A[i].T ≽ c*c.T
         mu > |0|
@@ -462,7 +462,7 @@ and to provide one additional example in this doc:
 
                 maximize c.T*X*c
         such that
-        〈 A[i]*A[i].T | X 〉 < 1.0 for all i in [s]
+        〈 A[i]*A[i].T | X 〉 < 1.0 for all i in [s]
         X ≽ |0|
         ---------------------
 
@@ -559,7 +559,7 @@ The SOCP for the A-optimal design problem is:
         Z   : list of 8 variables, (3, 5), continuous
         mu  : (8, 1), continuous
 
-                minimize 〈 |1| | mu 〉
+                minimize 〈 |1| | mu 〉
         such that
         ||Z[i]|| < mu[i] for all i in [s]
         Σ_{i in [s]} A[i]*Z[i] = I
@@ -725,11 +725,11 @@ and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the design points #5 to #8:
         mu  : (8, 1), continuous
         w   : (8, 1), continuous
 
-                minimize 〈 |1| | mu 〉
+                minimize 〈 |1| | mu 〉
         such that
         Σ_{i in [s]} A[i]*Z[i] = I
-        〈 |1| | w[:4] 〉 < 0.5
-        〈 |1| | w[4:] 〉 < 0.5
+        〈 |1| | w[:4] 〉 < 0.5
+        〈 |1| | w[4:] 〉 < 0.5
         ||Z[i]||^2 < ( mu[i])( w[i]) for all i in [s]
         ---------------------
 
@@ -819,11 +819,11 @@ The exact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
         n       : (8, 1), integer
         t       : (8, 1), continuous
 
-                minimize 〈 |1| | t 〉
+                minimize 〈 |1| | t 〉
         such that
         ||Z[i]||^2 < ( n[i])( t[i]) for all i in [s]
         Σ_{i in [s]} A[i]*Z[i] = I
-        〈 |1| | n 〉 < N
+        〈 |1| | n 〉 < N
         ---------------------
         [...]
         [...]
@@ -917,7 +917,7 @@ to the design points #3 to #8.
         L = Σ_{i in [s]} A[i]*V[i]
         L[i,j] = 0 for all (i,j) in upper triangle
         ||V[i]|| < (m)**0.5*w[i] for all i in [s]
-        〈 |1| | w 〉 < 1.0
+        〈 |1| | w 〉 < 1.0
         t<geomean( diag(L))
         ---------------------
         [...]
@@ -977,7 +977,7 @@ that must satisfies :math:`t^8 \leq \prod_{i=0}^4 L_{i,i}`:
         L = Σ_{i in [s]} A[i]*V[i]
         L[i,j] = 0 for all (i,j) in upper triangle
         ||V[i]|| < (m)**0.5*w[i] for all i in [s]
-        〈 |1| | w 〉 < 1.0
+        〈 |1| | w 〉 < 1.0
         ||u[01]||^2 < ( L[0,0])( L[1,1])
         ||u[23]||^2 < ( L[2,2])( L[3,3])
         ||u[4.]||^2 < L[4,4]
@@ -1061,8 +1061,8 @@ we obtain the following N-exact D-optimal design:
         L = Σ_{i in [s]} A[i]*V[i]
         L[i,j] = 0 for all (i,j) in upper triangle
         ||V[i][:,k]||^2 < ( n[i] / N)( T[i,k]) for all (i,k)
-        〈 |1| | T[:,k] 〉 < 1.0 for all k
-        〈 |1| | n 〉 < N
+        〈 |1| | T[:,k] 〉 < 1.0 for all k
+        〈 |1| | n 〉 < N
         t<geomean( diag(L))
         ---------------------
         [...]
@@ -1117,7 +1117,7 @@ The following code finds the same design as the SOCP approach presented above.
 
                 maximize t
         such that
-        〈 |1| | w 〉 < 1.0
+        〈 |1| | w 〉 < 1.0
         det( Σ_i w[i]*A[i]*A[i].T)**1/5>t
         ---------------------
         [ ...]
@@ -1207,7 +1207,7 @@ allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and
 
                 maximize t
         such that
-        〈 |1| | w 〉 < 1.0
+        〈 |1| | w 〉 < 1.0
         trace( Σ_i w[i]*A[i]*A[i].T)**1/5>t
         ---------------------
         [ ...]
@@ -1229,7 +1229,7 @@ allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and
 
                 minimize t
         such that
-        〈 |1| | w 〉 < 1.0
+        〈 |1| | w 〉 < 1.0
         trace( Σ_i w[i]*A[i]*A[i].T)**-3<t
         ---------------------
         [ ...]

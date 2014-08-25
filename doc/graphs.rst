@@ -192,7 +192,7 @@ function :func:`flow_Constraint() <picos.tools.flow_Constraint>`:
         
 	---------------------
 	optimization problem  (LP):
-	61 variables, 140 affine constraints
+	61 variables, 139 affine constraints
 
 	f 	: dict of 60 variables, (1, 1), continuous
 	F 	: (1, 1), continuous
@@ -649,8 +649,9 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
         maxcut = pic.Problem()
         X=maxcut.add_variable('X',(N,N),'symmetric')
 
-        #Laplacian of the graph  
-        L=pic.new_param('L',1/4.*nx.laplacian(G))
+        #Laplacian of the graph 
+        LL = 1/4.*nx.laplacian_matrix(G).todense()
+        L=pic.new_param('L',LL)
 
         #ones on the diagonal
         maxcut.add_constraint(pic.tools.diag_vect(X)==1)
@@ -710,7 +711,7 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 
         X   : (20, 20), symmetric
 
-                maximize 〈 L | X 〉
+                maximize 〈 L | X 〉
         such that
         diag(X) = |1|
         X ≽ |0|
