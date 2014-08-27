@@ -34,6 +34,22 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -140,10 +156,10 @@
 <dd><ul class="first last simple">
 <li>Improved support for complex SDP (access to dual information and correction of a few bugs, in particular sum of complex affine expression now work correctly)</li>
 <li>Flow constraints in graphs, including multicommodity flows, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
-<li>Improved implementation of <a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>, which
-was taking a very long time to process large parameters.</li>
+<li>Additional <code class="docutils literal"><span class="pre">coef</span></code> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><code class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></code></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
+<li>Improved implementation of <a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>, which was taking a very long time to process large parameters.</li>
 <li>Improved implementation of the retrieval of optimal primal variables with CPLEX. With the previous versions there was an important overhead at the end of the solving process to get the optimal values, this is now working much faster.</li>
-<li>Improved readibility of the documentation.</li>
+<li>Nicer documentation.</li>
 </ul>
 </dd>
 </dl>

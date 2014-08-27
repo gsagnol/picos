@@ -31,8 +31,9 @@ on every function of PICOS.
     Major Release with following changes:
      * Support for Semidefinite Programming over the complex domain, see :ref:`here <complex>`.
      * Flow constraints in graphs, cf. :ref:`this section <flowcons>`.
+     * Additional ``coef`` argument in the function :func:`picos.tracepow() <picos.tools.tracepow>`, in order to represent constraints of the form :math:`\operatorname{trace}(M X^p) \geq t`.
      * Improved implementation of several functionalities, in particular the slicing of affine expressions (``__getitem__``), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.
-     * Improved readibility of the documentation.
+     * Nicer documentation.
      
  * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
      Preliminary release of the 1.0.1 (still a few bugs for complex SDPs).

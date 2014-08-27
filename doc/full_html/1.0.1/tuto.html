@@ -35,6 +35,22 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -842,6 +858,14 @@ is used, the base <img class="math" src="_images/math/188c175aac0a8a9c2249933671
 forced to be positive semidefinite) by picos.</p>
 </div>
 </div></blockquote>
+<p>When the exponent is <img class="math" src="_images/math/eaefb689569d36bc921fe09ae34e70055519ae2c.png" alt="0&lt;p&lt;1"/>,
+it is also possible to represent constraints of the form
+<img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>
+with SDPs, where <img class="math" src="_images/math/1b98248ee27b132b3aa95430a12a5a5507597c14.png" alt="M\succeq 0"/>, see <a class="reference internal" href="#tuto-refs"><em>[2]</em></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tracepow</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="mf">0.6666</span><span class="p">,</span> <span class="n">coef</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">t</span>
+<span class="go"># trace of pth power ineq : trace[ A[0].T*A[0] *(X)**2/3]&gt;t#</span>
+</pre></div>
+</div>
 <p>As for geometric means, inequalities involving real powers are
 stored in a temporary object of the class <a class="reference internal" href="constraint.html#picos.TracePow_Constraint" title="picos.TracePow_Constraint"><code class="xref py py-class docutils literal"><span class="pre">TracePow_Constraint</span></code></a>,
 which contains a field <code class="docutils literal"><span class="pre">Ptmp</span></code> , a Problem instance with all the SOC or SDP constraints
@@ -1204,6 +1228,10 @@ and <img class="math" src="_images/math/82ce15fa14debd13c707b4d5d273766f07b8cfe7
 M.S. Lobo, L. Vandenberghe, S. Boyd and H. Lebret,
 <em>Linear Algebra and its Applications</em>,
 284, p. <em>193-228</em>, 1998.</li>
+<li>&#8220;<a class="reference external" href="http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751">On the semidefinite representations of real functions applied to symmetric
+matrices</a>&#8221;, G. Sagnol,
+<em>Linear Algebra and its Applications</em>,
+439(10), p. <em>2829-2843</em>, 2013.</li>
 </ol>
 </div></blockquote>
 </div>

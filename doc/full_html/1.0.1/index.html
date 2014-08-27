@@ -34,6 +34,22 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -152,8 +168,9 @@ on every function of PICOS.</p>
 <dd><ul class="first last simple">
 <li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
 <li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
+<li>Additional <code class="docutils literal"><span class="pre">coef</span></code> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><code class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></code></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
 <li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<code class="docutils literal"><span class="pre">__getitem__</span></code>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
-<li>Improved readibility of the documentation.</li>
+<li>Nicer documentation.</li>
 </ul>
 </dd>
 </dl>

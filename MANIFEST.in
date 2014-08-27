@@ -1,0 +1,4 @@
+include *.txt
+recursive-include doc *.rst 
+recursive-include doc/_templates *.html
+recursive-include doc/_static *

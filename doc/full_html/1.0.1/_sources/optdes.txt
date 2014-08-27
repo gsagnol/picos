@@ -1263,4 +1263,6 @@ References
            
         4. "`On the semidefinite representations of real functions applied to symmetric
            matrices <http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751>`_", G. Sagnol,
-           Submitted, ZIB Report 12-50, 2012.
+           *Linear Algebra and its Applications*,
+           439(10), p. *2829-2843*, 2013.
+           

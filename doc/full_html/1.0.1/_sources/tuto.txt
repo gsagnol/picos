@@ -808,10 +808,19 @@ creates the constraint
         is used, the base :math:`x` is forced to be nonnegative (resp. the base :math:`X` is
         forced to be positive semidefinite) by picos.
         
+When the exponent is :math:`0<p<1`, 
+it is also possible to represent constraints of the form
+:math:`\operatorname{trace}(M X^p) \geq t`
+with SDPs, where :math:`M\succeq 0`, see :ref:`[2] <tuto_refs>`.
+
+>>> pic.tracepow(X, 0.6666, coef = A[0].T*A[0]) >= t
+# trace of pth power ineq : trace[ A[0].T*A[0] *(X)**2/3]>t#
+
 As for geometric means, inequalities involving real powers are 
 stored in a temporary object of the class :class:`TracePow_Constraint <picos.TracePow_Constraint>`,
 which contains a field ``Ptmp`` , a Problem instance with all the SOC or SDP constraints
 used to represent the original inequality.
+
 
 Inequalities involving generalized p-norm
 -----------------------------------------
@@ -1218,4 +1227,8 @@ References
            M.S. Lobo, L. Vandenberghe, S. Boyd and H. Lebret,
            *Linear Algebra and its Applications*,
            284, p. *193-228*, 1998.
-
+           
+        2. "`On the semidefinite representations of real functions applied to symmetric
+           matrices <http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751>`_", G. Sagnol,
+           *Linear Algebra and its Applications*,
+           439(10), p. *2829-2843*, 2013.
