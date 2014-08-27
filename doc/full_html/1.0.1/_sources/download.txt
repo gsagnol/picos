@@ -6,17 +6,16 @@ Download
 
 The latest version of PICOS can be downloaded here:
 
-        `picos-1.0.1.dev <dist/PICOS-1.0.1.dev.tar.gz>`_
+        `picos-1.0.1 <dist/PICOS-1.0.1.tar.gz>`_
 
 Installation instructions are explained
 :ref:`here <requirements>`.
 
-   .. note::
-        This version has the suffix ``.dev`` in its name, because the support for
-        complex SDPs is not completely finished. In particular, it is
-        not possible to retrieve the optimal dual variables of a complex program yet.
+
 
 **Older versions**
+
+  `picos-1.0.1.dev <dist/PICOS-1.0.1.dev.tar.gz>`_
 
   `picos-1.0.0 <dist/PICOS-1.0.0.tar.gz>`_
 

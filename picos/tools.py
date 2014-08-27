@@ -889,8 +889,8 @@ def _retrieve_matrix(mat,exSize=None):
                         retstr='|0|'
         elif retmat.size==(1,1):
                 retstr=str(retmat[0])
-        elif (len(retmat.V) == retmat.size[0]*retmat.size[1]) and (
-              all([v==retmat.V[0] for v in retmat.V])): #|alpha|
+        elif (len(retmat.V) == retmat.size[0]*retmat.size[1]) and not(
+              bool(retmat-retmat.V[0])): #|alpha|
                 if retmat[0]==0:
                         retstr='|0|'
                 elif retmat[0]==1:

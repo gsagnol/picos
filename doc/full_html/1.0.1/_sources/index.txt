@@ -27,18 +27,16 @@ on every function of PICOS.
 
 **News**
 
-
- * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
-   Major Release with following changes:
+ * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|
+    Major Release with following changes:
      * Support for Semidefinite Programming over the complex domain, see :ref:`here <complex>`.
      * Flow constraints in graphs, cf. :ref:`this section <flowcons>`.
-     * Improved implementation of ``__getitem__`` for affine expressions. The slicing of affine expressions
-       was slowing down (a lot!) the processing of the optimization problem.
-       
-   .. note::
-        This version has the suffix ``.dev`` in its name, because the support for
-        complex SDPs is not completely finished. In particular, it is
-        not possible to retrieve the optimal dual variables of a complex program yet.
+     * Improved implementation of several functionalities, in particular the slicing of affine expressions (``__getitem__``), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.
+     * Improved readibility of the documentation.
+     
+ * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
+     Preliminary release of the 1.0.1 (still a few bugs for complex SDPs).
+     
         
 
  * 19 Jul. 13: **Picos** :ref:`1.0.0 <download>` **Released** |br|

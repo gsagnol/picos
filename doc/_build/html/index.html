@@ -145,22 +145,26 @@ on every function of PICOS.</p>
 <p><strong>News</strong></p>
 <blockquote>
 <div><ul>
-<li><p class="first">18 May 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1.dev</em></a> <strong>Released</strong> <br />
-Major Release with following changes:</p>
-<blockquote>
-<div><ul class="simple">
+<li><dl class="first docutils">
+<dt>27 Aug. 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1</em></a> <strong>Released</strong> <br /></dt>
+<dd><dl class="first last docutils">
+<dt>Major Release with following changes:</dt>
+<dd><ul class="first last simple">
 <li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
 <li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
-<li>Improved implementation of <code class="docutils literal"><span class="pre">__getitem__</span></code> for affine expressions. The slicing of affine expressions
-was slowing down (a lot!) the processing of the optimization problem.</li>
+<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<code class="docutils literal"><span class="pre">__getitem__</span></code>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
+<li>Improved readibility of the documentation.</li>
 </ul>
-</div></blockquote>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">This version has the suffix <code class="docutils literal"><span class="pre">.dev</span></code> in its name, because the support for
-complex SDPs is not completely finished. In particular, it is
-not possible to retrieve the optimal dual variables of a complex program yet.</p>
-</div>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>18 May 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1.dev</em></a> <strong>Released</strong> <br /></dt>
+<dd><p class="first last">Preliminary release of the 1.0.1 (still a few bugs for complex SDPs).</p>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>19 Jul. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.0</em></a> <strong>Released</strong> <br /></dt>

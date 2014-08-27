@@ -8,7 +8,17 @@
 Change History
 ==============
 
- * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
+ * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|
+   
+   Release fixing the missing functionnalities of the previous *.dev* version:
+     * Improved support for complex SDP (access to dual information and correction of a few bugs, in particular sum of complex affine expression now work correctly)
+     * Flow constraints in graphs, including multicommodity flows, cf. :ref:`this section <flowcons>`.
+     * Improved implementation of :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`, which
+       was taking a very long time to process large parameters.
+     * Improved implementation of the retrieval of optimal primal variables with CPLEX. With the previous versions there was an important overhead at the end of the solving process to get the optimal values, this is now working much faster. 
+     * Improved readibility of the documentation.
+     
+* 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
    
    Major Release with following changes:
      * Support for Semidefinite Programming over the complex domain, see :ref:`here <complex>`.
