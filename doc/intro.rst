@@ -344,6 +344,8 @@ Author and contributors
           their comments, ideas, questions, ... (in no particular order):
 
                         * `Dan Stahlke <http://www.stahlke.org/>`_
+                        
+                        * `Marco Dalai <http://www.ing.unibs.it/~marco.dalai/>`_
 
                         * `Matteo Seminaroti <http://www.cwi.nl/people/2683/>`_
                         

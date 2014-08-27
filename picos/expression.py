@@ -2048,6 +2048,10 @@ class TracePow_Exp(_ConvexExp):
            (resp. over the set of positive semidefinite matrices ``exp``), and PICOS implicitely forces
            the constraint ``exp >0`` (resp. ``exp >> 0``) to hold.
            
+           Also, when a coef matrix :math:`M` is specified (for constraints of the
+           form :math:`\operatorname{trace}(M X^p) \geq t`),
+           the matrix :math:`M` must be positive semidefinite and :math:`p` must be in :math:`(0,1]`.
+           
            **Overloaded operator**
         
                 :``<``: less **or equal** than (the rhs must be a scalar affine expression, AND
@@ -2058,16 +2062,21 @@ class TracePow_Exp(_ConvexExp):
 
         """
         
-        def __init__(self,exp,alpha,beta=1):
+        def __init__(self,exp,alpha,beta=1,M=None):
                 pstr = str(alpha)
                 if beta>1:
                         pstr+='/'+str(beta)
                 p=float(alpha)/float(beta)
-                if exp.size==(1,1):
-                        _ConvexExp.__init__(self,'( '+exp.string+')**'+pstr,'pth power expression')
+                if M is None:
+                        if exp.size==(1,1):
+                                _ConvexExp.__init__(self,'( '+exp.string+')**'+pstr,'pth power expression')
+                        else:
+                                _ConvexExp.__init__(self,'trace( '+exp.string+')**'+pstr,'trace of pth power expression')
                 else:
-                        _ConvexExp.__init__(self,'trace( '+exp.string+')**'+pstr,'trace of pth power expression')
-                
+                        if exp.size==(1,1):
+                                _ConvexExp.__init__(self, M.string+' *( '+exp.string+')**'+pstr,'pth power expression')
+                        else:
+                                _ConvexExp.__init__(self,'trace[ '+M.string+' *('+exp.string+')**'+pstr+']','trace of pth power expression')
                 
                 if exp.size[0] != exp.size[1]:
                         raise ValueError('Matrix must be square')
@@ -2083,14 +2092,32 @@ class TracePow_Exp(_ConvexExp):
                 self.dim = exp.size[0]
                 """dimension of ``exp``"""
                 
+                self.M = None#
+                """the coef matrix"""
+                
+                if M is not None:#we assume without checking that M is positive semidefinite
+                        if p<=0 or p>1:
+                                raise ValueError('when a coef matrix M is given, p must be between 0 and 1')
+                        if not M.is_valued():
+                                raise ValueError('coef matrix M must be valued')
+                        if not M.size == exp.size:
+                                raise ValueError('coef matrix M must have the same size as exp')
+                        self.M=M
+                
         
         def eval(self,ind=None):
                 val=self.exp.eval(ind)
+                Mval = self.M.eval(ind)
                 if not isinstance(val,cvx.base.matrix):
                         val = cvx.matrix(val)
-                ev = np.linalg.eigvalsh(np.matrix(val))
                 p = float(self.numerator)/float(self.denominator)
-                return sum([vi**p for vi in ev])
+                if self.M is None:
+                        ev = np.linalg.eigvalsh(np.matrix(val))
+                        return sum([vi**p for vi in ev])
+                else:
+                        U,S,V = np.linalg.svd(val)
+                        Xp = cvx.matrix(U)*cvx.spdiag([s**p for s in S])*cvx.matrix(V)
+                        return np.trace(Mval*Xp)
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
         
@@ -2186,7 +2213,7 @@ class TracePow_Exp(_ConvexExp):
                                         Ptmp.add_constraint( (idt|v[0]) < exp )
                                 
                                 
-                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '<' + exp.string)
+                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,None,Ptmp,self.string + '<' + exp.string)
                                         
                         
                 else:#constant
@@ -2199,7 +2226,10 @@ class TracePow_Exp(_ConvexExp):
                 if (p > 1) or (p < 0):
                         raise Exception('>= operator can be used only when the function is concave (0<p<=1)')
                 if p == 1:
-                        return self.exp > exp
+                        if self.M is None:
+                                return self.exp > exp
+                        else:
+                                return (self.M | self.exp) > exp
                 
                 if isinstance(exp,AffinExp):
                         if exp.size <> (1,1):
@@ -2250,12 +2280,19 @@ class TracePow_Exp(_ConvexExp):
                                                 v.append(v0)
                                 lis = newlis
                         if self.dim == 1:
-                                Ptmp.add_constraint( exp**2 < lis[0] * lis[1])
+                                if self.M is None:
+                                        Ptmp.add_constraint( exp**2 < lis[0] * lis[1])
+                                else:
+                                        Ptmp.add_constraint( v[0]**2 < lis[0] * lis[1])
+                                        Ptmp.add_constraint( (self.M * v[0]) > exp )
                         else:
                                 Ptmp.add_constraint( ((lis[0] & v[0])//(v[0] & lis[1])) >> 0)
-                                Ptmp.add_constraint( (idt|v[0]) > exp )
+                                if self.M is None:
+                                        Ptmp.add_constraint( (idt|v[0]) > exp )
+                                else:
+                                        Ptmp.add_constraint( (self.M|v[0]) > exp )
                                 
-                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '>' + exp.string)
+                        return TracePow_Constraint(exp,self.exp,self.numerator,self.denominator,self.M,Ptmp,self.string + '>' + exp.string)
                           
                 else:#constant
                         term,termString=_retrieve_matrix(exp,(1,1))

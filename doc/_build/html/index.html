@@ -44,9 +44,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-              
-              <a href="#" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
-              
+          <a href="#" class="fa fa-home"> picos</a>
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -98,7 +96,6 @@
 </ul>
 
         
-
       </div>
       &nbsp;
     </nav>
@@ -152,8 +149,9 @@ on every function of PICOS.</p>
 <dd><ul class="first last simple">
 <li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
 <li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
-<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<code class="docutils literal"><span class="pre">__getitem__</span></code>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
-<li>Improved readibility of the documentation.</li>
+<li>Additional <tt class="docutils literal"><span class="pre">coef</span></tt> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
+<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<tt class="docutils literal"><span class="pre">__getitem__</span></tt>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
+<li>Nicer documentation.</li>
 </ul>
 </dd>
 </dl>

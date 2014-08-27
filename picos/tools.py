@@ -234,10 +234,15 @@ def norm(exp,num=2,denom=1):
         frac = Fraction(p).limit_denominator(1000)
         return NormP_Exp(exp,frac.numerator,frac.denominator)
         
-def tracepow(exp,num=1,denom=1):
-        """returns a :class:`TracePow_Exp <picos.TracePow_Exp>` object representing the trace of the pth-power of the symmetric matrix ``exp``.
+def tracepow(exp,num=1,denom=1,coef=None):
+        """Returns a :class:`TracePow_Exp <picos.TracePow_Exp>` object representing the trace of the pth-power of the symmetric matrix ``exp``, where ``exp`` is an :class:`AffinExp <picos.AffinExp>` which we denote by :math:`X`.
         This can be used to enter constraints of the form :math:`\operatorname{trace} X^p \leq t` with :math:`p\geq1` or :math:`p < 0`, or :math:`\operatorname{trace} X^p \geq t` with :math:`0 \leq p \leq 1`.
         Note that :math:`X` is forced to be positive semidefinite when a constraint of this form is entered in PICOS.
+        
+        It is also possible to specify a ``coef`` matrix (:math:`M`) of the same size as ``exp``, in order to represent the expression  :math:`\operatorname{trace} (M X^p)`.
+        The constraint :math:`\operatorname{trace} (M X^p)\geq t` can be reformulated with SDP constraints if :math:`M` is positive
+        semidefinite and :math:`0<p<1`.
+        
         Trace of power inequalities are internally reformulated as a set of Linear Matrix Inequalities (SDP),
         or second order cone inequalities if ``exp`` is a scalar.
         
@@ -257,12 +262,20 @@ def tracepow(exp,num=1,denom=1):
         >>> pic.tracepow(X,0.6) > t
         # trace of pth power ineq : trace( X)**3/5>t#
         
+        >>> A = cvx.normal(3,3);A=A*A.T #A random semidefinite positive matrix
+        >>> A = pic.new_param('A',A)
+        >>> pic.tracepow(X,0.25,coef=A) > t
+        # trace of pth power ineq : trace[ A *(X)**1/4]>t#
         """
+        #TODO coef
         from .expression import AffinExp
         from .expression import TracePow_Exp
         if not isinstance(exp,AffinExp):
                 mat,name=_retrieve_matrix(exp)
                 exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        if not(coef is None) and not isinstance(coef,AffinExp):
+                M,Mstr=_retrieve_matrix(coef)
+                coef = AffinExp({},constant=M[:],size=M.size,string=Mstr)
         if num == denom:
                 return exp
         p = float(num)/float(denom)
@@ -270,7 +283,7 @@ def tracepow(exp,num=1,denom=1):
                 raise Exception('undefined for p=0')
         from fractions import Fraction
         frac = Fraction(p).limit_denominator(1000)
-        return TracePow_Exp(exp,frac.numerator,frac.denominator)
+        return TracePow_Exp(exp,frac.numerator,frac.denominator,coef)
         
 def detrootn(exp):
         """returns a :class:`DetRootN_Exp <picos.DetRootN_Exp>` object representing the determinant of the

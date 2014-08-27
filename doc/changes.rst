@@ -13,10 +13,10 @@ Change History
    Release fixing the missing functionnalities of the previous *.dev* version:
      * Improved support for complex SDP (access to dual information and correction of a few bugs, in particular sum of complex affine expression now work correctly)
      * Flow constraints in graphs, including multicommodity flows, cf. :ref:`this section <flowcons>`.
-     * Improved implementation of :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`, which
-       was taking a very long time to process large parameters.
+     * Additional ``coef`` argument in the function :func:`picos.tracepow() <picos.tools.tracepow>`, in order to represent constraints of the form :math:`\operatorname{trace}(M X^p) \geq t`.
+     * Improved implementation of :func:`_retrieve_matrix() <picos.tools._retrieve_matrix>`, which was taking a very long time to process large parameters.
      * Improved implementation of the retrieval of optimal primal variables with CPLEX. With the previous versions there was an important overhead at the end of the solving process to get the optimal values, this is now working much faster. 
-     * Improved readibility of the documentation.
+     * Nicer documentation.
      
 * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
    

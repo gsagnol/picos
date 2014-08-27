@@ -62,3 +62,16 @@ v1.0.1.dev, 18.05.14
      * Flow constraints in graphs
      * Improved implementation of *expression slicing* (__getitem__)
      
+v 1.0.1, 27.08.14:
+     Release fixing the missing functionnalities of the previous *.dev* version:
+     * Improved support for complex SDP (access to dual information and correction of a few
+       bugs, in particular sum of complex affine expression now work correctly)
+     * Flow constraints in graphs, including multicommodity flows.
+     * Additional ``coef`` argument in the function tracepow(), in order to represent
+       constraints of the form trace(M X^p) >= t.
+     * Improved implementation of retrieve_matrix(), which was taking a very long time to
+       process large parameters.
+     * Improved implementation of the retrieval of optimal primal variables with CPLEX.
+       With the previous versions there was an important overhead at the end of the
+       solving process to get the optimal values, this is now working much faster. 
+     * Nicer documentation.

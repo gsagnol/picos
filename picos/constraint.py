@@ -383,11 +383,12 @@ class TracePow_Constraint(_Convex_Constraint):
         """ A temporary object used to pass (trace of) pth power inequalities
         This class derives from :class:`Constraint <picos.Constraint>`
         """
-        def __init__(self,exprhs,explhs,alpha,beta,Ptmp,constring):
+        def __init__(self,exprhs,explhs,alpha,beta,M,Ptmp,constring):
                 self.explhs = explhs
                 self.exprhs = exprhs
                 self.numerator=alpha
                 self.denominator=beta
+                self.M=M
                 p = float(alpha)/float(beta)
                 if explhs.size[0]>1:
                         _Convex_Constraint.__init__(self,Ptmp,constring,'trace of pth power ineq')
@@ -398,7 +399,7 @@ class TracePow_Constraint(_Convex_Constraint):
         
         def slack_var(self):
                 p = float(self.numerator) / self.denominator
-                slk = self.exprhs.value-tracepow(self.explhs,self.numerator,self.denominator).value
+                slk = self.exprhs.value-tracepow(self.explhs,self.numerator,self.denominator,self.M).value
                 if p>0 and p<1:
                         return -slk
                 else:
