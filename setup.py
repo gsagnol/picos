@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='PICOS',
-    version='1.0.2.dev',
+    version='1.0.1',
     author='G. Sagnol',
     author_email='sagnol@zib.de',
     packages=['picos'],

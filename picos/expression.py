@@ -755,7 +755,7 @@ class AffinExp(Expression):
                                         try:
                                                 self.factors[k]+=term.factors[k]
                                         except TypeError as ex:
-                                                if str(ex).startswith('incompatible'):#incompatible typecodes
+                                                if str(ex).startswith('incompatible') or str(ex).startswith('invalid'):#incompatible typecodes
                                                         self.factors[k]= self.factors[k] + term.factors[k]
                                                 else:
                                                         raise
@@ -771,11 +771,21 @@ class AffinExp(Expression):
                                                 newCons=cvx.matrix(0.,self.size,'d')[:]
                                         self.constant=newCons
                                 if not term.constant is None:
-                                        if (isinstance(self.constant,cvx.spmatrix)
-                                          and isinstance(term.constant,cvx.matrix)):
+                                        try:
+                                                self.constant+=term.constant
+                                        except TypeError as ex:
+                                                if str(ex).startswith('incompatible') or str(ex).startswith('invalid'):#incompatible typecodes
+                                                        self.constant = self.constant + term.constant
+                                                else:
+                                                        raise
+                                        """old implementation without try-block; the new one is safer !
+                                        
+                                        if ((isinstance(self.constant,cvx.spmatrix) and isinstance(term.constant,cvx.matrix))) or (
+                                               term.constant.typecode=='z' and self.constant.typecode=='d'):
                                                   #inplace op not defined
-                                                  self.constant=cvx.matrix(self.constant)
+                                                  self.constant=cvx.matrix(self.constant,tc=term.constant.typecode)
                                         self.constant+=term.constant
+                                        """
                                 
                         if term.affstring() not in ['0','','|0|','0.0','|0.0|']:
                                 if term.string[0]=='-':
@@ -1637,7 +1647,7 @@ class QuadExp(Expression):
                                         try:
                                                 self.quad[ij]+=term.quad[ij]
                                         except TypeError as ex:
-                                                if str(ex).startswith('incompatible'):#incompatible typecodes
+                                                if str(ex).startswith('incompatible') or str(ex).startswith('invalid'):#incompatible typecodes
                                                         self.quad[ij]= self.quad[ij] + term.quad[ij]
                                                 else:
                                                         raise
