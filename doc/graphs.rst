@@ -588,7 +588,7 @@ Let us now draw the multicut:
         fig.gca().axes.get_yaxis().set_ticks([])
 
         pylab.show()
-
+        
 .. plot:: pyplots/multicut.py
 
 On this graph, the pairs of terminal nodes are denoted by
@@ -639,7 +639,7 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 
         #make G undirected
         G=nx.Graph(G)
-
+	
         #allocate weights to the edges
         for (i,j) in G.edges():
                 G[i][j]['weight']=c[i,j]+c[j,i]

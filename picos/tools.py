@@ -760,16 +760,18 @@ def _retrieve_matrix(mat,exSize=None):
                                 retmat=cvx.spmatrix([],[],[], exSize )
                         retstr=''
                 else:
+                        retstr=str(mat)
                         if exSize is None:
                                 #no exSize-> scalar
                                 retmat=cvx.matrix(mat,(1,1),tc=tc)
                         elif isinstance(exSize,int):
                                 #exSize is an int -> alpha * identity matrix
                                 retmat=mat*cvx.spdiag([1.]*exSize)
+                                retstr +='I'
                         elif isinstance(exSize,tuple):
-                                #exSize is a tuple -> zeros of desired size
+                                #exSize is a tuple -> ones of desired size
                                 retmat=mat*cvx.matrix(1., exSize )
-                        retstr=str(mat)
+                        
         elif isinstance(mat,str):
                 retstr=mat
                 if mat[0]=='-':
@@ -1376,7 +1378,8 @@ def _quad2norm(qd):
                         allvars=allvars//v[:]
         return abs(V*allvars)**2
         
-def _copy_dictexp_to_new_vars(dct,cvars):
+def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
+        #cf function _copy_exp_to_new_vars for an explanation of the 'complex' argument
         D = {}
         import copy
         for var,value in dct.iteritems():
@@ -1385,11 +1388,34 @@ def _copy_dictexp_to_new_vars(dct,cvars):
                                 raise Exception('quadratic form involving hermitian variable')
                         D[cvars[var[0].name],cvars[var[1].name]] = copy.copy(value)
                 else:
+                        if complex is None:
+                                D[cvars[var.name]] = copy.copy(value)
+                                continue
+                        
                         if var.vtype == 'hermitian' and (var.name+'_RE') in cvars:
+                                #WARNING: this only works for expressions of the form (P|Z),
+                                #P hermitienne, in which case the expression is real indeed
+                                """
+                                if value.size[0] == 1:
+                                        n  = int(value.size[1]**(0.5))
+                                        v1 = value[0,:]
+                                        P = cvx.matrix(v1,(n,n))
+                                        vr = (P.real()-P.real().T)[:]
+                                        vi = (P.imag()+P.imag().T)[:]
+                                        if (vi.T*vi)[0] + (vr.T*vr)[0] < 1e-6:
+                                                hermproduct = True
+                                        else:
+                                                hermproduct = False        
+                                else:
+                                        hermproduct = False
+                                """
+                                #TODO, delete the above, complexity check done earlier
+                                
                                 if value.typecode=='z':
                                         vr = value.real()
-                                        D[cvars[var.name+'_IM']] = value.imag() #no minus because 
-                                                                                #value.imag()=-value.H.imag()
+                                        D[cvars[var.name+'_IM']] = value.imag() 
+                                        #!BUG corrected, in previous version
+                                        #"no minus because value.imag()=-value.H.imag()" ???
                                 else:
                                         vr = value
                                 
@@ -1399,9 +1425,30 @@ def _copy_dictexp_to_new_vars(dct,cvars):
                                         v=vr[i,:]
                                         AA = cvx.matrix(v,(n,n))
                                         AA = (AA + AA.T)/2.#symmetrize
-                                        vv.append([svec(AA).T])
-                                        
+                                        vv.append(svec(AA).T)
                                 D[cvars[var.name+'_RE']] = cvx.sparse(vv)
+                                if complex:
+                                        #compute the imaginary part and append it.
+                                        if value.typecode=='z':
+                                                Him = value.real()
+                                                vi = value.imag()
+                                        else:
+                                                Him = copy.copy(value)
+                                                vi = cvx.spmatrix([],[],[],Him.size)
+                                        
+                                        n = int(vi.size[1]**(0.5))
+                                        vv = []
+                                        for i in range(vi.size[0]):
+                                                v=vr[i,:]
+                                                BB = cvx.matrix(-v,(n,n))
+                                                BB = (BB + BB.T)/2.#symmetrize
+                                                vv.append(svec(BB).T)
+                                        Hre = cvx.sparse(vv)
+                                        
+                                        D[cvars[var.name+'_RE']] = cvx.sparse([D[cvars[var.name+'_RE']],Hre])
+                                        D[cvars[var.name+'_IM']] = cvx.sparse([D[cvars[var.name+'_IM']],Him])
+                                        
+
                                 
                         else:
                                 if value.typecode=='z':
@@ -1410,49 +1457,67 @@ def _copy_dictexp_to_new_vars(dct,cvars):
                                 else:
                                         vr = copy.copy(value)
                                         vi = 0
-                                if vi:
-                                        D[cvars[var.name]] = vr + 1j * vi
+                                if complex:
+                                        D[cvars[var.name]] = cvx.sparse([vr,vi])
                                 else:
                                         D[cvars[var.name]] = vr
         return D
 
-def _copy_exp_to_new_vars(exp,cvars):
+def _copy_exp_to_new_vars(exp,cvars,complex=None):
+        #if complex=None (default), the expression is copied "as is"
+        #if complex=False, the exp is assumed to be real_valued and
+        #                  only the real part is copied to the new expression)
+        #otherwise (complex=True), a new expression is created, which concatenates horizontally
+        #           the real and the imaginary part
         from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp, NormP_Exp,TracePow_Exp,DetRootN_Exp
         import copy
         if isinstance(exp,Variable):
                 return cvars[exp.name]
         elif isinstance(exp,AffinExp):
-                newfacs = _copy_dictexp_to_new_vars(exp.factors,cvars)
-                return AffinExp(newfacs,copy.copy(exp.constant),exp.size,exp.string)
+                newfacs = _copy_dictexp_to_new_vars(exp.factors,cvars,complex=complex)
+                if exp.constant is None:
+                        v = cvx.spmatrix([],[],[],(exp.size[0] * exp.size[1],1))
+                else:
+                        v = exp.constant
+                if complex is None:
+                        newcons = copy.copy(v)
+                        newsize = exp.size
+                elif complex:
+                        newcons = cvx.sparse([v.real(),v.imag()])
+                        newsize = (exp.size[0],2*exp.size[1])
+                else:
+                        newcons = v.real()
+                        newsize = exp.size
+                return AffinExp(newfacs,newcons,newsize,exp.string)
         elif isinstance(exp,Norm):
-                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars,complex=complex)
                 return Norm(newexp)
         elif isinstance(exp,LogSumExp):
-                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars,complex=complex)
                 return LogSumExp(newexp)
         elif isinstance(exp,QuadExp): 
-                newaff =  _copy_exp_to_new_vars(exp.aff,cvars)
-                newqds = _copy_dictexp_to_new_vars(exp.quad,cvars)
+                newaff =  _copy_exp_to_new_vars(exp.aff,cvars,complex=complex)
+                newqds = _copy_dictexp_to_new_vars(exp.quad,cvars,complex=complex)
                 if exp.LR is None:
                         return QuadExp(newqds,newaff,exp.string,None)
                 else:
-                        LR0 = _copy_exp_to_new_vars(exp.LR[0],cvars)
-                        LR1 = _copy_exp_to_new_vars(exp.LR[1],cvars)
+                        LR0 = _copy_exp_to_new_vars(exp.LR[0],cvars,complex=complex)
+                        LR1 = _copy_exp_to_new_vars(exp.LR[1],cvars,complex=complex)
                         return QuadExp(newqds,newaff,exp.string,(LR0,LR1))
         elif isinstance(exp,GeneralFun): 
-                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.Exp,cvars,complex=complex)
                 return LogSumExp(exp.fun,newexp,exp.funstring)
         elif isinstance(exp,GeoMeanExp):
-                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars,complex=complex)
                 return GeoMeanExp(newexp)
         elif isinstance(exp,NormP_Exp):
-                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars,complex=complex)
                 return NormP_Exp(newexp,exp.numerator,exp.denominator)
         elif isinstance(exp,TracePow_Exp):
-                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars,complex=complex)
                 return TracePow_Exp(newexp,exp.numerator,exp.denominator)
         elif isinstance(exp,DetRootN_Exp):
-                newexp =  _copy_exp_to_new_vars(exp.exp,cvars)
+                newexp =  _copy_exp_to_new_vars(exp.exp,cvars,complex=complex)
                 return DetRootN_Exp(newexp)
         elif exp is None:
                 return None

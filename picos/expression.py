@@ -354,6 +354,7 @@ class AffinExp(Expression):
                         if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
                                 if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
                                         return facs[1]
+                        return 0.5*(self + self.conj)
                 else:
                         return 0.5*(self + self.conj)
         
@@ -374,6 +375,7 @@ class AffinExp(Expression):
                         if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
                                 if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
                                         return facs[0]
+                        return -1j*0.5*(self - self.conj)
                 else:
                         return -1j*0.5*(self - self.conj)
         
@@ -384,6 +386,33 @@ class AffinExp(Expression):
                 raise ValueError('imag is not writable')
            
         imag = property(get_imag,set_imag,del_imag,"imaginary part (for complex expressions)")
+        
+        def is_real(self):
+                real = True
+                for (x,A) in self.factors.iteritems():
+                        if x.vtype == 'complex':
+                                return False
+                        if A.typecode == 'z' and bool(A.imag()):
+                                if x.vtype != 'hermitian':
+                                        return False
+                        if x.vtype == 'hermitian':
+                                #test if this is an expression of the form P|Z with P Hermitian
+                                n = int(A.size[1]**(0.5))
+                                for i in range(A.size[0]):
+                                        vv = A[i,:]
+                                        P = cvx.matrix(vv,(n,n))
+                                        vr = (P.real()-P.real().T)[:]
+                                        vi = (P.imag()+P.imag().T)[:]
+                                        if (vi.T*vi)[0] + (vr.T*vr)[0] > 1e-6:
+                                                return False
+                if self.constant is None:
+                        return True
+                if self.constant.typecode == 'z' and bool(self.constant.imag()):
+                        return False
+                return True
+                                
+                                
+                        
         
         def is_valued(self, ind = None):
                 
@@ -550,7 +579,59 @@ class AffinExp(Expression):
         
         H = property(Htranspose,setH,delH,"Hermitian transposition")
         """Transposition"""
-        """Transposition"""
+        
+	def hadamard(self,fact):
+                selfcopy=self.copy()
+                if isinstance(fact,AffinExp):
+                        if fact.isconstant():
+                                fac,facString=cvx.sparse(fact.eval()),fact.string
+                        else:
+				if self.isconstant():
+					return fact.hadamard(self)
+				else:
+					raise Exception('not implemented')
+                else:
+                        fac,facString=_retrieve_matrix(fact,self.size[0])
+                if fac.size==(1,1) and selfcopy.size[0]<>1:
+                        fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[0])
+                if self.size==(1,1) and fac.size[1]<>1:
+                        oldstring=selfcopy.string
+                        selfcopy=selfcopy.diag(fac.size[1])
+                        selfcopy.string=oldstring
+                if selfcopy.size[0]<>fac.size[0] or selfcopy.size[1]<>fac.size[1]:
+                        raise Exception('incompatible dimensions')
+		mm,nn = selfcopy.size
+		bfac=cvx.spmatrix([],[],[],(mm*nn,mm*nn))
+                for i, j, v in zip(fac.I, fac.J, fac.V):
+                    bfac[j*mm+i,j*mm+i] = v
+                for k in selfcopy.factors:
+                        newfac=bfac*selfcopy.factors[k]
+                        selfcopy.factors[k]=newfac
+                if selfcopy.constant is None:
+                        newfac=None
+                else:
+                        newfac=bfac*selfcopy.constant
+                selfcopy.constant=newfac
+                """
+                #the following removes 'I' from the string when a matrix is multiplied
+                #by the identity. We leave the 'I' when the factor of identity is a scalar
+                if len(facString)>0:
+                        if facString[-1]=='I' and (len(facString)==1
+                                 or facString[-2].isdigit() or facString[-2]=='.') and (
+                                 self.size != (1,1)):
+                                facString=facString[:-1]
+		"""
+                sstring=selfcopy.affstring()
+                if len(facString)>0:
+                        if ('+' in sstring) or ('-' in sstring):
+                                sstring='( '+sstring+' )'
+                        if ('+' in facString) or ('-' in facString):
+                                facString='( '+facString+' )'
+
+                        selfcopy.string=facString+'∘'+sstring
+
+                return selfcopy
+
 
         def __rmul__(self,fact):
                 selfcopy=self.copy()

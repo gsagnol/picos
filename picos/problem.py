@@ -2150,10 +2150,10 @@ class Problem(object):
                 
                 
         def is_complex(self):
+		tps = [x.vtype for x in self.variables.values()]
+		if 'hermitian' in tps or 'complex' in tps:
+			return True
                 if self.numberSDPConstraints>0:
-                        tps = [x.vtype for x in self.variables.values()]
-                        if 'hermitian' in tps or 'complex' in tps:
-                                return True
                         for c in self.constraints:
                                 if c.typeOfConstraint.startswith('sdp'):
                                       if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
@@ -6682,14 +6682,42 @@ class Problem(object):
                                         real.add_constraint(E1 << E2)
                                 else:
                                         real.add_constraint(E1 >> E2)
+                        elif c.typeOfConstraint.startswith('lin'):
+                                #3 situations can occur:
+                                #_E1 and E2 are real, in this case we add only a constraint
+                                # for the real part
+                                #_there is an imaginary part. In this case, this must be an
+                                # EQUALITY constraint and we equate both the real and the im. part
+                                if c.Exp1.is_real() and c.Exp2.is_real():
+                                        E1=_copy_exp_to_new_vars(c.Exp1,cvars,complex = False)
+                                        E2=_copy_exp_to_new_vars(c.Exp2,cvars,complex = False)
+                                        c2 = Constraint(c.typeOfConstraint,None,E1,E2,None)
+                                        real.add_constraint(c2,c.key)
+                                elif c.typeOfConstraint[3] == '=':
+                                        E1=_copy_exp_to_new_vars(c.Exp1,cvars,complex = True)
+                                        E2=_copy_exp_to_new_vars(c.Exp2,cvars,complex = True)
+                                        c2 = Constraint(c.typeOfConstraint,None,E1,E2,None)
+                                        real.add_constraint(c2,c.key)
+                                else:
+                                        raise Exception('A constraint involves inequality between complex numbers')
+                                        
                         else:
-                                E1=_copy_exp_to_new_vars(c.Exp1,cvars)
-                                E2=_copy_exp_to_new_vars(c.Exp2,cvars)
-                                E3=_copy_exp_to_new_vars(c.Exp3,cvars)
-                                
+                                if c.Exp1.is_real():
+                                        E1=_copy_exp_to_new_vars(c.Exp1,cvars,complex=False)
+                                else:
+                                        E1=_copy_exp_to_new_vars(c.Exp1,cvars,complex = True)
+                                if not(c.Exp2 is None) and not(c.Exp2.is_real()):
+                                        raise Exception('complex expression in the RHS of a nonlinear constraint')
+                                if not(c.Exp3 is None) and not(c.Exp3.is_real()):
+                                        raise Exception('complex expression in the RHS of a nonlinear constraint')
+                                E2=_copy_exp_to_new_vars(c.Exp2,cvars,complex = False)
+                                E3=_copy_exp_to_new_vars(c.Exp3,cvars,complex = False)
                                 c2 = Constraint(c.typeOfConstraint,None,E1,E2,E3)
                                 real.add_constraint(c2,c.key)
-                obj=_copy_exp_to_new_vars(self.objective[1],cvars)
+                                
+                if not(self.objective[1] is None) and  not(self.objective[1].is_real()):
+                        raise Exception('objective is not real-valued')
+                obj=_copy_exp_to_new_vars(self.objective[1],cvars,complex = False)
                 ##take real part
                 #import pdb;pdb.set_trace()
                 #if obj[1]:
