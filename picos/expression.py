@@ -276,64 +276,60 @@ class AffinExp(Expression):
                 
         def set_value(self,value):
                 #is it a complex variable?
-                if (len(self.factors)==2):
+                if self.is_pure_complex_var():
                         facs = self.factors.keys()
-                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                        if facs[0].name.endswith('_RE'):
                                 Zr=facs[0]
-                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
-                                        Zi=facs[1]
-                                        value = _retrieve_matrix(value,self.size)[0]
-                                        Zr.value = value.real()
-                                        if value.typecode == 'z':
-                                                Zi.value = value.imag()
-                                        else:
-                                                Zi.value = 0
-                                        return
-                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                Zi=facs[1]
+                        else:
                                 Zr=facs[1]
-                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
-                                        Zi=facs[0]
-                                        value = _retrieve_matrix(value,self.size)[0]
-                                        Zr.value = value.real()
-                                        if value.typecode == 'z':
-                                                Zi.value = value.imag()
-                                        else:
-                                                Zi.value = 0
-                                        return
+                                Zi=facs[1]
+                        Zr.value = value.real()
+                        if value.typecode == 'z':
+                                Zi.value = value.imag()
+                        else:
+                                Zi.value = 0
+                        return
+                #is it an antisym variable ?
+                if self.is_pure_antisym_var():
+                        facs = self.factors.keys()
+                        vutri = facs[0]
+                        n = int((vutri.size[0])**0.5)
+                        value = _retrieve_matrix(value,(n,n))[0]
+                        vutri.value = _utri(value)
+                        return
                 raise ValueError('set_value can only be called on a Variable')
                 
         def del_simple_var_value(self):
                 #is it a complex variable?
-                if (len(self.factors)==2):
+                if self.is_pure_complex_var():
                         facs = self.factors.keys()
-                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                        if facs[0].name.endswith('_RE'):
                                 Zr=facs[0]
-                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
-                                        Zi=facs[1]
-                                        del Zi.value
-                                        del Zr.value
-                                        return
-                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                Zi=facs[1]
+                        else:
                                 Zr=facs[1]
-                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
-                                        Zi=facs[0]
-                                        del Zi.value
-                                        del Zr.value
-                                        return
+                                Zi=facs[1]
+                        del Zi.value
+                        del Zr.value
+                        return
+                #is it an antisym variable ?
+                if self.is_pure_antisym_var():
+                        facs = self.factors.keys()
+                        vutri = facs[0]
+                        del vutri.value
+                        return
                 raise ValueError('del_simple_var_value can only be called on a Variable')
         
         value = property(eval,set_value,del_simple_var_value,"value of the affine expression")
         
         
         def get_type(self):
-                if (len(self.factors)==2):#is it a complex variable ?
-                        facs = self.factors.keys()
-                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
-                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
-                                        return 'complex'
-                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
-                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
-                                        return 'complex'
+                #is it a complex variable?
+                if self.is_pure_complex_var():
+                        return 'complex'
+                elif self.is_pure_antisym_var():
+                        return 'antisym'
                 raise ValueError('get_type can only be called on a Variable')
         
         def set_type(self,value):
@@ -342,19 +338,17 @@ class AffinExp(Expression):
         def del_type(self):
                 raise ValueError('vtype cannot be deleted')
         
-        vtype = property(get_type,set_type,del_type,"vype (for complex variables)")
+        vtype = property(get_type,set_type,del_type,"vtype (for complex and antisym variables)")
         
         
         def get_real(self):
-                if (len(self.factors)==2):#is it a complex variable ?
+                #is it a complex variable?
+                if self.is_pure_complex_var():
                         facs = self.factors.keys()
-                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
-                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
-                                        return facs[0]
-                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
-                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
-                                        return facs[1]
-                        return 0.5*(self + self.conj)
+                        if facs[0].name.endswith('_RE'):
+                                return facs[0]
+                        else:
+                                return facs[1]
                 else:
                         return 0.5*(self + self.conj)
         
@@ -367,15 +361,13 @@ class AffinExp(Expression):
         real = property(get_real,set_real,del_real,"real part (for complex expressions)")
 
         def get_imag(self):
-                if (len(self.factors)==2):#is it a complex variable ?
+                #is it a complex variable?
+                if self.is_pure_complex_var():
                         facs = self.factors.keys()
-                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
-                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
-                                        return facs[1]
-                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
-                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
-                                        return facs[0]
-                        return -1j*0.5*(self - self.conj)
+                        if facs[0].name.endswith('_RE'):
+                                return facs[1]
+                        else:
+                                return facs[0]
                 else:
                         return -1j*0.5*(self - self.conj)
         
@@ -386,6 +378,30 @@ class AffinExp(Expression):
                 raise ValueError('imag is not writable')
            
         imag = property(get_imag,set_imag,del_imag,"imaginary part (for complex expressions)")
+        
+        def is_pure_complex_var(self):
+                if self.constant:
+                        return False
+                if (len(self.factors)==2):
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
+                                if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
+                                        return True
+                        if facs[1].name.endswith('_RE') and _is_idty(self.factors[facs[1]]):
+                                if facs[0].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[0]]):
+                                        return True
+                return False
+                
+                
+        def is_pure_antisym_var(self):
+                if self.constant:
+                        return False
+                if (len(self.factors)==1):
+                        facs = self.factors.keys()
+                        if facs[0].name.endswith('_utri') and _is_idty(self.factors[facs[0]],'antisym'):
+                                return True
+                return False
+                                
         
         def is_real(self):
                 real = True
@@ -2554,6 +2570,7 @@ class Variable(AffinExp):
                      * 'binary'     (binary 0/1 variable)
                      * 'integer'    (integer variable)
                      * 'symmetric'  (symmetric matrix variable)
+                     * 'antisym'    (antisymmetric matrix variable)
                      * 'complex'    (complex matrix variable)
                      * 'hermitian'  (complex hermitian matrix variable)
                      * 'semicont'   (semicontinuous variable 
@@ -2567,12 +2584,16 @@ class Variable(AffinExp):
          
         @vtype.setter
         def vtype(self, value):
-                if not(value in ['symmetric','hermitian','complex','continuous','binary','integer','semicont','semiint']):
+                if not(value in ['symmetric','antisym','hermitian','complex','continuous','binary','integer','semicont','semiint']):
                         raise ValueError('unknown variable type')
                 if self._vtype not in ('symmetric',) and value in ('symmetric',):
                         raise Exception('change to symmetric is forbiden because of sym-vectorization')
                 if self._vtype in ('symmetric',) and value not  in ('symmetric',):
                         raise Exception('change from symmetric is forbiden because of sym-vectorization')
+                if self._vtype not in ('antisym',) and value in ('antisym',):
+                        raise Exception('change to antisym is forbiden because of sym-vectorization')
+                if self._vtype in ('antisym',) and value not  in ('antisym',):
+                        raise Exception('change from antisym is forbiden because of sym-vectorization')
                 self._vtype = value
                 
         @property

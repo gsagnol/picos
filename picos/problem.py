@@ -807,6 +807,8 @@ class Problem(object):
                                 
                                 * ``'symmetric'``: symmetric matrix
                                 
+                                * ``'antisym'``: antisymmetric matrix
+                                
                                 * ``'complex'``: complex matrix variable
                                 
                                 * ``'hermitian'``: complex hermitian matrix
@@ -867,6 +869,21 @@ class Problem(object):
                                 raise ValueError('symmetric variables must be square')
                         s0=size[0]
                         self.numberOfVars+=s0*(s0+1)/2
+                elif vtype== 'antisym':
+                        if size[0]!=size[1]:
+                                raise ValueError('antisymmetric variables must be square')
+                        s0=size[0]
+                        if s0 <= 1:
+                                raise ValueError('dimension too small')
+                        if not(lower is None and upper is None):
+                                raise ValueError('hard lower / upper bounds not supported for antisym variables. Add a constraint instead.')
+                        idmat=_svecm1_identity(vtype,(s0,s0))
+                        Xv = self.add_variable(name+'_utri',(s0*(s0-1))/2, vtype = 'continuous',lower = None,upper =None)
+                        exp = idmat * Xv
+                        exp.string = name
+                        exp._size = (s0,s0)
+                        return exp
+                
                 elif vtype== 'complex':
                         l=None
                         lr,li,ur,ui = None,None,None,None
@@ -1305,6 +1322,14 @@ class Problem(object):
                 elif var+'_IM' in self.variables and var+'_RE' in self.variables:#complex
                         exp = self.variables[var+'_RE'] + 1j * self.variables[var+'_IM']
                         exp.string = var
+                        return exp
+                elif var not in self.variables and var+'_utri' in self.variables:#antisym
+                        vu = self.variables[var+'_utri']
+                        n = int((1+(1+vu.size[0]*8)**0.5)/2.)
+                        idasym = _svecm1_identity('antisym',(n,n))
+                        exp = idasym * vu
+                        exp.string = var
+                        exp._size = (n,n)
                         return exp
                 elif var in self.variables:
                         return self.variables[var]
@@ -4081,40 +4106,28 @@ class Problem(object):
                         if self.options['verbose']>0:
                                 print '*** Making the problem real...  ***'
                         
-                        #try first without forcing antysymmetry of the imaginary part
-                        nosym = False
-                        for force_sym in [False,True]:
-                                realP = self.to_real(force_sym = force_sym)
-                                if self.options['verbose']>0:
-                                        print '*** OK, solve the real problem and transform the solution as in the original problem...  ***'
-                                sol = realP.solve()
-                                obj = sol['obj']
-                                if 'noprimals' in self.options and self.options['noprimals']:
-                                        break
-                                else:
-                                        primals = {}
-                                        for var in self.variables.values():
-                                                if var.vtype == 'hermitian':
-                                                        Zi = realP.get_valued_variable(var.name+'_IM')
-                                                        if max(Zi+Zi.T)>1e-5 or min(Zi+Zi.T)<-1e-5:#force symmetry
-                                                                if self.options['verbose']>0:
-                                                                        print ("\033[1;31m a matrix was not Hermitian. Now I force symmetry. \033[0m")
-                                                                nosym = True
-                                                                continue
-                                                        primals[var.name] = realP.get_valued_variable(var.name+'_RE') + 1j * Zi
-                                                elif var.vtype == 'complex':
-                                                        Zr = realP.get_valued_variable(var.name+'_RE')
-                                                        Zi = realP.get_valued_variable(var.name+'_IM')
-                                                        primals[var.name] = Zr + 1j * Zi
-                                                else:
-                                                        primals[var.name] = realP.get_valued_variable(var.name)
-                                        if nosym:
-                                                nosym = False
-                                                continue
-                                        break #do not force symmetry if Z is already hermitian
-                        
+                        realP = self.to_real()
+                        if self.options['verbose']>0:
+                                print '*** OK, solve the real problem and transform the solution as in the original problem...  ***'
+                        sol = realP.solve()
+                        obj = sol['obj']
+                        if 'noprimals' in self.options and self.options['noprimals']:
+                                pass
+                        else:
+                                primals = {}
+                                for var in self.variables.values():
+                                        if var.vtype == 'hermitian':
+                                                Zi = realP.get_valued_variable(var.name+'_IM')
+                                                primals[var.name] = realP.get_valued_variable(var.name+'_RE') + 1j * Zi
+                                        elif var.vtype == 'complex':
+                                                Zr = realP.get_valued_variable(var.name+'_RE')
+                                                Zi = realP.get_valued_variable(var.name+'_IM')
+                                                primals[var.name] = Zr + 1j * Zi
+                                        else:
+                                                primals[var.name] = realP.get_valued_variable(var.name)
+                                
                         if 'noduals' in self.options and self.options['noduals']:
-                                        pass
+                                pass
                         else:
                                 duals = []
                                 for cst in realP.constraints:
@@ -6623,7 +6636,7 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print 'done.'
                                 
-        def to_real(self, force_sym = False):
+        def to_real(self):
                 """
                 Returns an equivalent problem,
                 where the n x n- hermitian matrices have been replaced by 
@@ -6636,10 +6649,13 @@ class Problem(object):
                         if v.vtype == 'hermitian':
                                 #cvars[v.name]=real.add_variable(v.name+'_full',(2*v.size[0],2*v.size[1]),'symmetric')
                                 cvars[v.name+'_RE']=real.add_variable(v.name+'_RE',(v.size[0],v.size[1]),'symmetric')
+                                """
                                 cvars[v.name+'_IM']=real.add_variable(v.name+'_IM',(v.size[0],v.size[1]))
                                 #real.add_constraint((cvars[v.name+'RE'] & -cvars[v.name+'IM'])//(cvars[v.name+'IM'] & cvars[v.name+'RE']) == cvars[v.name])
                                 if force_sym:
                                         real.add_constraint(cvars[v.name+'_IM'] == -cvars[v.name+'_IM'].T)
+                                """
+                                cvars[v.name+'_IM_utri']=real.add_variable(v.name+'_IM',(v.size[0],v.size[1]),'antisym').factors.keys()[0]
                         else:
                                 cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
                 
@@ -6650,8 +6666,11 @@ class Problem(object):
                                 for var,value in exp1.factors.iteritems():
                                         try:
                                                 if var.vtype == 'hermitian':
+                                                        n = int(value.size[1]**(0.5))                                
+                                                        idasym = _svecm1_identity('antisym',(n,n))
+                                                        
                                                         D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
-                                                        D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
+                                                        D[cvars[var.name+'_IM_utri']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True) * idasym
                                                 else:
                                                         D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
                                         except Exception as ex:
@@ -6669,7 +6688,7 @@ class Problem(object):
                                 for var,value in exp2.factors.iteritems():
                                         if var.vtype == 'hermitian':
                                                 D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
-                                                D[cvars[var.name+'_IM']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
+                                                D[cvars[var.name+'_IM_utri']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
                                         else:
                                                 D[cvars[var.name]] = _cplx_vecmat_to_real_vecmat(value,sym=False)
                                 if exp2.constant is None:
@@ -6797,7 +6816,7 @@ class Problem(object):
                 factors = {}
                 for Gs,hs in zip(self.cvxoptVars['Gs'],self.cvxoptVars['hs']):
                         nbar = int(Gs.size[0]**0.5)
-                        svecs = [svec(cvx.matrix(Gs[:,k],(nbar,nbar))).T for k in range(Gs.size[1])]
+                        svecs = [svec(cvx.matrix(Gs[:,k],(nbar,nbar)),ignore_sym=True).T for k in range(Gs.size[1])]
                         msvec = cvx.sparse(svecs)
                         X.append(dual.add_variable('X['+str(j)+']',(nbar,nbar),'symmetric'))
                         factors[X[j]] = -msvec

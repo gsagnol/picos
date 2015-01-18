@@ -40,6 +40,7 @@ __all__=['_retrieve_matrix',
         'svec',
         'svecm1',
         'ltrim1',
+        '_utri',
         'lowtri',
         'sum',
         '_bsum',
@@ -929,7 +930,7 @@ def _retrieve_matrix(mat,exSize=None):
         return retmat,retstr
 
 
-def svec(mat):
+def svec(mat,ignore_sym = False):
         """
         mat must be symmetric,
         return the svec representation of mat.
@@ -939,14 +940,15 @@ def svec(mat):
         
         s0=mat.size[0]
         if s0!=mat.size[1]:
-                raise ValueError('mat must be symmetric')
+                raise ValueError('mat must be square')
         
         I=[]
         J=[]
         V=[]
         for (i,j,v) in zip((mat.I),(mat.J),(mat.V)):
-                if abs(mat[j,i]-v)>1e-6:
-                        raise ValueError('mat must be symmetric')
+                if not ignore_sym:
+                        if abs(mat[j,i]-v)>1e-6:
+                                raise ValueError('mat must be symmetric')
                 if i<=j:
                         isvec=j*(j+1)/2+i
                         J.append(0)
@@ -1116,7 +1118,20 @@ def lowtri(exp):
                                 ncs.append(v)
                 newcons = cvx.matrix(ncs,(nr,1))
         return AffinExp(newfacs,newcons,(nr,1),'lowtri('+exp.string+')')
-                        
+               
+def _utri(mat):
+        """
+        return elements of the (strict) upper triangular part of a cvxopt matrix
+        """
+        m,n = mat.size
+        if m!= n:
+                raise ValueError('mat must be square')
+        v = []
+        for j in range(1,n):
+                for i in range(j):
+                        v.append(mat[i,j])
+        return cvx.sparse(v)
+               
 def _svecm1_identity(vtype,size):
         """
         row wise svec-1 transformation of the
@@ -1139,7 +1154,24 @@ def _svecm1_identity(vtype,size):
                         else:
                                 V.append(1/np.sqrt(2))
                 idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0+1)/2))
-        
+        elif vtype == 'antisym':
+                s0=size[0]
+                if size[1]!=s0:
+                        raise ValueError('should be square')
+                I = []
+                J = []
+                V = []
+                k=0
+                for j in range(1,s0):
+                        for i in range(j):
+                                I.append(s0*j+i)
+                                J.append(k)
+                                V.append(1)
+                                I.append(s0*i+j)
+                                J.append(k)
+                                V.append(-1)
+                                k+=1
+                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0-1)/2))
         else:
                 sp=size[0]*size[1]
                 idmat=cvx.spmatrix([1]*sp,range(sp),range(sp),(sp,sp))
@@ -1393,33 +1425,19 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                 continue
                         
                         if var.vtype == 'hermitian' and (var.name+'_RE') in cvars:
-                                #WARNING: this only works for expressions of the form (P|Z),
-                                #P hermitienne, in which case the expression is real indeed
-                                """
-                                if value.size[0] == 1:
-                                        n  = int(value.size[1]**(0.5))
-                                        v1 = value[0,:]
-                                        P = cvx.matrix(v1,(n,n))
-                                        vr = (P.real()-P.real().T)[:]
-                                        vi = (P.imag()+P.imag().T)[:]
-                                        if (vi.T*vi)[0] + (vr.T*vr)[0] < 1e-6:
-                                                hermproduct = True
-                                        else:
-                                                hermproduct = False        
-                                else:
-                                        hermproduct = False
-                                """
-                                #TODO, delete the above, complexity check done earlier
-                                
+
+                                n = int(value.size[1]**(0.5))                                
+                                idasym = _svecm1_identity('antisym',(n,n))
+                                        
                                 if value.typecode=='z':
                                         vr = value.real()
-                                        D[cvars[var.name+'_IM']] = value.imag() 
-                                        #!BUG corrected, in previous version
+                                        D[cvars[var.name+'_IM_utri']] = -value.imag() * idasym
+                                        #!BUG corrected, in previous version (1.0.1)
                                         #"no minus because value.imag()=-value.H.imag()" ???
+                                        # But maybe an other error was cancelling this bug...
                                 else:
                                         vr = value
                                 
-                                n = int(vr.size[1]**(0.5))
                                 vv = []
                                 for i in range(vr.size[0]):
                                         v=vr[i,:]
@@ -1439,14 +1457,14 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                         n = int(vi.size[1]**(0.5))
                                         vv = []
                                         for i in range(vi.size[0]):
-                                                v=vr[i,:]
-                                                BB = cvx.matrix(-v,(n,n))
+                                                v=vi[i,:]
+                                                BB = cvx.matrix(v,(n,n))
                                                 BB = (BB + BB.T)/2.#symmetrize
                                                 vv.append(svec(BB).T)
                                         Hre = cvx.sparse(vv)
                                         
                                         D[cvars[var.name+'_RE']] = cvx.sparse([D[cvars[var.name+'_RE']],Hre])
-                                        D[cvars[var.name+'_IM']] = cvx.sparse([D[cvars[var.name+'_IM']],Him])
+                                        D[cvars[var.name+'_IM_utri']] = cvx.sparse([D[cvars[var.name+'_IM_utri']],Him*idasym])
                                         
 
                                 
@@ -1589,12 +1607,19 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
         return cvx.sparse(vv)
         
 
-def _is_idty(mat):
-        if (mat.size[0] == mat.size[1]):
-                n = mat.size[0]
-                if (list(mat.I) == range(n) and
-                    list(mat.J) == range(n) and
-                    list(mat.V) == [1.]*n):
+def _is_idty(mat,vtype='continuous'):
+        if vtype=='continuous':
+                if (mat.size[0] == mat.size[1]):
+                        n = mat.size[0]
+                        if (list(mat.I) == range(n) and
+                        list(mat.J) == range(n) and
+                        list(mat.V) == [1.]*n):
+                                return True
+        elif vtype=='antisym':
+                n = int((mat.size[0])**0.5)
+                if n != int(n) or n*(n-1)/2 != mat.size[1]:
+                        return False
+                if not (_svecm1_identity('antisym',(n,n)) - mat):
                         return True
         return False
 
