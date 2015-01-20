@@ -2055,31 +2055,42 @@ class NormP_Exp(_ConvexExp):
                                 raise Exception('upper bound of a norm must be scalar')
                         if self.exp.size == (1,1):
                                 return abs(self.exp) < exp
+                        p = float(self.numerator)/self.denominator
                         from .problem import Problem
                         Ptmp = Problem()
                         m = self.exp.size[0]*self.exp.size[1]
-                        v = Ptmp.add_variable('v',m)
-                        x = Ptmp.add_variable('x',m)
                         
-                        amb = self.numerator - self.denominator
-                        b = self.denominator
-                        oneamb = '|1|('+str(amb)+',1)'
-                        oneb = '|1|('+str(b)+',1)'
-                        for i in range(m):
-                                if amb>0:
-                                        if b==1:
-                                                vec = (v[i])//(exp*oneamb)
-                                        else:
-                                                vec = (v[i]*oneb)//(exp*oneamb)
-                                else:
-                                        if b==1:
-                                                vec = v[i]
-                                        else:
-                                                vec = (v[i]*oneb)
-                                Ptmp.add_constraint(abs(self.exp[i]) < x[i])
-                                Ptmp.add_constraint(x[i] < geomean(vec))
+                        if p==1:
+                                v = Ptmp.add_variable('v',m)
+                                Ptmp.add_constraint(self.exp  <= v)
+                                Ptmp.add_constraint(-self.exp <= v)
+                                Ptmp.add_constraint((1|v)<exp)
+                        elif p==float('inf'):
+                                Ptmp.add_constraint(self.exp  <= exp)
+                                Ptmp.add_constraint(-self.exp  <= exp)
+                        else:
+                                x = Ptmp.add_variable('x',m)
+                                v = Ptmp.add_variable('v',m)
                                 
-                        Ptmp.add_constraint((1|v)<exp)
+                                amb = self.numerator - self.denominator
+                                b = self.denominator
+                                oneamb = '|1|('+str(amb)+',1)'
+                                oneb = '|1|('+str(b)+',1)'
+                                for i in range(m):
+                                        if amb>0:
+                                                if b==1:
+                                                        vec = (v[i])//(exp*oneamb)
+                                                else:
+                                                        vec = (v[i]*oneb)//(exp*oneamb)
+                                        else:
+                                                if b==1:
+                                                        vec = v[i]
+                                                else:
+                                                        vec = (v[i]*oneb)
+                                        Ptmp.add_constraint(abs(self.exp[i]) < x[i])
+                                        Ptmp.add_constraint(x[i] < geomean(vec))
+                                Ptmp.add_constraint((1|v)<exp)
+                        
                         return NormP_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '<' + exp.string)
                                         
                         
@@ -2102,6 +2113,11 @@ class NormP_Exp(_ConvexExp):
                         if p == 1 :
                                 Ptmp.add_constraint(self.exp>0)
                                 Ptmp.add_constraint((1|self.exp) > exp)
+                                print "\033[1;31m*** Warning -- generalized norm inequality, expression is forced to be >=0 \033[0m"
+                        elif p==float('-inf'):
+                                Ptmp.add_constraint(self.exp  >= exp)
+                                print "\033[1;31m*** Warning -- generalized norm inequality,
+                                norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m"
                         elif p>=0:
                                 v = Ptmp.add_variable('v',m)
                                 
