@@ -596,14 +596,15 @@ class AffinExp(Expression):
         H = property(Htranspose,setH,delH,"Hermitian transposition")
         """Transposition"""
         
-	def hadamard(self,fact):
+	def __xor__(self,fact):
+                """hadamard (elementwise) product"""
                 selfcopy=self.copy()
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=cvx.sparse(fact.eval()),fact.string
                         else:
 				if self.isconstant():
-					return fact.hadamard(self)
+					return fact ^ self
 				else:
 					raise Exception('not implemented')
                 else:
@@ -647,6 +648,9 @@ class AffinExp(Expression):
                         selfcopy.string=facString+'∘'+sstring
 
                 return selfcopy
+
+        def __rxor__(self,fact):
+                return self.__xor__(fact)
 
 
         def __rmul__(self,fact):
