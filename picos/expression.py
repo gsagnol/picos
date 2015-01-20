@@ -520,6 +520,8 @@ class AffinExp(Expression):
                 return selfcopy
                 
         def inplace_conjugate(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_conjugate should not be called on a Variable object')
                 for k in self.factors:
                         if self.factors[k].typecode=='z':
                                 Fr = self.factors[k].real()
@@ -595,6 +597,64 @@ class AffinExp(Expression):
         
         H = property(Htranspose,setH,delH,"Hermitian transposition")
         """Transposition"""
+
+        def inplace_partial_transpose(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_transpose should not be called on a Variable object')
+                bsize=self.size[0]
+                subsize = int((bsize)**0.5)
+                if subsize != (bsize)**0.5 or bsize != self.size[1]:
+                        raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices')
+                
+                for k in self.factors:
+                        I0 = []
+                        J=self.factors[k].J
+                        V=self.factors[k].V
+                        for i in self.factors[k].I:
+                            column, row = divmod(i, bsize)
+                            row_block, lrow = divmod(row, subsize)
+                            column_block, lcolumn = divmod(column, subsize)
+                            row = row_block*subsize + lcolumn
+                            column = column_block*subsize + lrow
+                            I0.append(column*bsize + row)
+                        self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                if not (self.constant is None):
+                        spconstant=cvx.sparse(self.constant)
+                        J=spconstant.J
+                        V=spconstant.V
+                        I0 = []
+                        for i in spconstant.I:
+                            column, row = divmod(i, bsize)
+                            row_block, lrow = divmod(row, subsize)
+                            column_block, lcolumn = divmod(column, subsize)
+                            row = row_block*subsize + lcolumn
+                            column = column_block*subsize + lrow
+                            I0.append(column*bsize + row)
+                        self.constant = cvx.spmatrix(V,I0,J,spconstant.size)
+                self._size=(self.size[1],self.size[0])
+                if ( ('*' in self.affstring()) or ('/' in self.affstring())
+                        or ('+' in self.affstring()) or ('-' in self.affstring()) ):
+                        self.string='( '+self.string+' ).Tx'
+                else:
+                        self.string+='.Tx'
+
+        def partial_transpose(self):
+                selfcopy=self.copy()
+                selfcopy.inplace_partial_transpose()
+                return selfcopy
+        
+        def setTx(self,value):
+                raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
+        
+        def delTx(self):
+                raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
+        
+        Tx = property(partial_transpose,setTx,delTx,"Partial transposition")
+        """Partial transposition"""
+        
+        def hadamard(self,fact):
+                """hadamard (elementwise) product"""
+                return self^fact
         
 	def __xor__(self,fact):
                 """hadamard (elementwise) product"""
@@ -2120,8 +2180,7 @@ class NormP_Exp(_ConvexExp):
                                 print "\033[1;31m*** Warning -- generalized norm inequality, expression is forced to be >=0 \033[0m"
                         elif p==float('-inf'):
                                 Ptmp.add_constraint(self.exp  >= exp)
-                                print "\033[1;31m*** Warning -- generalized norm inequality,
-                                norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m"
+                                print "\033[1;31m*** Warning -- generalized norm inequality, norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m"
                         elif p>=0:
                                 v = Ptmp.add_variable('v',m)
                                 
