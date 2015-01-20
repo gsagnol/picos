@@ -597,6 +597,7 @@ class AffinExp(Expression):
         """Transposition"""
         
 	def __xor__(self,fact):
+                """hadamard (elementwise) product"""
                 selfcopy=self.copy()
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
