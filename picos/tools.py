@@ -63,6 +63,7 @@ __all__=['_retrieve_matrix',
         'norm',
         '_read_sdpa',
         'tracepow',
+        'trace',
         'ball',
         'simplex',
         'truncated_simplex',
@@ -231,6 +232,10 @@ def norm(exp,num=2,denom=1):
                 exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
         if num == 2 and denom == 1:
                 return abs(exp)
+        if isinstance(num,tuple) and len(num)==2:
+                if denom!=1:
+                        raise ValueError('tuple as 2d argument for L(p,q)-norm and 3d argument is !=1')
+                return NormP_Exp(exp,num[0],1,num[1],1)
         p = float(num)/float(denom)
         if p==0:
                 raise Exception('undefined for p=0')
@@ -276,7 +281,6 @@ def tracepow(exp,num=1,denom=1,coef=None):
         >>> pic.tracepow(X,0.25,coef=A) > t
         # trace of pth power ineq : trace[ A *(X)**1/4]>t#
         """
-        #TODO coef
         from .expression import AffinExp
         from .expression import TracePow_Exp
         if not isinstance(exp,AffinExp):
@@ -286,13 +290,19 @@ def tracepow(exp,num=1,denom=1,coef=None):
                 M,Mstr=_retrieve_matrix(coef)
                 coef = AffinExp({},constant=M[:],size=M.size,string=Mstr)
         if num == denom:
-                return exp
+                return ('I' | exp)
         p = float(num)/float(denom)
         if p==0:
                 raise Exception('undefined for p=0')
         from fractions import Fraction
         frac = Fraction(p).limit_denominator(1000)
         return TracePow_Exp(exp,frac.numerator,frac.denominator,coef)
+
+def trace(exp):
+        """
+        trace of a square AffinExp
+        """
+        return tracepow(exp)
         
 def detrootn(exp):
         """returns a :class:`DetRootN_Exp <picos.DetRootN_Exp>` object representing the determinant of the
@@ -1529,7 +1539,7 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                         vi = value.imag()
                                 else:
                                         vr = copy.copy(value)
-                                        vi = 0
+                                        vi = cvx.spmatrix([],[],[],vr.size)
                                 if complex:
                                         D[cvars[var.name]] = cvx.sparse([vr,vi])
                                 else:
@@ -1556,7 +1566,11 @@ def _copy_exp_to_new_vars(exp,cvars,complex=None):
                         newcons = copy.copy(v)
                         newsize = exp.size
                 elif complex:
-                        newcons = cvx.sparse([v.real(),v.imag()])
+                        if v.typecode == 'z':
+                                vi = v.imag()
+                        else:
+                                vi = cvx.spmatrix([],[],[],v.size)
+                        newcons = cvx.sparse([v.real(),vi])
                         newsize = (exp.size[0],2*exp.size[1])
                 else:
                         newcons = v.real()

@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint','Sym_Trunc_Simplex_Constraint']
+__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint','Sym_Trunc_Simplex_Constraint','NormPQ_Constraint']
 
 class Constraint(object):
         """A class for describing a constraint.
@@ -118,25 +118,42 @@ class Constraint(object):
                         if len(fac1)==1:
                                 var = fac1.keys()[0]
                                 mat = fac1[var]
-                                if var.vtype in ('symmetric',):
-                                        idty = _svecm1_identity('symmetric',var.size)
+                                idty = _svecm1_identity(var.vtype,var.size)
                                 if ( not(self.Exp1.constant) and
                                      self.Exp2.is0() and
                                      self.typeOfConstraint[3]=='>' and
-                                     var.vtype in ('symmetric',) and
+                                     var.vtype in ('symmetric','hermitian','continuous') and
                                      list(mat.I) == list(idty.I) and
                                      list(mat.J) == list(idty.J) and
                                      list(mat.V) == list(idty.V)
                                      ):
-                                        self.semidefVar = var
-                        fac2 = self.Exp1.factors
+                                        if var.vtype == 'continuous':
+                                                raise Exception("X>>0 with X of vtype continuous. Use vtype='symmetric' instead")
+                                        else:
+                                                self.semidefVar = var
+                        if self.Exp1.is_pure_complex_var():
+                                if self.Exp2.is0():
+                                        raise Exception("X>>0 with X of vtype complex. Use vtype='hermitian' instead")
+                        fac2 = self.Exp2.factors
                         if len(fac2)==1:
                                 var = fac2.keys()[0]
+                                mat = fac2[var]
+                                idty = _svecm1_identity(var.vtype,var.size)
                                 if ( not(self.Exp2.constant) and
                                      self.Exp1.is0() and
                                      self.typeOfConstraint[3]=='<' and
-                                     var.vtype in ('symmetric',)):
-                                        self.semidefVar = var
+                                     var.vtype in ('symmetric','hermitian','continuous') and
+                                     list(mat.I) == list(idty.I) and
+                                     list(mat.J) == list(idty.J) and
+                                     list(mat.V) == list(idty.V)
+                                     ):
+                                        if var.vtype == 'continuous':
+                                                raise Exception("X>>0 with X of vtype continuous. Use vtype='symmetric' instead")
+                                        else:
+                                                self.semidefVar = var
+                        if self.Exp2.is_pure_complex_var():
+                                if self.Exp1.is0():
+                                        raise Exception("X>>0 with X of vtype complex. Use vtype='hermitian' instead")
 
         def __str__(self):
                 if not(self.myfullconstring is None):
@@ -378,6 +395,25 @@ class NormP_Constraint(_Convex_Constraint):
                         return -(self.expaff.value-norm(self.expnorm,self.numerator,self.denominator).value)
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+
+class NormPQ_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass (p,q)-norm inequalities.
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """ 
+        def __init__(self,expaff,expnorm,p,q,Ptmp,constring):
+                self.expaff = expaff
+                self.expnorm = expnorm
+                self.p=p
+                self.q=q
+                _Convex_Constraint.__init__(self,Ptmp,constring,'pq-norm ineq')
+                self.prefix='_npq'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+        
+        def slack_var(self):
+                return self.expaff.value-norm(self.expnorm,(p,q)).value
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+
 
 class TracePow_Constraint(_Convex_Constraint):
         """ A temporary object used to pass (trace of) pth power inequalities

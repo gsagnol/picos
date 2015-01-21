@@ -127,6 +127,8 @@ class Problem(object):
                 
                 self.obj_passed = []
                 """list of solver instances where the objective has been passed"""
+                
+                self._complex = False #problem has complex coefs             
 
         def __str__(self):
                 probstr='---------------------\n'               
@@ -150,7 +152,7 @@ class Problem(object):
 
                 printedlis=[]
                 for vkey in self.variables.keys():
-                        if vkey.startswith('_geo') or vkey.startswith('_nop') or vkey.startswith('_ntp') or vkey.startswith('_ndt') or vkey.startswith('_nts'):
+                        if vkey[:4] in ('_geo','_nop','_ntp','_ndt','_nts','_npq'):
                                 continue
                         if '[' in vkey and ']' in vkey:
                                 lisname=vkey[:vkey.index('[')]
@@ -1074,6 +1076,29 @@ class Problem(object):
                 self.constraints.append(cons)
                 self.consNumbering.append(self.countCons)
                 self.countCons+=1
+                #complex coefs ?
+                found = False
+                for exp in (cons.Exp1,cons.Exp2,cons.Exp3):
+                        if exp is None:
+                                continue
+                        for x,fac in exp.factors.iteritems():
+                                if fac.typecode=='z':
+                                        if fac.imag():
+                                                self._complex = True
+                                                found = True
+                                                break
+                                        else:
+                                                exp.factors[x] = fac.real()
+                        if not(exp.constant is None) and exp.constant.typecode=='z':
+                                if exp.constant.imag():
+                                        self._complex = True
+                                        found = True
+                                else:
+                                        exp.constant = exp.constant.real()
+                                        
+                        if found:
+                                break
+                
                 if cons.typeOfConstraint[:3]=='lin':
                         self.numberAffConstraints+=(cons.Exp1.size[0]*cons.Exp1.size[1])
                                         
@@ -2178,6 +2203,10 @@ class Problem(object):
 		tps = [x.vtype for x in self.variables.values()]
 		if 'hermitian' in tps or 'complex' in tps:
 			return True
+                else:
+                        return self._complex
+                """
+                TODO delete?
                 if self.numberSDPConstraints>0:
                         for c in self.constraints:
                                 if c.typeOfConstraint.startswith('sdp'):
@@ -2186,8 +2215,9 @@ class Problem(object):
                                       if (c.Exp1-c.Exp2).constant.typecode=='z':
                                               return True
                                       
+                
                 return False
-                    
+                """    
                 
         def _make_cplex_instance(self):
                 """

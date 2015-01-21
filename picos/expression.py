@@ -421,7 +421,10 @@ class AffinExp(Expression):
                                         vv = A[i,:]
                                         P = cvx.matrix(vv,(n,n))
                                         vr = (P.real()-P.real().T)[:]
-                                        vi = (P.imag()+P.imag().T)[:]
+                                        if P.typecode == 'z':
+                                                vi = (P.imag()+P.imag().T)[:]
+                                        else:
+                                                vi = cvx.matrix(0.,(1,1))
                                         if (vi.T*vi)[0] + (vr.T*vr)[0] > 1e-6:
                                                 return False
                 if self.constant is None:
@@ -526,13 +529,19 @@ class AffinExp(Expression):
                 if isinstance(self,Variable):
                         raise Exception('inplace_conjugate should not be called on a Variable object')
                 for k in self.factors:
-                        if k.vtype=='hermitian':#same as transpose
-                                bsize=self.size[0]
-                                bsize2=self.size[1]
-                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
-                                J=self.factors[k].J
-                                V=self.factors[k].V
-                                self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                        if k.vtype=='hermitian':
+                                fack = self.factors[k]
+                                I = fack.I
+                                J = fack.J
+                                V = fack.V
+                                J0 = []
+                                V0 = []
+                                n = int(fack.size[1]**0.5)
+                                for j,v in zip(J,V):
+                                        col,row = divmod(j,n)
+                                        J0.append(row * n + col)
+                                        V0.append(v.conjugate())
+                                self.factors[k] = cvx.spmatrix(V0,I,J0,fack.size)
                                 
                         elif self.factors[k].typecode=='z':
                                 Fr = self.factors[k].real()
@@ -1989,7 +1998,10 @@ class _ConvexExp(Expression):
          
         def __str__(self):
                 if self.is_valued():
-                        return str(self.value[0])
+                        try:
+                                return str(self.value[0])
+                        except:
+                                return str(self.value)
                 else:
                         return repr(self)
 
@@ -2133,13 +2145,14 @@ class NormP_Exp(_ConvexExp):
                 
                 self.den2 = beta2
                 """denominator of q"""
-                
         
         def eval(self,ind=None):
                 val=self.exp.eval(ind)
                 p = float(self.numerator)/float(self.denominator)
                 if self.num2 is not None:
-                        return 'TODO'
+                        q = float(self.num2)/float(self.den2)
+                        return np.linalg.norm([np.linalg.norm(list(val[i,:]),q) for i in range(val.size[0])],p)
+                        
                 else:
                         return np.linalg.norm([vi for vi in val],p)
                 
@@ -2158,10 +2171,25 @@ class NormP_Exp(_ConvexExp):
                         Ptmp = Problem()
                         m = self.exp.size[0]*self.exp.size[1]
                         
+                        if self.num2 is not None: #(p,q)-norm
+                                q = float(self.num2)/float(self.den2)
+                                N = self.exp.size[0]
+                                u = Ptmp.add_variable('v',N)
+                                for i in range(N):
+                                        Ptmp.add_constraint(norm(self.exp[i,:],q) <= u[i])
+                                if p==1:
+                                        Ptmp.add_constraint(1|u <= exp)
+                                elif p==float('inf'):
+                                        Ptmp.add_constraint(u <= exp)
+                                elif p==2:
+                                        Ptmp.add_constraint(abs(u) <= exp)                                
+                                else:
+                                        Ptmp.add_constraint(norm(u,p) <= exp)                                
+                                return NormPQ_Constraint(exp,self.exp,p,q,Ptmp,self.string + '<' + exp.string)
                         if p==1:
                                 v = Ptmp.add_variable('v',m)
-                                Ptmp.add_constraint(self.exp  <= v)
-                                Ptmp.add_constraint(-self.exp <= v)
+                                Ptmp.add_constraint(self.exp[:]  <= v)
+                                Ptmp.add_constraint(-self.exp[:] <= v)
                                 Ptmp.add_constraint((1|v)<exp)
                         elif p==float('inf'):
                                 Ptmp.add_constraint(self.exp  <= exp)
@@ -2938,6 +2966,13 @@ class Variable(AffinExp):
                         raise Exception('should be of size {0}'.format(self.size))
                 if self.vtype in ('symmetric',):
                         valuemat=svec(valuemat)
+                elif self.vtype == 'hermitian':
+                        v = (valuemat-valuemat.H)[:]
+                        norm2 = (v.H*v)[0].real
+                        if norm2 > 1e-6:
+                                raise ValueError('value is not Hermitian')
+                        else:
+                                valuemat = 0.5 * (valuemat + valuemat.H)
                 self._value = valuemat
 
         def del_var_value(self):
