@@ -47,7 +47,8 @@ __all__=['Expression',
         'DetRootN_Exp',
         'Variable',
         'Set',
-        'Ball'
+        'Ball',
+        'Truncated_Simplex'
         ]
        
 global INFINITY
@@ -525,7 +526,15 @@ class AffinExp(Expression):
                 if isinstance(self,Variable):
                         raise Exception('inplace_conjugate should not be called on a Variable object')
                 for k in self.factors:
-                        if self.factors[k].typecode=='z':
+                        if k.vtype=='hermitian':#same as transpose
+                                bsize=self.size[0]
+                                bsize2=self.size[1]
+                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                                J=self.factors[k].J
+                                V=self.factors[k].V
+                                self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                                
+                        elif self.factors[k].typecode=='z':
                                 Fr = self.factors[k].real()
                                 Fi = self.factors[k].imag()
                                 self.factors[k] = Fr -1j *Fi
@@ -2091,15 +2100,25 @@ class NormP_Exp(_ConvexExp):
                         p must be less or equal than 1)
         """
         
-        def __init__(self,exp,alpha,beta=1):
+        def __init__(self,exp,alpha,beta=1,alpha2=None,beta2=1):
                 pstr = str(alpha)
                 if beta>1:
                         pstr+='/'+str(beta)
                 p=float(alpha)/float(beta)
-                if p>=1:
-                        _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','p-norm expression')
+                if not alpha2 is None:
+                        qstr = str(alpha2)
+                        if beta2>1:
+                                qstr+='/'+str(beta2)
+                        q=float(alpha2)/float(beta2)
+                        if p>=1 and q>=1:
+                                _ConvexExp.__init__(self,'norm_'+pstr+','+qstr+'( '+exp.string+')','(p,q)-norm expression')
+                        else:
+                                raise ValueError('(p,q) norm is only implemented for p,q >=1')
                 else:
-                        _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','generalized p-norm expression')
+                        if p>=1:
+                                _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','p-norm expression')
+                        else:
+                                _ConvexExp.__init__(self,'norm_'+pstr+'( '+exp.string+')','generalized p-norm expression')
                 self.exp = exp
                 """The affine expression to which the p-norm is applied"""
                 
@@ -2109,11 +2128,20 @@ class NormP_Exp(_ConvexExp):
                 self.denominator= beta
                 """denominator of p"""
                 
+                self.num2 = alpha2
+                """numerator of p"""
+                
+                self.den2 = beta2
+                """denominator of q"""
+                
         
         def eval(self,ind=None):
                 val=self.exp.eval(ind)
                 p = float(self.numerator)/float(self.denominator)
-                return np.linalg.norm([vi for vi in val],p)
+                if self.num2 is not None:
+                        return 'TODO'
+                else:
+                        return np.linalg.norm([vi for vi in val],p)
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
         
@@ -3087,17 +3115,24 @@ class Ball(Set):
                         
 class Truncated_Simplex(Set):
         
-        def __init__(self,radius=1,nonneg=True):
+        def __init__(self,radius=1,truncated = False, nonneg=True):
                 self.radius = radius
+                self.truncated = truncated
                 self.nonneg = nonneg
                 
         def __str__(self):
                 if float(self.radius)==1 and self.nonneg:
                         return '# standard simplex #'
-                elif self.nonneg:
-                        return '# truncated simplex {0<=x<=1: sum(x) <= ' + str(self.radius) +'} #'
+                if self.truncated:
+                        if self.nonneg:
+                                return '# truncated simplex {0<=x<=1: sum(x) <= ' + str(self.radius) +'} #'
+                        else:
+                                return '# Symmetrized truncated simplex {-1<=x<=1: sum(|x|) <= ' + str(self.radius) +'} #'
                 else:
-                        return '# Symmetrized truncated simplex {-1<=x<=1: sum(|x|) <= ' + str(self.radius) +'} #'
+                        if self.nonneg:
+                                return '# simplex {x>=0: sum(x) <= ' + str(self.radius) +'} #'
+                        else:
+                                return '# L_1-Ball of radius ' + str(self.radius) +'} #'
         
         def __repr__(self):
                 return str(self)
@@ -3107,26 +3142,43 @@ class Truncated_Simplex(Set):
                 
                 if isinstance(exp,AffinExp):
                         n = exp.size[0] * exp.size[1]
-                        if self.nonneg:
-                                if self.radius <= 1:
+                        if self.truncated:
+                                if self.nonneg:
+                                        if self.radius <= 1:
+                                                aff = (-exp[:]) // (1|exp[:])
+                                                rhs = cvx.sparse([0]*n+[self.radius])
+                                                if self.radius == 1:
+                                                        simptext =' in standard simplex'
+                                                else:
+                                                        simptext =' in simplex of radius ' + str(self.radius)
+                                        else:
+                                                aff = (exp[:]) // (-exp[:]) // (1|exp[:])
+                                                rhs = cvx.sparse([1]*n+[0]*n+[self.radius])
+                                                simptext = ' in truncated simplex of radius ' + str(self.radius)
+                                        cons = (aff <= rhs)
+                                        cons.myconstring = exp.string + simptext
+                                else:
+                                        from .problem import Problem
+                                        Ptmp = Problem()
+                                        v = Ptmp.add_variable('v',n)
+                                        Ptmp.add_constraint( exp[:] < v)
+                                        Ptmp.add_constraint( -exp[:] < v)
+                                        Ptmp.add_constraint( (1|v) < self.radius)
+                                        if self.radius > 1:
+                                                Ptmp.add_constraint( v < 1)
+                                        constring = '||'+exp.string+'||_(infty,1) <= (1,'+str(self.radius)+')'
+                                        cons = Sym_Trunc_Simplex_Constraint(exp,self.radius,Ptmp,constring)
+                        else:
+                                if self.nonneg:
                                         aff = (-exp[:]) // (1|exp[:])
                                         rhs = cvx.sparse([0]*n+[self.radius])
+                                        cons = (aff <= rhs)
+                                        if self.radius == 1:
+                                                cons.myconstring = exp.string +' in standard simplex'
+                                        else:
+                                                cons.myconstring = exp.string +' in simplex of radius ' + str(self.radius)
                                 else:
-                                        aff = (exp[:]) // (-exp[:]) // (1|exp[:])
-                                        rhs = cvx.sparse([1]*n+[0]*n+[self.radius])
-                                cons = (aff <= rhs)
-                                cons.myconstring = exp.string +' in truncated simplex of radius '+str(self.radius)
-                        else:
-                                from .problem import Problem
-                                Ptmp = Problem()
-                                v = Ptmp.add_variable('v',n)
-                                Ptmp.add_constraint( exp[:] < v)
-                                Ptmp.add_constraint( -exp[:] < v)
-                                Ptmp.add_constraint( (1|v) < self.radius)
-                                if self.radius > 1:
-                                        Ptmp.add_constraint( v < 1)
-                                constring = '||'+exp.string+'||_(infty,1) <= (1,'+str(self.radius)+')'
-                                cons = Sym_Trunc_Simplex_Constraint(exp,self.radius,Ptmp,constring)
+                                        cons = norm(exp,1) < self.radius
                         return cons
                 else: #constant
                         term,termString=_retrieve_matrix(exp,None)

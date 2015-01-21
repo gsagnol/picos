@@ -63,6 +63,9 @@ __all__=['_retrieve_matrix',
         'norm',
         '_read_sdpa',
         'tracepow',
+        'ball',
+        'simplex',
+        'truncated_simplex',
         '_cplx_mat_to_real_mat',
         '_cplx_vecmat_to_real_vecmat',
         '_is_idty',
@@ -315,7 +318,54 @@ def detrootn(exp):
                 exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
         return DetRootN_Exp(exp)
         
+def ball(r,p=2):
+        """returns a :class:`Ball <picos.expression.Ball>` object representing:
+          * a L_p Ball of radius ``r`` (:math:`\{x: \Vert x \Vert_p \geq r \}`) if :math:`p \geq 1`
+          * the convex set :math:`\{x\geq 0: \Vert x \Vert_p \geq r \}` :math:`p < 1`.
+          
+        **Example**
         
+        >>> import picos as pic
+        >>> P = pic.Problem()
+        >>> x = P.add_variable('x', 3)
+        # p-norm ineq : norm_3( x)<1.0#
+        >>> x << pic.ball(1,0.5)
+        # generalized p-norm ineq : norm_1/2( x)>1.0#
+          
+        """
+        from .expression import Ball
+        return Ball(p,r)
+
+def simplex(gamma = 1):
+        """returns a :class:`Truncated_Simplex <picos.expression.Truncated_Simplex>` object representing the set :math:`\{x\geq 0: ||x||_1 \leq \gamma \}`.
+        
+        **Example**
+        
+        >>> x << pic.simplex(1)
+        # (4x1)-affine constraint: x in standard simplex #
+        >>> x << pic.simplex(2)
+        # (4x1)-affine constraint: x in simplex of radius 2 #
+
+        """
+        from .expression import Truncated_Simplex
+        return Truncated_Simplex(radius=gamma, truncated=False, nonneg = True)
+
+def truncated_simplex(gamma = 1, sym = False):
+        """returns a :class:`Truncated_Simplex <picos.expression.Truncated_Simplex>` object representing object representing the set:
+          * :math:`\{x \geq  0: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=False`` (default)
+          * :math:`\{x: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=True``.
+        
+        **Example**
+        
+        >>> x << pic.truncated_simplex(2)
+        # (7x1)-affine constraint: x in truncated simplex of radius 2 #
+        >>> x << pic.truncated_simplex(2,sym=True)
+        # symmetrized truncated simplex : ||x||_(infty,1) <= (1,2)#
+        
+        """
+        from .expression import Truncated_Simplex
+        return Truncated_Simplex(radius=gamma, truncated=True, nonneg = not(sym))
+
 def allIdent(lst):
         if len(lst)<=1:
                 return(True)

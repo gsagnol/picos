@@ -186,3 +186,18 @@ np.trace (B.H * A)
 print Z|A
 np.trace (A.H * B)
 
+#test frob norm
+import picos as pic
+import cvxopt as cvx
+
+P = cvx.matrix([[1,2-1j,3],[2+1j,4,-1-2j],[3,-1+2j,5]])
+Q = cvx.matrix([[1,1-4j,3-1j],[1+4j,2,-3j],[3+1j,3j,1]])
+R = cvx.matrix([[1,2-4j,8-1j],[1-5j,2,-4j],[3+1j,1+3j,1]])#not hermitian
+
+cpl = pic.Problem()
+Z = cpl.add_variable('Z',(3,3),'hermitian')
+cpl.set_objective('max','I'|Z)
+cpl.add_constraint((P*P.H)|Z<1)
+cpl.add_constraint((Q*Q.H)|Z<1)
+cpl.add_constraint(abs(Z)<0.04)
+cpl.add_constraint(Z>>0)

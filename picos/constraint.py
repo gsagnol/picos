@@ -435,6 +435,6 @@ class Sym_Trunc_Simplex_Constraint(_Convex_Constraint):
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
-                return cvx.matrix([1-norm(self.exp,'inf'),self.radius-norm(self.exp,1)])
+                return cvx.matrix([1-norm(self.exp,'inf').value,self.radius-norm(self.exp,1).value])
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
