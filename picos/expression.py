@@ -522,6 +522,8 @@ class AffinExp(Expression):
                 return selfcopy
                 
         def inplace_conjugate(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_conjugate should not be called on a Variable object')
                 for k in self.factors:
                         if self.factors[k].typecode=='z':
                                 Fr = self.factors[k].real()
@@ -597,6 +599,64 @@ class AffinExp(Expression):
         
         H = property(Htranspose,setH,delH,"Hermitian transposition")
         """Transposition"""
+
+        def inplace_partial_transpose(self):
+                if isinstance(self,Variable):
+                        raise Exception('inplace_transpose should not be called on a Variable object')
+                bsize=self.size[0]
+                subsize = int((bsize)**0.5)
+                if subsize != (bsize)**0.5 or bsize != self.size[1]:
+                        raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices')
+                
+                for k in self.factors:
+                        I0 = []
+                        J=self.factors[k].J
+                        V=self.factors[k].V
+                        for i in self.factors[k].I:
+                            column, row = divmod(i, bsize)
+                            row_block, lrow = divmod(row, subsize)
+                            column_block, lcolumn = divmod(column, subsize)
+                            row = row_block*subsize + lcolumn
+                            column = column_block*subsize + lrow
+                            I0.append(column*bsize + row)
+                        self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
+                if not (self.constant is None):
+                        spconstant=cvx.sparse(self.constant)
+                        J=spconstant.J
+                        V=spconstant.V
+                        I0 = []
+                        for i in spconstant.I:
+                            column, row = divmod(i, bsize)
+                            row_block, lrow = divmod(row, subsize)
+                            column_block, lcolumn = divmod(column, subsize)
+                            row = row_block*subsize + lcolumn
+                            column = column_block*subsize + lrow
+                            I0.append(column*bsize + row)
+                        self.constant = cvx.spmatrix(V,I0,J,spconstant.size)
+                self._size=(self.size[1],self.size[0])
+                if ( ('*' in self.affstring()) or ('/' in self.affstring())
+                        or ('+' in self.affstring()) or ('-' in self.affstring()) ):
+                        self.string='( '+self.string+' ).Tx'
+                else:
+                        self.string+='.Tx'
+
+        def partial_transpose(self):
+                selfcopy=self.copy()
+                selfcopy.inplace_partial_transpose()
+                return selfcopy
+        
+        def setTx(self,value):
+                raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
+        
+        def delTx(self):
+                raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
+        
+        Tx = property(partial_transpose,setTx,delTx,"Partial transposition")
+        """Partial transposition"""
+        
+        def hadamard(self,fact):
+                """hadamard (elementwise) product"""
+                return self^fact
         
 	def __xor__(self,fact):
                 """hadamard (elementwise) product"""
@@ -2065,31 +2125,42 @@ class NormP_Exp(_ConvexExp):
                                 raise Exception('upper bound of a norm must be scalar')
                         if self.exp.size == (1,1):
                                 return abs(self.exp) < exp
+                        p = float(self.numerator)/self.denominator
                         from .problem import Problem
                         Ptmp = Problem()
                         m = self.exp.size[0]*self.exp.size[1]
-                        v = Ptmp.add_variable('v',m)
-                        x = Ptmp.add_variable('x',m)
                         
-                        amb = self.numerator - self.denominator
-                        b = self.denominator
-                        oneamb = '|1|('+str(amb)+',1)'
-                        oneb = '|1|('+str(b)+',1)'
-                        for i in range(m):
-                                if amb>0:
-                                        if b==1:
-                                                vec = (v[i])//(exp*oneamb)
-                                        else:
-                                                vec = (v[i]*oneb)//(exp*oneamb)
-                                else:
-                                        if b==1:
-                                                vec = v[i]
-                                        else:
-                                                vec = (v[i]*oneb)
-                                Ptmp.add_constraint(abs(self.exp[i]) < x[i])
-                                Ptmp.add_constraint(x[i] < geomean(vec))
+                        if p==1:
+                                v = Ptmp.add_variable('v',m)
+                                Ptmp.add_constraint(self.exp  <= v)
+                                Ptmp.add_constraint(-self.exp <= v)
+                                Ptmp.add_constraint((1|v)<exp)
+                        elif p==float('inf'):
+                                Ptmp.add_constraint(self.exp  <= exp)
+                                Ptmp.add_constraint(-self.exp  <= exp)
+                        else:
+                                x = Ptmp.add_variable('x',m)
+                                v = Ptmp.add_variable('v',m)
                                 
-                        Ptmp.add_constraint((1|v)<exp)
+                                amb = self.numerator - self.denominator
+                                b = self.denominator
+                                oneamb = '|1|('+str(amb)+',1)'
+                                oneb = '|1|('+str(b)+',1)'
+                                for i in range(m):
+                                        if amb>0:
+                                                if b==1:
+                                                        vec = (v[i])//(exp*oneamb)
+                                                else:
+                                                        vec = (v[i]*oneb)//(exp*oneamb)
+                                        else:
+                                                if b==1:
+                                                        vec = v[i]
+                                                else:
+                                                        vec = (v[i]*oneb)
+                                        Ptmp.add_constraint(abs(self.exp[i]) < x[i])
+                                        Ptmp.add_constraint(x[i] < geomean(vec))
+                                Ptmp.add_constraint((1|v)<exp)
+                        
                         return NormP_Constraint(exp,self.exp,self.numerator,self.denominator,Ptmp,self.string + '<' + exp.string)
                                         
                         
@@ -2112,6 +2183,10 @@ class NormP_Exp(_ConvexExp):
                         if p == 1 :
                                 Ptmp.add_constraint(self.exp>0)
                                 Ptmp.add_constraint((1|self.exp) > exp)
+                                print "\033[1;31m*** Warning -- generalized norm inequality, expression is forced to be >=0 \033[0m"
+                        elif p==float('-inf'):
+                                Ptmp.add_constraint(self.exp  >= exp)
+                                print "\033[1;31m*** Warning -- generalized norm inequality, norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m"
                         elif p>=0:
                                 v = Ptmp.add_variable('v',m)
                                 

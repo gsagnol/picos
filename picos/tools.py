@@ -231,10 +231,15 @@ def norm(exp,num=2,denom=1):
         p = float(num)/float(denom)
         if p==0:
                 raise Exception('undefined for p=0')
-        from fractions import Fraction
-        frac = Fraction(p).limit_denominator(1000)
-        return NormP_Exp(exp,frac.numerator,frac.denominator)
-        
+        if p == float('inf'):
+                return NormP_Exp(exp,float('inf'),1)
+        elif p == float('-inf'):
+                return NormP_Exp(exp,float('-inf'),1)
+        else:
+                from fractions import Fraction
+                frac = Fraction(p).limit_denominator(1000)
+                return NormP_Exp(exp,frac.numerator,frac.denominator)
+
 def tracepow(exp,num=1,denom=1,coef=None):
         """Returns a :class:`TracePow_Exp <picos.TracePow_Exp>` object representing the trace of the pth-power of the symmetric matrix ``exp``, where ``exp`` is an :class:`AffinExp <picos.AffinExp>` which we denote by :math:`X`.
         This can be used to enter constraints of the form :math:`\operatorname{trace} X^p \leq t` with :math:`p\geq1` or :math:`p < 0`, or :math:`\operatorname{trace} X^p \geq t` with :math:`0 \leq p \leq 1`.
