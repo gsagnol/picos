@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint']
+__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint','Sym_Trunc_Simplex_Constraint']
 
 class Constraint(object):
         """A class for describing a constraint.
@@ -420,5 +420,21 @@ class DetRootN_Constraint(_Convex_Constraint):
         
         def slack_var(self):
                 return self.exprhs.value - detrootn(self.expdet).value
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+
+class Sym_Trunc_Simplex_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass symmetrized truncated simplex constraints.
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """
+        def __init__(self,exp,radius,Ptmp,constring):
+                self.exp = exp
+                self.radius = radius
+                _Convex_Constraint.__init__(self,Ptmp,constring,'symmetrized truncated simplex')
+                self.prefix='_nts'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+        
+        def slack_var(self):
+                return cvx.matrix([1-norm(self.exp,'inf'),self.radius-norm(self.exp,1)])
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

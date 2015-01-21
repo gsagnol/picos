@@ -150,7 +150,7 @@ class Problem(object):
 
                 printedlis=[]
                 for vkey in self.variables.keys():
-                        if vkey.startswith('_geo') or vkey.startswith('_nop') or vkey.startswith('_ntp') or vkey.startswith('_ndt'):
+                        if vkey.startswith('_geo') or vkey.startswith('_nop') or vkey.startswith('_ntp') or vkey.startswith('_ndt') or vkey.startswith('_nts'):
                                 continue
                         if '[' in vkey and ']' in vkey:
                                 lisname=vkey[:vkey.index('[')]

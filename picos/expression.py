@@ -46,6 +46,8 @@ __all__=['Expression',
         'TracePow_Exp',
         'DetRootN_Exp',
         'Variable',
+        'Set',
+        'Ball'
         ]
        
 global INFINITY
@@ -1433,6 +1435,10 @@ class AffinExp(Expression):
                 return GeneralFun(fun,self,fun())
         
         def __lshift__(self,exp):
+                
+                if isinstance(exp,Set):
+                        return exp >> self
+                
                 if self.size[0]<>self.size[1]:
                         raise Exception('both sides of << must be square')
                 if isinstance(exp,AffinExp):
@@ -2973,3 +2979,82 @@ class Variable(AffinExp):
                         raise IndexError('slice of zero-dimension')
                 return AffinExp(newfacs,newcons,newsize,newstr)
 
+class Set(object):
+        def __init__(self):
+                pass
+
+class Ball(Set):
+        
+        def __init__(self,p,radius):
+                self.p = p
+                self.radius = radius
+                
+        def __str__(self):
+                if float(self.p)>=1:
+                        return '# L_'+str(self.p)+'-Ball of radius '+str(self.radius)+' #'
+                else:
+                        return '# generalized outer L_p-Ball {x>=0: ||x||_'+str(self.p)+' >='+str(self.radius) +'} #'
+                
+        def __repr__(self):
+                return str(self)
+        
+        def __rshift__(self,exp):
+                if isinstance(exp,AffinExp):
+                        if float(self.p)>=1:
+                                cons = (norm(exp,self.p) < self.radius)
+                        else:
+                                cons = (norm(exp,self.p) > self.radius)
+                        return cons
+                else: #constant
+                        term,termString=_retrieve_matrix(exp,None)
+                        exp2=AffinExp(factors={},constant=term[:],size=term.size,string=termString)
+                        return  self >> exp2
+                        
+class Truncated_Simplex(Set):
+        
+        def __init__(self,radius=1,nonneg=True):
+                self.radius = radius
+                self.nonneg = nonneg
+                
+        def __str__(self):
+                if float(self.radius)==1 and self.nonneg:
+                        return '# standard simplex #'
+                elif self.nonneg:
+                        return '# truncated simplex {0<=x<=1: sum(x) <= ' + str(self.radius) +'} #'
+                else:
+                        return '# Symmetrized truncated simplex {-1<=x<=1: sum(|x|) <= ' + str(self.radius) +'} #'
+        
+        def __repr__(self):
+                return str(self)
+        
+
+        def __rshift__(self,exp):
+                
+                if isinstance(exp,AffinExp):
+                        n = exp.size[0] * exp.size[1]
+                        if self.nonneg:
+                                if self.radius <= 1:
+                                        aff = (-exp[:]) // (1|exp[:])
+                                        rhs = cvx.sparse([0]*n+[self.radius])
+                                else:
+                                        aff = (exp[:]) // (-exp[:]) // (1|exp[:])
+                                        rhs = cvx.sparse([1]*n+[0]*n+[self.radius])
+                                cons = (aff <= rhs)
+                                cons.myconstring = exp.string +' in truncated simplex of radius '+str(self.radius)
+                        else:
+                                from .problem import Problem
+                                Ptmp = Problem()
+                                v = Ptmp.add_variable('v',n)
+                                Ptmp.add_constraint( exp[:] < v)
+                                Ptmp.add_constraint( -exp[:] < v)
+                                Ptmp.add_constraint( (1|v) < self.radius)
+                                if self.radius > 1:
+                                        Ptmp.add_constraint( v < 1)
+                                constring = '||'+exp.string+'||_(infty,1) <= (1,'+str(self.radius)+')'
+                                cons = Sym_Trunc_Simplex_Constraint(exp,self.radius,Ptmp,constring)
+                        return cons
+                else: #constant
+                        term,termString=_retrieve_matrix(exp,None)
+                        exp2=AffinExp(factors={},constant=term[:],size=term.size,string=termString)
+                        return self >> exp2
+        
