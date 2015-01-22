@@ -200,4 +200,25 @@ cpl.set_objective('max','I'|Z)
 cpl.add_constraint((P*P.H)|Z<1)
 cpl.add_constraint((Q*Q.H)|Z<1)
 #cpl.add_constraint(abs(Z)<0.04)
+cpl.add_constraint(abs(2*Z)<0.08)#TODO here, handle this part- case, and then directly on a herm variable
 cpl.add_constraint(Z>>0)
+
+
+#AND TEST equiv of the following in complex numbers (complex SOCP)
+import picos as pic
+P = pic.Problem()
+X = P.add_variable('X',(3,2),'complex')
+t = P.add_variable('t',1)
+P.add_constraint(pic.norm(X,(1,2)) < t) #Basis check with 1,2
+P.add_constraint('|1|(1,3)' * X == [1-1j,2+3j])
+P.set_objective('min',t)
+P.solve()
+
+import picos as pic
+P = pic.Problem()
+Z = P.add_variable('Z',(3,1),'complex')
+t = P.add_variable('t',1)
+P.add_constraint(abs(Z) < t)
+P.add_constraint('|1|(1,3)' * Z == 1+2j)
+P.set_objective('min',t)
+P.solve()
