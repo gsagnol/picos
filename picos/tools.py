@@ -181,7 +181,7 @@ def geomean(exp):
         Note that geometric mean inequalities are internally reformulated as a
         set of SOC inequalities.
         
-        ** Example:**
+        **Example:**
         
         >>> import picos as pic
         >>> prob = pic.Problem()
@@ -205,14 +205,22 @@ def norm(exp,num=2,denom=1):
         Generalized norms are also defined for :math:`p<1`, by using the usual formula
         :math:`\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
         is concave (for :math:`p<1`) over the set of vectors with nonnegative coordinates.
-        When a constraint of the form :math:`\operatorname{norm}(x,p) > t` with :math:`p\leq1` is entered,
-        PICOS implicitely assumes that :math:`x` is a nonnegative vector.
+        When a constraint of the form :math:`\operatorname{norm}(x,p) > t` with :math:`p\leq1` is entered, PICOS implicitely assumes that :math:`x` is a nonnegative vector.
+        
+        This function can also be used to represent the Lp,q- norm of a matrix (for :math:`p,q \geq 1`):
+        :math:`\operatorname{norm}(X,(p,q)) := \Big(\sum_i (\sum_j x_{ij}^q )^{p/q}\Big)^{1/p}`,
+        that is, the p-norm of the vector formed with the q-norms of the rows of :math:`X`.
         
         The exponent :math:`p` of the norm must be specified either by
         a couple numerator (2d argument) / denominator (3d arguments),
         or directly by a float ``p`` given as second argument. In the latter case a rational
-        approximation of ``p`` will be used.
+        approximation of ``p`` will be used. It is also possible to pass ``'inf'``  as
+        second argument for the infinity-norm (aka max-norm).
         
+        For the case of :math:`(p,q)`-norms, ``p`` and ``q`` must be specified by a tuple of floats
+        in the second argument (rational approximations will be used), and the third argument will
+        be ignored.
+                        
         **Example:**
         
         >>> import picos as pic
@@ -223,6 +231,10 @@ def norm(exp,num=2,denom=1):
         # p-norm ineq : norm_7/3( y)<x#
         >>> pic.norm(y,-0.4) > x
         # generalized p-norm ineq : norm_-2/5( y)>x#
+        >>> X = P.add_variable('X',(3,2))
+        # pq-norm ineq : norm_1,2( X)<1.0#
+        >>> pic.norm(X,('inf',1)) < 1
+        # pq-norm ineq : norm_inf,1( X)<1.0#
         
         """
         from .expression import AffinExp
@@ -330,6 +342,7 @@ def detrootn(exp):
         
 def ball(r,p=2):
         """returns a :class:`Ball <picos.expression.Ball>` object representing:
+        
           * a L_p Ball of radius ``r`` (:math:`\{x: \Vert x \Vert_p \geq r \}`) if :math:`p \geq 1`
           * the convex set :math:`\{x\geq 0: \Vert x \Vert_p \geq r \}` :math:`p < 1`.
           
@@ -362,6 +375,7 @@ def simplex(gamma = 1):
 
 def truncated_simplex(gamma = 1, sym = False):
         """returns a :class:`Truncated_Simplex <picos.expression.Truncated_Simplex>` object representing object representing the set:
+        
           * :math:`\{x \geq  0: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=False`` (default)
           * :math:`\{x: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=True``.
         
@@ -1502,6 +1516,10 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                         # But maybe an other error was cancelling this bug...
                                 else:
                                         vr = value
+                                        if complex:
+                                                D[cvars[var.name+'_IM_utri']] = cvx.spmatrix(
+                                                        [],[],[],
+                                                        (vr.size[0],cvars[var.name+'_IM_utri'].size[0]))
                                 
                                 vv = []
                                 for i in range(vr.size[0]):
@@ -1555,6 +1573,8 @@ def _copy_exp_to_new_vars(exp,cvars,complex=None):
         from .expression import Variable, AffinExp, Norm, LogSumExp, QuadExp, GeneralFun, GeoMeanExp, NormP_Exp,TracePow_Exp,DetRootN_Exp
         import copy
         if isinstance(exp,Variable):
+                if exp.vtype=='hermitian':#handle as AffinExp
+                        return _copy_exp_to_new_vars('I'*exp,cvars,complex=complex)
                 return cvars[exp.name]
         elif isinstance(exp,AffinExp):
                 newfacs = _copy_dictexp_to_new_vars(exp.factors,cvars,complex=complex)

@@ -8,6 +8,26 @@
 Change History
 ==============
 
+picos 102 TODO
+
+        bugs correction complex sdp (i particular, scalar product, conjugate,
+                equality constraints for complex expressions, more efficient implementation)
+        vtype = antisym
+        norm Lpq
+        hadamard ^
+        partial transpose
+        ball, simplex, truncated simplex
+        
+        [TODO]
+        write_SDPA [CHECK]
+        permute
+        sum k largest
+        CVK format ?
+        
+        DOC all changes + write summary ?
+        
+
+
  * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|
    
    Release fixing the missing functionnalities of the previous *.dev* version:

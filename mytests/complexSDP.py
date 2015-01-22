@@ -199,9 +199,14 @@ Z = cpl.add_variable('Z',(3,3),'hermitian')
 cpl.set_objective('max','I'|Z)
 cpl.add_constraint((P*P.H)|Z<1)
 cpl.add_constraint((Q*Q.H)|Z<1)
-#cpl.add_constraint(abs(Z)<0.04)
-cpl.add_constraint(abs(2*Z)<0.08)#TODO here, handle this part- case, and then directly on a herm variable
+cpl.add_constraint(abs(Z)<0.04)
+#cpl.add_constraint(abs(2*Z)<0.08)
 cpl.add_constraint(Z>>0)
+re = cpl.to_real()
+
+[ 2.65e-02-j0.00e+00 -1.44e-02-j1.29e-03  2.38e-03-j7.81e-03]
+[-1.44e-02+j1.29e-03  1.30e-02-j0.00e+00 -5.07e-03-j8.12e-04]
+[ 2.38e-03+j7.81e-03 -5.07e-03+j8.12e-04  1.13e-02-j0.00e+00]
 
 
 #AND TEST equiv of the following in complex numbers (complex SOCP)

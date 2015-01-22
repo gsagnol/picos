@@ -618,13 +618,20 @@ class AffinExp(Expression):
         H = property(Htranspose,setH,delH,"Hermitian transposition")
         """Transposition"""
 
-        def inplace_partial_transpose(self):
+        def inplace_partial_transpose(self, dim=None):
                 if isinstance(self,Variable):
-                        raise Exception('inplace_transpose should not be called on a Variable object')
+                        raise Exception('partial_transpose should not be called on a Variable object')
                 bsize=self.size[0]
-                subsize = int((bsize)**0.5)
-                if subsize != (bsize)**0.5 or bsize != self.size[1]:
-                        raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices')
+                if bsize != self.size[1]:
+                        raise ValueError('partial_transpose can only be applied to square matrices')
+                
+                if dim is None:
+                        subsize = int((bsize)**0.5)
+                        if subsize != (bsize)**0.5:
+                                raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices without specifying the dimensions of the subsystems')
+                        dim = [subsize, subsize]
+                if dim[0]*dim[1] != bsize:
+                        raise ValueError('invalid dimensions')
                 
                 for k in self.factors:
                         I0 = []
@@ -632,10 +639,10 @@ class AffinExp(Expression):
                         V=self.factors[k].V
                         for i in self.factors[k].I:
                             column, row = divmod(i, bsize)
-                            row_block, lrow = divmod(row, subsize)
-                            column_block, lcolumn = divmod(column, subsize)
-                            row = row_block*subsize + lcolumn
-                            column = column_block*subsize + lrow
+                            row_block, lrow = divmod(row, dim[1])
+                            column_block, lcolumn = divmod(column, dim[1])
+                            row = row_block*dim[1] + lcolumn
+                            column = column_block*dim[1] + lrow
                             I0.append(column*bsize + row)
                         self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
                 if not (self.constant is None):
@@ -645,10 +652,10 @@ class AffinExp(Expression):
                         I0 = []
                         for i in spconstant.I:
                             column, row = divmod(i, bsize)
-                            row_block, lrow = divmod(row, subsize)
-                            column_block, lcolumn = divmod(column, subsize)
-                            row = row_block*subsize + lcolumn
-                            column = column_block*subsize + lrow
+                            row_block, lrow = divmod(row, dim[1])
+                            column_block, lcolumn = divmod(column, dim[1])
+                            row = row_block*dim[1] + lcolumn
+                            column = column_block*dim[1] + lrow
                             I0.append(column*bsize + row)
                         self.constant = cvx.spmatrix(V,I0,J,spconstant.size)
                 self._size=(self.size[1],self.size[0])
@@ -658,9 +665,10 @@ class AffinExp(Expression):
                 else:
                         self.string+='.Tx'
 
-        def partial_transpose(self):
+
+        def partial_transpose(self,dim=None):
                 selfcopy=self.copy()
-                selfcopy.inplace_partial_transpose()
+                selfcopy.inplace_partial_transpose(dim)
                 return selfcopy
         
         def setTx(self,value):
