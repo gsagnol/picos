@@ -633,10 +633,11 @@ onto a random hyperplan, we obtain a cut whose expected capacity is at least
 0.878 times the optimum. Below is a simple implementation of their algorithm:
 
 .. testcode::
+        
         import cvxopt as cvx
         import cvxopt.lapack
         import numpy as np
-
+        
         #make G undirected
         G=nx.Graph(G)
 	

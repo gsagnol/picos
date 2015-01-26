@@ -466,7 +466,8 @@ class Sym_Trunc_Simplex_Constraint(_Convex_Constraint):
         def __init__(self,exp,radius,Ptmp,constring):
                 self.exp = exp
                 self.radius = radius
-                _Convex_Constraint.__init__(self,Ptmp,constring,'symmetrized truncated simplex')
+                _Convex_Constraint.__init__(self,Ptmp,constring,
+                                            '('+str(3*exp.size[0]*exp.size[1]+1)+'x1)-affine constraint')
                 self.prefix='_nts'
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         

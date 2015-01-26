@@ -99,8 +99,8 @@ class Problem(object):
                 self.msk_env=None
                 self.msk_task=None
                 self.msk_fxd=None
-                self.msk_scaledcols=None
-                self.msk_fxdconevars = None
+                self.msk_scaledcols=None #msk_scaledcols[i] = a means that msk instance uses a change of variable x[i]' = a*x[i], where x[i] is the original var of the Problem and x[i]' is passed to MOSEK
+                self.msk_fxdconevars = None # a pair (k,j) in msk_scaledcols[i] means that the variable x'[j] passed to mosek belongs to the ith cone, in the kth position.
 
                 self.scip_solver = None
                 self.scip_vars = None
@@ -6426,208 +6426,174 @@ class Problem(object):
                 print 'done.'
                 f.close()
 
-        
-        def _write_sdpa(self,filename,extended=False):
+         
+        def _write_sdpa(self, filename):
                 """
-                write a problem to sdpa format
+                Write a problem to sdpa format
+
+                :param problem: The PICOS problem to convert.
+                :type problem: :class:`picos.Problem`.
+                :param filename: The name of the file. It must have the suffix ".dat-s"
+                :type filename: str.
+
                 """
-                
                 #--------------------#
                 # makes the instance #
                 #--------------------#
                 if not any(self.cvxoptVars.values()):
                         self._make_cvxopt_instance()
-                
-                
-                dims={}
-                dims['s']=[int(np.sqrt(Gsi.size[0])) for Gsi in self.cvxoptVars['Gs']]
-                dims['l']=self.cvxoptVars['Gl'].size[0]
-                dims['q']=[Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
-                G=self.cvxoptVars['Gl']
-                h=self.cvxoptVars['hl']
-                
+
+                dims = {}
+                dims['s'] = [int(np.sqrt(Gsi.size[0])) for Gsi in self.cvxoptVars['Gs']]
+                dims['l'] = self.cvxoptVars['Gl'].size[0]
+                dims['q'] = [Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+                G = self.cvxoptVars['Gl']
+                h = self.cvxoptVars['hl']
+
                 # handle the equalities as 2 ineq for smcp
-                if self.cvxoptVars['A'].size[0]>0:
-                        G=cvx.sparse([G,self.cvxoptVars['A']]) 
-                        G=cvx.sparse([G,-self.cvxoptVars['A']])
-                        h=cvx.matrix([h,self.cvxoptVars['b']])
-                        h=cvx.matrix([h,-self.cvxoptVars['b']])
-                        dims['l']+=(2*self.cvxoptVars['A'].size[0])
+                if self.cvxoptVars['A'].size[0] > 0:
+                        G = cvx.sparse([G, self.cvxoptVars['A']])
+                        G = cvx.sparse([G, -self.cvxoptVars['A']])
+                        h = cvx.matrix([h, self.cvxoptVars['b']])
+                        h = cvx.matrix([h, -self.cvxoptVars['b']])
+                        dims['l'] += (2*self.cvxoptVars['A'].size[0])
 
                 for i in range(len(dims['q'])):
-                        G=cvx.sparse([G,self.cvxoptVars['Gq'][i]])
-                        h=cvx.matrix([h,self.cvxoptVars['hq'][i]])
+                        G = cvx.sparse([G, self.cvxoptVars['Gq'][i]])
+                        h = cvx.matrix([h, self.cvxoptVars['hq'][i]])
 
-                                        
+
                 for i in range(len(dims['s'])):
-                        G=cvx.sparse([G,self.cvxoptVars['Gs'][i]])
-                        h=cvx.matrix([h,self.cvxoptVars['hs'][i]])
+                        G = cvx.sparse([G, self.cvxoptVars['Gs'][i]])
+                        h = cvx.matrix([h, self.cvxoptVars['hs'][i]])
 
-                #Remove the lines in A and b corresponding to 0==0        
-                JP=list(set(self.cvxoptVars['A'].I))
-                IP=range(len(JP))
-                VP=[1]*len(JP)
-                
-                idx_0eq0 = [i for i in range(self.cvxoptVars['A'].size[0]) if i not in JP]
-                
+                #Remove the lines in A and b corresponding to 0==0
+                JP = list(set(self.cvxoptVars['A'].I))
+                IP = range(len(JP))
+                VP = [1]*len(JP)
+
                 #is there a constraint of the form 0==a(a not 0) ?
-                if any([b for (i,b) in enumerate(self.cvxoptVars['b']) if i not in JP]):
+                if any([b for (i, b) in enumerate(self.cvxoptVars['b']) if i not in JP]):
                         raise Exception('infeasible constraint of the form 0=a')
-                
-                P=cvx.spmatrix(VP,IP,JP,(len(IP),self.cvxoptVars['A'].size[0]))
-                self.cvxoptVars['A']=P*self.cvxoptVars['A']
-                self.cvxoptVars['b']=P*self.cvxoptVars['b']
+
+                P = cvx.spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
+                self.cvxoptVars['A'] = P*self.cvxoptVars['A']
+                self.cvxoptVars['b'] = P*self.cvxoptVars['b']
                 c = self.cvxoptVars['c']
-                
+
                 #-----------------------------------------------------------#
                 # make A,B,and blockstruct.                                 #
                 # This code is a modification of the conelp function in smcp#
                 #-----------------------------------------------------------#
-                from cvxopt import matrix,sparse,spdiag,spmatrix
-                
+                from cvxopt import sparse, spmatrix
                 Nl = dims['l']
                 Nq = dims['q']
                 Ns = dims['s']
-                if not Nl: Nl = 0
+                if not Nl:
+                        Nl = 0
 
-                nblocks = Nl + len(Nq) + len(Ns)
-
-                P_n = Nl+_bsum(Nq)+_bsum(Ns)
                 P_m = G.size[1]
 
-                P_A = {}
                 P_b = -c
                 P_blockstruct = []
-                if Nl: P_blockstruct.append(-Nl)
-                if extended:
-                        for i in Nq: P_blockstruct.append(i*1j)
-                else:
-                        for i in Nq: P_blockstruct.append(i)
-                for i in Ns: P_blockstruct.append(i)
+                if Nl:
+                        P_blockstruct.append(-Nl)
+                for i in Nq:
+                        P_blockstruct.append(i)
+                for i in Ns:
+                        P_blockstruct.append(i)
 
-                def tril(X): #lower triangular part
-                        I=[]
-                        J=[]
-                        V=[]
-                        for i,j,v in zip(X.I,X.J,X.V):
-                                if j<=i:
-                                        I.append(i)
-                                        J.append(j)
-                                        V.append(v)
-                        return cvx.spmatrix(V,I,J,X.size)
-                                                
-                def ind2sub(n,ind): #transform index in col major order into
-                                    #a pair of matrix indices
-                        I=[]
-                        J=[]
-                        for i in ind:
-                                I.append(i%n)
-                                J.append(i//n)
-                        return I,J
-                        
-                
-                
-                for k in range(P_m+1):
-                        if not k==0:
-                                v = sparse(G[:,k-1])
-                        else:
-                                v = +sparse(h)
-                        B = []
-
-                        ptr = 0
-                        # lin. constraints
-                        if Nl:
-                                u = v[:Nl]
-                                I = u.I
-                                B.append(spmatrix(u.V,I,I,(Nl,Nl)))
-                                ptr += Nl
-
-                        # SOC constraints
-                        for i in xrange(len(Nq)):
-                                nq = Nq[i]
-                                u0 = v[ptr]
-                                u1 = v[ptr+1:ptr+nq]
-                                tmp = spmatrix(u1.V,[nq-1 for j in xrange(len(u1))],u1.I,(nq,nq))
-                                if not u0 == 0.0:
-                                        tmp += spmatrix(u0,xrange(nq),xrange(nq),(nq,nq)) 
-                                B.append(tmp)
-                                ptr += Nq[i]
-
-                        # SDP constraints
-                        for i in xrange(len(Ns)):
-                                ns = Ns[i]
-                                u = v[ptr:ptr+ns**2]
-                                I,J = ind2sub(ns,u.I)
-                                tmp = tril(spmatrix(u.V,I,J,(ns,ns)))
-                                B.append(tmp)
-                                ptr += ns**2
-
-                        #Ai = spdiag(B)
-                        #P_A[:,k] = Ai[:]
-                        P_A[k]=B
-
-                
-                
                 #write data
-                                
                 #add extension
-                if extended:
-                        if filename[-7:]!='.dat-sx':
-                                filename+='.dat-sx'
-                else:
-                        if filename[-6:]!='.dat-s':
-                                filename+='.dat-s'
+                if filename[-6:] != '.dat-s':
+                        filename += '.dat-s'
                 #check lp compatibility
-                if (self.numberQuadConstraints +
-                    self.numberLSEConstraints) > 0:
+                if (self.numberQuadConstraints + self.numberLSEConstraints) > 0:
                         if self.options['convert_quad_to_socp_if_needed']:
-                                pcop=self.copy()
+                                pcop = self.copy()
                                 pcop.convert_quad_to_socp()
-                                pcop._write_sdpa(filename,extended)
+                                pcop._write_sdpa(filename)
                                 return
                         else:
-                                raise QuadAsSocpError('Problem should not have quad or gp constraints. '+
-                                        'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
+                                raise pic.QuadAsSocpError('Problem should not have quad or gp constraints. '+
+                                                'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
                 #open file
-                f = open(filename,'w')
+                f = open(filename, 'w')
                 f.write('"file '+filename+' generated by picos"\n')
-                print 'writing problem in '+filename+'...'
+                print('writing problem in '+filename+'...')
                 f.write(str(self.numberOfVars)+' = number of vars\n')
                 f.write(str(len(P_blockstruct))+' = number of blocs\n')
                 #bloc structure
-                f.write(str(P_blockstruct).replace('[','(').replace(']',')'))
+                f.write(str(P_blockstruct).replace('[', '(').replace(']', ')'))
                 f.write(' = BlocStructure\n')
                 #c vector (objective)
-                f.write(str(list(-P_b)).replace('[','{').replace(']','}'))
+                f.write(str(list(-P_b)).replace('[', '{').replace(']', '}'))
                 f.write('\n')
                 #coefs
                 from itertools import izip
-                for k,Ak in P_A.iteritems():
-                        for b,B in enumerate(Ak):
-                                for i,j,v in izip(B.I,B.J,B.V):
-                                        f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
-                                                  k,b+1,j+1,i+1,-v))
-                
-                #binaries an integers in extended format
-                if extended:
-                        #general integers
-                        f.write("Generals\n")
-                        for name,v in self.variables.iteritems():
-                                if v.vtype=='integer':
-                                        for i in xrange(v.startIndex,v.endIndex):
-                                                f.write(str(i+1)+'\n')
-                                if v.vtype=='semiint' or v.vtype=='semicont':
-                                        raise Exception('semiint and semicont variables not handled by this LP writer')
-                        #binary variables
-                        f.write("Binaries\n")
-                        for name,v in self.variables.iteritems():
-                                if v.vtype=='binary':
-                                        for i in xrange(v.startIndex,v.endIndex):
-                                                f.write(str(i+1)+'\n')
-                
-                print 'done.'
+                for k in range(P_m+1):
+                        if k != 0:
+                                v = sparse(G[:, k-1])
+                        else:
+                                v = +sparse(h)
+
+                        ptr = 0
+                        block = 0
+                        # lin. constraints
+                        if Nl:
+                                u = v[:Nl]
+                                for i, j, value in izip(u.I, u.I, u.V):
+                                        f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(k, block+1, j+1, i+1, -value))
+                                ptr += Nl
+                                block += 1
+
+                        # SOC constraints
+                        for nq in Nq:
+                                u0 = v[ptr]
+                                u1 = v[ptr+1:ptr+nq]
+                                tmp = spmatrix(u1.V, [nq-1 for j in xrange(len(u1))], u1.I, (nq, nq))
+                                if not u0 == 0.0:
+                                        tmp += spmatrix(u0, xrange(nq), xrange(nq), (nq, nq))
+                                for i, j, value in izip(tmp.I, tmp.J, tmp.V):
+                                        f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(k, block+1, j+1, i+1, -value))
+                                ptr += nq
+                                block += 1
+
+                        # SDP constraints
+                        for ns in Ns:
+                                u = v[ptr:ptr+ns**2]
+                                for index_k, index in enumerate(u.I):
+                                        j, i = divmod(index, ns)
+                                        if j <= i:
+                                                f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(k, block+1, j+1, i+1, -u.V[index_k]))
+                                ptr += ns**2
+                                block += 1
+
                 f.close()
+        
+        def _write_cbf(self,filename):
                 
+                #write data
+                #add extension
+                if filename[-4:] != '.cbf':
+                        filename += '.cbf'
+                #check lp compatibility
+                if (self.numberQuadConstraints + self.numberLSEConstraints) > 0:
+                        if self.options['convert_quad_to_socp_if_needed']:
+                                pcop = self.copy()
+                                pcop.convert_quad_to_socp()
+                                pcop._write_cbf(filename)
+                                return
+                        else:
+                                raise pic.QuadAsSocpError('Problem should not have quad or gp constraints. '+
+                                                'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
+                #open file
+                f = open(filename, 'w')
+                f.write('"file '+filename+' generated by picos"\n')
+                print('writing problem in '+filename+'...')
+
+                f.close()
+         
         def convert_quad_to_socp(self):
                 if self.options['verbose']>0:
                         print 'reformulating quads as socp...'

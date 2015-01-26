@@ -64,6 +64,7 @@ __all__=['_retrieve_matrix',
         '_read_sdpa',
         'tracepow',
         'trace',
+        'partial_transpose',
         'ball',
         'simplex',
         'truncated_simplex',
@@ -130,7 +131,7 @@ def sum(lst,it=None,indices=None):
         from .expression import Expression
         from .expression import AffinExp
         if len(lst)==0:
-                return AffinExp({},constant=0,size=(1,1),string='0')
+                return AffinExp({},constant=cvx.matrix([0.],(1,1)),size=(1,1),string='0')
         if not(all([isinstance(exi,Expression) for exi in lst])):
                 import __builtin__
                 return __builtin__.sum(lst)
@@ -199,8 +200,7 @@ def geomean(exp):
         return GeoMeanExp(exp)
         
 def norm(exp,num=2,denom=1):
-        """returns a :class:`NormP_Exp <picos.NormP_Exp>` object representing the (generalized-) p-norm of the entries
-        of ``exp[:]``.
+        """returns a :class:`NormP_Exp <picos.NormP_Exp>` object representing the (generalized-) p-norm of the entries of ``exp[:]``.
         This can be used to enter constraints of the form :math:`\Vert x \Vert_p \leq t` with :math:`p\geq1`.
         Generalized norms are also defined for :math:`p<1`, by using the usual formula
         :math:`\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
@@ -220,18 +220,19 @@ def norm(exp,num=2,denom=1):
         For the case of :math:`(p,q)`-norms, ``p`` and ``q`` must be specified by a tuple of floats
         in the second argument (rational approximations will be used), and the third argument will
         be ignored.
-                        
+        
         **Example:**
         
         >>> import picos as pic
-        >>> prob = pic.Problem()
-        >>> x = prob.add_variable('x',1)
-        >>> y = prob.add_variable('y',3)
+        >>> P = pic.Problem()
+        >>> x = P.add_variable('x',1)
+        >>> y = P.add_variable('y',3)
         >>> pic.norm(y,7,3) < x
         # p-norm ineq : norm_7/3( y)<x#
         >>> pic.norm(y,-0.4) > x
         # generalized p-norm ineq : norm_-2/5( y)>x#
         >>> X = P.add_variable('X',(3,2))
+        >>> pic.norm(X,(1,2)) < 1
         # pq-norm ineq : norm_1,2( X)<1.0#
         >>> pic.norm(X,('inf',1)) < 1
         # pq-norm ineq : norm_inf,1( X)<1.0#
@@ -315,6 +316,48 @@ def trace(exp):
         trace of a square AffinExp
         """
         return tracepow(exp)
+
+def partial_transpose(exp,dim = None):
+        r"""Partial transpose of the Affine Expression. If ``exp`` is matrix
+        :class:`AffinExp <picos.AffinExp>` partitionned
+        in subblocks :math:`A_{ij}`, the partial transpose of ``exp`` is
+        a block matrix whose (i,j)-block equals :math:`A_{ij}^T`
+        (as opposed to :math:`A_{ji}^T` in the case of a regular transposition).
+        
+        The optional parameter ``dim`` is a tuple of int can be used to specify
+        the dimension of the subblocks (all subblocks must have the same size,
+        so ``exp.size[0]`` must be divisible by ``dim[0]``
+        and ``exp.size[1]`` must be divisible by ``dim[1]``).
+        
+        The default value ``dim=None`` automatically computes the size of the subblocks,
+        assuming that ``exp`` is a :math:`n^2 \times n^2`-square matrix
+        with blocks of size :math:`n \times n`.
+        The partial transpose of a :math:`n^2 \times n^2` -matrix can also
+        be constructed with the property :attr:`Tx <picos.Expression.Tx>` of an affine expression.
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> import cvxopt as cvx
+        >>> P = pic.Problem()
+        >>> X = P.add_variable('X',(4,4))
+        >>> X.value = cvx.matrix(range(16),(4,4))
+        >>> print X #doctest: +NORMALIZE_WHITESPACE
+        [ 0.00e+00  4.00e+00  8.00e+00  1.20e+01]
+        [ 1.00e+00  5.00e+00  9.00e+00  1.30e+01]
+        [ 2.00e+00  6.00e+00  1.00e+01  1.40e+01]
+        [ 3.00e+00  7.00e+00  1.10e+01  1.50e+01]
+        >>> print X.Tx #standard partial transpose (with respect to the 2x2 blocks) #doctest: +NORMALIZE_WHITESPACE
+        [ 0.00e+00  1.00e+00  8.00e+00  9.00e+00]
+        [ 4.00e+00  5.00e+00  1.20e+01  1.30e+01]
+        [ 2.00e+00  3.00e+00  1.00e+01  1.10e+01]
+        [ 6.00e+00  7.00e+00  1.40e+01  1.50e+01]
+        >>> print pic.partial_transpose(X,(2,1)) #(and now with respect to blocks of size 2x1) #doctest: +NORMALIZE_WHITESPACE
+        [ 0.00e+00  1.00e+00  4.00e+00  5.00e+00  8.00e+00  9.00e+00  1.20e+01 ... ]
+        [ 2.00e+00  3.00e+00  6.00e+00  7.00e+00  1.00e+01  1.10e+01  1.40e+01 ... ]
+
+        """
+        return exp.partial_transpose(dim)
         
 def detrootn(exp):
         """returns a :class:`DetRootN_Exp <picos.DetRootN_Exp>` object representing the determinant of the
@@ -351,7 +394,8 @@ def ball(r,p=2):
         >>> import picos as pic
         >>> P = pic.Problem()
         >>> x = P.add_variable('x', 3)
-        # p-norm ineq : norm_3( x)<1.0#
+        >>> x << pic.ball(2,3)  #doctest: +NORMALIZE_WHITESPACE
+        # p-norm ineq : norm_3( x)<2.0#
         >>> x << pic.ball(1,0.5)
         # generalized p-norm ineq : norm_1/2( x)>1.0#
           
@@ -384,7 +428,7 @@ def truncated_simplex(gamma = 1, sym = False):
         >>> x << pic.truncated_simplex(2)
         # (7x1)-affine constraint: x in truncated simplex of radius 2 #
         >>> x << pic.truncated_simplex(2,sym=True)
-        # symmetrized truncated simplex : ||x||_(infty,1) <= (1,2)#
+        # (10x1)-affine constraint : ||x||_{infty;1} <= {1;2}#
         
         """
         from .expression import Truncated_Simplex

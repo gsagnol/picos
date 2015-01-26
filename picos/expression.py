@@ -621,29 +621,30 @@ class AffinExp(Expression):
         def inplace_partial_transpose(self, dim=None):
                 if isinstance(self,Variable):
                         raise Exception('partial_transpose should not be called on a Variable object')
-                bsize=self.size[0]
-                if bsize != self.size[1]:
-                        raise ValueError('partial_transpose can only be applied to square matrices')
+                size=self.size
                 
                 if dim is None:
-                        subsize = int((bsize)**0.5)
-                        if subsize != (bsize)**0.5:
-                                raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices without specifying the dimensions of the subsystems')
+                        subsize = int((size[0])**0.5)
+                        if subsize != (size[0])**0.5 or size[0] != size[1]:
+                                raise ValueError('partial_transpose can only be applied to n**2 x n**2 matrices when the dimensions of subsystems are not defined')
                         dim = [subsize, subsize]
-                if dim[0]*dim[1] != bsize:
-                        raise ValueError('invalid dimensions')
+                if size[0] % dim[0] != 0:
+                        raise ValueError('dimension of sub-blocks must be dividers of the dimension of the expression to which partial_transpose is applied.')
+                if size[1] % dim[1] != 0:
+                        raise ValueError('dimension of sub-blocks must be dividers of the dimension of the expression to which partial_transpose is applied.')
                 
+                newsize = ( (size[0]*dim[1])//dim[0],(size[1]*dim[0])//dim[1] )
                 for k in self.factors:
                         I0 = []
                         J=self.factors[k].J
                         V=self.factors[k].V
                         for i in self.factors[k].I:
-                            column, row = divmod(i, bsize)
-                            row_block, lrow = divmod(row, dim[1])
+                            column, row = divmod(i, size[0])
+                            row_block, lrow = divmod(row, dim[0])
                             column_block, lcolumn = divmod(column, dim[1])
                             row = row_block*dim[1] + lcolumn
-                            column = column_block*dim[1] + lrow
-                            I0.append(column*bsize + row)
+                            column = column_block*dim[0] + lrow
+                            I0.append(column*newsize[0] + row)
                         self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
                 if not (self.constant is None):
                         spconstant=cvx.sparse(self.constant)
@@ -651,14 +652,14 @@ class AffinExp(Expression):
                         V=spconstant.V
                         I0 = []
                         for i in spconstant.I:
-                            column, row = divmod(i, bsize)
-                            row_block, lrow = divmod(row, dim[1])
+                            column, row = divmod(i, size[0])
+                            row_block, lrow = divmod(row, dim[0])
                             column_block, lcolumn = divmod(column, dim[1])
                             row = row_block*dim[1] + lcolumn
-                            column = column_block*dim[1] + lrow
-                            I0.append(column*bsize + row)
+                            column = column_block*dim[0] + lrow
+                            I0.append(column*newsize[0] + row)
                         self.constant = cvx.spmatrix(V,I0,J,spconstant.size)
-                self._size=(self.size[1],self.size[0])
+                self._size=newsize
                 if ( ('*' in self.affstring()) or ('/' in self.affstring())
                         or ('+' in self.affstring()) or ('-' in self.affstring()) ):
                         self.string='( '+self.string+' ).Tx'
@@ -678,7 +679,7 @@ class AffinExp(Expression):
                 raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
         
         Tx = property(partial_transpose,setTx,delTx,"Partial transposition")
-        """Partial transposition"""
+        """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n)"""
         
         def hadamard(self,fact):
                 """hadamard (elementwise) product"""
@@ -3209,7 +3210,7 @@ class Truncated_Simplex(Set):
                                         Ptmp.add_constraint( (1|v) < self.radius)
                                         if self.radius > 1:
                                                 Ptmp.add_constraint( v < 1)
-                                        constring = '||'+exp.string+'||_(infty,1) <= (1,'+str(self.radius)+')'
+                                        constring = '||'+exp.string+'||_{infty;1} <= {1;'+str(self.radius)+'}'
                                         cons = Sym_Trunc_Simplex_Constraint(exp,self.radius,Ptmp,constring)
                         else:
                                 if self.nonneg:
