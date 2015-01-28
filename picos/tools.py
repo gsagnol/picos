@@ -58,6 +58,9 @@ __all__=['_retrieve_matrix',
         'NonConvexError',
         'DualizationError',
         'geomean',
+        '_break_cols',
+        '_break_rows',
+        '_block_idx',
         '_flatten',
         '_remove_in_lil',
         'norm',
@@ -176,6 +179,53 @@ def _bsum(lst):
         import __builtin__
         return __builtin__.sum(lst)
         
+def _break_cols(mat,sizes):
+        n = len(sizes)
+        I,J,V = [],[],[]
+        for i in range(n):
+                I.append([])
+                J.append([])
+                V.append([])
+        cumsz = np.cumsum(sizes)
+        import bisect
+        for i,j,v in zip(mat.I,mat.J,mat.V):
+                block = bisect.bisect(cumsz,j)
+                I[block].append(i)
+                V[block].append(v)
+                if block==0:
+                        J[block].append(j)
+                else:
+                        J[block].append(j-cumsz[block-1])
+        return [cvx.spmatrix(V[k],I[k],J[k],(mat.size[0],sz)) for k,sz in enumerate(sizes)]
+
+def _break_rows(mat,sizes):
+        n = len(sizes)
+        I,J,V = [],[],[]
+        for i in range(n):
+                I.append([])
+                J.append([])
+                V.append([])
+        cumsz = np.cumsum(sizes)
+        import bisect
+        for i,j,v in zip(mat.I,mat.J,mat.V):
+                block = bisect.bisect(cumsz,i)
+                J[block].append(j)
+                V[block].append(v)
+                if block==0:
+                        I[block].append(i)
+                else:
+                        I[block].append(i-cumsz[block-1])
+        return [cvx.spmatrix(V[k],I[k],J[k],(sz,mat.size[1])) for k,sz in enumerate(sizes)]
+
+def _block_idx(i,sizes):
+        # if there are blocks of sizes n1,...,nk and i is
+        # the index of an element of the big vectorized variable,
+        # returns the block of i and its index inside the sub-block.
+        cumsz = np.cumsum(sizes)
+        import bisect
+        block = bisect.bisect(cumsz,i)
+        return block, (i if block==0 else i-cumsz[block-1])
+
 def geomean(exp):
         """returns a :class:`GeoMeanExp <picos.GeoMeanExp>` object representing the geometric mean of the entries of ``exp[:]``.
         This can be used to enter inequalities of the form ``t <= geomean(x)``.

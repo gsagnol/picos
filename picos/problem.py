@@ -3066,7 +3066,6 @@ class Problem(object):
                         indsdpvar = [i for i,cons in
                                  enumerate([cs for cs in self.constraints if cs.typeOfConstraint.startswith('sdp')])
                                  if cons.semidefVar]
-                        import pdb;pdb.set_trace()
                         if not(idxsdpvars):
                                 reset_hbv_True = True
                                 self.options._set('handleBarVars',False)
@@ -6139,10 +6138,9 @@ class Problem(object):
                         raise Exception('general-obj are not supported')       
                 
                 #automatic extension recognition
-                if not(filename[-4:] in ('.mps','.opf') or
+                if not(filename[-4:] in ('.mps','.opf','.cbf') or
                        filename[-3:]=='.lp' or
-                       filename[-6:]=='.dat-s' or
-                       filename[-7:]=='.dat-sx'):
+                       filename[-6:]=='.dat-s'):
                         if writer in ('mosek','gurobi'):
                                 if (self.numberSDPConstraints >0):
                                         raise Exception('no sdp with mosek/gurobi')
@@ -6169,52 +6167,13 @@ class Problem(object):
                                 if (self.numberConeConstraints + 
                                     self.numberSDPConstraints) ==0:
                                         filename+='.lp'
-                                else:
+                                elif self.numberConeConstraints == 0:
                                         filename+='.dat-s'
+                                else:
+                                        filename+='.cbf'
                         else:
                                 raise Exception('unexpected writer')
 
-                #writer selection [obsolete, since we now give picos as default]
-                if writer is None:
-                        avs=available_solvers()
-                        if filename[-4:]=='.mps':
-                                if 'mosek' in avs:
-                                        writer='mosek'
-                                elif 'gurobi' in avs:
-                                        writer='gurobi'
-                                else:
-                                        raise Exception('no mps writer available')
-                        elif filename[-4:]=='.opf':
-                                if 'mosek' in avs:
-                                        writer='mosek'
-                                else:
-                                        raise Exception('no opf writer available')
-                        elif filename[-3:]=='.lp':
-                                if not(self.cplex_Instance is None):
-                                        writer='cplex'
-                                elif not(self.msk_task is None) and (self.numberConeConstraints + 
-                                                                self.numberQuadConstraints) ==0:
-                                        writer='mosek'
-                                elif not(self.gurobi_Instance is None) and (self.numberConeConstraints + 
-                                                                self.numberQuadConstraints) ==0:
-                                        writer='gurobi'
-                                elif 'cplex' in avs:
-                                        writer='cplex'
-                                elif 'mosek' in avs and (self.numberConeConstraints + 
-                                                                self.numberQuadConstraints) ==0:
-                                        writer='mosek'
-                                elif 'gurobi' in avs and (self.numberConeConstraints + 
-                                                                self.numberQuadConstraints) ==0:
-                                        writer='gurobi'
-                                else:
-                                        writer='picos'
-                        elif filename[-6:]=='.dat-s':
-                                writer='picos'
-                        elif filename[-7:]=='.dat-sx':
-                                writer='picos'
-                        else:
-                                raise Exception('unexpected file extension')
-                
                   
                 if writer == 'cplex':
                         if self.cplex_Instance is None:
@@ -6233,8 +6192,8 @@ class Problem(object):
                                 self._write_lp(filename)
                         elif filename[-6:]=='.dat-s':
                                 self._write_sdpa(filename)
-                        elif filename[-7:]=='.dat-sx':
-                                self._write_sdpa(filename,True)
+                        elif filename[-4:]=='.cbf':
+                                self._write_cbf(filename)
                         else:
                                 raise Exception('unexpected file extension')
                 else:
@@ -6571,7 +6530,10 @@ class Problem(object):
 
                 f.close()
         
-        def _write_cbf(self,filename):
+        def _write_cbf(self,filename,uptri = False):
+                """write problem data in a cbf file
+                ``uptri`` specifies whether upper triangular elements of symmetric matrices are specified
+                """
                 
                 #write data
                 #add extension
@@ -6589,7 +6551,7 @@ class Problem(object):
                                                 'Try to convert the problem to an SOCP with the function convert_quad_to_socp()')
 
 
-                #parse variables #TODO HERE
+                #parse variables
                 NUMVAR_SCALAR = int(_bsum([(var.endIndex-var.startIndex)
                                         for var in self.variables.values()
                                         if not(var.semiDef)]))
@@ -6625,14 +6587,14 @@ class Problem(object):
                 
                 #open file
                 f = open(filename, 'w')
-                f.write('"file '+filename+' generated by picos"\n')
+                f.write('#file '+filename+' generated by picos\n')
                 print('writing problem in '+filename+'...')
 
                 f.write("VER\n")
                 f.write("1\n\n")
                 
                 f.write("OBJSENSE\n")
-                if self[0] == 'max':
+                if self.objective[0] == 'max':
                         f.write("MAX\n\n")
                 else:
                         f.write("MIN\n\n")
@@ -6647,18 +6609,38 @@ class Problem(object):
                                 f.write(str(ni)+"\n")
                         f.write("\n")
                 
+                #bounds
                 cones = []
+                conecons = []
+                Acoord = []
+                Bcoord = []
+                iaff = 0
+                offset = 0
                 for si,ei,v in indices:
                         if v.semiDef:
-                                pass
+                                offset += (ei-si)
                         else:
-                                if (v._bndtext).endswith('nonnegative'):
+                                if 'nonnegative' in (v._bndtext):
                                         cones.append(('L+',ei-si))
-                                elif (v._bndtext).endswith('nonnegative'):
+                                elif 'nonpositive' in (v._bndtext):
                                         cones.append(('L-',ei-si))
                                 else:
                                         cones.append(('F',ei-si))
-                                
+                                if 'nonnegative' not in (v._bndtext):
+                                        for j,(l,u) in v.bnd.iteritems():
+                                                if l is not None:
+                                                        Acoord.append((iaff,si+j-offset,1.))
+                                                        Bcoord.append((iaff,-l))
+                                                        iaff+=1
+                                if 'nonpositive' not in (v._bndtext):
+                                        for j,(l,u) in v.bnd.iteritems():
+                                                if u is not None:
+                                                        Acoord.append((iaff,si+j-offset,-1.))
+                                                        Bcoord.append((iaff,u))
+                                                        iaff+=1
+                if iaff:
+                        conecons.append(('L+',iaff))
+                
                 f.write("VAR\n")
                 f.write(str(NUMVAR_SCALAR)+' '+str(len(cones))+'\n')
                 for tp,n in cones:
@@ -6674,23 +6656,59 @@ class Problem(object):
                                 f.write(str(i)+"\n")        
                         f.write("\n")
                 
-                #TODO var BOUNDS !
                 
                 #constraints
-                conecons = []
-                iaff = 0
+                psdcons = []
+                isdp = 0
                 Fcoord = []
-                Acoord = []
-                Bcoord = []
-                for cons in self.constraints:
-                        if cons.typeOfConstraint.startswith('lin') or cons.typeOfConstraint[2:]=='cone':
+                Hcoord = []
+                Dcoord = []
+                ObjAcoord = []
+                ObjBcoord = []
+                ObjFcoord = []
+                #dummy constraint for the objective
+                if self.objective[1] is None:
+                        dummy_cons = (AffinExp() > 0)
+                else:
+                        dummy_cons = (self.objective[1] > 0)
+                dummy_cons.typeOfConstraint = 'lin0'
+                
+                for cons in ([dummy_cons] + self.constraints):
+                        if cons.typeOfConstraint.startswith('sdp'):
+                                if cons.semidefVar:
+                                        continue
+                        if (cons.typeOfConstraint.startswith('lin') 
+                            or cons.typeOfConstraint[2:]=='cone'
+                            or cons.typeOfConstraint.startswith('sdp')) :
                                 #get sparse indices
                                 if cons.typeOfConstraint.startswith('lin'):
                                         expcone = cons.Exp1-cons.Exp2
+                                        if cons.typeOfConstraint[3] == '=':
+                                                conetype = 'L='
+                                        elif cons.typeOfConstraint[3] == '<':
+                                                conetype = 'L-'
+                                        elif cons.typeOfConstraint[3] == '>':
+                                                conetype = 'L+'
+                                        elif cons.typeOfConstraint[3] == '0':
+                                                conetype = '0'#dummy type for the objective function
+                                        else:
+                                                raise Exception('unexpected typeOfConstraint')
                                 elif cons.typeOfConstraint == 'SOcone':
                                         expcone = ((cons.Exp2) // (cons.Exp1[:]))
+                                        conetype = 'Q'
                                 elif cons.typeOfConstraint == 'RScone':
-                                        expcone = ((cons.Exp2) // (cons.Exp3) // (2*cons.Exp1[:]))
+                                        expcone = ((cons.Exp2) // (0.5*cons.Exp3) // (cons.Exp1[:]))
+                                        conetype = 'QR'
+                                elif cons.typeOfConstraint.startswith('sdp'):
+                                        if cons.typeOfConstraint[3] == '<':
+                                                conetype = None
+                                                expcone = cons.Exp2-cons.Exp1
+                                        elif cons.typeOfConstraint[3] == '>':
+                                                expcone = cons.Exp1-cons.Exp2
+                                                conetype = None
+                                        else:
+                                                raise Exception('unexpected typeOfConstraint')
+
                                 else:
                                         raise Exception('unexpected typeOfConstraint')
                                 ijv=[]
@@ -6710,41 +6728,465 @@ class Problem(object):
                                                 lasti=i
                                                 itojv[i]=[(j,v)]
                                 
-                                dim = cons.Exp1.size[0]*cons.Exp1.size[1]
-                                if cons.typeOfConstraint[3] == '=':
-                                        conetype = 'L='
-                                elif cons.typeOfConstraint[3] == '<':
-                                        conetype = 'L-'
-                                elif cons.typeOfConstraint[3] == '>':
-                                        conetype = 'L+'
+                                if conetype:
+                                        if conetype != '0':
+                                                dim = expcone.size[0]*expcone.size[1]
+                                                conecons.append((conetype,dim))
                                 else:
-                                        raise Exception('unexpected typeOfConstraint')
-                                conecons.append((conetype,dim))
+                                        dim = expcone.size[0]
+                                        psdcons.append(dim)
+                                        
+                                if conetype:
+                                        for i,jv in itojv.iteritems():
+                                                J=[jvk[0] for jvk in jv]
+                                                V=[jvk[1] for jvk in jv]
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                                for j,v in zip(J,V):
+                                                        if conetype != '0':
+                                                                Acoord.append((iaff+i,j,v))
+                                                        else:
+                                                                ObjAcoord.append((j,v))
+                                                for k,mat in enumerate(mats):
+                                                        for row,col,v in zip(mat.I,mat.J,mat.V):
+                                                                if conetype != '0':
+                                                                        Fcoord.append((iaff + i,k,row,col,v))
+                                                                else:
+                                                                        ObjFcoord.append((k,row,col,v))
+                                                                if uptri and row!=col:
+                                                                        if conetype != '0':
+                                                                                Fcoord.append((iaff + i,k,col,row,v))
+                                                                        else:
+                                                                                ObjFcoord.append((k,col,row,v))
+                                        constant = expcone.constant
+                                        if not(constant is None):
+                                                constant = cvx.sparse(constant)
+                                                for i,v in zip(constant.I,constant.V):
+                                                        if conetype != '0':
+                                                                Bcoord.append((iaff+i,v))
+                                                        else:
+                                                                ObjBcoord.append(v)
+                                else:
+                                        for i,jv in itojv.iteritems():
+                                                col,row = divmod(i,dim)
+                                                if not(uptri) and row < col:
+                                                        continue
+                                                J=[jvk[0] for jvk in jv]
+                                                V=[jvk[1] for jvk in jv]
+                                                J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
+                                                if any([bool(m) for m in mats]):
+                                                        raise Exception('SDP cons should not depend on PSD var')
+                                                for j,v in zip(J,V):
+                                                        Hcoord.append((isdp,j,row,col,v))
+                                        
+                                        constant = expcone.constant
+                                        if not(constant is None):
+                                                constant = cvx.sparse(constant)
+                                                for i,v in zip(constant.I,constant.V):
+                                                        col,row = divmod(i,dim)
+                                                        if row < col:
+                                                                continue
+                                                        Dcoord.append((isdp,row,col,v))
+                                        
+                                        
+                                if conetype:
+                                        if conetype != '0':
+                                                iaff+= dim
+                                else:
+                                        isdp+=1
+                        else:
+                                raise Exception('unexpected typeOfConstraint')
+                
+                if iaff>0:
+                        f.write("CON\n")
+                        f.write(str(iaff)+' '+str(len(conecons))+'\n')
+                        for tp,n in conecons:
+                                f.write(tp+' '+str(n))
+                                f.write('\n')
                                 
-                                for i,jv in itojv.iteritems():
-                                        J=[jvk[0] for jvk in jv]
-                                        V=[jvk[1] for jvk in jv]
-                                        J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
-                                        for j,v in zip(J,V):
-                                                Acoord.append((iaff+i,j,v))
-                                        for k,mat in enumerate(mats):
-                                                for row,col,v in zip(mat.I,mat.J,mat.V):
-                                                        Fcoord.append((iaff + i,k,row,col,v))
-                                                        #if row !=col:
-                                                        #        Fcoord.append((iaff + i,k,col,row,v))
-                                constant = expcone.constant
-                                if not(constant is None):
-                                        constant = cvx.sparse(constant)
-                                        for i,v in zip(constant.I,constant.V):
-                                                Bcoord.append((iaff+i,v))
-                                iaff += dim
-                        elif cons.typeOfConstraint.startswith('sdp'):
-                                pass#TODO here AND put conetype in just one loop above and Q,Q+
-                                
-                                
+                        f.write('\n')
+                
+                if isdp > 0:
+                        f.write("PSDCON\n")
+                        f.write(str(isdp)+'\n')
+                        for n in psdcons:
+                                f.write(str(n)+'\n')
+                        f.write('\n')
+                
+                if ObjFcoord:
+                        f.write("OBJFCOORD\n")
+                        f.write(str(len(ObjFcoord))+'\n')
+                        for (k,row,col,v) in ObjFcoord:
+                                f.write('{0} {1} {2} {3}\n'.format(k,row,col,v))
+                        f.write('\n')
+                
+                if ObjAcoord:
+                        f.write("OBJACOORD\n")
+                        f.write(str(len(ObjAcoord))+'\n')
+                        for (j,v) in ObjAcoord:
+                                f.write('{0} {1}\n'.format(j,v))
+                        f.write('\n')
+                
+                if ObjBcoord:
+                        f.write("OBJBCOORD\n")
+                        v = ObjBcoord[0]
+                        f.write('{0}\n'.format(v))
+                        f.write('\n')
 
+                if Fcoord:
+                        f.write("FCOORD\n")
+                        f.write(str(len(Fcoord))+'\n')
+                        for (i,k,row,col,v) in Fcoord:
+                                f.write('{0} {1} {2} {3} {4}\n'.format(i,k,row,col,v))
+                        f.write('\n')
+                
+                if Acoord:
+                        f.write("ACOORD\n")
+                        f.write(str(len(Acoord))+'\n')
+                        for (i,j,v) in Acoord:
+                                f.write('{0} {1} {2}\n'.format(i,j,v))
+                        f.write('\n')
+                
+                if Bcoord:
+                        f.write("BCOORD\n")
+                        f.write(str(len(Bcoord))+'\n')
+                        for (i,v) in Bcoord:
+                                f.write('{0} {1}\n'.format(i,v))
+                        f.write('\n')
+
+                if Hcoord:
+                        f.write("HCOORD\n")
+                        f.write(str(len(Hcoord))+'\n')
+                        for (i,j,row,col,v) in Hcoord:
+                                f.write('{0} {1} {2} {3} {4}\n'.format(i,j,row,col,v))
+                        f.write('\n')
+                
+                if Dcoord:
+                        f.write("DCOORD\n")
+                        f.write(str(len(Dcoord))+'\n')
+                        for (i,row,col,v) in Dcoord:
+                                f.write('{0} {1} {2} {3}\n'.format(i,row,col,v))
+                        f.write('\n')
+                        
+                print 'done.'
                 f.close()
-         
+
+        def _read_cbf(self,filename):
+                f = open(filename, 'r')
+                print('importing problem data from '+filename+'...')
+                self.__init__()
+                
+                line = f.readline()
+                while not line.startswith('VER'):
+                        line = f.readline()
+                
+                ver = int(f.readline())
+                if ver != 1:
+                        print 'WARNING, file has version > 1'
+                
+
+                structure_keywords = ['OBJSENSE','PSDVAR','VAR','INT','PSDCON','CON']
+                data_keywords = ['OBJFCOORD','OBJACOORD','OBJBCOORD',
+                                 'FCOORD','ACOORD','BCOORD',
+                                 'HCOORD','DCOORD']
+                
+                structure_mode = True #still parsing structure blocks
+                seen_blocks = []
+                parsed_blocks = {}
+                while True:
+                        line = f.readline()
+                        if not line:
+                                break
+                        lsplit = line.split()
+                        if lsplit and lsplit[0] in structure_keywords:
+                                if lsplit[0] == 'INT' and ('VAR' not in seen_blocks):
+                                        raise Exception('INT BLOCK before VAR BLOCK')
+                                if lsplit[0] == 'CON' and not('VAR' in seen_blocks or 'PSDVAR' in seen_blocks):
+                                        raise Exception('CON BLOCK before VAR/PSDVAR BLOCK')
+                                if lsplit[0] == 'PSDCON' and not('VAR' in seen_blocks or 'PSDVAR' in seen_blocks):
+                                        raise Exception('PSDCON BLOCK before VAR/PSDVAR BLOCK')
+                                if lsplit[0] == 'VAR' and ('CON' in seen_blocks or 'PSDCON' in seen_blocks):
+                                        raise Exception('VAR BLOCK after CON/PSDCON BLOCK')
+                                if lsplit[0] == 'PSDVAR' and ('CON' in seen_blocks or 'PSDCON' in seen_blocks):
+                                        raise Exception('PSDVAR BLOCK after CON/PSDCON BLOCK')
+                                if structure_mode:
+                                        parsed_blocks[lsplit[0]] = self._read_cbf_block(lsplit[0],f,parsed_blocks)
+                                        seen_blocks.append(lsplit[0])
+                                else:
+                                        raise Exception('Structure keyword after first data item')
+                        if lsplit and lsplit[0] in data_keywords:
+                                if 'OBJSENSE' not in seen_blocks:
+                                        raise Exception('missing OBJSENSE block')
+                                if not('VAR' in seen_blocks or 'PSDVAR' in seen_blocks):
+                                        raise Exception('missing VAR/PSDVAR block')
+                                if lsplit[0] in ('OBJFCOORD','FCOORD') and not('PSDVAR' in seen_blocks):
+                                        raise Exception('missing PSDVAR block')
+                                if lsplit[0] in ('OBJACOORD','ACOORD','HCOORD') and not('VAR' in seen_blocks):
+                                        raise Exception('missing VAR block')        
+                                if lsplit[0] in ('DCOORD','HCOORD') and not('PSDCON' in seen_blocks):
+                                        raise Exception('missing PSDCON block')
+                                structure_mode = False
+                                parsed_blocks[lsplit[0]] = self._read_cbf_block(lsplit[0],f,parsed_blocks)
+                                seen_blocks.append(lsplit[0])
+                
+                f.close()
+                #variables
+                if 'VAR' in parsed_blocks:
+                        Nvars,varsz,x = parsed_blocks['VAR']
+                
+                if 'PSDVAR' in parsed_blocks:
+                        psdsz,X = parsed_blocks['PSDVAR']
+                
+                #objective
+                bobj = parsed_blocks.get('OBJBCOORD',0)
+                bobj = new_param('bobj',bobj)
+                obj = bobj
+                
+                aobj = {}
+                if 'OBJACOORD' in parsed_blocks:
+                        obj_vecs = _break_cols(parsed_blocks['OBJACOORD'],varsz)
+                        aobj = {}
+                        for k,v in enumerate(obj_vecs):
+                                if v:
+                                        aobj[k] = new_param('c['+str(k)+']',v)
+                                        obj+= aobj[k]*x[k]
+                
+                Fobj = {}
+                if 'OBJFCOORD' in parsed_blocks:
+                        Fbl = parsed_blocks['OBJFCOORD']
+                        for i,Fi in enumerate(Fbl):
+                                if Fi:
+                                      Fobj[i] = new_param('F['+str(i)+']',Fi)
+                                      obj+= (Fobj[i] | X[i])
+                
+                self.set_objective(self.objective[0],obj)
+                
+                #cone constraints
+                bb={}
+                AA={}
+                FF={}
+                if 'CON' in parsed_blocks:
+                        Ncons,structcons = parsed_blocks['CON']
+                        szcons = [s for tp,s in structcons]
+                        
+                        b = parsed_blocks.get('BCOORD',cvx.spmatrix([],[],[],(Ncons,1)))
+                        bvecs = _break_rows(b,szcons)
+                        consexp = []
+                        for i,bi in enumerate(bvecs):
+                                bb[i] = new_param('b['+str(i)+']',bi)
+                                consexp.append(bb[i])
+                
+                        A = parsed_blocks.get('ACOORD',cvx.spmatrix([],[],[],(Ncons,Nvars)))
+                        Ablc = _break_rows(A,szcons)
+                        for i,Ai in enumerate(Ablc):
+                                Aiblocs = _break_cols(Ai,varsz)
+                                for j,Aij in enumerate(Aiblocs):
+                                        if Aij:
+                                                AA[i,j] = new_param('A['+str((i,j))+']',Aij)
+                                                consexp[i] += AA[i,j] * x[j]
+                        
+                        Fcoords = parsed_blocks.get('FCOORD',{})
+                        for k,mats in Fcoords.iteritems():
+                                i,row = _block_idx(k,szcons)
+                                row_exp = AffinExp()
+                                for j,mat in enumerate(mats):
+                                        if mat:
+                                                FF[i,j,row] = new_param('F['+str((i,j,row))+']',mat)
+                                                row_exp+= (FF[i,j,row] | X[j])
+                                
+                                consexp[i] += (('e_'+str(row)+'('+str(szcons[i])+',1)') * row_exp)
+                        
+                        for i,(tp,sz) in enumerate(structcons):
+                                if tp == 'F':
+                                        continue
+                                elif tp == 'L-':
+                                        self.add_constraint(consexp[i] < 0)
+                                elif tp == 'L+':
+                                        self.add_constraint(consexp[i] > 0)
+                                elif tp == 'L=':
+                                        self.add_constraint(consexp[i] == 0)
+                                elif tp == 'Q':
+                                        self.add_constraint(abs(consexp[i][1:])<consexp[i][0])
+                                elif tp == 'QR':
+                                        self.add_constraint(abs(consexp[i][2:])**2<2*consexp[i][0]*consexp[i][1])
+                                else:
+                                        raise Exception('unexpected cone type')
+                
+                DD = {}
+                HH = {}
+                if 'PSDCON' in parsed_blocks:
+                        Dblocks = parsed_blocks.get('DCOORD',
+                                                    [cvx.spmatrix([],[],[],(ni,ni)) for ni in parsed_blocks['PSDCON']])
+                        Hblocks = parsed_blocks.get('HCOORD',{})
+                        
+                        consexp = []
+                        for i,Di in enumerate(Dblocks):
+                                DD[i] = new_param('D['+str(i)+']',Di)
+                                consexp.append(DD[i])
+                                
+                        for j,Hj in Hblocks.iteritems():
+                                i,col = _block_idx(j,varsz)
+                                for k,Hij in enumerate(Hj):
+                                        if Hij:
+                                                HH[k,i,col] = new_param('H['+str((k,i,col))+']',Hij)
+                                                consexp[k] += HH[k,i,col]*x[i][col]
+                        
+                        for exp in consexp:
+                                self.add_constraint(exp >> 0)
+                                
+                        
+                print 'done.'
+                #TODO here INTS ???
+                return
+
+        def _read_cbf_block(self,blocname,f,parsed_blocks):
+                if blocname=='OBJSENSE':
+                        objsense = f.readline().split()[0].lower()
+                        self.objective = (objsense,None)
+                        return None
+                elif blocname=='PSDVAR':
+                        n = int(f.readline())
+                        vardims = []
+                        XX = []
+                        for i in range(n):
+                                ni = int(f.readline())
+                                vardims.append(ni)
+                                Xi = self.add_variable('X['+str(i)+']',(ni,ni),'symmetric')
+                                XX.append(Xi)
+                                self.add_constraint(Xi >> 0)
+                        return vardims,XX
+                elif blocname=='VAR':
+                        Nscalar,ncones = [int(fi) for fi in f.readline().split()]
+                        tot_dim = 0
+                        var_structure = []
+                        xx = []
+                        for i in range(ncones):
+                                lsplit = f.readline().split()
+                                tp,dim = lsplit[0],int(lsplit[1])
+                                tot_dim += dim
+                                var_structure.append(dim)
+                                if tp=='F':
+                                        xi = self.add_variable('x['+str(i)+']',dim)
+                                elif tp=='L+':
+                                        xi = self.add_variable('x['+str(i)+']',dim,lower = 0)
+                                elif tp=='L-':
+                                        xi = self.add_variable('x['+str(i)+']',dim,upper = 0)
+                                elif tp=='L=':
+                                        xi = self.add_variable('x['+str(i)+']',dim,lower=0,upper = 0)
+                                elif tp=='Q':
+                                        xi = self.add_variable('x['+str(i)+']',dim)
+                                        self.add_constraint(abs(xi[1:]) < xi[0])
+                                elif tp=='QR':
+                                        xi = self.add_variable('x['+str(i)+']',dim)
+                                        self.add_constraint(abs(xi[2:])**2 < 2* xi[0]*xi[1])
+                                xx.append(xi)
+                        if tot_dim != Nscalar:
+                                raise Exception('VAR dimensions do not match the header')
+                        return Nscalar,var_structure,xx
+                elif blocname=='CON':                        
+                        Ncons,ncones = [int(fi) for fi in f.readline().split()]
+                        cons_structure = []
+                        tot_dim = 0
+                        for i in range(ncones):
+                                lsplit = f.readline().split()
+                                tp,dim = lsplit[0],int(lsplit[1])
+                                tot_dim += dim
+                                cons_structure.append((tp,dim))
+                        if tot_dim != Ncons:
+                                raise Exception('CON dimensions do not match the header')
+                        return Ncons,cons_structure
+                elif blocname=='PSDCON':
+                        n = int(f.readline())
+                        psdcons_structure = []
+                        for i in range(n):
+                                ni = int(f.readline())
+                                psdcons_structure.append(ni)
+                        return psdcons_structure
+                elif blocname=='OBJACOORD':
+                        n = int(f.readline())
+                        J = []
+                        V = []
+                        for i in range(n):
+                                lsplit = f.readline().split()
+                                j,v = int(lsplit[0]),float(lsplit[1])
+                                J.append(j)
+                                V.append(v)
+                        return cvx.spmatrix(V,[0]*len(J),J,(1,parsed_blocks['VAR'][0]))
+                elif blocname=='OBJBCOORD':
+                        return float(f.readline())
+                elif blocname=='OBJFCOORD':
+                        n = int(f.readline())
+                        Fobj = [cvx.spmatrix([],[],[],(ni,ni)) for ni in parsed_blocks['PSDVAR'][0]]
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                j,row,col,v = (int(lsplit[0]),int(lsplit[1]),
+                                                 int(lsplit[2]),float(lsplit[3]))
+                                Fobj[j][row,col] = v
+                                if row != col:
+                                        Fobj[j][col,row] = v
+                        return Fobj
+                elif blocname=='FCOORD':
+                        n = int(f.readline())
+                        Fblocks = {}
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                i,j,row,col,v = (int(lsplit[0]),int(lsplit[1]),
+                                                 int(lsplit[2]),int(lsplit[3]),float(lsplit[4]))
+                                if i not in Fblocks:
+                                        Fblocks[i] = [cvx.spmatrix([],[],[],(ni,ni)) for ni in parsed_blocks['PSDVAR'][0]]
+                                
+                                Fblocks[i][j][row,col] = v
+                                if row != col:
+                                        Fblocks[i][j][col,row] = v
+                        return Fblocks
+                elif blocname=='ACOORD':
+                        n = int(f.readline())
+                        J = []
+                        V = []
+                        I = []
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                i,j,v = int(lsplit[0]),int(lsplit[1]),float(lsplit[2])
+                                I.append(i)
+                                J.append(j)
+                                V.append(v)
+                        return cvx.spmatrix(V,I,J,(parsed_blocks['CON'][0],parsed_blocks['VAR'][0]))
+                elif blocname=='BCOORD':
+                        n = int(f.readline())
+                        V = []
+                        I = []
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                i,v = int(lsplit[0]),float(lsplit[1])
+                                I.append(i)
+                                V.append(v)
+                        return cvx.spmatrix(V,I,[0]*len(I),(parsed_blocks['CON'][0],1))
+                elif blocname=='HCOORD':
+                        n = int(f.readline())
+                        Hblocks = {}
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                i,j,row,col,v = (int(lsplit[0]),int(lsplit[1]),
+                                                 int(lsplit[2]),int(lsplit[3]),float(lsplit[4]))
+                                if j not in Hblocks:
+                                        Hblocks[j] = [cvx.spmatrix([],[],[],(ni,ni)) for ni in parsed_blocks['PSDCON']]
+                                
+                                Hblocks[j][i][row,col] = v
+                                if row != col:
+                                        Hblocks[j][i][col,row] = v
+                        return Hblocks
+                elif blocname=='DCOORD':
+                        n = int(f.readline())
+                        Dblocks =  [cvx.spmatrix([],[],[],(ni,ni)) for ni in parsed_blocks['PSDCON']]
+                        for k in range(n):
+                                lsplit = f.readline().split()
+                                i,row,col,v = (int(lsplit[0]),int(lsplit[1]),int(lsplit[2]),float(lsplit[3]))
+                                Dblocks[i][row,col] = v
+                                if row != col:
+                                        Dblocks[i][col,row] = v
+                        return Dblocks
+                else:
+                        raise Exception('unexpected block name')
+        
         def convert_quad_to_socp(self):
                 if self.options['verbose']>0:
                         print 'reformulating quads as socp...'

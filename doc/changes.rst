@@ -17,12 +17,11 @@ picos 102 TODO
         hadamard ^ [todoc + tuto]
         partial transpose [doc OK]
         ball, simplex, truncated simplex [ADD tuto]
+        write_SDPA more efficient        
+        cbf writer
         
         [TODO]
-        write_SDPA [CHECK]
-        permute
         sum k largest
-        CVK format ?
         
         DOC all changes + write summary ?
         
