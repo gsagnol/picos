@@ -101,5 +101,48 @@ P.add_constraint(X>>0)
 P.set_objective('min', (M0|X) + x[0] + x[1] + 1)
 
 
+#matrix sqrt
+import picos as pic
+import cvxopt as cvx
+P = pic.Problem()
+A = cvx.matrix([[1,0],[0,1]])
+B = cvx.matrix([[2,1],[1,2]])
+X = P.add_variable('X',(2,2),'symmetric')
+P.add_constraint(X>>0)
+P.add_constraint(((A & X) // (X & B))>>0)
+P.set_objective('max', ('I'|X))
 
 
+#MISOCP - exact A
+prob_exact_A=pic.Problem()
+AA=[cvx.sparse(a,tc='d') for a in A] #each AA[i].T is a 3 x 5 observation matrix
+s=len(AA)
+m=AA[0].size[0]
+AA=pic.new_param('A',AA)
+
+N =pic.new_param('N',20) #number of trials allowed
+I =pic.new_param('I',cvx.spmatrix([1]*m,range(m),range(m),(m,m))) #identity matrix
+Z=[prob_exact_A.add_variable('Z['+str(i)+']',AA[i].T.size) for i in range(s)]
+n=prob_exact_A.add_variable('n',s, vtype='integer')
+t=prob_exact_A.add_variable('t',s)
+
+#define the constraints and objective function
+prob_exact_A.add_list_of_constraints(
+        [abs(Z[i])**2<n[i]*t[i] for i in range(s)], #constraints
+        'i', #index
+        '[s]' #set to which the index belongs
+        )
+prob_exact_A.add_constraint(
+        pic.sum(
+        [AA[i]*Z[i] for i in range(s)], #summands
+        'i', #index
+        '[s]' #set to which the index belongs
+        )
+        == I )
+
+prob_exact_A.add_constraint( 1|n < N )
+prob_exact_A.set_objective('min',1|t)
+
+P = prob_exact_A
+#solve the problem and display the optimal design
+print P

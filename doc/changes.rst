@@ -12,7 +12,7 @@ picos 102 TODO
 
         bugs correction complex sdp (i particular, scalar product, conjugate,
                 equality constraints for complex expressions, more efficient implementation)
-        vtype = antisym 
+        vtype = antisym [tuto]
         norm Lpq [doc OK]
         hadamard ^ [todoc + tuto]
         partial transpose [doc OK]
@@ -22,9 +22,9 @@ picos 102 TODO
         
         [TODO]
         sum k largest
-        
+        comment from mail and answer
         DOC all changes + write summary ?
-        
+        text of sym trunc simplex constraint
 
 
  * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|

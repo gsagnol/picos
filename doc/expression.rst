@@ -63,3 +63,23 @@ DetRootN_Exp
 
 .. autoclass:: picos.DetRootN_Exp
     :members:
+
+Set
+===
+
+.. autoclass:: picos.Set
+    :members:
+    
+Ball
+====
+
+.. autoclass:: picos.Ball
+    :members:
+    
+
+Truncated_Simplex
+=================
+
+.. autoclass:: picos.Truncated_Simplex
+    :members:
+    

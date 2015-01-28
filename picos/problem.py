@@ -34,7 +34,7 @@ from .tools import *
 from .expression import *
 from .constraint import *
 
-__all__=[ 'Problem','Variable']
+__all__= ['Problem','Variable']
 
 global INFINITY
 INFINITY=1e16
@@ -6099,9 +6099,16 @@ class Problem(object):
                                         * ``'.dat-s'``: `sparse SDPA format <http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa>`_
                                           This format is suitable to save semidefinite programs (SDP). SOC constraints are
                                           stored as semidefinite constraints with an *arrow pattern*.
+                                          
+                                        * ``'.cbf'``: CBF (Conic Benchmark Format). This format
+                                          is suitable for optimization problems involving
+                                          second order and/or semidefinite cone constraints. This is
+                                          the standard to use for conic optimization problems,
+                                          cf. `CBLIB <http://cblib.zib.de/>`_ and 
+                                          `this paper <http://www.optimization-online.org/DB_HTML/2014/03/4301.html>`_ from Henrik Friberg.
                                         
                 :type filename: str.
-                :param writer: The default writer is ``picos``, which has its own *LP* and
+                :param writer: The default writer is ``picos``, which has its own *LP*, *CBF*, and
                                *sparse SDPA* write functions. If cplex, mosek or gurobi is installed,
                                the user can pass the option ``writer='cplex'``, ``writer='gurobi'`` or
                                ``writer='mosek'``, and the write function of this solver
@@ -6120,6 +6127,13 @@ class Problem(object):
                                 Each (Key,Value) pair ``i -> alpha`` of this dictionary indicates that
                                 the ``i`` th column has been rescaled by a factor ``alpha``.
                                 
+                              
+                              * The CBF writer tries to write symmetric variables :math:`X` in
+                                the section ``PSDVAR`` of the .cbf file. However, this is possible
+                                only if the constraint :math:`X\succeq 0` appears in the problem,
+                                and no other LMI involves :math:`X` . If these two conditions are
+                                not satisfied, then the symmetric-vectorization of :math:`X` is
+                                used as a (free) variable of the section ``VAR`` in the .cbf file (cf. next paragraph).
                               
                               * For problems involving a symmetric matrix variable :math:`X`
                                 (typically, semidefinite programs), the expressions
@@ -6559,6 +6573,19 @@ class Problem(object):
                 indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
                 indices = sorted(indices)
                 idxsdpvars=[(si,ei) for (si,ei,v) in indices[::-1] if v.semiDef]
+                #search if some semidef vars are implied in other semidef constraints
+                PSD_not_handled = []
+                for c in self.constraints:
+                        if c.typeOfConstraint.startswith('sdp') and not(c.semidefVar):
+                                for v in (c.Exp1-c.Exp2).factors:
+                                        if v.semiDef:
+                                                idx = (v.startIndex,v.endIndex)
+                                                if idx in idxsdpvars:
+                                                        PSD_not_handled.append(v)
+                                                        NUMVAR_SCALAR += (idx[1]-idx[0])
+                                                        idxsdpvars.remove(idx)
+                                                
+                
                 barvars = bool(idxsdpvars)
                 
                 
@@ -6617,7 +6644,7 @@ class Problem(object):
                 iaff = 0
                 offset = 0
                 for si,ei,v in indices:
-                        if v.semiDef:
+                        if v.semiDef and not (v in PSD_not_handled):
                                 offset += (ei-si)
                         else:
                                 if 'nonnegative' in (v._bndtext):
@@ -6675,7 +6702,8 @@ class Problem(object):
                 
                 for cons in ([dummy_cons] + self.constraints):
                         if cons.typeOfConstraint.startswith('sdp'):
-                                if cons.semidefVar:
+                                v = cons.semidefVar
+                                if not(v is None) and not(v in PSD_not_handled):
                                         continue
                         if (cons.typeOfConstraint.startswith('lin') 
                             or cons.typeOfConstraint[2:]=='cone'
@@ -6871,7 +6899,11 @@ class Problem(object):
                 f.close()
 
         def _read_cbf(self,filename):
-                f = open(filename, 'r')
+                try:
+                        f = open(filename, 'r')
+                except IOError:
+                        filename += '.cbf'
+                        f = open(filename, 'r')
                 print('importing problem data from '+filename+'...')
                 self.__init__()
                 
@@ -6883,7 +6915,7 @@ class Problem(object):
                 if ver != 1:
                         print 'WARNING, file has version > 1'
                 
-
+                
                 structure_keywords = ['OBJSENSE','PSDVAR','VAR','INT','PSDCON','CON']
                 data_keywords = ['OBJFCOORD','OBJACOORD','OBJBCOORD',
                                  'FCOORD','ACOORD','BCOORD',
@@ -6932,14 +6964,21 @@ class Problem(object):
                 #variables
                 if 'VAR' in parsed_blocks:
                         Nvars,varsz,x = parsed_blocks['VAR']
+                else:
+                        x = None
+                
+                if 'INT' in parsed_blocks:
+                        x = parsed_blocks['INT']
                 
                 if 'PSDVAR' in parsed_blocks:
                         psdsz,X = parsed_blocks['PSDVAR']
+                else:
+                        X = None
                 
                 #objective
-                bobj = parsed_blocks.get('OBJBCOORD',0)
-                bobj = new_param('bobj',bobj)
-                obj = bobj
+                obj_constant = parsed_blocks.get('OBJBCOORD',0)
+                bobj = new_param('bobj',obj_constant)
+                obj = new_param('bobj',obj_constant)
                 
                 aobj = {}
                 if 'OBJACOORD' in parsed_blocks:
@@ -6973,7 +7012,7 @@ class Problem(object):
                         consexp = []
                         for i,bi in enumerate(bvecs):
                                 bb[i] = new_param('b['+str(i)+']',bi)
-                                consexp.append(bb[i])
+                                consexp.append(new_param('b['+str(i)+']',bi))
                 
                         A = parsed_blocks.get('ACOORD',cvx.spmatrix([],[],[],(Ncons,Nvars)))
                         Ablc = _break_rows(A,szcons)
@@ -7021,7 +7060,7 @@ class Problem(object):
                         consexp = []
                         for i,Di in enumerate(Dblocks):
                                 DD[i] = new_param('D['+str(i)+']',Di)
-                                consexp.append(DD[i])
+                                consexp.append(new_param('D['+str(i)+']',Di))
                                 
                         for j,Hj in Hblocks.iteritems():
                                 i,col = _block_idx(j,varsz)
@@ -7035,8 +7074,19 @@ class Problem(object):
                                 
                         
                 print 'done.'
-                #TODO here INTS ???
-                return
+                
+                params = {'aobj':aobj,
+                          'bobj':bobj,
+                          'Fobj':Fobj,
+                          'A':AA,
+                          'b':bb,
+                          'F':FF,
+                          'D':DD,
+                          'H':HH,
+                          }
+                
+                
+                return x,X,params #TODO interface + check returned params !
 
         def _read_cbf_block(self,blocname,f,parsed_blocks):
                 if blocname=='OBJSENSE':
@@ -7082,6 +7132,23 @@ class Problem(object):
                         if tot_dim != Nscalar:
                                 raise Exception('VAR dimensions do not match the header')
                         return Nscalar,var_structure,xx
+                elif blocname=='INT':
+                        n = int(f.readline())
+                        ints = {}
+                        for k in range(n):
+                                j = int(f.readline())
+                                i,col = _block_idx(j,parsed_blocks['VAR'][1])
+                                ints.setdefault(i,[])
+                                ints[i].append(col)
+                        x = parsed_blocks['VAR'][2]
+                        for i in ints:
+                                if len(ints[i]) == x[i].size[0]:
+                                        x[i].vtype = 'integer'
+                                else:
+                                        x.append(self.add_variable('x_int['+str(i)+']',len(ints[i]),'integer'))
+                                        for k,j in enumerate(ints[i]):
+                                                self.add_constraint(x[i][j] == x[-1][k])
+                        return x
                 elif blocname=='CON':                        
                         Ncons,ncones = [int(fi) for fi in f.readline().split()]
                         cons_structure = []

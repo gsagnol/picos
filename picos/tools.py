@@ -48,6 +48,7 @@ __all__=['_retrieve_matrix',
         'new_param',
         'available_solvers',
         'offset_in_lil',
+        'import_cbf',
         'diag_vect',
         '_quad2norm',
         '_copy_exp_to_new_vars',
@@ -1499,6 +1500,34 @@ def offset_in_lil(lil,offset,lower):
                 else:
                         raise Exception('elements of lil must be int or list')
         return lil
+
+def import_cbf(filename):
+        """
+        Imports the data from a CBF file, and creates a :class:`Problem` object.
+        
+        The created problem contains one (multidimmensional) variable
+        for each cone specified in the section ``VAR`` of the .cbf file,
+        and one (multidimmensional) constraint for each cone
+        specified in the sections ``CON`` and ``PSDCON``. 
+        
+        Semidefinite variables defined in the section ``PSDVAR`` of the .cbf file
+        are represented by a matrix picos variable ``X`` with ``X.vtype='symmetric'``.
+        
+        This function returns a tuple ``(P,x,X,data)``,
+        where:
+        
+         * ``P`` is the imported picos :class:`Problem` object.
+         * ``x`` is a list of :class:`Variable` objects, representing the (multidimmensional) scalar variables.
+         * ``X`` is a list of :class:`Variable` objects, representing the symmetric semidefinite positive variables.
+         * ``data`` is a dictionary containing picos parameters (:class:`AffinExp` objects) used
+           to define the problem. Indexing is with respect to the blocks of variables as defined
+           in thes sections ``VAR`` and  ``CON`` of the .cbf file.
+         
+        """
+        from .problem import Problem
+        P = Problem()
+        x,X,data = P._read_cbf(filename)
+        return (P,x,X,data)
 
 def _flatten(l):
         """ flatten a (recursive) list of list """

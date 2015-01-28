@@ -148,6 +148,8 @@ class AffinExp(Expression):
                 :``+=``: in-place sum  (with an affine or quadratic expression)
                 :``-``: substraction   (with an affine or quadratic expression) or unitary minus
                 :``*``: multiplication (by another affine expression or a scalar)
+                :``^``: hadamard product (elementwise multiplication with another affine expression,
+                            similarly as MATLAB operator ``.*`` )
                 :``/``: division       (by a scalar)
                 :``|``: scalar product (with another affine expression)
                 :``[.]``: slice of an affine expression
@@ -165,8 +167,10 @@ class AffinExp(Expression):
                 :``<``: less **or equal** (than an affine or quadratic expression)
                 :``>``: greater **or equal** (than an affine or quadratic expression)
                 :``==``: is equal (to another affine expression)
-                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality âª³)
-                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality âª´)
+                :``<<``: less than inequality in the Loewner ordering (linear matrix inequality
+                           :math:`\preceq`  ); or, if the right hand side is a :class:`Set`,
+                           membership in this set.
+                :``>>``: greater than inequality in the Loewner ordering (linear matrix inequality :math:`\succeq` )
                 
         .. Warning::
                 
@@ -616,7 +620,7 @@ class AffinExp(Expression):
                 raise AttributeError("attribute 'H' of 'AffinExp' is not writable")
         
         H = property(Htranspose,setH,delH,"Hermitian transposition")
-        """Transposition"""
+        """Hermitian (or conjugate) transposition"""
 
         def inplace_partial_transpose(self, dim=None):
                 if isinstance(self,Variable):
@@ -679,7 +683,9 @@ class AffinExp(Expression):
                 raise AttributeError("attribute 'Tx' of 'AffinExp' is not writable")
         
         Tx = property(partial_transpose,setTx,delTx,"Partial transposition")
-        """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n)"""
+        """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n).
+           cf. doc of :func:`picos.tools.partial_transpose`
+        """
         
         def hadamard(self,fact):
                 """hadamard (elementwise) product"""
@@ -2745,6 +2751,15 @@ class Variable(AffinExp):
                 if self._vtype in ('antisym',) and value not  in ('antisym',):
                         raise Exception('change from antisym is forbiden because of sym-vectorization')
                 self._vtype = value
+                if ('[' in self.name and
+                    ']' in self.name and
+                    self.name.split('[')[0] in self.parent_problem.listOfVars):
+                        vlist = self.name.split('[')[0]
+                        if all([vi.vtype==value for vi in  self.parent_problem.get_variable(vlist)]):
+                                self.parent_problem.listOfVars[vlist]['vtype'] = value
+                        else:
+                                self.parent_problem.listOfVars[vlist]['vtype'] = 'different'
+                        
                 
         @property
         def semiDef(self):
@@ -3127,10 +3142,21 @@ class Variable(AffinExp):
                 return AffinExp(newfacs,newcons,newsize,newstr)
 
 class Set(object):
+        """
+        Parent class for set objects
+        """
         def __init__(self):
                 pass
 
 class Ball(Set):
+        """
+        represents a Ball of Norm p. This object should be created by the function :func:`picos.tools.ball` .
+        
+        ** Overloaded operators **
+        
+          :``>>``: membership of the right hand side in this set.
+
+        """
         
         def __init__(self,p,radius):
                 self.p = p
@@ -3158,6 +3184,15 @@ class Ball(Set):
                         return  self >> exp2
                         
 class Truncated_Simplex(Set):
+        """
+        represents a simplex, that can be intersected with the ball of radius 1 for the infinity-norm (truncation), and that can be symmetrized with respect to the origin.
+        This object should be created by the function :func:`picos.tools.simplex` or  :func:`picos.tools.truncated_simplex` .
+
+        ** Overloaded operators **
+        
+          :``>>``: membership of the right hand side in this set.
+        
+        """
         
         def __init__(self,radius=1,truncated = False, nonneg=True):
                 self.radius = radius
