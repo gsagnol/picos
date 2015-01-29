@@ -32,7 +32,7 @@ import sys
 
 from .tools import *
 
-__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint','Sym_Trunc_Simplex_Constraint','NormPQ_Constraint']
+__all__=['Constraint','_Convex_Constraint','Flow_Constraint','GeoMeanConstraint','NormP_Constraint','TracePow_Constraint','DetRootN_Constraint','Sym_Trunc_Simplex_Constraint','NormPQ_Constraint','Sumklargest_Constraint']
 
 class Constraint(object):
         """A class for describing a constraint.
@@ -467,11 +467,33 @@ class Sym_Trunc_Simplex_Constraint(_Convex_Constraint):
                 self.exp = exp
                 self.radius = radius
                 _Convex_Constraint.__init__(self,Ptmp,constring,
-                                            '('+str(3*exp.size[0]*exp.size[1]+1)+'x1)-affine constraint')
+                                            'symmetrized truncated simplex constraint')
                 self.prefix='_nts'
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
                 return cvx.matrix([1-norm(self.exp,'inf').value,self.radius-norm(self.exp,1).value])
+                        
+        slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
+        
+class Sumklargest_Constraint(_Convex_Constraint):
+        """ A temporary object used to pass constraints involving "sum of k largest elements".
+        This class derives from :class:`Constraint <picos.Constraint>`
+        """
+        def __init__(self,rhs,exp,k,eigenvalues,Ptmp,constring):
+                self.rhs = rhs
+                self.exp = exp
+                self.k = k
+                self.eigs = eigenvalues
+                _Convex_Constraint.__init__(self,Ptmp,constring,
+                                            'sum_k_largest constraint')
+                self.prefix='_nsk'
+                """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+        
+        def slack_var(self):
+                if self.eigs:
+                        return self.rhs.value - sum_k_largest_lambda(self.exp,self.k).value
+                else:
+                        return self.rhs.value - sum_k_largest(self.exp,self.k).value
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

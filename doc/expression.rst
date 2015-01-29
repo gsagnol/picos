@@ -1,84 +1,86 @@
+:tocdepth: 2
+
 .. _expression:
 
-==========
-Expression
-==========
+==============
+**Expression**
+==============
 
 .. autoclass:: picos.Expression
 
 
-AffinExp
-========
+*AffinExp*
+==========
 
 .. autoclass:: picos.AffinExp
     :members:
 
 
-Variable
-""""""""
+*Variable*
+==========
 
 .. _variable:
 
 .. autoclass:: picos.Variable
     :members:
 
-Norm
-====
+*Norm*
+======
 
 .. autoclass:: picos.Norm
     :members:
 
-QuadExp
-=======
+*QuadExp*
+=========
 
 .. autoclass:: picos.QuadExp
     :members:
 
-LogSumExp
-=========
+*LogSumExp*
+===========
 
 .. autoclass:: picos.LogSumExp
     :members:
 
-GeoMeanExp
-==========
+*GeoMeanExp*
+============
 
 .. autoclass:: picos.GeoMeanExp
     :members:
 
-NormP_Exp
-=========
+*NormP_Exp*
+===========
 
 .. autoclass:: picos.NormP_Exp
     :members:
     
-TracePow_Exp
-============
+*TracePow_Exp*
+==============
 
 .. autoclass:: picos.TracePow_Exp
     :members:
     
-DetRootN_Exp
-============
+*DetRootN_Exp*
+==============
 
 .. autoclass:: picos.DetRootN_Exp
     :members:
 
-Set
-===
+*Set*
+=====
 
 .. autoclass:: picos.Set
     :members:
     
-Ball
-====
+*Ball*
+======
 
 .. autoclass:: picos.Ball
     :members:
     
 
-Truncated_Simplex
-=================
+*Truncated_Simplex*
+===================
 
 .. autoclass:: picos.Truncated_Simplex
     :members:

@@ -1,8 +1,10 @@
-.. _tuto:
+:tocdepth: 3
 
-********
-Tutorial
-********
+.. _tutocontent:
+
+************
+**Tutorial**
+************
 
 First of all, let us import the PICOS module and cvxopt
 
@@ -31,9 +33,9 @@ Let us now create an instance ``prob`` of an optimization problem
 
   >>> prob = pic.Problem()    #create a Problem instance
 
-=========
-Variables
-=========
+===========
+*Variables*
+===========
 
 
 We will now create the variables of our optimization problem. This is done
@@ -84,9 +86,12 @@ attributes :attr:`name <picos.Variable.name>`, :attr:`value <picos.Variable.valu
   >>> Z[2].name
   'Z[2]'
 
-==================
-Affine Expressions
-==================
+The admissible values for the ``vtype`` attribute are documented in :func:`add_variable() <picos.Problem.add_variable>`.
+
+                     
+====================
+*Affine Expressions*
+====================
 
 We will now use our variables to create some affine expressions,
 which are stored as instance of the class :class:`AffinExp <picos.AffinExp>`,
@@ -217,6 +222,8 @@ affine expressions with them.
    # (1 x 1)-affine expression: 〈 b[2] | x 〉 #
    >>> ( A[3] | Y )                             #generalized dot product for matrices: (A|B)=trace(A*B.T)
    # (1 x 1)-affine expression: 〈 A[3] | Y 〉 #
+   >>> b[1]^x                                   #hadamard (element-wise) product
+   # (4 x 1)-affine expression: b[1]∘x #
 
 We can also take some subelements of affine expressions, by using
 the standard syntax of python slices:
@@ -314,9 +321,9 @@ With this example, you see what happens when a problem is printed:
 the list of optimization variables is displayed, then the objective function
 and finally a list of constraints (in the case above, there is no constraint).
 
-============================
-Norm of an affine Expression
-============================
+==============================
+*Norm of an affine Expression*
+==============================
 
 The norm of an affine expression is an overload of the ``abs()`` function.
 If ``x`` is an affine expression, ``abs(x)`` is its Euclidean norm :math:`\sqrt{x^T x}`.
@@ -343,10 +350,12 @@ Besides, note that the string representation of an absolute value uses the doubl
 (Recall that the single bar notation ``|t|`` is used to denote the vector
 whose all values are ``t``).
 
+It is also possible to use other :math:`L_p-` norms in picos, cf. :ref:`this paragraph <pnorms>` .
 
-=====================
-Quadratic Expressions
-=====================
+
+=======================
+*Quadratic Expressions*
+=======================
 
 Quadratic expressions can be formed in several ways:
 
@@ -365,9 +374,9 @@ Quadratic expressions can be formed in several ways:
 
 It is not possible (yet) to make a multidimensional quadratic expression.
 
-===========
-Constraints
-===========
+=============
+*Constraints*
+=============
 
 A constraint takes the form of two expressions separated by a relation operator.
 
@@ -625,7 +634,7 @@ Quadratic inequalities are entered in the following way:
   #Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) < 0 #
 
 Note that PICOS does not check the convexity of convex constraints.
-It is the solver which will raise an Exception if it does not support
+The solver will raise an Exception if it does not support
 non-convex quadratics.
 
 
@@ -821,6 +830,7 @@ stored in a temporary object of the class :class:`TracePow_Constraint <picos.Tra
 which contains a field ``Ptmp`` , a Problem instance with all the SOC or SDP constraints
 used to represent the original inequality.
 
+.. _pnorms:
 
 Inequalities involving generalized p-norm
 -----------------------------------------
@@ -833,6 +843,8 @@ concave over the set of vectors with nonnegative coordinates for :math:`p \leq 1
 
 >>> pic.norm(x,3) < t
 # p-norm ineq : norm_3( x)<t#
+>>> pic.norm(x,'inf') < 2
+# p-norm ineq : norm_inf( x)<2.0#
 >>> pic.norm(x,0.5) > x[0]-x[1]
 # generalized p-norm ineq : norm_1/2( x)>x[0] -x[1]#
 
@@ -841,6 +853,10 @@ concave over the set of vectors with nonnegative coordinates for :math:`p \leq 1
         Note that when a constraint of the form ``norm(x,p) >= t`` is entered (with :math:`p \leq 1` ),
         PICOS forces the vector ``x`` to be nonnegative (componentwise).
 
+Inequalities involving the generalized :math:`L_{p,q}` norm of
+a matrix can also be handled with picos, cf. the documentation of
+:func:`picos.norm() <picos.tools.norm>` .
+        
 As for geometric means, inequalities involving p-norms are 
 stored in a temporary object of the class :class:`NormP_Constraint <picos.NormP_Constraint>`,
 which contains a field ``Ptmp`` , a Problem instance with all the SOC constraints
@@ -866,10 +882,45 @@ As for geometric means, inequalities involving the nth root of a determinant are
 stored in a temporary object of the class :class:`DetRootN_Constraint <picos.DetRootN_Constraint>`,
 which contains a field ``Ptmp`` , a Problem instance with all the SOC and SDP constraints
 used to represent the original inequality.
+
+================
+*Set membership*
+================
+
+Since Picos 1.0.2, there is a :class:`Set <picos.Set>` class
+that can be used to pass constraints as membership of an affine expression to a set.
+
+Following sets are currently supported:
+
+ * :math:`L_p-` balls representing the set :math:`\{x: \Vert x \Vert_p \leq r \}`  
+   can be constructed with the function :func:`pic.ball() <picos.tools.ball>`
+ * The standard simplex (scaled by a factor :math:`\gamma` ) :math:`\{x \geq 0: \sum_i x_i \leq r \}`
+   can be constructed with the function :func:`pic.simplex() <picos.tools.simplex>`
+ * Truncated simplexes :math:`\{0 \leq x \leq 1: \sum_i x_i \leq r \}`
+   and symmetrized Truncated simplexes :math:`\{x: \Vert x \Vert_\infty \leq 1, \Vert x \Vert_1\leq r \}`
+   can be constructed with the function :func:`pic.truncated_simplex() <picos.tools.truncated_simplex>`
+ 
+Membership of an affine expression to a set can be expressed with the overloaded operator ``<<``.
+This returns a temporary object that can be passed to a picos problem with the function
+:func:`add_constraint() <picos.Problem.add_constraint>` .
+
+>>> x << pic.simplex(1)
+# (5x1)-affine constraint: x in standard simplex #
+>>> x << pic.truncated_simplex(2)
+# (9x1)-affine constraint: x in truncated simplex of radius 2 #
+>>> x << pic.truncated_simplex(2,sym=True)
+# symmetrized truncated simplex constraint : ||x||_{infty;1} <= {1;2}#
+>>> x << pic.ball(3)
+# (4x1)-SOC constraint: ||x|| < 3.0 #
+>>> pic.ball(2,'inf') >> x
+# p-norm ineq : norm_inf( x)<2.0#
+>>> x << pic.ball(4,1.5)
+# p-norm ineq : norm_3/2( x)<4.0#
         
-=========================
-Write a Problem to a file
-=========================
+        
+===========================
+*Write a Problem to a file*
+===========================
 
 It is possible to write a problem to a file, thanks to the
 function :func:`write_to_file() <picos.Problem.write_to_file>`.
@@ -938,9 +989,9 @@ Generated output:
         import os
         os.system('rm -f helloworld.lp')
 
-===============
-Solve a Problem
-===============
+=================
+*Solve a Problem*
+=================
 
 To solve a problem, you have to use the method :func:`solve() <picos.Problem.solve>`
 of the class :class:`Problem <picos.Problem>`. This method accepts several

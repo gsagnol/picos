@@ -1,8 +1,10 @@
+:tocdepth: 1
+
 .. _problem:
 
-=======
-Problem
-=======
+===========
+**Problem**
+===========
 
 .. autoclass:: picos.Problem
     :members:

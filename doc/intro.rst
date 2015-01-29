@@ -59,7 +59,7 @@ interfaced solvers can be found :ref:`here <solvers>`.
   * Mixed Integer Programming (**MIP**)
   * Convex Quadratically constrained Quadratic Programming (**convex QCQP**)
   * Second Order Cone Programming (**SOCP**)
-  * Semidefinite Programming (**SDP**)
+  * Semidefinite Programming (**SDP**), also with (complex-valued) Hermitian matrices.
   * General Quadratically constrained Quadratic Programming (**QCQP**)
   * Mixed Integer Quadratic Programming (**MIQP**)
 
@@ -71,8 +71,9 @@ below, explaining their main differences with PICOS:
     
     This is a python interface
     that can be used to solve any convex optimization
-    problem. However, CVXPY interfaces only the open
-    source solver `cvxopt <http://abel.ee.ucla.edu/cvxopt/>`_ for disciplined convex programming (**DCP**)
+    problem that can be formed following the rules of
+    disciplined convex programming (**DCP**).
+    
 
   * `Numberjack <http://numberjack.ucc.ie/home>`_:
 

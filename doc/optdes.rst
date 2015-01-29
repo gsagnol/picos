@@ -1,8 +1,10 @@
+:tocdepth: 2
+
 .. _optdes:
 
-*****************************************
-Examples from Optimal Experimental Design
-*****************************************
+*********************************************
+**Examples from Optimal Experimental Design**
+*********************************************
 
 Optimal experimental design is a theory
 at the interface of statistics and optimization,
@@ -65,8 +67,8 @@ It should be run prior to any of the codes presented in this page.
         
         c = cvx.matrix([1,2,3,4,5])
 
-c-optimality, multi-response: SOCP
-==================================
+*c-optimality, multi-response: SOCP*
+====================================
 
 We compute the c-optimal design (``c=[1,2,3,4,5]``)
 for the observation matrices ``A[i].T`` from the variable ``A`` defined above.
@@ -233,8 +235,8 @@ Generated output:
         [...]
 
 
-c-optimality, single-response: LP
-=================================
+*c-optimality, single-response: LP*
+===================================
 
 When the observation matrices are row vectors (single-response framework),
 the SOCP above reduces to a simple LP, because the variables
@@ -319,8 +321,8 @@ inequalities when :math:`z_i` is scalar, so the problem is a LP indeed:
         [...]
         [ 2.93e-01]
 
-SDP formulation of the c-optimal design problem
-===============================================
+*SDP formulation of the c-optimal design problem*
+=================================================
 
 We give below the SDP for c-optimality, in primal and dual
 form. You can observe that we obtain the same results as
@@ -483,8 +485,8 @@ and to provide one additional example in this doc:
         [-3.48e-02 -5.28e-02 -1.66e-02  2.05e-01  8.39e-02]
         [-1.43e-02 -2.17e-02 -6.79e-03  8.39e-02  3.44e-02]
 
-A-optimality: SOCP
-==================
+*A-optimality: SOCP*
+====================
 
 We compute the A-optimal design
 for the observation matrices ``A[i].T`` defined in the preambule.
@@ -648,8 +650,8 @@ and to provide one additional example in this doc:
         [ 1.32e-01]
         [ 2.70e-01]
 
-A-optimality with multiple constraints: SOCP
-============================================
+*A-optimality with multiple constraints: SOCP*
+==============================================
 
 A-optimal designs can also be computed by SOCP
 when the vector of weights :math:`\mathbf{w}` is subject
@@ -743,8 +745,8 @@ and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the design points #5 to #8:
         [ 9.02e-02]
         [ 2.25e-01]
 
-Exact A-optimal design: MISOCP
-==============================
+*Exact A-optimal design: MISOCP*
+================================
 
 In the exact version of A-optimality, a number :math:`N \in \mathbb{N}`
 of trials is given, and the goal is to find the optimal number of times
@@ -834,8 +836,8 @@ The exact optimal design is :math:`\mathbf{n}=[0,0,5,3,2,2,3,5]`:
         [ 3.00e+00]
         [ 5.00e+00]
 
-approximate and exact D-optimal design: (MI)SOCP
-================================================
+*approximate and exact D-optimal design: (MI)SOCP*
+==================================================
 
 The D-optimal design problem has a SOCP formulation involving a
 geometric mean in the objective function:
@@ -1075,8 +1077,8 @@ we obtain the following N-exact D-optimal design:
         [ 7.00e+00]
 
 
-Former MAXDET formulation of the D-optimal design: SDP
-======================================================
+*Former MAXDET formulation of the D-optimal design: SDP*
+========================================================
 
 A so-called MAXDET Programming formulation of the D-optimal design
 has been known since the late 90's :ref:`[3] <optdes_refs>`, and
@@ -1129,8 +1131,8 @@ The following code finds the same design as the SOCP approach presented above.
         [ 3.18e-01]
         [ 3.51e-01]
 
-General Phi_p optimal design Problem: SDP
-=========================================
+*General Phi_p optimal design Problem: SDP*
+===========================================
 
 The A- and D-optimal design problems presented above can be obtained as special cases of the general
 Kiefer :math:`\Phi_p-` optimal design problem, where :math:`p` is a real in :math:`(-\infty,1]` :
@@ -1244,8 +1246,8 @@ allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and
         
 .. _optdes_refs:
 
-References
-==========
+*References*
+============
 
         1. "`Computing Optimal Designs of multiresponse Experiments reduces to
            Second-Order Cone Programming <http://arxiv.org/abs/0912.5467>`_", G. Sagnol,

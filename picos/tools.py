@@ -70,6 +70,9 @@ __all__=['_retrieve_matrix',
         'trace',
         'partial_transpose',
         'ball',
+        'sum_k_largest',
+        'sum_k_largest_lambda',
+        'lambda_max',
         'simplex',
         'truncated_simplex',
         '_cplx_mat_to_real_mat',
@@ -368,6 +371,60 @@ def trace(exp):
         """
         return tracepow(exp)
 
+def sum_k_largest(exp,k):
+        """returns a :class:`Sum_k_Largest_Exp <picos.Sum_k_Largest_Exp>` object representing the sum
+        of the ``k`` largest elements of an affine expression ``exp``.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i\downarrow} \leq t`.
+        This kind of constraints is reformulated internally as a set of linear inequalities.
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('x',3)
+        >>> t = prob.add_variable('t',1)
+        >>> pic.sum_k_largest(x,2) < 1
+        >>> pic.sum_k_largest(x,1) < t
+        
+        """
+        from .expression import AffinExp
+        from .expression import Sum_k_Largest_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return Sum_k_Largest_Exp(exp,k,False)
+
+def sum_k_largest_lambda(exp,k):
+        """returns a :class:`Sum_k_Largest_Exp <picos.Sum_k_Largest_Exp>` object representing the sum
+        of the ``k`` largest eigenvalues of a square matrix affine expression ``exp``.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i\downarrow}(X) \leq t`. 
+        This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
+        Note that ``exp`` is assumed to be symmetric (picos does not check).
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('X',(3,3),'symmetric')
+        >>> t = prob.add_variable('t',1)
+        >>> pic.sum_k_largest(X,3) < 1
+        >>> pic.sum_k_largest(X,2) < t
+        
+        """
+        from .expression import AffinExp
+        from .expression import Sum_k_Largest_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return Sum_k_Largest_Exp(exp,k,True)
+
+def lambda_max(exp):
+        """
+        largest eigenvalue of a square matrix expression (cf. :func:`pic.sum_k_largest(exp,1) <picos.tools.sum_k_largest_lambda>`)
+        """
+        return sum_k_largest_lambda(exp,1)
+
+
 def partial_transpose(exp,dim = None):
         r"""Partial transpose of the Affine Expression. If ``exp`` is matrix
         :class:`AffinExp <picos.AffinExp>` partitionned
@@ -459,6 +516,9 @@ def simplex(gamma = 1):
         
         **Example**
         
+        >>> import picos as pic
+        >>> P = pic.Problem()
+        >>> x = P.add_variable('x', 3)
         >>> x << pic.simplex(1)
         # (4x1)-affine constraint: x in standard simplex #
         >>> x << pic.simplex(2)
@@ -476,10 +536,13 @@ def truncated_simplex(gamma = 1, sym = False):
         
         **Example**
         
+        >>> import picos as pic
+        >>> P = pic.Problem()
+        >>> x = P.add_variable('x', 3)
         >>> x << pic.truncated_simplex(2)
         # (7x1)-affine constraint: x in truncated simplex of radius 2 #
         >>> x << pic.truncated_simplex(2,sym=True)
-        # (10x1)-affine constraint : ||x||_{infty;1} <= {1;2}#
+        # symmetrized truncated simplex constraint : ||x||_{infty;1} <= {1;2}#
         
         """
         from .expression import Truncated_Simplex

@@ -1,8 +1,10 @@
+:tocdepth: 2
+
 .. _graphs:
 
-**********************
-Cut problems in graphs
-**********************
+**************************
+**Cut problems in graphs**
+**************************
 
 The code below initializes the graph used in all the examples of this page.
 It should be run prior to any of the codes presented in this page.
@@ -49,8 +51,8 @@ the output. In this example, we also use a kind of arbitrary sequence for the ed
 		i=i+1
 
 
-Max-flow, Min-cut (LP)
-======================
+*Max-flow, Min-cut (LP)*
+========================
 
 Max-flow
 ''''''''
@@ -416,8 +418,8 @@ Let us now draw the maximum flow:
 On this graph, the source in blue, the sink in green,
 and the edges defining the cut are marked in red.
 
-Multicut (MIP)
-==============
+*Multicut (MIP)*
+================
 
 Multicut is a generalization of the mincut problem, in which several pairs
 of nodes must be disconnected. The goal is to find a cut of minimal
@@ -596,8 +598,8 @@ dark and light colors of the same shade (e.g. dark vs. light green
 for the pairs (3,4),(3,9), and (3,18)), and the edges defining the
 cut are marked in red.
 
-Maxcut relaxation (SDP)
-=======================
+*Maxcut relaxation (SDP)*
+=========================
 
 The goal of the **maxcut** problem is to find
 a partition (S,T) of the nodes of an *undirected* graph G(V,E),
@@ -754,8 +756,8 @@ are blue or green depending on the partition they belong to.
 .. _graph_refs:
 
 
-References
-==========
+*References*
+============
 
         1. "Maximal Flow through a Network", LR Ford Jr and DR Fulkerson,
            *Canadian journal of mathematics*, 1956.

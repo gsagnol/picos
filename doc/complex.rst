@@ -1,8 +1,10 @@
+:tocdepth: 2
+
 .. _complex:
 
-********************************
-Complex Semidefinite Programming
-********************************
+************************************
+**Complex Semidefinite Programming**
+************************************
 
 Since the version 1.0.1, it is possible to
 do complex semidefinite programming with Picos.
@@ -47,8 +49,8 @@ anf ``H`` (Hermitian transposition, i.e. ``exp.H`` returns ``exp.conj.T`` ).
 
 
 
-Fidelity in Quantum Information Theory
-======================================
+*Fidelity in Quantum Information Theory*
+========================================
 
 The material of this section is inspired from a lecture of John Watrous :ref:`[4] <complex_refs>`.
 
@@ -78,7 +80,6 @@ This quantity can be expressed as the optimal value of the following complex-val
         \end{eqnarray*}
         \end{center}
 
-        
 This Problem can be solved as follows in PICOS
 
 .. testcode::
@@ -154,8 +155,8 @@ This Problem can be solved as follows in PICOS
         fidelity computed by trace-norm: F(P,Q) = 37.4742
 
 
-Phase Recovery in Signal Processing
-===================================
+*Phase Recovery in Signal Processing*
+=====================================
 
 The material from this section is inspired from :ref:`[3] <complex_refs>`.
 
@@ -252,8 +253,8 @@ This problem can be implemented as follows using Picos:
 .. _complex_refs:
 
            
-References
-==========
+*References*
+============
 
         1. "Approximation algorithms for MAX-3-CUT and other problems via complex semidefinite programming",
            M.X. Goemans and D. Williamson. In Proceedings of the thirty-third annual

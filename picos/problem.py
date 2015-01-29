@@ -152,7 +152,7 @@ class Problem(object):
 
                 printedlis=[]
                 for vkey in self.variables.keys():
-                        if vkey[:4] in ('_geo','_nop','_ntp','_ndt','_nts','_npq'):
+                        if vkey[:4] in ('_geo','_nop','_ntp','_ndt','_nts','_npq','_nsk'):
                                 continue
                         if '[' in vkey and ']' in vkey:
                                 lisname=vkey[:vkey.index('[')]
@@ -815,9 +815,9 @@ class Problem(object):
                                 
                                 * ``'hermitian'``: complex hermitian matrix
                                 
-                                * ``'semicont'``: 0 or continuous variable satisfying its bounds
+                                * ``'semicont'``: 0 or continuous variable satisfying its bounds (supported by CPLEX and GUROBI only)
                                 
-                                * ``'semiint'``: 0 or integer variable satisfying its bounds
+                                * ``'semiint'``: 0 or integer variable satisfying its bounds (supported by CPLEX and GUROBI only)
                 
                 :type vtype: str.
                 :param lower: a lower bound for the variable. Can be either a vector/matrix of the
@@ -6085,6 +6085,13 @@ class Problem(object):
                                  extension of the file (if provided) indicates the format
                                  of the export:
                                  
+                                        * ``'.cbf'``: CBF (Conic Benchmark Format). This format
+                                          is suitable for optimization problems involving
+                                          second order and/or semidefinite cone constraints. This is
+                                          the standard to use for conic optimization problems,
+                                          cf. `CBLIB <http://cblib.zib.de/>`_ and 
+                                          `this paper <http://www.optimization-online.org/DB_HTML/2014/03/4301.html>`_ from Henrik Friberg.
+                                 
                                         * ``'.lp'``: `LP format <http://docs.mosek.com/6.0/pyapi/node022.html>`_
                                           . This format handles only linear constraints, unless the writer ``'cplex'``
                                           is used, and the file is saved in the extended
@@ -6099,13 +6106,6 @@ class Problem(object):
                                         * ``'.dat-s'``: `sparse SDPA format <http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa>`_
                                           This format is suitable to save semidefinite programs (SDP). SOC constraints are
                                           stored as semidefinite constraints with an *arrow pattern*.
-                                          
-                                        * ``'.cbf'``: CBF (Conic Benchmark Format). This format
-                                          is suitable for optimization problems involving
-                                          second order and/or semidefinite cone constraints. This is
-                                          the standard to use for conic optimization problems,
-                                          cf. `CBLIB <http://cblib.zib.de/>`_ and 
-                                          `this paper <http://www.optimization-online.org/DB_HTML/2014/03/4301.html>`_ from Henrik Friberg.
                                         
                 :type filename: str.
                 :param writer: The default writer is ``picos``, which has its own *LP*, *CBF*, and

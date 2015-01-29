@@ -1,8 +1,10 @@
+:tocdepth: 1
+
 .. _tools:
 
-===========
-picos.tools
-===========
+===============
+**picos.tools**
+===============
 
 .. automodule:: picos.tools
-    :members: available_solvers, diag, diag_vect, lowtri, eval_dict, lse, new_param, sum, norm, geomean, tracepow, trace, detrootn, flow_Constraint, _retrieve_matrix, ball, simplex, truncated_simplex, partial_transpose, import_cbf
+    :members: available_solvers, ball, detrootn, diag, diag_vect, eval_dict, flow_Constraint, geomean, import_cbf, lambda_max, lowtri, lse, new_param, norm, partial_transpose, _retrieve_matrix, simplex, sum, sum_k_largest, sum_k_largest_lambda, trace, tracepow, truncated_simplex

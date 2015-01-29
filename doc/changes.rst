@@ -12,11 +12,11 @@ picos 102 TODO
 
         bugs correction complex sdp (i particular, scalar product, conjugate,
                 equality constraints for complex expressions, more efficient implementation)
-        vtype = antisym [tuto]
-        norm Lpq [doc OK]
-        hadamard ^ [todoc + tuto]
+        vtype = antisym
+        norm Lpq
+        hadamard
         partial transpose [doc OK]
-        ball, simplex, truncated simplex [ADD tuto]
+        ball, simplex, truncated simplex
         write_SDPA more efficient        
         cbf writer
         
@@ -24,7 +24,7 @@ picos 102 TODO
         sum k largest
         comment from mail and answer
         DOC all changes + write summary ?
-        text of sym trunc simplex constraint
+        
 
 
  * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|

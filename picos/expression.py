@@ -45,6 +45,7 @@ __all__=['Expression',
         'NormP_Exp',
         'TracePow_Exp',
         'DetRootN_Exp',
+        'Sum_k_Largest_Exp',
         'Variable',
         'Set',
         'Ball',
@@ -684,7 +685,7 @@ class AffinExp(Expression):
         
         Tx = property(partial_transpose,setTx,delTx,"Partial transposition")
         """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n).
-           cf. doc of :func:`picos.tools.partial_transpose`
+           cf. doc of :func:`picos.partial_transpose() <picos.tools.partial_transpose>`
         """
         
         def hadamard(self,fact):
@@ -2623,7 +2624,104 @@ class DetRootN_Exp(_ConvexExp):
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
                         return self>exp1
 
+class Sum_k_Largest_Exp(_ConvexExp):
+        """A class storing the sum of the k largest elements of an
+           :class:`AffinExp <picos.AffinExp>`, or the sum
+           of its k largest eigenvalues (for a square matrix expression).
+           It derives from :class:`Expression<picos.Expression>`.
+           
+           Use the function :func:`picos.sum_k_largest() <picos.tools.sum_k_largest>` 
+           or :func:`picos.sum_k_largest_lambda() <picos.tools.sum_k_largest_lambda>`
+           to create an instance of this class.
+           
+           Note that the matrix :math:`X` is assumed to be symmetric
+           when a constraint of the form ``pic.sum_k_largest_lambda(X,k) < t`` is added.
+           
+           **Overloaded operator**
+        
+                :``<``: greater **or equal** than (the rhs must be a scalar affine expression)
+                
+        """
+        def __init__(self,exp,k,eigenvals = False):
+                if eigenvals:
+                        n = exp.size[0]
+                        if k==1:
+                                expstr = 'lambda_max('+exp.string+')'
+                        elif k==n:
+                                expstr = 'trace('+exp.string+')'
+                        else:
+                                expstr = 'sum_'+str(k)+'_largest_lambda('+exp.string+')'
+                        if exp.size[0] != exp.size[1]:
+                                raise ValueError('Expression must be square')
+                else:
+                        n = exp.size[0] * exp.size[1]
+                        if k==1:
+                                expstr = 'max('+exp.string+')'
+                        elif k==n:
+                                expstr = 'sum('+exp.string+')'
+                        else:
+                                expstr = 'sum_'+str(k)+'_largest('+exp.string+')'
                         
+                
+                _ConvexExp.__init__(self,expstr,'sumklargest expression')
+                
+                self.exp = exp
+                """The affine expression to which the sumklargest is applied"""
+                
+                self.k = k
+                """The number of elements to sum"""
+                                
+                self.eigenvalues = eigenvals
+                """whether this is a sum of k largest eigenvalues (for symmetric matrices)"""
+                
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                if not isinstance(val,cvx.base.matrix):
+                        val = cvx.matrix(val)
+
+                if self.eigenvalues:
+                        ev = sorted(np.linalg.eigvalsh(val))
+                else:
+                        ev = sorted(val)
+                        
+                return sum(ev[-self.k:])
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        
+        def __lt__(self,exp):
+                
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('upper bound of a sum_k_largest must be scalar')
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        if self.eigenvalues:
+                                n = self.exp.size[0]
+                                s = Ptmp.add_variable('s',1)
+                                Z = Ptmp.add_variable('Z',(n,n),'symmetric')
+                                I = new_param('I',cvx.spdiag([1.]*n))
+                                Ptmp.add_constraint(Z>>0)
+                                Ptmp.add_constraint(self.exp << Z + s*I)
+                                Ptmp.add_constraint(exp > (I|Z)+ (self.k*s))
+                        else:
+                                n = self.exp.size[0] * self.exp.size[1]
+                                if self.k==1:
+                                        return self.exp < exp
+                                elif self.k==n:
+                                        return (1|self.exp) < exp
+                                else:
+                                        lbda = Ptmp.add_variable('lambda',1,lower = 0)
+                                        mu = Ptmp.add_variable('mu',self.exp.size,lower = 0)
+                                        Ptmp.add_constraint(self.exp < lbda + mu)
+                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < exp)
+                
+                        return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,Ptmp,self.string + '<' + exp.string)
+                          
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self<exp1
+
 class Variable(AffinExp):
         """This class stores a variable. It
         derives from :class:`AffinExp<picos.AffinExp>`.
@@ -2729,12 +2827,8 @@ class Variable(AffinExp):
                      * 'antisym'    (antisymmetric matrix variable)
                      * 'complex'    (complex matrix variable)
                      * 'hermitian'  (complex hermitian matrix variable)
-                     * 'semicont'   (semicontinuous variable 
-                                    [can take the value 0 or any 
-                                    other admissible value])
-                     * 'semiint'    (semi integer variable 
-                                     [can take the value 0 or any
-                                     other integer admissible value])
+                     * 'semicont'   (semicontinuous variable [can take the value 0 or any other admissible value])
+                     * 'semiint'    (semi integer variable [can take the value 0 or any other integer admissible value])
                 """
                 return self._vtype
          
@@ -3150,7 +3244,7 @@ class Set(object):
 
 class Ball(Set):
         """
-        represents a Ball of Norm p. This object should be created by the function :func:`picos.tools.ball` .
+        represents a Ball of Norm p. This object should be created by the function :func:`picos.ball() <picos.tools.ball>` .
         
         ** Overloaded operators **
         
@@ -3186,7 +3280,7 @@ class Ball(Set):
 class Truncated_Simplex(Set):
         """
         represents a simplex, that can be intersected with the ball of radius 1 for the infinity-norm (truncation), and that can be symmetrized with respect to the origin.
-        This object should be created by the function :func:`picos.tools.simplex` or  :func:`picos.tools.truncated_simplex` .
+        This object should be created by the function :func:`picos.simplex() <picos.tools.simplex>` or  :func:`picos.truncated_simplex() <picos.tools.truncated_simplex>` .
 
         ** Overloaded operators **
         

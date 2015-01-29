@@ -1,8 +1,10 @@
+:tocdepth: 1
+
 .. _constraint:
 
-==========
-Constraint
-==========
+==============
+**Constraint**
+==============
 
 .. autoclass:: picos.Constraint
     :members:
@@ -14,6 +16,10 @@ Constraint
 .. autoclass:: picos.NormP_Constraint
     :members:
     :inherited-members: slack
+
+.. autoclass:: picos.NormPQ_Constraint
+    :members:
+    :inherited-members: slack
     
 .. autoclass:: picos.TracePow_Constraint
     :members:
@@ -23,5 +29,9 @@ Constraint
     :members:
     
 .. autoclass:: picos.DetRootN_Constraint
+    :members:
+    :inherited-members: slack
+
+.. autoclass:: picos.Sumklargest_Constraint
     :members:
     :inherited-members: slack

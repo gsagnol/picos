@@ -53,7 +53,7 @@ on every function of PICOS.
    :maxdepth: 2
 
    intro
-   tuto
+   tuto_summary
    examples
    api
    download
