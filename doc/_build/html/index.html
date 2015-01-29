@@ -44,9 +44,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-              
-              <a href="#" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
-              
+          <a href="#" class="fa fa-home"> picos</a>
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -68,21 +66,6 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="summary.html">Summary of implemented functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
@@ -140,7 +123,6 @@
 </ul>
 
         
-
       </div>
       &nbsp;
     </nav>
@@ -180,7 +162,7 @@ a user-friendly python interface to many linear and conic optimization solvers,
 see more about PICOS in the <a class="reference internal" href="intro.html#intro"><em>introduction</em></a>.</p>
 <p>The latest version can be downloaded <a class="reference internal" href="download.html#download"><em>here</em></a>,
 and can be installed by following <a class="reference internal" href="intro.html#requirements"><em>these instructions</em></a>.</p>
-<p>This documentation contains a <a class="reference internal" href="tuto_summary.html#tuto"><em>tutorial</em></a> and some <a class="reference internal" href="examples.html#examples"><em>examples</em></a>,
+<p>This documentation contains a <em class="xref std std-ref">tutorial</em> and some <a class="reference internal" href="examples.html#examples"><em>examples</em></a>,
 which should already be enough for a quick start with PICOS. To go deeper,
 have a look at the <a class="reference internal" href="api.html#api"><em>picos reference</em></a>, which provides information
 on every function of PICOS.</p>
@@ -194,8 +176,8 @@ on every function of PICOS.</p>
 <dd><ul class="first last simple">
 <li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
 <li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
-<li>Additional <code class="docutils literal"><span class="pre">coef</span></code> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><code class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></code></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
-<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<code class="docutils literal"><span class="pre">__getitem__</span></code>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
+<li>Additional <tt class="docutils literal"><span class="pre">coef</span></tt> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
+<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<tt class="docutils literal"><span class="pre">__getitem__</span></tt>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
 <li>Nicer documentation.</li>
 </ul>
 </dd>
@@ -229,11 +211,6 @@ on every function of PICOS.</p>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="summary.html">Summary of implemented functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>

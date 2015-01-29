@@ -480,20 +480,31 @@ class Sumklargest_Constraint(_Convex_Constraint):
         """ A temporary object used to pass constraints involving "sum of k largest elements".
         This class derives from :class:`Constraint <picos.Constraint>`
         """
-        def __init__(self,rhs,exp,k,eigenvalues,Ptmp,constring):
+        def __init__(self,rhs,exp,k,eigenvalues,islargest,Ptmp,constring):
                 self.rhs = rhs
                 self.exp = exp
                 self.k = k
-                self.eigs = eigenvalues
-                _Convex_Constraint.__init__(self,Ptmp,constring,
+                self.eigs = eigenvalues #bool -> sum of eigenvalues of normal elements
+                self.islargest = islargest #bool -> False when it is in fact a sum of k smallest elements >= rhs
+                if islargest:
+                        _Convex_Constraint.__init__(self,Ptmp,constring,
                                             'sum_k_largest constraint')
+                else:
+                        _Convex_Constraint.__init__(self,Ptmp,constring,
+                                            'sum_k_smallest constraint')
                 self.prefix='_nsk'
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
-                if self.eigs:
-                        return self.rhs.value - sum_k_largest_lambda(self.exp,self.k).value
+                if is_largest:
+                        if self.eigs:
+                                return self.rhs.value - sum_k_largest_lambda(self.exp,self.k).value
+                        else:
+                                return self.rhs.value - sum_k_largest(self.exp,self.k).value
                 else:
-                        return self.rhs.value - sum_k_largest(self.exp,self.k).value
+                        if self.eigs:
+                                return sum_k_smallest_lambda(self.exp,self.k).value  - self.rhs.value
+                        else:
+                                return sum_k_smallest(self.exp,self.k).value - self.rhs.value
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

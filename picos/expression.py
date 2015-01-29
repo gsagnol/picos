@@ -2639,7 +2639,7 @@ class Sum_k_Largest_Exp(_ConvexExp):
            
            **Overloaded operator**
         
-                :``<``: greater **or equal** than (the rhs must be a scalar affine expression)
+                :``<``: smaller **or equal** than (the rhs must be a scalar affine expression)
                 
         """
         def __init__(self,exp,k,eigenvals = False):
@@ -2663,10 +2663,10 @@ class Sum_k_Largest_Exp(_ConvexExp):
                                 expstr = 'sum_'+str(k)+'_largest('+exp.string+')'
                         
                 
-                _ConvexExp.__init__(self,expstr,'sumklargest expression')
+                _ConvexExp.__init__(self,expstr,'sum_k_largest expression')
                 
                 self.exp = exp
-                """The affine expression to which the sumklargest is applied"""
+                """The affine expression to which the sum_k_largest is applied"""
                 
                 self.k = k
                 """The number of elements to sum"""
@@ -2697,25 +2697,141 @@ class Sum_k_Largest_Exp(_ConvexExp):
                         Ptmp = Problem()
                         if self.eigenvalues:
                                 n = self.exp.size[0]
-                                s = Ptmp.add_variable('s',1)
-                                Z = Ptmp.add_variable('Z',(n,n),'symmetric')
                                 I = new_param('I',cvx.spdiag([1.]*n))
-                                Ptmp.add_constraint(Z>>0)
-                                Ptmp.add_constraint(self.exp << Z + s*I)
-                                Ptmp.add_constraint(exp > (I|Z)+ (self.k*s))
+                                if self.k==n:
+                                        return (I|self.exp)<exp
+                                elif self.k==1:
+                                        cons = self.exp << exp*I
+                                        cons.myconstring = self.string + '<=' + exp.string
+                                        return cons
+                                else:
+                                        s = Ptmp.add_variable('s',1)
+                                        Z = Ptmp.add_variable('Z',(n,n),'symmetric')
+                                        Ptmp.add_constraint(Z>>0)
+                                        Ptmp.add_constraint(-self.exp << Z + s*I)
+                                        Ptmp.add_constraint(-exp > (I|Z)+ (self.k*s))
                         else:
                                 n = self.exp.size[0] * self.exp.size[1]
                                 if self.k==1:
-                                        return self.exp < exp
+                                        cons = self.exp < exp
+                                        cons.myconstring =  self.string + '<=' + exp.string
+                                        return cons
                                 elif self.k==n:
                                         return (1|self.exp) < exp
+                                else:
+                                        lbda = Ptmp.add_variable('lambda',1,lower = 0)
+                                        mu = Ptmp.add_variable('mu',self.exp.size,lower = 0)
+                                        Ptmp.add_constraint(-self.exp < lbda + mu)
+                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < -exp)
+                
+                        return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,True,Ptmp,self.string + '<' + exp.string)
+                          
+                else:#constant
+                        term,termString=_retrieve_matrix(exp,(1,1))
+                        exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
+                        return self<exp1
+
+class Sum_k_Smallest_Exp(_ConvexExp):
+        """A class storing the sum of the k smallest elements of an
+           :class:`AffinExp <picos.AffinExp>`, or the sum
+           of its k smallest eigenvalues (for a square matrix expression).
+           It derives from :class:`Expression<picos.Expression>`.
+           
+           Use the function :func:`picos.sum_k_smallest() <picos.tools.sum_k_smallest>` 
+           or :func:`picos.sum_k_smallest_lambda() <picos.tools.sum_k_smallest_lambda>`
+           to create an instance of this class.
+           
+           Note that the matrix :math:`X` is assumed to be symmetric
+           when a constraint of the form ``pic.sum_k_smallest_lambda(X,k) > t`` is added.
+           
+           **Overloaded operator**
+        
+                :``>``: greater **or equal** than (the rhs must be a scalar affine expression)
+                
+        """
+        def __init__(self,exp,k,eigenvals = False):
+                if eigenvals:
+                        n = exp.size[0]
+                        if k==1:
+                                expstr = 'lambda_min('+exp.string+')'
+                        elif k==n:
+                                expstr = 'trace('+exp.string+')'
+                        else:
+                                expstr = 'sum_'+str(k)+'_smallest_lambda('+exp.string+')'
+                        if exp.size[0] != exp.size[1]:
+                                raise ValueError('Expression must be square')
+                else:
+                        n = exp.size[0] * exp.size[1]
+                        if k==1:
+                                expstr = 'min('+exp.string+')'
+                        elif k==n:
+                                expstr = 'sum('+exp.string+')'
+                        else:
+                                expstr = 'sum_'+str(k)+'_smallest('+exp.string+')'
+                        
+                
+                _ConvexExp.__init__(self,expstr,'sum_k_smallest expression')
+                
+                self.exp = exp
+                """The affine expression to which sum_k_smallest is applied"""
+                
+                self.k = k
+                """The number of elements to sum"""
+                                
+                self.eigenvalues = eigenvals
+                """whether this is a sum of k smallest eigenvalues (for symmetric matrices)"""
+                
+        def eval(self,ind=None):
+                val=self.exp.eval(ind)
+                if not isinstance(val,cvx.base.matrix):
+                        val = cvx.matrix(val)
+
+                if self.eigenvalues:
+                        ev = sorted(np.linalg.eigvalsh(val))
+                else:
+                        ev = sorted(val)
+                        
+                return sum(ev[:self.k])
+                
+        value = property(eval,Expression.set_value,Expression.del_simple_var_value)
+        
+        def __gt__(self,exp):
+                
+                if isinstance(exp,AffinExp):
+                        if exp.size <> (1,1):
+                                raise Exception('lower bound of a sum_k_smallest must be scalar')
+                        from .problem import Problem
+                        Ptmp = Problem()
+                        if self.eigenvalues:
+                                n = self.exp.size[0]
+                                I = new_param('I',cvx.spdiag([1.]*n))
+                                if self.k==n:
+                                        return (I|self.exp)<exp
+                                elif self.k==1:
+                                        cons = self.exp >> exp*I
+                                        cons.myconstring = self.string + '>=' + exp.string
+                                        return cons
+                                else:
+                                        s = Ptmp.add_variable('s',1)
+                                        Z = Ptmp.add_variable('Z',(n,n),'symmetric')
+                                        Ptmp.add_constraint(Z>>0)
+                                        Ptmp.add_constraint(self.exp << Z + s*I)
+                                        Ptmp.add_constraint(exp > (I|Z)+ (self.k*s))
+                        else:
+                                n = self.exp.size[0] * self.exp.size[1]
+                                if self.k==1:
+                                        cons = self.exp > exp
+                                        cons.myconstring =  self.string + '>=' + exp.string
+                                        return cons
+                                elif self.k==n:
+                                        return (1|self.exp) > exp
                                 else:
                                         lbda = Ptmp.add_variable('lambda',1,lower = 0)
                                         mu = Ptmp.add_variable('mu',self.exp.size,lower = 0)
                                         Ptmp.add_constraint(self.exp < lbda + mu)
                                         Ptmp.add_constraint(self.k * lbda + (1|mu) < exp)
                 
-                        return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,Ptmp,self.string + '<' + exp.string)
+                        return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,False,Ptmp,self.string + '>' + exp.string)
                           
                 else:#constant
                         term,termString=_retrieve_matrix(exp,(1,1))

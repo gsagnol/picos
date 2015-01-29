@@ -73,6 +73,9 @@ __all__=['_retrieve_matrix',
         'sum_k_largest',
         'sum_k_largest_lambda',
         'lambda_max',
+        'sum_k_smallest',
+        'sum_k_smallest_lambda',
+        'lambda_min',
         'simplex',
         'truncated_simplex',
         '_cplx_mat_to_real_mat',
@@ -374,7 +377,7 @@ def trace(exp):
 def sum_k_largest(exp,k):
         """returns a :class:`Sum_k_Largest_Exp <picos.Sum_k_Largest_Exp>` object representing the sum
         of the ``k`` largest elements of an affine expression ``exp``.
-        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i\downarrow} \leq t`.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i}^{\downarrow} \leq t`.
         This kind of constraints is reformulated internally as a set of linear inequalities.
         
         **Example:**
@@ -384,7 +387,9 @@ def sum_k_largest(exp,k):
         >>> x = prob.add_variable('x',3)
         >>> t = prob.add_variable('t',1)
         >>> pic.sum_k_largest(x,2) < 1
+        # sum_k_largest constraint : sum_2_largest(x)<1.0#
         >>> pic.sum_k_largest(x,1) < t
+        # (3x1)-affine constraint: max(x)<=t #
         
         """
         from .expression import AffinExp
@@ -394,10 +399,11 @@ def sum_k_largest(exp,k):
                 exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
         return Sum_k_Largest_Exp(exp,k,False)
 
+
 def sum_k_largest_lambda(exp,k):
         """returns a :class:`Sum_k_Largest_Exp <picos.Sum_k_Largest_Exp>` object representing the sum
         of the ``k`` largest eigenvalues of a square matrix affine expression ``exp``.
-        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i\downarrow}(X) \leq t`. 
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i}^{\downarrow}(X) \leq t`. 
         This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
         Note that ``exp`` is assumed to be symmetric (picos does not check).
         
@@ -405,10 +411,12 @@ def sum_k_largest_lambda(exp,k):
         
         >>> import picos as pic
         >>> prob = pic.Problem()
-        >>> x = prob.add_variable('X',(3,3),'symmetric')
+        >>> X = prob.add_variable('X',(3,3),'symmetric')
         >>> t = prob.add_variable('t',1)
-        >>> pic.sum_k_largest(X,3) < 1
-        >>> pic.sum_k_largest(X,2) < t
+        >>> pic.sum_k_largest_lambda(X,3) < 1 #this is simply the trace of X
+        # (1x1)-affine constraint: 〈 I | X 〉 < 1.0 #
+        >>> pic.sum_k_largest_lambda(X,2) < t
+        # sum_k_largest constraint : sum_2_largest_lambda(X)<t#
         
         """
         from .expression import AffinExp
@@ -421,9 +429,76 @@ def sum_k_largest_lambda(exp,k):
 def lambda_max(exp):
         """
         largest eigenvalue of a square matrix expression (cf. :func:`pic.sum_k_largest(exp,1) <picos.tools.sum_k_largest_lambda>`)
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('X',(3,3),'symmetric')
+        >>> pic.lambda_max(X) < 2
+        # (3x3)-LMI constraint lambda_max(X)<=2.0 #
         """
         return sum_k_largest_lambda(exp,1)
 
+def sum_k_smallest(exp,k):
+        """returns a :class:`Sum_k_Smallest_Exp <picos.Sum_k_Smallest_Exp>` object representing the sum
+        of the ``k`` smallest elements of an affine expression ``exp``.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i}^{\uparrow} \geq t`.
+        This kind of constraints is reformulated internally as a set of linear inequalities.
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('x',3)
+        >>> t = prob.add_variable('t',1)
+        >>> pic.sum_k_smallest(x,2) > t
+        # sum_k_smallest constraint : sum_2_smallest(x)>t#
+        >>> pic.sum_k_smallest(x,1) > 3
+        # (3x1)-affine constraint: min(x)>=3.0 #
+        
+        """
+        from .expression import AffinExp
+        from .expression import Sum_k_Smallest_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return Sum_k_Smallest_Exp(exp,k,False)
+
+
+def sum_k_smallest_lambda(exp,k):
+        """returns a :class:`Sum_k_Smallest_Exp <picos.Sum_k_Smallest_Exp>` object representing the sum
+        of the ``k`` smallest eigenvalues of a square matrix affine expression ``exp``.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i}^{\uparrow}(X) \geq t`. 
+        This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
+        Note that ``exp`` is assumed to be symmetric (picos does not check).
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> X = prob.add_variable('X',(3,3),'symmetric')
+        >>> t = prob.add_variable('t',1)
+        >>> pic.sum_k_smallest_lambda(X,1) > 1
+        >>> pic.sum_k_smallest_lambda(X,2) > t
+        
+        """
+        from .expression import AffinExp
+        from .expression import Sum_k_Smallest_Exp
+        if not isinstance(exp,AffinExp):
+                mat,name=_retrieve_matrix(exp)
+                exp = AffinExp({},constant=mat[:],size=mat.size,string=name)
+        return Sum_k_Smallest_Exp(exp,k,True)
+
+def lambda_min(exp):
+        """
+        smallest eigenvalue of a square matrix expression (cf. :func:`pic.sum_k_smallest(exp,1) <picos.tools.sum_k_smallest_lambda>`)
+        
+        >>> import picos as pic
+        >>> prob = pic.Problem()
+        >>> x = prob.add_variable('X',(3,3),'symmetric')
+        >>> pic.lambda_min(X) > -1
+        # (3x3)-LMI constraint lambda_max(X)>=-1.0 #
+        """
+        return sum_k_smallest_lambda(exp,1)
 
 def partial_transpose(exp,dim = None):
         r"""Partial transpose of the Affine Expression. If ``exp`` is matrix
