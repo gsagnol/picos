@@ -6,8 +6,8 @@ Introduction
 
 PICOS is a user friendly interface
 to several conic and integer programming solvers,
-very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_ under
-`MATLAB <http://www.mathworks.com/>`_.
+very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_ 
+or `CVX <http://cvxr.com/cvx/>`_ under `MATLAB <http://www.mathworks.com/>`_.
 
 The main motivation for PICOS is to have the possibility to
 enter an optimization problem as a *high level model*,
@@ -336,6 +336,8 @@ Author and contributors
                   `Guillaume Sagnol <http://www.zib.de/sagnol>`_, <sagnol( a t )zib.de>
 
         * Contributors: People who actively contributed to the code of Picos (in no particular order)
+        
+                        * `Petter Wittek <http://peterwittek.com/>`_
         
                         * Paul Fournel
                         

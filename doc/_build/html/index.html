@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 1.0.2.dev documentation</title>
+  <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 1.0.2 documentation</title>
   
 
   
@@ -28,7 +28,7 @@
   
 
   
-    <link rel="top" title="picos 1.0.2.dev documentation" href="#"/>
+    <link rel="top" title="picos 1.0.2 documentation" href="#"/>
         <link rel="next" title="Introduction" href="intro.html"/> 
 
   
@@ -75,7 +75,7 @@
 <li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
-<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-tools"><em>Other useful tools</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
@@ -193,24 +193,27 @@ on every function of PICOS.</p>
 <blockquote>
 <div><ul>
 <li><dl class="first docutils">
-<dt>27 Aug. 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1</em></a> <strong>Released</strong> <br /></dt>
+<dt>30 Jan. 15: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.2</em></a> <strong>Released</strong></dt>
 <dd><dl class="first last docutils">
-<dt>Major Release with following changes:</dt>
+<dt>Major release with following new functionalities:</dt>
 <dd><ul class="first last simple">
-<li>Support for Semidefinite Programming over the complex domain, see <a class="reference internal" href="complex.html#complex"><em>here</em></a>.</li>
-<li>Flow constraints in graphs, cf. <a class="reference internal" href="tuto.html#flowcons"><em>this section</em></a>.</li>
-<li>Additional <tt class="docutils literal"><span class="pre">coef</span></tt> argument in the function <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a>, in order to represent constraints of the form <img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>.</li>
-<li>Improved implementation of several functionalities, in particular the slicing of affine expressions (<tt class="docutils literal"><span class="pre">__getitem__</span></tt>), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.</li>
-<li>Nicer documentation.</li>
+<li>Support (read and write) for <tt class="docutils literal"><span class="pre">.cbf</span></tt> problem files (<a class="reference external" href="http://cblib.zib.de/">conic benchmark format</a> ), which should be the standard for (mixed integer) conic optimization problems, cf. <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file</span></tt></a> and <a class="reference internal" href="tools.html#picos.tools.import_cbf" title="picos.tools.import_cbf"><tt class="xref py py-func docutils literal"><span class="pre">import_cbf</span></tt></a> .</li>
+<li>Improved support for complex SDP (more efficient implementation of <a class="reference internal" href="problem.html#picos.Problem.to_real" title="picos.Problem.to_real"><tt class="xref py py-func docutils literal"><span class="pre">to_real()</span></tt></a> , corrected bug in the implementation of the scalar product for Hermitian matrices and the conjugate of a complex expression, support for equality constraints involving complex coefficients)</li>
+<li>Support for inequalities involving the sum of k largest elements of an affine expression, or the k largest eigenvalues of a symmetric matrix expression, cf. the functions <a class="reference internal" href="tools.html#picos.tools.sum_k_largest" title="picos.tools.sum_k_largest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.sum_k_smallest" title="picos.tools.sum_k_smallest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.sum_k_largest_lambda" title="picos.tools.sum_k_largest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest_lambda()</span></tt></a>, <a class="reference internal" href="tools.html#picos.tools.sum_k_smallest_lambda" title="picos.tools.sum_k_smallest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest_lambda()</span></tt></a>, <a class="reference internal" href="tools.html#picos.tools.lambda_max" title="picos.tools.lambda_max"><tt class="xref py py-func docutils literal"><span class="pre">lambda_max()</span></tt></a> and <a class="reference internal" href="tools.html#picos.tools.lambda_min" title="picos.tools.lambda_min"><tt class="xref py py-func docutils literal"><span class="pre">lambda_min()</span></tt></a> .</li>
+<li>Support for inequalities involving the <img class="math" src="_images/math/ed7239a554be683d1c627394db65406808336314.png" alt="L_{p,q}-"/> norm of an affine expresison, cf. <a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">norm()</span></tt></a> .</li>
+<li>New <tt class="docutils literal"><span class="pre">vtype</span></tt> for antisymmetric matrix variables ( <a class="reference internal" href="expression.html#picos.Variable.vtype" title="picos.Variable.vtype"><tt class="xref py py-attr docutils literal"><span class="pre">vtype</span></tt></a> <tt class="docutils literal"><span class="pre">=</span> <span class="pre">antisym</span></tt>).</li>
+<li>Constraints can be specified as membership in a <a class="reference internal" href="expression.html#picos.Set" title="picos.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a> . Sets can be created by the functions <a class="reference internal" href="tools.html#picos.tools.ball" title="picos.tools.ball"><tt class="xref py py-func docutils literal"><span class="pre">ball()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.simplex" title="picos.tools.simplex"><tt class="xref py py-func docutils literal"><span class="pre">simplex()</span></tt></a>, and <a class="reference internal" href="tools.html#picos.tools.truncated_simplex" title="picos.tools.truncated_simplex"><tt class="xref py py-func docutils literal"><span class="pre">truncated_simplex()</span></tt></a> .</li>
+<li>New functions <a class="reference internal" href="problem.html#picos.Problem.maximize" title="picos.Problem.maximize"><tt class="xref py py-func docutils literal"><span class="pre">maximize</span></tt></a> and <a class="reference internal" href="problem.html#picos.Problem.minimize" title="picos.Problem.minimize"><tt class="xref py py-func docutils literal"><span class="pre">maximize</span></tt></a> to specify the objective function of a problem and solve it.</li>
+</ul>
+</dd>
+<dt>And many thanks to <a class="reference external" href="http://peterwittek.com/">Petter Wittek</a> for the following improvements, who were motivated by the use of PICOS in the package <a class="reference external" href="http://peterwittek.github.io/ncpol2sdpa/">ncpol2sdpa</a> for optimization over noncommutative polynomials:</dt>
+<dd><ul class="first last simple">
+<li>More efficient implementation of the writer to the sparse - SDPA file format (<a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file</span></tt></a>)</li>
+<li>Hadamard (elementwise) product of affine expression is implemented, as an overload of the <tt class="docutils literal"><span class="pre">^</span></tt> operator,   cf. an example <a class="reference internal" href="tuto.html#overloads"><em>here</em></a> .</li>
+<li>Partial transposition of an Affine Expression, cf. <a class="reference internal" href="tools.html#picos.tools.partial_transpose" title="picos.tools.partial_transpose"><tt class="xref py py-func docutils literal"><span class="pre">partial_transpose()</span></tt></a> or the <a class="reference internal" href="expression.html#picos.AffinExp.Tx" title="picos.AffinExp.Tx"><tt class="xref py py-attr docutils literal"><span class="pre">Tx</span></tt></a> attribute.</li>
 </ul>
 </dd>
 </dl>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>18 May 14: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.1.dev</em></a> <strong>Released</strong> <br /></dt>
-<dd><p class="first last">Preliminary release of the 1.0.1 (still a few bugs for complex SDPs).</p>
 </dd>
 </dl>
 </li>
@@ -304,7 +307,7 @@ on every function of PICOS.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.2.dev',
+            VERSION:'1.0.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

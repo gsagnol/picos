@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.2.dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -7276,6 +7276,9 @@ class Problem(object):
                         raise Exception('unexpected block name')
         
         def convert_quad_to_socp(self):
+                """
+                replace quadratic constraints by equivalent second order cone constraints
+                """
                 if self.options['verbose']>0:
                         print 'reformulating quads as socp...'
                 for i,c in enumerate(self.constraints):

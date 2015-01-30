@@ -204,6 +204,8 @@ In contrast, tuples are converted into list of affine expressions:
 Overloaded operators
 --------------------
 
+.. _overloads:
+
 OK, so now we have some variables (``t``, ``x``, ``w``, ``Y``, and ``Z``)
 and some parameters (``A``, ``b``, ``D`` and ``alpha``). Let us create some
 affine expressions with them.
@@ -994,8 +996,11 @@ Generated output:
 =================
 
 To solve a problem, you have to use the method :func:`solve() <picos.Problem.solve>`
-of the class :class:`Problem <picos.Problem>`. This method accepts several
-options. In particular the solver can be specified by passing 
+of the class :class:`Problem <picos.Problem>`. 
+Alternatively, the functions :func:`maximize(obj) <picos.Problem.maximize>`
+and :func:`minimize(obj) <picos.Problem.minimize>`
+can be used to specify the objective function and call the solver in a single statement. 
+These method accept several options. In particular the solver can be specified by passing 
 an option of the form ``solver='solver_name'``. For a list of available
 parameters with their default values, see the doc of the function
 :func:`set_all_options_to_default() <picos.Problem.set_all_options_to_default>`.
@@ -1054,7 +1059,7 @@ More examples can be found :ref:`here <examples>`.
    P.add_constraint(x[0]>x[1])
    P.add_constraint(A*x<[3,4])
    objective = 0.5 * x[0] + x[1]
-   P.set_objective('max', objective)
+   P.set_objective('max', objective) #or directly P.maximize(objective)
    
    #display the problem and solve it
    print P

@@ -27,18 +27,21 @@ on every function of PICOS.
 
 **News**
 
- * 27 Aug. 14: **Picos** :ref:`1.0.1 <download>` **Released** |br|
-    Major Release with following changes:
-     * Support for Semidefinite Programming over the complex domain, see :ref:`here <complex>`.
-     * Flow constraints in graphs, cf. :ref:`this section <flowcons>`.
-     * Additional ``coef`` argument in the function :func:`picos.tracepow() <picos.tools.tracepow>`, in order to represent constraints of the form :math:`\operatorname{trace}(M X^p) \geq t`.
-     * Improved implementation of several functionalities, in particular the slicing of affine expressions (``__getitem__``), the processing of large matrix parameters, and the access to primal optimal variables with CPLEX.
-     * Nicer documentation.
-     
- * 18 May 14: **Picos** :ref:`1.0.1.dev <download>` **Released** |br|
-     Preliminary release of the 1.0.1 (still a few bugs for complex SDPs).
-     
-        
+ * 30 Jan. 15: **Picos** :ref:`1.0.2 <download>` **Released**
+    Major release with following new functionalities:
+     * Support (read and write) for ``.cbf`` problem files (`conic benchmark format <http://cblib.zib.de/>`_ ), which should be the standard for (mixed integer) conic optimization problems, cf. :func:`write_to_file <picos.Problem.write_to_file>` and :func:`import_cbf <picos.tools.import_cbf>` . 
+     * Improved support for complex SDP (more efficient implementation of :func:`to_real() <picos.Problem.to_real>` , corrected bug in the implementation of the scalar product for Hermitian matrices and the conjugate of a complex expression, support for equality constraints involving complex coefficients)
+     * Support for inequalities involving the sum of k largest elements of an affine expression, or the k largest eigenvalues of a symmetric matrix expression, cf. the functions :func:`sum_k_largest() <picos.tools.sum_k_largest>` , :func:`sum_k_smallest() <picos.tools.sum_k_smallest>` , :func:`sum_k_largest_lambda() <picos.tools.sum_k_largest_lambda>`, :func:`sum_k_smallest_lambda() <picos.tools.sum_k_smallest_lambda>`, :func:`lambda_max() <picos.tools.lambda_max>` and :func:`lambda_min() <picos.tools.lambda_min>` .
+     * Support for inequalities involving the :math:`L_{p,q}-` norm of an affine expresison, cf. :func:`norm() <picos.tools.norm>` .
+     * New ``vtype`` for antisymmetric matrix variables ( :attr:`vtype <picos.Variable.vtype>` ``= antisym``).
+     * Constraints can be specified as membership in a :class:`Set <picos.Set>` . Sets can be created by the functions :func:`ball() <picos.tools.ball>` , :func:`simplex() <picos.tools.simplex>`, and :func:`truncated_simplex() <picos.tools.truncated_simplex>` .
+     * New functions :func:`maximize <picos.Problem.maximize>` and :func:`maximize <picos.Problem.minimize>` to specify the objective function of a problem and solve it. 
+
+    And many thanks to `Petter Wittek <http://peterwittek.com/>`_ for the following improvements, who were motivated by the use of PICOS in the package `ncpol2sdpa <http://peterwittek.github.io/ncpol2sdpa/>`_ for optimization over noncommutative polynomials:
+     * More efficient implementation of the writer to the sparse - SDPA file format (:func:`write_to_file <picos.Problem.write_to_file>`)
+     * Hadamard (elementwise) product of affine expression is implemented, as an overload of the ``^`` operator,   cf. an example :ref:`here <overloads>` .
+     * Partial transposition of an Affine Expression, cf. :func:`partial_transpose() <picos.tools.partial_transpose>` or the :attr:`Tx <picos.AffinExp.Tx>` attribute.
+
 
  * 19 Jul. 13: **Picos** :ref:`1.0.0 <download>` **Released** |br|
         with Semidefinite Programming Interface for MOSEK 7.0 !!!
