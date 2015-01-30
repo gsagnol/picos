@@ -2113,6 +2113,7 @@ class NormP_Exp(_ConvexExp):
         """A class storing the p-norm of a multidimensional expression.
            It derives from :class:`Expression<picos.Expression>`.
            Use the function :func:`picos.norm() <picos.tools.norm>` to create a instance of this class.
+           This class can also be used to store the :math:`L_{p,q}` norm of a matrix.
            
            Generalized norms are also defined for :math:`p<1`, by using the usual formula
            :math:`\operatorname{norm}(\mathbf{x},p) := \Big(\sum_i x_i^p\Big)^{1/p}`. Note that this function
@@ -2128,16 +2129,16 @@ class NormP_Exp(_ConvexExp):
                         p must be less or equal than 1)
         """
         
-        def __init__(self,exp,alpha,beta=1,alpha2=None,beta2=1):
-                pstr = str(alpha)
-                if beta>1:
-                        pstr+='/'+str(beta)
-                p=float(alpha)/float(beta)
-                if not alpha2 is None:
-                        qstr = str(alpha2)
-                        if beta2>1:
-                                qstr+='/'+str(beta2)
-                        q=float(alpha2)/float(beta2)
+        def __init__(self,exp,numerator,denominator=1,num2=None,den2=1):
+                pstr = str(numerator)
+                if denominator>1:
+                        pstr+='/'+str(denominator)
+                p=float(numerator)/float(denominator)
+                if not num2 is None:
+                        qstr = str(num2)
+                        if den2>1:
+                                qstr+='/'+str(den2)
+                        q=float(num2)/float(den2)
                         if p>=1 and q>=1:
                                 _ConvexExp.__init__(self,'norm_'+pstr+','+qstr+'( '+exp.string+')','(p,q)-norm expression')
                         else:
@@ -2150,16 +2151,16 @@ class NormP_Exp(_ConvexExp):
                 self.exp = exp
                 """The affine expression to which the p-norm is applied"""
                 
-                self.numerator = alpha
+                self.numerator = numerator
                 """numerator of p"""
                 
-                self.denominator= beta
+                self.denominator= denominator
                 """denominator of p"""
                 
-                self.num2 = alpha2
-                """numerator of p"""
+                self.num2 = num2
+                """numerator of q"""
                 
-                self.den2 = beta2
+                self.den2 = den2
                 """denominator of q"""
         
         def eval(self,ind=None):
@@ -2326,11 +2327,11 @@ class TracePow_Exp(_ConvexExp):
 
         """
         
-        def __init__(self,exp,alpha,beta=1,M=None):
-                pstr = str(alpha)
-                if beta>1:
-                        pstr+='/'+str(beta)
-                p=float(alpha)/float(beta)
+        def __init__(self,exp,numerator,denominator=1,M=None):
+                pstr = str(numerator)
+                if denominator>1:
+                        pstr+='/'+str(denominator)
+                p=float(numerator)/float(denominator)
                 if M is None:
                         if exp.size==(1,1):
                                 _ConvexExp.__init__(self,'( '+exp.string+')**'+pstr,'pth power expression')
@@ -2347,10 +2348,10 @@ class TracePow_Exp(_ConvexExp):
                 self.exp = exp
                 """The affine expression to which the p-norm is applied"""
                 
-                self.numerator = alpha
+                self.numerator = numerator
                 """numerator of p"""
                 
-                self.denominator= beta
+                self.denominator= denominator
                 """denominator of p"""
                 
                 self.dim = exp.size[0]
@@ -2708,8 +2709,8 @@ class Sum_k_Largest_Exp(_ConvexExp):
                                         s = Ptmp.add_variable('s',1)
                                         Z = Ptmp.add_variable('Z',(n,n),'symmetric')
                                         Ptmp.add_constraint(Z>>0)
-                                        Ptmp.add_constraint(-self.exp << Z + s*I)
-                                        Ptmp.add_constraint(-exp > (I|Z)+ (self.k*s))
+                                        Ptmp.add_constraint(self.exp << Z + s*I)
+                                        Ptmp.add_constraint(exp > (I|Z)+ (self.k*s))
                         else:
                                 n = self.exp.size[0] * self.exp.size[1]
                                 if self.k==1:
@@ -2721,8 +2722,8 @@ class Sum_k_Largest_Exp(_ConvexExp):
                                 else:
                                         lbda = Ptmp.add_variable('lambda',1,lower = 0)
                                         mu = Ptmp.add_variable('mu',self.exp.size,lower = 0)
-                                        Ptmp.add_constraint(-self.exp < lbda + mu)
-                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < -exp)
+                                        Ptmp.add_constraint(self.exp < lbda + mu)
+                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < exp)
                 
                         return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,True,Ptmp,self.string + '<' + exp.string)
                           
@@ -2815,8 +2816,8 @@ class Sum_k_Smallest_Exp(_ConvexExp):
                                         s = Ptmp.add_variable('s',1)
                                         Z = Ptmp.add_variable('Z',(n,n),'symmetric')
                                         Ptmp.add_constraint(Z>>0)
-                                        Ptmp.add_constraint(self.exp << Z + s*I)
-                                        Ptmp.add_constraint(exp > (I|Z)+ (self.k*s))
+                                        Ptmp.add_constraint(-self.exp << Z + s*I)
+                                        Ptmp.add_constraint(-exp > (I|Z)+ (self.k*s))
                         else:
                                 n = self.exp.size[0] * self.exp.size[1]
                                 if self.k==1:
@@ -2828,15 +2829,15 @@ class Sum_k_Smallest_Exp(_ConvexExp):
                                 else:
                                         lbda = Ptmp.add_variable('lambda',1,lower = 0)
                                         mu = Ptmp.add_variable('mu',self.exp.size,lower = 0)
-                                        Ptmp.add_constraint(self.exp < lbda + mu)
-                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < exp)
+                                        Ptmp.add_constraint(-self.exp < lbda + mu)
+                                        Ptmp.add_constraint(self.k * lbda + (1|mu) < -exp)
                 
                         return Sumklargest_Constraint(exp,self.exp,self.k,self.eigenvalues,False,Ptmp,self.string + '>' + exp.string)
                           
                 else:#constant
                         term,termString=_retrieve_matrix(exp,(1,1))
                         exp1=AffinExp(factors={},constant=term,size=(1,1),string=termString)
-                        return self<exp1
+                        return self>exp1
 
 class Variable(AffinExp):
         """This class stores a variable. It

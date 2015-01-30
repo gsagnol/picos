@@ -19,9 +19,10 @@ picos 102 TODO
         ball, simplex, truncated simplex
         write_SDPA more efficient        
         cbf writer
+        maximize minimize
+        sum_k_largest
         
         [TODO]
-        sum k largest
         comment from mail and answer
         DOC all changes + write summary ?
         

@@ -1076,11 +1076,19 @@ class Problem(object):
                 self.constraints.append(cons)
                 self.consNumbering.append(self.countCons)
                 self.countCons+=1
-                #complex coefs ?
+                #is there any complex coef ?
                 found = False
                 for exp in (cons.Exp1,cons.Exp2,cons.Exp3):
                         if exp is None:
                                 continue
+                        try:
+                                dct_facts = exp.factors
+                        except AttributeError as ex:
+                                if 'QuadExp' in str(ex):#quadratic expression (should) not contain complex coefs
+                                        continue
+                                else:
+                                        raise
+                                        
                         for x,fac in exp.factors.iteritems():
                                 if fac.typecode=='z':
                                         if fac.imag():
@@ -4079,6 +4087,19 @@ class Problem(object):
         --                CALL THE SOLVER            --
         -----------------------------------------------
         """        
+        def minimize(self,obj,**options):
+                """
+                sets the objective ('min',``obj``) and calls the function :func:`solve() <picos.Problem.solve>` .
+                """
+                self.set_objective('min',obj)
+                return self.solve(**options)
+        
+        def maximize(self,obj,**options):
+                """
+                sets the objective ('max',``obj``) and calls the function :func:`solve() <picos.Problem.solve>` .
+                """
+                self.set_objective('max',obj)
+                return self.solve(**options)
 
         def solve(self, **options):
                 """

@@ -496,15 +496,15 @@ class Sumklargest_Constraint(_Convex_Constraint):
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
-                if is_largest:
+                if self.islargest:
                         if self.eigs:
-                                return self.rhs.value - sum_k_largest_lambda(self.exp,self.k).value
+                                return cvx.matrix(self.rhs.value - sum_k_largest_lambda(self.exp,self.k).value)
                         else:
-                                return self.rhs.value - sum_k_largest(self.exp,self.k).value
+                                return cvx.matrix(self.rhs.value - sum_k_largest(self.exp,self.k).value)
                 else:
                         if self.eigs:
-                                return sum_k_smallest_lambda(self.exp,self.k).value  - self.rhs.value
+                                return cvx.matrix(sum_k_smallest_lambda(self.exp,self.k).value  - self.rhs.value)
                         else:
-                                return sum_k_smallest(self.exp,self.k).value - self.rhs.value
+                                return cvx.matrix(sum_k_smallest(self.exp,self.k).value - self.rhs.value)
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)

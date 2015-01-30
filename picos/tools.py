@@ -69,6 +69,7 @@ __all__=['_retrieve_matrix',
         'tracepow',
         'trace',
         'partial_transpose',
+        'detrootn',
         'ball',
         'sum_k_largest',
         'sum_k_largest_lambda',
@@ -478,7 +479,9 @@ def sum_k_smallest_lambda(exp,k):
         >>> X = prob.add_variable('X',(3,3),'symmetric')
         >>> t = prob.add_variable('t',1)
         >>> pic.sum_k_smallest_lambda(X,1) > 1
+        # (3x3)-LMI constraint lambda_min(X)>=1.0 #
         >>> pic.sum_k_smallest_lambda(X,2) > t
+        # sum_k_smallest constraint : sum_2_smallest_lambda(X)>t#
         
         """
         from .expression import AffinExp
@@ -496,7 +499,7 @@ def lambda_min(exp):
         >>> prob = pic.Problem()
         >>> x = prob.add_variable('X',(3,3),'symmetric')
         >>> pic.lambda_min(X) > -1
-        # (3x3)-LMI constraint lambda_max(X)>=-1.0 #
+        # (3x3)-LMI constraint lambda_min(X)>=-1.0 #
         """
         return sum_k_smallest_lambda(exp,1)
 
@@ -1244,8 +1247,11 @@ def _retrieve_matrix(mat,exSize=None):
 
 def svec(mat,ignore_sym = False):
         """
-        mat must be symmetric,
-        return the svec representation of mat.
+        returns the svec representation of the cvx matrix ``mat``.
+        (see `Dattorro, ch.2.2.2.1 <http://meboo.convexoptimization.com/Meboo.html>`_)
+        
+        If ``ignore_sym = False`` (default), the function raises an Exception if ``mat`` is not symmetric.
+        Otherwise, elements in the lower triangle of ``mat`` are simply ignored.
         """
         if not isinstance(mat,cvx.spmatrix):
                 mat=cvx.sparse(mat)
