@@ -1,0 +1,574 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Summary of implemented functions &mdash; picos 1.0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.0.2 documentation" href="index.html"/>
+        <link rel="up" title="User’s guide" href="tuto_summary.html"/>
+        <link rel="next" title="Tutorial" href="tuto.html"/>
+        <link rel="prev" title="User’s guide" href="tuto_summary.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href=""><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="tuto_summary.html">User&#8217;s guide</a> &raquo;</li>
+      
+    <li><strong>Summary of implemented functions</strong></li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/summary.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="summary-of-implemented-functions">
+<span id="summary"></span><h1><strong>Summary of implemented functions</strong><a class="headerlink" href="#summary-of-implemented-functions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="operators-to-manipulate-picos-expressions">
+<h2><em>Operators to manipulate PICOS Expressions</em><a class="headerlink" href="#operators-to-manipulate-picos-expressions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>Operator</strong></th>
+<th class="head"><strong>Interpretation</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">+</span></tt></td>
+<td>addition</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">+=</span></tt></td>
+<td>inplace addition</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">-</span></tt></td>
+<td>substraction</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">*</span></tt></td>
+<td>multiplication</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">^</span></tt></td>
+<td>Hadamard (elementwise) product</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">|</span></tt></td>
+<td>scalar product</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">/</span></tt></td>
+<td>division</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">**</span></tt></td>
+<td>exponentiation</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">abs()</span></tt></td>
+<td>Euclidean (or Frobenius) norm</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">[]</span></tt></td>
+<td>slicing</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">&amp;</span></tt></td>
+<td>horizontal concatenation</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">//</span></tt></td>
+<td>vertical concatenation</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">.T</span></tt></td>
+<td>transposition</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">.H</span></tt></td>
+<td>Hermitian transposition</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">.Tx</span></tt></td>
+<td>partial transposition</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">.conj</span></tt></td>
+<td>complex conjugate</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">.real</span></tt></td>
+<td>real part</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">.imag</span></tt></td>
+<td>imaginary part</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="operators-that-create-constraints">
+<h2><em>Operators that create constraints</em><a class="headerlink" href="#operators-that-create-constraints" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>Operator</strong></th>
+<th class="head"><strong>Interpretation</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">&lt;</span></tt> or <tt class="docutils literal"><span class="pre">&lt;=</span></tt></td>
+<td>less or equal</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">&gt;</span></tt> or <tt class="docutils literal"><span class="pre">&gt;=</span></tt></td>
+<td>larger or equal</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">==</span></tt></td>
+<td>equal</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt></td>
+<td>Löwner ordering  <img class="math" src="_images/math/da4c7280a1e4b22becdca120467d55839fd5b6f6.png" alt="\preceq"/>,
+or set membership  <img class="math" src="_images/math/0895151267523b664507acd57737caffe34acd61.png" alt="\in"/></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt></td>
+<td>Löwner ordering  <img class="math" src="_images/math/9803842183b2996684487c801d0383b18c235d2b.png" alt="\succeq"/>,
+or set membership   <img class="math" src="_images/math/f95a962f2d4e3e4d9c5174b0cffc2e2e40198268.png" alt="\ni"/></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="functions-that-create-affine-expressions">
+<h2><em>functions that create affine expressions</em><a class="headerlink" href="#functions-that-create-affine-expressions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="59%" />
+<col width="41%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.sum" title="picos.tools.sum"><tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt></a></td>
+<td>sums a list of affine expressions</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.diag" title="picos.tools.diag"><tt class="xref py py-func docutils literal"><span class="pre">diag()</span></tt></a></td>
+<td>diagonal matrix defined by its diagonal</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.diag_vect" title="picos.tools.diag_vect"><tt class="xref py py-func docutils literal"><span class="pre">diag_vect()</span></tt></a></td>
+<td>vector of diagonal elements of a matrix</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.new_param" title="picos.tools.new_param"><tt class="xref py py-func docutils literal"><span class="pre">new_param()</span></tt></a></td>
+<td>constant affine expression</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.trace" title="picos.tools.trace"><tt class="xref py py-func docutils literal"><span class="pre">trace()</span></tt></a></td>
+<td>trace of a square affine expression</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.lowtri" title="picos.tools.lowtri"><tt class="xref py py-func docutils literal"><span class="pre">lowtri()</span></tt></a></td>
+<td>vector of lower triangular elements</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.partial_transpose" title="picos.tools.partial_transpose"><tt class="xref py py-func docutils literal"><span class="pre">partial_transpose()</span></tt></a></td>
+<td>partial transposition</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="functions-to-create-convex-constraints">
+<h2><em>functions to create convex constraints</em><a class="headerlink" href="#functions-to-create-convex-constraints" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="62%" />
+<col width="38%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">geomean()</span></tt></a></td>
+<td>geometric mean</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">norm()</span></tt></a></td>
+<td>(generalized) <img class="math" src="_images/math/3880eaa2e3831969722e43d73b47054675a0a134.png" alt="L_p-"/> norm</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">tracepow()</span></tt></a></td>
+<td>trace of a <a href="#id1"><span class="problematic" id="id2">*</span></a>p*th matrix power</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">detrootn()</span></tt></a></td>
+<td><a href="#id3"><span class="problematic" id="id4">*</span></a>n*th root of determinant</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.sum_k_largest" title="picos.tools.sum_k_largest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest()</span></tt></a></td>
+<td>sum of k largest elements</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.sum_k_smallest" title="picos.tools.sum_k_smallest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest()</span></tt></a></td>
+<td>sum of k smallest elements</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.sum_k_largest_lambda" title="picos.tools.sum_k_largest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest_lambda()</span></tt></a></td>
+<td>sum of k largest eigenvalues</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.sum_k_smallest_lambda" title="picos.tools.sum_k_smallest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest_lambda()</span></tt></a></td>
+<td>sum of k smallest eigenvalues</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.lambda_max" title="picos.tools.lambda_max"><tt class="xref py py-func docutils literal"><span class="pre">lambda_max()</span></tt></a></td>
+<td>largest eigenvalue</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.lambda_min" title="picos.tools.lambda_min"><tt class="xref py py-func docutils literal"><span class="pre">lambda_min()</span></tt></a></td>
+<td>smallest eigenvalue</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="functions-that-create-sets">
+<h2><em>functions that create sets</em><a class="headerlink" href="#functions-that-create-sets" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.ball" title="picos.tools.ball"><tt class="xref py py-func docutils literal"><span class="pre">ball(r,p)</span></tt></a></td>
+<td>a <img class="math" src="_images/math/354f73df2b487ef4ac026de9e35cb4b0ff40d87a.png" alt="L_p"/>- ball of radius <tt class="docutils literal"><span class="pre">r</span></tt></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.simplex" title="picos.tools.simplex"><tt class="xref py py-func docutils literal"><span class="pre">simplex(a)</span></tt></a></td>
+<td>a standard simplex
+<img class="math" src="_images/math/9c23b8aaf5be93d84974af5da4af89cf1c3bcaad.png" alt="\{x\geq 0: \Vert x \Vert_1 \leq a \}"/></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.truncated_simplex" title="picos.tools.truncated_simplex"><tt class="xref py py-func docutils literal"><span class="pre">truncated_simplex(a)</span></tt></a></td>
+<td><blockquote class="first">
+<div>a set of the form</div></blockquote>
+<p class="last"><img class="math" src="_images/math/05c9eee131702d93c5b5d72933410ea07cf048db.png" alt="\{ 0\leq x\leq 1: \Vert x \Vert_1 \leq a\}"/>  or
+<img class="math" src="_images/math/2447ccc00444b681297c05a20ee18e7c382f9d61.png" alt="\{x: \Vert x \Vert_\infty \leq 1 \Vert x \Vert_1 \leq a\}"/></p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="other-useful-functions">
+<h2><em>Other useful functions</em><a class="headerlink" href="#other-useful-functions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="to-transform-a-problem">
+<h3>To transform a problem<a class="headerlink" href="#to-transform-a-problem" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="60%" />
+<col width="40%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="xref py py-func docutils literal"><span class="pre">convert_quad_to_socp()</span></tt></td>
+<td>replaces quadratic constraints by
+equivalent second order cone constraints</td>
+</tr>
+<tr class="row-odd"><td><tt class="xref py py-func docutils literal"><span class="pre">to_real()</span></tt></td>
+<td>transform complex SDP to real SDP</td>
+</tr>
+<tr class="row-even"><td><tt class="xref py py-func docutils literal"><span class="pre">dualize()</span></tt></td>
+<td>returns Lagrangian dual of a problem</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="get-information-on-a-problem">
+<h3>Get information on a problem<a class="headerlink" href="#get-information-on-a-problem" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="67%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="problem.html#picos.Problem.get_variable" title="picos.Problem.get_variable"><tt class="xref py py-func docutils literal"><span class="pre">get_variable(name)</span></tt></a></td>
+<td>gets the variable object <tt class="docutils literal"><span class="pre">name</span></tt></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="problem.html#picos.Problem.get_valued_variable" title="picos.Problem.get_valued_variable"><tt class="xref py py-func docutils literal"><span class="pre">get_valued_variable(name)</span></tt></a></td>
+<td>gets the value of the variable <tt class="docutils literal"><span class="pre">name</span></tt></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="problem.html#picos.Problem.check_current_value_feasibility" title="picos.Problem.check_current_value_feasibility"><tt class="xref py py-func docutils literal"><span class="pre">check_current_value_feasibility()</span></tt></a></td>
+<td>are the current variable value  feasible?</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="problem.html#picos.Problem.obj_value" title="picos.Problem.obj_value"><tt class="xref py py-func docutils literal"><span class="pre">obj_value()</span></tt></a></td>
+<td>objective for the current variable values</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="problem.html#picos.Problem.type" title="picos.Problem.type"><tt class="xref py py-attr docutils literal"><span class="pre">.type</span></tt></a></td>
+<td>returns problem&#8217;s type</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="other-tools">
+<h3>Other tools<a class="headerlink" href="#other-tools" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="58%" />
+<col width="42%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>function</strong></th>
+<th class="head"><strong>short doc</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.available_solvers" title="picos.tools.available_solvers"><tt class="xref py py-func docutils literal"><span class="pre">available_solvers()</span></tt></a></td>
+<td>lists installed solvers</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="tools.html#picos.tools.import_cbf" title="picos.tools.import_cbf"><tt class="xref py py-func docutils literal"><span class="pre">import_cbf()</span></tt></a></td>
+<td>imports data from a .cbf file</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="tools.html#picos.tools.eval_dict" title="picos.tools.eval_dict"><tt class="xref py py-func docutils literal"><span class="pre">eval_dict()</span></tt></a></td>
+<td>evaluates a dictionary of picos variables
+(after a problem has been solved)</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file()</span></tt></a></td>
+<td>writes problem to a file</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tuto.html" class="btn btn-neutral float-right" title="Tutorial">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tuto_summary.html" class="btn btn-neutral" title="User’s guide"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

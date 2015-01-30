@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Constraint &mdash; picos 1.0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.0.2 documentation" href="index.html"/>
+        <link rel="up" title="The PICOS Reference" href="api.html"/>
+        <link rel="next" title="Download" href="download.html"/>
+        <link rel="prev" title="Expression" href="expression.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">The PICOS Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href=""><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="api.html">The PICOS Reference</a> &raquo;</li>
+      
+    <li><strong>Constraint</strong></li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/constraint.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="constraint">
+<span id="id1"></span><h1><strong>Constraint</strong><a class="headerlink" href="#constraint" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="picos.Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Constraint</tt><big>(</big><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#picos.Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for describing a constraint.</p>
+<dl class="attribute">
+<dt id="picos.Constraint.Exp1">
+<tt class="descname">Exp1</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp1" title="Permalink to this definition">¶</a></dt>
+<dd><p>LHS</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Exp2">
+<tt class="descname">Exp2</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>RHS
+(ignored for constraints of type <tt class="docutils literal"><span class="pre">lse</span></tt> and <tt class="docutils literal"><span class="pre">quad</span></tt>, where
+<tt class="docutils literal"><span class="pre">Exp2</span></tt> is set to <tt class="docutils literal"><span class="pre">0</span></tt>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Exp3">
+<tt class="descname">Exp3</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Second factor of the RHS for <tt class="docutils literal"><span class="pre">RScone</span></tt> constraints
+(see <a class="reference internal" href="#picos.Constraint.typeOfConstraint" title="picos.Constraint.typeOfConstraint"><tt class="xref py py-attr docutils literal"><span class="pre">typeOfConstraint</span></tt></a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.Id">
+<tt class="descname">Id</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Id" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer identifier</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.boundCons">
+<tt class="descname">boundCons</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.boundCons" title="Permalink to this definition">¶</a></dt>
+<dd><p>stores  list of bounds of the form (var,index,lower,upper)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.dual">
+<tt class="descname">dual</tt><a class="headerlink" href="#picos.Constraint.dual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value of the dual variable associated to this constraint</p>
+<p>See the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> in the tutorial
+for more information.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.exp3ConeVar">
+<tt class="descname">exp3ConeVar</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.exp3ConeVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>for a constraint of the form ||x||&lt;u or ||x||^2&lt;u v, stores x, u and v</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.key">
+<tt class="descname">key</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string to give a key name to the constraint</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.passed">
+<tt class="descname">passed</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.passed" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of solvers to which this constraints was already passed</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.semidefVar">
+<tt class="descname">semidefVar</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.semidefVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>for a constraint of the form X&gt;&gt;0, stores the semidef variable</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.slack">
+<tt class="descname">slack</tt><a class="headerlink" href="#picos.Constraint.slack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value of the slack variable associated to this constraint
+(should be nonnegative/zero if the inequality/equality
+is satisfied: for an inequality of the type <tt class="docutils literal"><span class="pre">lhs&lt;rhs</span></tt>,
+the slack is <tt class="docutils literal"><span class="pre">rhs-lhs</span></tt>, and for <tt class="docutils literal"><span class="pre">lhs&gt;rhs</span></tt>
+the slack is <tt class="docutils literal"><span class="pre">lhs-rhs</span></tt>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="picos.Constraint.typeOfConstraint">
+<tt class="descname">typeOfConstraint</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.typeOfConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string from the following values,
+indicating the type of constraint:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">lin&lt;</span></tt>, <tt class="docutils literal"><span class="pre">lin=</span></tt> or <tt class="docutils literal"><span class="pre">lin&gt;</span></tt> : Linear (in)equality
+<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≤</span> <span class="pre">Exp2</span></tt>, <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">=</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≥</span> <span class="pre">Exp2</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">SOcone</span></tt> : Second Order Cone constraint <tt class="docutils literal"><span class="pre">||Exp1||</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">RScone</span></tt> : Rotated Cone constraint
+<tt class="docutils literal"><span class="pre">||Exp1||**2</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span> <span class="pre">*</span> <span class="pre">Exp3</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">lse</span></tt> : Geometric Programming constraint <tt class="docutils literal"><span class="pre">LogSumExp(Exp1)&lt;0</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">quad</span></tt>: scalar quadratic constraint <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">&lt;</span> <span class="pre">0</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">sdp&lt;</span></tt> or <tt class="docutils literal"><span class="pre">sdp&gt;</span></tt>: semidefinite constraint
+<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≼</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≽</span> <span class="pre">Exp2</span></tt>.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.GeoMeanConstraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">GeoMeanConstraint</tt><big>(</big><em>expaff</em>, <em>expgeo</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.GeoMeanConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass geometric mean inequalities.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="picos.GeoMeanConstraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.GeoMeanConstraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.NormP_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">NormP_Constraint</tt><big>(</big><em>expaff</em>, <em>expnorm</em>, <em>alpha</em>, <em>beta</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.NormP_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass p-norm inequalities.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+<dl class="attribute">
+<dt id="picos.NormP_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.NormPQ_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">NormPQ_Constraint</tt><big>(</big><em>expaff</em>, <em>expnorm</em>, <em>p</em>, <em>q</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.NormPQ_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass (p,q)-norm inequalities.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+<dl class="attribute">
+<dt id="picos.NormPQ_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormPQ_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.TracePow_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">TracePow_Constraint</tt><big>(</big><em>exprhs</em>, <em>explhs</em>, <em>alpha</em>, <em>beta</em>, <em>M</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.TracePow_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass (trace of) pth power inequalities
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+<dl class="attribute">
+<dt id="picos.TracePow_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.Flow_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Flow_Constraint</tt><big>(</big><em>G</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.Flow_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass a flow constraint.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="picos.Flow_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Flow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.DetRootN_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">DetRootN_Constraint</tt><big>(</big><em>expdet</em>, <em>exprhs</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.DetRootN_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass nth root of determinant inequalities.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+<dl class="attribute">
+<dt id="picos.DetRootN_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.DetRootN_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="picos.Sumklargest_Constraint">
+<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Sumklargest_Constraint</tt><big>(</big><em>rhs</em>, <em>exp</em>, <em>k</em>, <em>eigenvalues</em>, <em>islargest</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.Sumklargest_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A temporary object used to pass constraints involving &#8220;sum of k largest elements&#8221;.
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+<dl class="attribute">
+<dt id="picos.Sumklargest_Constraint.prefix">
+<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Sumklargest_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="download.html" class="btn btn-neutral float-right" title="Download">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="expression.html" class="btn btn-neutral" title="Expression"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

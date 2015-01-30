@@ -1,0 +1,1403 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tutorial &mdash; picos 1.0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.0.2 documentation" href="index.html"/>
+        <link rel="up" title="User’s guide" href="tuto_summary.html"/>
+        <link rel="next" title="Examples" href="examples.html"/>
+        <link rel="prev" title="Summary of implemented functions" href="summary.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href=""><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="tuto_summary.html">User&#8217;s guide</a> &raquo;</li>
+      
+    <li><strong>Tutorial</strong></li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/tuto.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="tutorial">
+<span id="tutocontent"></span><h1><strong>Tutorial</strong><a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>First of all, let us import the PICOS module and cvxopt</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+</pre></div>
+</div>
+<p>We now generate some arbitrary data, that we will use in this tutorial.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)]</span>  <span class="c">#a list of pairs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="p">(</span> <span class="p">[</span><span class="mi">0</span> <span class="p">,</span><span class="mi">2</span> <span class="p">,</span><span class="mi">0</span> <span class="p">,</span><span class="mi">3</span> <span class="p">],</span>                               <span class="c">#a tuple of 5 lists, each of length 4</span>
+<span class="gp">... </span>      <span class="p">[</span><span class="mi">1</span> <span class="p">,</span><span class="mi">1</span> <span class="p">,</span><span class="mi">0</span> <span class="p">,</span><span class="mi">5</span> <span class="p">],</span>
+<span class="gp">... </span>      <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span> <span class="p">,</span><span class="mi">2</span> <span class="p">,</span><span class="mi">4</span> <span class="p">],</span>
+<span class="gp">... </span>      <span class="p">[</span><span class="mi">0</span> <span class="p">,</span><span class="mi">0</span> <span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>      <span class="p">[</span><span class="mi">1</span> <span class="p">,</span><span class="mi">1</span> <span class="p">,</span><span class="mi">0</span> <span class="p">,</span><span class="mi">0</span> <span class="p">]</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">A</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">5</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)))</span>     <span class="c">#A is a list of 2x4 matrices</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;Peter&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="s">&#39;Bob&#39;</span>  <span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="s">&#39;Betty&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="s">&#39;Elisa&#39;</span><span class="p">:</span> <span class="mi">14</span>
+<span class="gp">... </span>   <span class="p">}</span>
+</pre></div>
+</div>
+<p>Let us now create an instance <tt class="docutils literal"><span class="pre">prob</span></tt> of an optimization problem</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>    <span class="c">#create a Problem instance</span>
+</pre></div>
+</div>
+<div class="section" id="variables">
+<h2><em>Variables</em><a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<p>We will now create the variables of our optimization problem. This is done
+by calling the method <a class="reference internal" href="problem.html#picos.Problem.add_variable" title="picos.Problem.add_variable"><tt class="xref py py-func docutils literal"><span class="pre">add_variable()</span></tt></a>.
+This function adds an instance of the class <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>
+in the dictionary <tt class="docutils literal"><span class="pre">prob.variables</span></tt>, and returns a reference
+to the freshly added variable.
+As we will next see, we
+can use
+this <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>
+to form affine and quadratic expressions.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="c">#a scalar</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="c">#a column vector</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Y&#39;</span><span class="p">,(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span> <span class="c">#a matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">Z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Z[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>  <span class="p">)</span><span class="c"># a list of 5 matrices</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="o">=</span><span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>   <span class="c">#a dictionary of (scalar) binary variables, indexed by our pairs</span>
+<span class="gp">... </span>    <span class="n">w</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">),</span><span class="mi">1</span> <span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, if we try to display a variable, here is what we get:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span>
+<span class="go"># variable w[(2, 4)]:(1 x 1),binary #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span>
+<span class="go"># variable Y:(2 x 4),continuous #</span>
+</pre></div>
+</div>
+<p>Also note the use of the
+attributes <a class="reference internal" href="expression.html#picos.Variable.name" title="picos.Variable.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>, <a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a>,
+<tt class="xref py py-attr docutils literal"><span class="pre">size</span></tt>, and <a class="reference internal" href="expression.html#picos.Variable.vtype" title="picos.Variable.vtype"><tt class="xref py py-attr docutils literal"><span class="pre">vtype</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">vtype</span>
+<span class="go">&#39;binary&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">vtype</span>
+<span class="go">&#39;continuous&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">vtype</span><span class="o">=</span><span class="s">&#39;integer&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go"># variable x:(4 x 1),integer #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">size</span>
+<span class="go">(4, 1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_valued</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_valued</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;Z[2]&#39;</span>
+</pre></div>
+</div>
+<p>The admissible values for the <tt class="docutils literal"><span class="pre">vtype</span></tt> attribute are documented in <a class="reference internal" href="problem.html#picos.Problem.add_variable" title="picos.Problem.add_variable"><tt class="xref py py-func docutils literal"><span class="pre">add_variable()</span></tt></a>.</p>
+</div>
+<div class="section" id="affine-expressions">
+<h2><em>Affine Expressions</em><a class="headerlink" href="#affine-expressions" title="Permalink to this headline">¶</a></h2>
+<p>We will now use our variables to create some affine expressions,
+which are stored as instance of the class <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>,
+and will be the
+core to define an optimization problem. Most python operators have been overloaded
+to work with instances of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>
+(a list of available overloaded operators can be found in the
+doc of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>). For example,
+you can form the sum of two variables by writing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Z</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="go"># (4 x 2)-affine expression: Z[0] + Z[3] #</span>
+</pre></div>
+</div>
+<p>The transposition of an affine expression is done by appending <tt class="docutils literal"><span class="pre">.T</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go"># variable x:(4 x 1),integer #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">T</span>
+<span class="go"># (1 x 4)-affine expression: x.T #</span>
+</pre></div>
+</div>
+<div class="section" id="parameters-as-constant-affine-expressions">
+<h3>Parameters as constant affine expressions<a class="headerlink" href="#parameters-as-constant-affine-expressions" title="Permalink to this headline">¶</a></h3>
+<p>It is also possible to form affine expressions by using parameters
+stored in data structures such as a <tt class="docutils literal"><span class="pre">list</span></tt> or a <tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt>
+(In fact, any type that is recognizable by the function <a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go"># (4 x 1)-affine expression: x + [ 4 x 1 MAT ] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go"># (1 x 4)-affine expression: x.T + [ 1 x 4 MAT ] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<span class="go"># (2 x 2)-affine expression: [ 2 x 4 MAT ]*Z[0] + [ 2 x 4 MAT ]*Z[4] #</span>
+</pre></div>
+</div>
+<p>In the above example, you see that the list <tt class="docutils literal"><span class="pre">b[0]</span></tt> was correctly converted into
+a  <img class="math" src="_images/math/4bf017b589c444b8be47a9207f71c8a99dab8714.png" alt="4 \times 1"/> vector in the first expression, and into
+a  <img class="math" src="_images/math/bdf82fdd0273ec7a246c3644f452e6dac66e5ad0.png" alt="1 \times 4"/> vector in the second one. This is because the overloaded
+operators always try to convert the data into matrices of the appropriate size.</p>
+<p>If you want to have better-looking string representations of your affine expressions,
+you will need to convert the parameters into constant affine expressions. This can be done
+thanks to the function <a class="reference internal" href="tools.html#picos.tools.new_param" title="picos.tools.new_param"><tt class="xref py py-func docutils literal"><span class="pre">new_param()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">A</span><span class="p">)</span>              <span class="c">#this creates a list of constant affine expressions [A[0],...,A[4]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>              <span class="c">#this creates a list of constant affine expressions [b[0],...,b[4]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;D&#39;</span><span class="p">,</span><span class="n">D</span><span class="p">)</span>              <span class="c">#this creates a dictionary of constant AffExpr, indexed by &#39;Peter&#39;, &#39;Bob&#39;, ...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">alpha</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="mi">12</span><span class="p">)</span>     <span class="c">#a scalar parameter</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">alpha</span>
+<span class="go"># (1 x 1)-affine expression: alpha #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span><span class="p">[</span><span class="s">&#39;Betty&#39;</span><span class="p">]</span>
+<span class="go"># (1 x 1)-affine expression: D[Betty] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>                                         
+<span class="go">[# (4 x 1)-affine expression: b[0] #,</span>
+<span class="go"> # (4 x 1)-affine expression: b[1] #,</span>
+<span class="go"> # (4 x 1)-affine expression: b[2] #,</span>
+<span class="go"> # (4 x 1)-affine expression: b[3] #,</span>
+<span class="go"> # (4 x 1)-affine expression: b[4] #]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">[ 0.00e+00]</span>
+<span class="go">[ 2.00e+00]</span>
+<span class="go">[ 0.00e+00]</span>
+<span class="go">[ 3.00e+00]</span>
+</pre></div>
+</div>
+<p>The above example also illustrates that when a <em>valued</em> affine expression <tt class="docutils literal"><span class="pre">exp</span></tt> is printed,
+it is its value that is displayed. For a non-valued affine expression, <strong>__repr__</strong>
+and <strong>__str__</strong> produce the same result, a string of the form <tt class="docutils literal"><span class="pre">'#</span> <span class="pre">(size)-affine</span> <span class="pre">expression:</span> <span class="pre">string-representation</span> <span class="pre">#'</span></tt>.
+Note that the constant affine expressions, as <tt class="docutils literal"><span class="pre">b[0]</span></tt> in the above example,
+are always <em>valued</em>.
+To assign a value to a non-constant <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>,
+you must set the <tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt> property of
+every variable involved in the affine expression.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x_minus_1</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_minus_1</span>                           <span class="c">#note that 1 was recognized as the (4x1)-vector with all ones</span>
+<span class="go"># (4 x 1)-affine expression: x -|1| #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">x_minus_1</span>
+<span class="go"># (4 x 1)-affine expression: x -|1| #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_minus_1</span><span class="o">.</span><span class="n">is_valued</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_minus_1</span><span class="o">.</span><span class="n">is_valued</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">x_minus_1</span>
+<span class="go">[-1.00e+00]</span>
+<span class="go">[ 0.00e+00]</span>
+<span class="go">[ 1.00e+00]</span>
+<span class="go">[-2.00e+00]</span>
+</pre></div>
+</div>
+<p>We also point out that <a class="reference internal" href="tools.html#picos.tools.new_param" title="picos.tools.new_param"><tt class="xref py py-func docutils literal"><span class="pre">new_param()</span></tt></a>
+converts lists into vectors and lists of lists into matrices (given
+in row major order).
+In contrast, tuples are converted into list of affine expressions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;vect&#39;</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>                        <span class="c"># [1,2,3] is converted into a vector of dimension 3</span>
+<span class="go"># (3 x 1)-affine expression: vect #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;mat&#39;</span><span class="p">,[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]])</span>               <span class="c"># [[1,2,3],[4,5,6]] is converted into a (2x3)-matrix</span>
+<span class="go"># (2 x 3)-affine expression: mat #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;list_of_scalars&#39;</span><span class="p">,(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>             <span class="c"># (1,2,3) is converted into a list of 3 scalar parameters </span>
+<span class="go">[# (1 x 1)-affine expression: list_of_scalars[0] #,</span>
+<span class="go"> # (1 x 1)-affine expression: list_of_scalars[1] #,</span>
+<span class="go"> # (1 x 1)-affine expression: list_of_scalars[2] #]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;list_of_vectors&#39;</span><span class="p">,([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span>   <span class="c"># ([1,2,3],[4,5,6]) is converted into a list of 2 vector parameters </span>
+<span class="go">[# (3 x 1)-affine expression: list_of_vectors[0] #,</span>
+<span class="go"> # (3 x 1)-affine expression: list_of_vectors[1] #]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="overloaded-operators">
+<h3>Overloaded operators<a class="headerlink" href="#overloaded-operators" title="Permalink to this headline">¶</a></h3>
+<p id="overloads">OK, so now we have some variables (<tt class="docutils literal"><span class="pre">t</span></tt>, <tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">w</span></tt>, <tt class="docutils literal"><span class="pre">Y</span></tt>, and <tt class="docutils literal"><span class="pre">Z</span></tt>)
+and some parameters (<tt class="docutils literal"><span class="pre">A</span></tt>, <tt class="docutils literal"><span class="pre">b</span></tt>, <tt class="docutils literal"><span class="pre">D</span></tt> and <tt class="docutils literal"><span class="pre">alpha</span></tt>). Let us create some
+affine expressions with them.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                              <span class="c">#left multiplication</span>
+<span class="go"># (2 x 2)-affine expression: A[0]*Z[0] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                              <span class="c">#right multiplication</span>
+<span class="go"># (4 x 4)-affine expression: Z[0]*A[0] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>                       <span class="c">#left and right multiplication</span>
+<span class="go"># (2 x 4)-affine expression: A[1]*Z[0]*A[2] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">alpha</span><span class="o">*</span><span class="n">Y</span>                                  <span class="c">#scalar multiplication</span>
+<span class="go"># (2 x 4)-affine expression: alpha*Y #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">/</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">D</span><span class="p">[</span><span class="s">&#39;Bob&#39;</span><span class="p">]</span>                     <span class="c">#division by a scalar and substraction</span>
+<span class="go"># (1 x 1)-affine expression: t / b[1][3] -D[Bob] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">|</span> <span class="n">x</span> <span class="p">)</span>                             <span class="c">#dot product</span>
+<span class="go"># (1 x 1)-affine expression: 〈 b[2] | x 〉 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span> <span class="n">A</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">|</span> <span class="n">Y</span> <span class="p">)</span>                             <span class="c">#generalized dot product for matrices: (A|B)=trace(A*B.T)</span>
+<span class="go"># (1 x 1)-affine expression: 〈 A[3] | Y 〉 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="n">x</span>                                   <span class="c">#hadamard (element-wise) product</span>
+<span class="go"># (4 x 1)-affine expression: b[1]∘x #</span>
+</pre></div>
+</div>
+<p>We can also take some subelements of affine expressions, by using
+the standard syntax of python slices:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>                                <span class="c">#2d and 3rd elements of b[1]</span>
+<span class="go"># (2 x 1)-affine expression: b[1][1:3] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>                                   <span class="c">#2d row of Y</span>
+<span class="go"># (1 x 4)-affine expression: Y[1,:] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>                                    <span class="c">#last element of x</span>
+<span class="go"># (1 x 1)-affine expression: x[-1] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">][:,</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">Y</span><span class="p">[:,</span><span class="o">-</span><span class="mi">2</span><span class="p">::</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>                  <span class="c">#extended slicing with (negative) steps is allowed</span>
+<span class="go"># (2 x 2)-affine expression: A[2][:,1:3]*( Y[:,-2::-2] ) #</span>
+</pre></div>
+</div>
+<p>In the last example, we keep only the second and third columns of <tt class="docutils literal"><span class="pre">A[2]</span></tt>, and
+the columns of <tt class="docutils literal"><span class="pre">Y</span></tt> with an even index, considered in the reverse order.
+To concatenate affine expressions, the operators <tt class="docutils literal"><span class="pre">//</span></tt> and <tt class="docutils literal"><span class="pre">&amp;</span></tt> have been
+overloaded:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">x</span> <span class="o">&amp;</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="o">//</span> <span class="n">x</span><span class="o">.</span><span class="n">T</span>                  <span class="c">#vertical (//) and horizontal (&amp;) concatenation</span>
+<span class="go"># (5 x 4)-affine expression: [b[1],b[2],x,A[0].T*A[0]*x;x.T] #</span>
+</pre></div>
+</div>
+<p>When a scalar is added/substracted to a matrix or a vector, we interprete it
+as an elementwise addition of the scalar to every element of the matrix or vector.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="mi">5</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="n">alpha</span>
+<span class="go"># (4 x 1)-affine expression: 5.0*x + |-alpha| #</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that the string representation <tt class="docutils literal"><span class="pre">'|-alpha|'</span></tt> does not stand for the
+absolute value of <tt class="docutils literal"><span class="pre">-alpha</span></tt>, but for the vector whose all terms are <tt class="docutils literal"><span class="pre">-alpha</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="summing-affine-expressions">
+<h3>Summing Affine Expressions<a class="headerlink" href="#summing-affine-expressions" title="Permalink to this headline">¶</a></h3>
+<p>You can take the advantage of python syntax to create sums of affine expressions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">sum</span><span class="p">([</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+<span class="go"># (2 x 2)-affine expression: A[0]*Z[0] + A[1]*Z[1] + A[2]*Z[2] + A[3]*Z[3] + A[4]*Z[4] #</span>
+</pre></div>
+</div>
+<p>This works, but you might have very long string representations if there are a lot
+of summands. So you&#8217;d better use
+the function <a class="reference internal" href="tools.html#picos.tools.sum" title="picos.tools.sum"><tt class="xref py py-func docutils literal"><span class="pre">picos.sum()</span></tt></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[5]&#39;</span><span class="p">)</span>
+<span class="go"># (2 x 2)-affine expression: Σ_{i in [5]} A[i]*Z[i] #</span>
+</pre></div>
+</div>
+<p>It is also possible to sum over several indices</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],[</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;j&#39;</span><span class="p">],</span><span class="s">&#39;[5]x[4]&#39;</span><span class="p">)</span>
+<span class="go"># (1 x 2)-affine expression: Σ_{i,j in [5]x[4]} |A[i][1,j]| + b[j].T*Z[i] #</span>
+</pre></div>
+</div>
+<p>A more complicated example, given in two variants: in the first one,
+<tt class="docutils literal"><span class="pre">p</span></tt> is a tuple index representing a pair, while in the second case
+we explicitely say that the pairs are of the form <tt class="docutils literal"><span class="pre">(p0,p1)</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">],(</span><span class="s">&#39;p&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="s">&#39;pairs&#39;</span><span class="p">)</span>
+<span class="go"># (1 x 1)-affine expression: Σ_{p in pairs} w[p]*b[p__1-1][p__0] #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="n">p0</span><span class="p">,</span><span class="n">p1</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">p1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">p0</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">p0</span><span class="p">,</span><span class="n">p1</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">],[</span><span class="s">&#39;p0&#39;</span><span class="p">,</span><span class="s">&#39;p1&#39;</span><span class="p">],</span><span class="s">&#39;pairs&#39;</span><span class="p">)</span>
+<span class="go"># (1 x 1)-affine expression: Σ_{p0,p1 in pairs} w[(p0, p1)]*b[p1-1][p0] #</span>
+</pre></div>
+</div>
+<p>It is also possible to sum over string indices (<em>see the documentation of</em> <a class="reference internal" href="tools.html#picos.tools.sum" title="picos.tools.sum"><tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">D</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">D</span><span class="p">],</span><span class="s">&#39;name&#39;</span><span class="p">,</span><span class="s">&#39;people_list&#39;</span><span class="p">)</span>
+<span class="go"># (1 x 1)-affine expression: Σ_{name in people_list} D[name] #</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="objective-function">
+<h3>Objective function<a class="headerlink" href="#objective-function" title="Permalink to this headline">¶</a></h3>
+<p>The objective function of the problem
+can be defined with the function
+<a class="reference internal" href="problem.html#picos.Problem.set_objective" title="picos.Problem.set_objective"><tt class="xref py py-func docutils literal"><span class="pre">set_objective()</span></tt></a>.
+Its first argument should be <tt class="docutils literal"><span class="pre">'max'</span></tt>, <tt class="docutils literal"><span class="pre">'min'</span></tt> or
+<tt class="docutils literal"><span class="pre">'find'</span></tt> (<em>for feasibility problems</em>),
+and the second argument should be a scalar expression:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,(</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">|</span> <span class="n">Y</span> <span class="p">)</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>  
+<span class="go">---------------------</span>
+<span class="go">optimization problem (MIP):</span>
+<span class="go">59 variables, 0 affine constraints</span>
+
+<span class="go">w   : dict of 6 variables, (1, 1), binary</span>
+<span class="go">Z   : list of 5 variables, (4, 2), continuous</span>
+<span class="go">t   : (1, 1), continuous</span>
+<span class="go">Y   : (2, 4), continuous</span>
+<span class="go">x   : (4, 1), integer</span>
+
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">such that</span>
+<span class="go">  []</span>
+<span class="go">---------------------</span>
+</pre></div>
+</div>
+<p>With this example, you see what happens when a problem is printed:
+the list of optimization variables is displayed, then the objective function
+and finally a list of constraints (in the case above, there is no constraint).</p>
+</div>
+</div>
+<div class="section" id="norm-of-an-affine-expression">
+<h2><em>Norm of an affine Expression</em><a class="headerlink" href="#norm-of-an-affine-expression" title="Permalink to this headline">¶</a></h2>
+<p>The norm of an affine expression is an overload of the <tt class="docutils literal"><span class="pre">abs()</span></tt> function.
+If <tt class="docutils literal"><span class="pre">x</span></tt> is an affine expression, <tt class="docutils literal"><span class="pre">abs(x)</span></tt> is its Euclidean norm <img class="math" src="_images/math/047236a67f4db60014f0cbd756b45c4a3c4ca2f5.png" alt="\sqrt{x^T x}"/>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go"># norm of a (4 x 1)- expression: ||x|| #</span>
+</pre></div>
+</div>
+<p>In the case where the affine expression is a matrix, <tt class="docutils literal"><span class="pre">abs()</span></tt> returns its
+Frobenius norm, defined as <img class="math" src="_images/math/b145314e7825b3c3a2142508a876ef2c4f240000.png" alt="\Vert M \Vert_F := \sqrt{\operatorname{trace} (M^T M)}"/>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="go"># norm of a (4 x 2)- expression: ||Z[1] -2.0*A[0].T|| #</span>
+</pre></div>
+</div>
+<p>Note that the absolute value of a scalar expression is stored as a norm:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go"># norm of a (1 x 1)- expression: ||t|| #</span>
+</pre></div>
+</div>
+<p>However, a scalar constraint of the form <img class="math" src="_images/math/334349037e2e0b04816ffb8cd29eac75dfc70005.png" alt="|a^T x + b| \leq c^T x + d"/>
+is handled as two linear constraints by PICOS, and so a problem with the latter
+constraint
+can be solved even if you do not have a SOCP solver available.
+Besides, note that the string representation of an absolute value uses the double bar notation.
+(Recall that the single bar notation <tt class="docutils literal"><span class="pre">|t|</span></tt> is used to denote the vector
+whose all values are <tt class="docutils literal"><span class="pre">t</span></tt>).</p>
+<p>It is also possible to use other <img class="math" src="_images/math/3880eaa2e3831969722e43d73b47054675a0a134.png" alt="L_p-"/> norms in picos, cf. <a class="reference internal" href="#pnorms"><em>this paragraph</em></a> .</p>
+</div>
+<div class="section" id="quadratic-expressions">
+<h2><em>Quadratic Expressions</em><a class="headerlink" href="#quadratic-expressions" title="Permalink to this headline">¶</a></h2>
+<p>Quadratic expressions can be formed in several ways:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">t</span> <span class="o">-</span> <span class="n">alpha</span>                       <span class="c">#sum of linear and quadratic terms</span>
+<span class="go">#quadratic expression: t**2 -x[1]*x[2] + 2.0*t -alpha #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>                                     <span class="c">#product of two affine expressions</span>
+<span class="go">#quadratic expression: ( x[1] -2.0 )*( t + 4.0 ) #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">*</span><span class="n">x</span>                                             <span class="c">#Row vector multiplied by column vector</span>
+<span class="go">#quadratic expression: Y[0,:]*x #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">x</span> <span class="o">+</span><span class="mi">2</span> <span class="o">|</span> <span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">])</span>                                   <span class="c">#scalar product of affine expressions</span>
+<span class="go">#quadratic expression: 〈 x + |2.0| | Z[1][:,1] 〉 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>                                            <span class="c">#recall that abs(x) is the euclidean norm of x</span>
+<span class="go">#quadratic expression: ||x||**2 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">t</span> <span class="o">&amp;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span>                               <span class="c">#quadratic form</span>
+<span class="go">#quadratic expression: [t,alpha]*A[1]*x #</span>
+</pre></div>
+</div>
+<p>It is not possible (yet) to make a multidimensional quadratic expression.</p>
+</div>
+<div class="section" id="constraints">
+<h2><em>Constraints</em><a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h2>
+<p>A constraint takes the form of two expressions separated by a relation operator.</p>
+<div class="section" id="linear-in-equalities">
+<h3>Linear (in)equalities<a class="headerlink" href="#linear-in-equalities" title="Permalink to this headline">¶</a></h3>
+<p>Linear (in)equalities are understood elementwise. <strong>The strict operators</strong>
+<tt class="docutils literal"><span class="pre">&lt;</span></tt> <strong>and</strong> <tt class="docutils literal"><span class="pre">&gt;</span></tt> <strong>denote weak inequalities</strong> (<em>less or equal than</em>
+and <em>larger or equal than</em>). For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>                                                        <span class="c">#sum of the x[i] less or equal than 2</span>
+<span class="go"># (1x1)-affine constraint: 〈 |1| | x 〉 &lt; 2.0 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>                                        <span class="c">#A 4x4-elementwise inequality</span>
+<span class="go"># (4x4)-affine constraint: Z[0]*A[0] &gt; b[1]*b[2].T #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[5]&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>            <span class="c">#A 2x2 equality. The RHS is the all-zero matrix</span>
+<span class="go"># (2x2)-affine constraint: Σ_{i in [5]} A[i]*Z[i] = |0| #</span>
+</pre></div>
+</div>
+<p>Constraints can be added in the problem with the function
+<a class="reference internal" href="problem.html#picos.Problem.add_constraint" title="picos.Problem.add_constraint"><tt class="xref py py-func docutils literal"><span class="pre">add_constraint()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">):</span>
+<span class="gp">... </span>     <span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">Y</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>        
+<span class="go">---------------------</span>
+<span class="go">optimization problem (MIP):</span>
+<span class="go">59 variables, 32 affine constraints</span>
+
+<span class="go">w   : dict of 6 variables, (1, 1), binary</span>
+<span class="go">Z   : list of 5 variables, (4, 2), continuous</span>
+<span class="go">t   : (1, 1), continuous</span>
+<span class="go">Y   : (2, 4), continuous</span>
+<span class="go">x   : (4, 1), integer</span>
+
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">such that</span>
+<span class="go">  Z[1] = Z[0] + Y.T</span>
+<span class="go">  Z[2] = Z[1] + Y.T</span>
+<span class="go">  Z[3] = Z[2] + Y.T</span>
+<span class="go">  Z[4] = Z[3] + Y.T</span>
+<span class="go">---------------------</span>
+</pre></div>
+</div>
+<p>The constraints of the problem can then be accessed with the function
+<a class="reference internal" href="problem.html#picos.Problem.get_constraint" title="picos.Problem.get_constraint"><tt class="xref py py-func docutils literal"><span class="pre">get_constraint()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>                      <span class="c">#constraints are numbered from 0</span>
+<span class="go"># (4x2)-affine constraint: Z[3] = Z[2] + Y.T #</span>
+</pre></div>
+</div>
+<p>An alternative is to pass the constraint with the option <tt class="docutils literal"><span class="pre">ret</span> <span class="pre">=</span> <span class="pre">True</span></tt>,
+which has the effect to return a reference to the constraint you want to add.
+In particular, this reference can be useful to access the optimal dual variable
+of the constraint, once the problem will have been solved.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mycons</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">+</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">Y</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">mycons</span>
+<span class="go"># (4x2)-affine constraint : Z[4] + Z[0] = Y.T #</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="groupping-constraints">
+<h3>Groupping constraints<a class="headerlink" href="#groupping-constraints" title="Permalink to this headline">¶</a></h3>
+<p>In order to have a more compact string representation of the problem,
+it is advised to use the function <a class="reference internal" href="problem.html#picos.Problem.add_list_of_constraints" title="picos.Problem.add_list_of_constraints"><tt class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></tt></a>,
+which works similarly as the function <a class="reference internal" href="tools.html#picos.tools.sum" title="picos.tools.sum"><tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">remove_all_constraints</span><span class="p">()</span>                                                    <span class="c">#we first remove the 4 constraints precedently added</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">Y</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>                                                         <span class="c">#a single constraint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">([</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">==</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">Y</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;1...4&#39;</span><span class="p">)</span> <span class="c">#the same list of constraints as above</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">prob</span>    
+<span class="go">---------------------</span>
+<span class="go">optimization problem (MIP):</span>
+<span class="go">59 variables, 40 affine constraints</span>
+
+<span class="go">w   : dict of 6 variables, (1, 1), binary</span>
+<span class="go">Z   : list of 5 variables, (4, 2), continuous</span>
+<span class="go">t   : (1, 1), continuous</span>
+<span class="go">Y   : (2, 4), continuous</span>
+<span class="go">x   : (4, 1), integer</span>
+
+<span class="go">    maximize 〈 A[0] | Y 〉 -t</span>
+<span class="go">such that</span>
+<span class="go">  Y &gt; |0|</span>
+<span class="go">  Z[i] = Z[i-1] + Y.T for all i in 1...4</span>
+<span class="go">---------------------</span>
+</pre></div>
+</div>
+<p>Now, the constraint <tt class="docutils literal"><span class="pre">Z[3]</span> <span class="pre">=</span> <span class="pre">Z[2]</span> <span class="pre">+</span> <span class="pre">Y.T</span></tt>, which has been entered
+in 4th position, can either be accessed by  <tt class="docutils literal"><span class="pre">prob.get_constraint(3)</span></tt> (<tt class="docutils literal"><span class="pre">3</span></tt> because
+constraints are numbered from <tt class="docutils literal"><span class="pre">0</span></tt>), or by</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="go"># (4x2)-affine constraint: Z[3] = Z[2] + Y.T #</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">(1,2)</span></tt> means <em>the 3rd constraint of the 2d group of constraints</em>,
+with zero-based numbering.</p>
+<p>Similarly, the constraint <tt class="docutils literal"><span class="pre">Y</span> <span class="pre">&gt;</span> <span class="pre">|0|</span></tt> can be accessed by
+<tt class="docutils literal"><span class="pre">prob.get_constraint(0)</span></tt> (first constraint),
+<tt class="docutils literal"><span class="pre">prob.get_constraint((0,0))</span></tt> (first constraint of the first group), or
+<tt class="docutils literal"><span class="pre">prob.get_constraint((0,))</span></tt> (unique constraint of the first group).</p>
+</div>
+<div class="section" id="flow-constraints-in-graphs">
+<span id="flowcons"></span><h3>Flow constraints in Graphs<a class="headerlink" href="#flow-constraints-in-graphs" title="Permalink to this headline">¶</a></h3>
+<p>Flow constraints in graphs are entered using a <a class="reference external" href="https://networkx.github.io/">Networkx</a> Graph. The following example finds a (trivial) maximal flow from <tt class="docutils literal"><span class="pre">'S'</span></tt> to <tt class="docutils literal"><span class="pre">'T'</span></tt> in <tt class="docutils literal"><span class="pre">G</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;S&#39;</span><span class="p">,</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">1</span><span class="p">);</span> <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">1</span><span class="p">);</span> <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span><span class="s">&#39;T&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pb</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Adding the flow variables</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">=</span><span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+<span class="gp">... </span>     <span class="n">f</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">=</span><span class="n">pb</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;f[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># A variable for the value of the flow</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">F</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;F&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Creating the flow constraint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">flowCons</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">flow_Constraint</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s">&#39;S&#39;</span><span class="p">,</span> <span class="n">sink</span><span class="o">=</span><span class="s">&#39;T&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="s">&#39;capacity&#39;</span><span class="p">,</span> <span class="n">flow_value</span><span class="o">=</span> <span class="n">F</span><span class="p">,</span> <span class="n">graphName</span><span class="o">=</span><span class="s">&#39;G&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pb</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">flowCons</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pb</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sol</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">flow</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">eval_dict</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Picos allows you to define single source - multiple sinks problems.
+You can use the same syntax as for a single source - single sink problems.
+Just add a list of sinks and a list of flows instead.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The function <a class="reference internal" href="tools.html#picos.tools.flow_Constraint" title="picos.tools.flow_Constraint"><tt class="xref py py-func docutils literal"><span class="pre">flow_Constraint()</span></tt></a>
+cannot take both multiple sources and multiple sinks.
+Multicommodity flows will be supported in the next release.</p>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+
+<span class="n">G</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;S&#39;</span><span class="p">,</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">2</span><span class="p">);</span> <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;S&#39;</span><span class="p">,</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="s">&#39;T1&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">2</span><span class="p">);</span> <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;B&#39;</span><span class="p">,</span><span class="s">&#39;T2&#39;</span><span class="p">,</span> <span class="n">capacity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">pbMultipleSinks</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="c"># Flow variable</span>
+<span class="n">f</span><span class="o">=</span><span class="p">{}</span>
+<span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+          <span class="n">f</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">=</span><span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;f[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c"># Flow value</span>
+<span class="n">F1</span><span class="o">=</span><span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;F1&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">F2</span><span class="o">=</span><span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;F2&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">flowCons</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">flow_Constraint</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s">&#39;S&#39;</span><span class="p">,</span> <span class="n">sink</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;T1&#39;</span><span class="p">,</span><span class="s">&#39;T2&#39;</span><span class="p">],</span> <span class="n">capacity</span><span class="o">=</span><span class="s">&#39;capacity&#39;</span><span class="p">,</span> <span class="n">flow_value</span><span class="o">=</span><span class="p">[</span><span class="n">F1</span><span class="p">,</span> <span class="n">F2</span><span class="p">],</span> <span class="n">graphName</span><span class="o">=</span><span class="s">&#39;G&#39;</span><span class="p">)</span>
+
+<span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">flowCons</span><span class="p">)</span>
+<span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">F1</span><span class="o">+</span><span class="n">F2</span><span class="p">)</span>
+
+<span class="c"># Solve the problem</span>
+<span class="n">pbMultipleSinks</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="n">pbMultipleSinks</span>
+<span class="k">print</span> <span class="s">&#39;The optimal flow F1 has value {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F1</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&#39;The optimal flow F2 has value {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (LP):
+6 variables, 12 affine constraints
+
+f       : dict of 4 variables, (1, 1), continuous
+F1      : (1, 1), continuous
+F2      : (1, 1), continuous
+
+          maximize F1 + F2
+such that
+  ** One Source, Multiple Sinks **
+  Flow conservation in G from S to T1 with value F1
+  Flow conservation in G from S to T2 with value F2
+
+---------------------
+The optimal flow F1 has value 2.0
+The optimal flow F2 has value 2.0
+</pre></div>
+</div>
+<p>A similar syntax can be used for multiple sources-single sink flows.</p>
+</div>
+<div class="section" id="quadratic-constraints">
+<h3>Quadratic constraints<a class="headerlink" href="#quadratic-constraints" title="Permalink to this headline">¶</a></h3>
+<p>Quadratic inequalities are entered in the following way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">t</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">#Quadratic constraint -t**2 + 2.0*t -alpha + x[1]*x[2] &lt; 0 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">t</span> <span class="o">&amp;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span><span class="mi">2</span> <span class="o">|</span> <span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">Y</span><span class="p">)</span><span class="o">-</span><span class="n">alpha</span>
+<span class="go">#Quadratic constraint [t,alpha]*A[1]*x + 〈 x + |2.0| | Z[1][:,1] 〉 -(3.0*〈 |1| | Y 〉 -alpha) &lt; 0 #</span>
+</pre></div>
+</div>
+<p>Note that PICOS does not check the convexity of convex constraints.
+The solver will raise an Exception if it does not support
+non-convex quadratics.</p>
+</div>
+<div class="section" id="second-order-cone-constraints">
+<h3>Second Order Cone Constraints<a class="headerlink" href="#second-order-cone-constraints" title="Permalink to this headline">¶</a></h3>
+<p>There are two types of second order cone constraints supported in PICOS.</p>
+<blockquote>
+<div><ul class="simple">
+<li>The constraints of the type <img class="math" src="_images/math/70c9fee2d7b0ac3947fd762af122b0c7d1ef9a20.png" alt="\Vert x \Vert \leq t"/>, where <img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/>
+is a scalar affine expression and <img class="math" src="_images/math/188c175aac0a8a9c22499336711b5d7256407254.png" alt="x"/> is
+a multidimensional affine expression (possibly a matrix, in which case the
+norm is Frobenius). This inequality forces
+the vector <img class="math" src="_images/math/f0cc483dee93294eaac96d039b79416b0e6cd364.png" alt="[x;t]"/> to belong to a Lorrentz-Cone (also called
+<em>ice-cream cone</em>)</li>
+<li>The constraints of the type <img class="math" src="_images/math/7cd00ee2b723a6986931501a8b05172082913395.png" alt="\Vert x \Vert^2 \leq t u,\ t \geq 0"/>, where
+<img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/> and <img class="math" src="_images/math/e5fc41b391867da81606413e3389c7efc73abaf0.png" alt="u"/> are scalar affine expressions and
+<img class="math" src="_images/math/188c175aac0a8a9c22499336711b5d7256407254.png" alt="x"/> is a multidimensional affine expression, which constrain
+the vector <img class="math" src="_images/math/0eed5d2b617e2bf27fe1fba21f4e5217bec97bd5.png" alt="[x,t,u]"/> inside a rotated version of the Lorretz cone.
+When a constraint of the form <tt class="docutils literal"><span class="pre">abs(x)**2</span> <span class="pre">&lt;</span> <span class="pre">t*u</span></tt> is passed to PICOS, <strong>it
+is implicitely assumed that</strong> <tt class="docutils literal"><span class="pre">t</span></tt> <strong>is nonnegative</strong>, and the constraint is
+handled as the equivalent, standard ice-cream cone constraint
+<img class="math" src="_images/math/5f690770734e0b97ff066e86276d5d28e0db85cb.png" alt="\Vert \ [2x,t-u]\  \Vert \leq t+u"/>.</li>
+</ul>
+</div></blockquote>
+<p>A few examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">|</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>                                                                  <span class="c">#A simple ice-cream cone constraint</span>
+<span class="go"># (4x1)-SOC constraint: ||x|| &lt; 〈 |2.0| | x -|1| 〉 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">Y</span><span class="o">+</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">t</span><span class="o">+</span><span class="n">alpha</span>                                                           <span class="c">#SOC constraint with Frobenius norm</span>
+<span class="go"># (2x4)-SOC constraint: ||Y + Z[0].T|| &lt; t + alpha #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">t</span><span class="o">-</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>                                      <span class="c">#Rotated SOC constraint</span>
+<span class="go"># (4x1)-Rotated SOC constraint: ||Z[1][:,0]||^2 &lt; ( 2.0*t -alpha)( x[2] -(x[-1])) #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span> <span class="n">D</span><span class="p">[</span><span class="s">&#39;Elisa&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">t</span>                                                               <span class="c">#t**2 is understood as the squared norm of [t]</span>
+<span class="go"># (1x1)-Rotated SOC constraint: ||t||^2 &lt; D[Elisa] + t #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mi">1</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>                                                             <span class="c">#1 is understood as the squared norm of [1]</span>
+<span class="go"># (1x1)-Rotated SOC constraint: 1.0 &lt; ( t -1.0)( x[2] + x[3]) #</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="semidefinite-constraints">
+<h3>Semidefinite Constraints<a class="headerlink" href="#semidefinite-constraints" title="Permalink to this headline">¶</a></h3>
+<p>Linear matrix inequalities (LMI) can be entered thanks to an overload of the operators
+<tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt> and <tt class="docutils literal"><span class="pre">&gt;&gt;</span></tt>. For example, the LMI</p>
+<div class="math">
+<p><img src="_images/math/48faff9979c88ade2ab93e94d657923618b14831.png" alt="\begin{equation*}
+\sum_{i=0}^3 x_i b_i b_i^T \succeq b_4 b_4^T,
+\end{equation*}"/></p>
+</div><p>where <img class="math" src="_images/math/9803842183b2996684487c801d0383b18c235d2b.png" alt="\succeq"/> is used to denote the Löwner ordering,
+is passed to PICOS by writing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;0...3&#39;</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+<span class="go"># (4x4)-LMI constraint Σ_{i in 0...3} x[i]*b[i]*b[i].T ≽ b[4]*b[4].T #</span>
+</pre></div>
+</div>
+<p>Note the difference with</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;0...3&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+<span class="go"># (4x4)-affine constraint: Σ_{i in 0...3} x[i]*b[i]*b[i].T &gt; b[4]*b[4].T #</span>
+</pre></div>
+</div>
+<p>which yields an elementwise inequality.</p>
+<p>For convenience, it is possible to add a symmetric matrix variable <tt class="docutils literal"><span class="pre">X</span></tt>,
+by specifying the option <tt class="docutils literal"><span class="pre">vtype=symmetric</span></tt>. This has the effect to
+store all the affine expressions which depend on <tt class="docutils literal"><span class="pre">X</span></tt> as a function
+of its lower triangular elements only.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sdp</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">sdp</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span><span class="n">vtype</span><span class="o">=</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sdp</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">sdp</span>   
+<span class="go">---------------------</span>
+<span class="go">optimization problem (SDP):</span>
+<span class="go">10 variables, 0 affine constraints, 10 vars in 1 SD cones</span>
+
+<span class="go">X   : (4, 4), symmetric</span>
+
+<span class="go">    find vars</span>
+<span class="go">such that</span>
+<span class="go">  X ≽ |0|</span>
+<span class="go">---------------------</span>
+</pre></div>
+</div>
+<p>In this example, you see indeed that the problem has 10=(4*5)/2 variables,
+which correspond to the lower triangular elements of <tt class="docutils literal"><span class="pre">X</span></tt>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">When a constraint of the form <tt class="docutils literal"><span class="pre">A</span> <span class="pre">&gt;&gt;</span> <span class="pre">B</span></tt> is passed to PICOS, it is not
+assumed that A-B is symmetric. Instead, the symmetric matrix whose lower
+triangular elements are those of A-B is forced to be positive semidefnite.
+So, in the cases where A-B is not implicitely forced to be symmetric, you
+should add a constraint of the form <tt class="docutils literal"><span class="pre">A-B==(A-B).T</span></tt> in the problem.</p>
+</div>
+</div>
+<div class="section" id="inequalities-involving-geometric-means">
+<h3>Inequalities involving geometric means<a class="headerlink" href="#inequalities-involving-geometric-means" title="Permalink to this headline">¶</a></h3>
+<p>It is possible to enter an inequality of the form</p>
+<div class="math">
+<p><img src="_images/math/7035c335153aba008652af3337ce6d5e0ef59668.png" alt="t \leq \prod_{i=1}^n x_i^{1/n}"/></p>
+</div><p>in PICOS, where <img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/>
+is a scalar affine expression and <img class="math" src="_images/math/188c175aac0a8a9c22499336711b5d7256407254.png" alt="x"/> is an affine expression
+of dimension <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> (possibly a matrix, in which case
+<img class="math" src="_images/math/33dfc32d00ebd5c5791c824010a155d9e5630b6f.png" alt="x_i"/> is counted in column major order).
+This inequality is internally converted to an equivalent set of
+second order cone inequalities, by using standard techniques
+(cf. e.g. <a class="reference internal" href="#tuto-refs"><em>[1]</em></a>).</p>
+<p>Many convex constraints can be formulated using inequalities that involve
+a geometric mean. For example, <img class="math" src="_images/math/213a7a2c7b7e9ac2177fb6172ff93e29814068bf.png" alt="t \leq x_1^{2/3}"/> is equivalent
+to <img class="math" src="_images/math/6f970d3e1d7b0f2b07358c4847b9ae9d3c8752e8.png" alt="t \leq t^{1/4} x_1^{1/4} x_1^{1/4}"/>, which can be entered in PICOS
+thanks to the function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></tt></a> :</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">geomean</span><span class="p">(</span><span class="n">t</span> <span class="o">//</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span><span class="mi">1</span><span class="p">)</span>
+<span class="go"># geometric mean ineq : t&lt;geomean( [t;x[1];x[1];1.0])#</span>
+</pre></div>
+</div>
+<p>Note that the latter example can also be passed to picos in a more simple way,
+thanks to an overloading of the <tt class="docutils literal"><span class="pre">**</span></tt> exponentiation operator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="mf">2.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+<span class="go"># pth power ineq : ( x[1])**2/3&gt;t#</span>
+</pre></div>
+</div>
+<p>Inequalities involving geometric means are stored in a temporary object
+of the class <a class="reference internal" href="constraint.html#picos.GeoMeanConstraint" title="picos.GeoMeanConstraint"><tt class="xref py py-class docutils literal"><span class="pre">GeoMeanConstraint</span></tt></a>,
+which can be passed to a problem with <a class="reference internal" href="problem.html#picos.Problem.add_constraint" title="picos.Problem.add_constraint"><tt class="xref py py-func docutils literal"><span class="pre">add_constraint()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">geom_ineq</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t</span><span class="o">&lt;</span><span class="n">pic</span><span class="o">.</span><span class="n">geomean</span><span class="p">(</span><span class="n">Y</span><span class="p">[:</span><span class="mi">6</span><span class="p">]),</span> <span class="n">ret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When the option <tt class="docutils literal"><span class="pre">ret</span> <span class="pre">=</span> <span class="pre">True</span></tt> is used to pass an inequality with a geometric mean,
+the object of the class <a class="reference internal" href="constraint.html#picos.GeoMeanConstraint" title="picos.GeoMeanConstraint"><tt class="xref py py-class docutils literal"><span class="pre">GeoMeanConstraint</span></tt></a> is returned.
+This object has an attribute <tt class="docutils literal"><span class="pre">Ptmp</span></tt> which contains all the SOC inequalities that
+are used internally to represent the geometric mean:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">geom_ineq</span><span class="o">.</span><span class="n">Ptmp</span><span class="o">.</span><span class="n">constraints</span>  
+<span class="go">[# (1x1)-Rotated SOC constraint: ||u[1:0-1]||^2 &lt; ( Y[:6][0])( Y[:6][1]) #,</span>
+<span class="go"> # (1x1)-Rotated SOC constraint: ||u[1:2-3]||^2 &lt; ( Y[:6][2])( Y[:6][3]) #,</span>
+<span class="go"> # (1x1)-Rotated SOC constraint: ||u[1:4-5]||^2 &lt; ( Y[:6][4])( Y[:6][5]) #,</span>
+<span class="go"> # (1x1)-Rotated SOC constraint: ||u[2:0-3]||^2 &lt; ( u[1:0-1])( u[1:2-3]) #,</span>
+<span class="go"> # (1x1)-Rotated SOC constraint: ||u[2:4-x]||^2 &lt; ( u[1:4-5])( t) #,</span>
+<span class="go"> # (1x1)-Rotated SOC constraint: ||t||^2 &lt; ( u[2:0-3])( u[2:4-x]) #]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="inequalities-involving-real-powers-or-trace-of-matrix-powers">
+<h3>Inequalities involving real powers or trace of matrix powers<a class="headerlink" href="#inequalities-involving-real-powers-or-trace-of-matrix-powers" title="Permalink to this headline">¶</a></h3>
+<p>As mentionned above, the <tt class="docutils literal"><span class="pre">**</span></tt> exponentiation operator has been overloaded
+to support real exponents. A rational approximation of the exponent is used,
+and the inequality are internally reformulated as a set of equivalent SOC inequalities.
+Note that only inequalities defining a convex regions can be passed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mf">0.6666</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go"># pth power ineq : ( t)**2/3&gt;x[0]#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**-</span><span class="mf">0.5</span> <span class="o">&lt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go"># pth power ineq : ( t)**-1/2&lt;x[0]#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>     <span class="n">t</span><span class="o">**-</span><span class="mf">0.5</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+<span class="gp">... </span>     <span class="k">print</span> <span class="s">&#39;Exception: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> 
+<span class="go">Exception: &gt;= operator can be used only when the function is concave (0&lt;p&lt;=1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="go"># (1x1)-Rotated SOC constraint: ||t||^2 &lt; x[1] + x[2] #</span>
+</pre></div>
+</div>
+<p>More generally, inequalities involving trace of matrix powers can be passed to PICOS,
+by using the <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">picos.tracepow()</span></tt></a> function. The following example
+creates the constraint</p>
+<blockquote>
+<div><div class="math">
+<p><img src="_images/math/dd857f2fa0d7d29f7b27a08c6bf4d3b56afb940f.png" alt="\operatorname{trace}\ \big(x_0 A_0 A_0^T + x_2 A_2 A_2^T\big)^{2.5} \leq 3."/></p>
+</div></div></blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tracepow</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span>
+<span class="go"># trace of pth power ineq : trace( x[0]*A[0]*A[0].T + x[2]*A[2]*A[2].T)**5/2&lt;3.0#</span>
+</pre></div>
+</div>
+<blockquote>
+<div><div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">when a power expression <img class="math" src="_images/math/3ae01849dc5cdf884a6ca6c31cc84029073c9bbb.png" alt="x^p"/> (resp. the trace of matrix power <img class="math" src="_images/math/3807240f89734af70558269146635eb9edd3eb2a.png" alt="\operatorname{trace}\ X^p"/> )
+is used, the base <img class="math" src="_images/math/188c175aac0a8a9c22499336711b5d7256407254.png" alt="x"/> is forced to be nonnegative (resp. the base <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> is
+forced to be positive semidefinite) by picos.</p>
+</div>
+</div></blockquote>
+<p>When the exponent is <img class="math" src="_images/math/eaefb689569d36bc921fe09ae34e70055519ae2c.png" alt="0&lt;p&lt;1"/>,
+it is also possible to represent constraints of the form
+<img class="math" src="_images/math/fa733d2db9d89ff82b3b53a61fc195c7de5b5625.png" alt="\operatorname{trace}(M X^p) \geq t"/>
+with SDPs, where <img class="math" src="_images/math/1b98248ee27b132b3aa95430a12a5a5507597c14.png" alt="M\succeq 0"/>, see <a class="reference internal" href="#tuto-refs"><em>[2]</em></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">tracepow</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="mf">0.6666</span><span class="p">,</span> <span class="n">coef</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">t</span>
+<span class="go"># trace of pth power ineq : trace[ A[0].T*A[0] *(X)**2/3]&gt;t#</span>
+</pre></div>
+</div>
+<p>As for geometric means, inequalities involving real powers are
+stored in a temporary object of the class <a class="reference internal" href="constraint.html#picos.TracePow_Constraint" title="picos.TracePow_Constraint"><tt class="xref py py-class docutils literal"><span class="pre">TracePow_Constraint</span></tt></a>,
+which contains a field <tt class="docutils literal"><span class="pre">Ptmp</span></tt> , a Problem instance with all the SOC or SDP constraints
+used to represent the original inequality.</p>
+</div>
+<div class="section" id="inequalities-involving-generalized-p-norm">
+<span id="pnorms"></span><h3>Inequalities involving generalized p-norm<a class="headerlink" href="#inequalities-involving-generalized-p-norm" title="Permalink to this headline">¶</a></h3>
+<p>Inequalities of the form <img class="math" src="_images/math/cd87c534b94a3cd0c1be6fa1cd9e27b6943bde01.png" alt="\Vert x \Vert_p \leq t"/> can be entered by using the
+function <a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">picos.norm()</span></tt></a>. This function is also defined for <img class="math" src="_images/math/6558063ec9c3e84e7b0a165f3e816d36e942234f.png" alt="p &lt; 1"/>
+by the usual formula <img class="math" src="_images/math/4c104a4c33ff2c388aeebfd5a20e3f0e62e36aa8.png" alt="\Vert x \Vert_p :=  \Big(\sum_i |x_i|^p \Big)^{1/p}"/>.
+The norm function is convex over <img class="math" src="_images/math/8305a1ff737d7c82636c29557804352a23327c11.png" alt="\mathbb{R}^n"/> for all <img class="math" src="_images/math/7896e51d807427cd86022746e181e94dd1b8940f.png" alt="p\geq 1"/>, and
+concave over the set of vectors with nonnegative coordinates for <img class="math" src="_images/math/7ac034c51b83458628986c6c6673c37234a742a5.png" alt="p \leq 1"/>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">t</span>
+<span class="go"># p-norm ineq : norm_3( x)&lt;t#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="s">&#39;inf&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
+<span class="go"># p-norm ineq : norm_inf( x)&lt;2.0#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go"># generalized p-norm ineq : norm_1/2( x)&gt;x[0] -x[1]#</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that when a constraint of the form <tt class="docutils literal"><span class="pre">norm(x,p)</span> <span class="pre">&gt;=</span> <span class="pre">t</span></tt> is entered (with <img class="math" src="_images/math/7ac034c51b83458628986c6c6673c37234a742a5.png" alt="p \leq 1"/> ),
+PICOS forces the vector <tt class="docutils literal"><span class="pre">x</span></tt> to be nonnegative (componentwise).</p>
+</div>
+<p>Inequalities involving the generalized <img class="math" src="_images/math/869bc845df202793810757251589f3edeb77d2c3.png" alt="L_{p,q}"/> norm of
+a matrix can also be handled with picos, cf. the documentation of
+<a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">picos.norm()</span></tt></a> .</p>
+<p>As for geometric means, inequalities involving p-norms are
+stored in a temporary object of the class <a class="reference internal" href="constraint.html#picos.NormP_Constraint" title="picos.NormP_Constraint"><tt class="xref py py-class docutils literal"><span class="pre">NormP_Constraint</span></tt></a>,
+which contains a field <tt class="docutils literal"><span class="pre">Ptmp</span></tt> , a Problem instance with all the SOC constraints
+used to represent the original inequality.</p>
+</div>
+<div class="section" id="inequalities-involving-the-nth-root-of-a-determinant">
+<h3>Inequalities involving the nth root of a determinant<a class="headerlink" href="#inequalities-involving-the-nth-root-of-a-determinant" title="Permalink to this headline">¶</a></h3>
+<p>The function <a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">picos.detrootn()</span></tt></a>
+can be used to enter the <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> th root of the determinant of a
+:math:<a href="#id1"><span class="problematic" id="id2">`</span></a>(n times n)-<a href="#id3"><span class="problematic" id="id4">`</span></a>symmetric positive semidefinite matrix:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">sdp</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;M&#39;</span><span class="p">,(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">detrootn</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go"># nth root of det ineq : det( M)**1/5&gt;t#</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Note that when a constraint of the form <tt class="docutils literal"><span class="pre">t</span> <span class="pre">&lt;</span> <span class="pre">pic.detrootn(M)</span></tt> is entered (with <img class="math" src="_images/math/7ac034c51b83458628986c6c6673c37234a742a5.png" alt="p \leq 1"/> ),
+PICOS forces the matrix <tt class="docutils literal"><span class="pre">M</span></tt> to be positive semidefinite.</p>
+</div>
+<p>As for geometric means, inequalities involving the nth root of a determinant are
+stored in a temporary object of the class <a class="reference internal" href="constraint.html#picos.DetRootN_Constraint" title="picos.DetRootN_Constraint"><tt class="xref py py-class docutils literal"><span class="pre">DetRootN_Constraint</span></tt></a>,
+which contains a field <tt class="docutils literal"><span class="pre">Ptmp</span></tt> , a Problem instance with all the SOC and SDP constraints
+used to represent the original inequality.</p>
+</div>
+</div>
+<div class="section" id="set-membership">
+<h2><em>Set membership</em><a class="headerlink" href="#set-membership" title="Permalink to this headline">¶</a></h2>
+<p>Since Picos 1.0.2, there is a <a class="reference internal" href="expression.html#picos.Set" title="picos.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a> class
+that can be used to pass constraints as membership of an affine expression to a set.</p>
+<p>Following sets are currently supported:</p>
+<blockquote>
+<div><ul class="simple">
+<li><img class="math" src="_images/math/3880eaa2e3831969722e43d73b47054675a0a134.png" alt="L_p-"/> balls representing the set <img class="math" src="_images/math/fa50581990700ad84a7ad8881f5a50bc8a3d302e.png" alt="\{x: \Vert x \Vert_p \leq r \}"/>
+can be constructed with the function <a class="reference internal" href="tools.html#picos.tools.ball" title="picos.tools.ball"><tt class="xref py py-func docutils literal"><span class="pre">pic.ball()</span></tt></a></li>
+<li>The standard simplex (scaled by a factor <img class="math" src="_images/math/0ebb67342b546ca42a1c634b1ef03c893c4cdedb.png" alt="\gamma"/> ) <img class="math" src="_images/math/40e56f46d05e50baa42d0c85e081e7016bcc9607.png" alt="\{x \geq 0: \sum_i x_i \leq r \}"/>
+can be constructed with the function <a class="reference internal" href="tools.html#picos.tools.simplex" title="picos.tools.simplex"><tt class="xref py py-func docutils literal"><span class="pre">pic.simplex()</span></tt></a></li>
+<li>Truncated simplexes <img class="math" src="_images/math/56111eb894187220079d1f050159ff26e258dde7.png" alt="\{0 \leq x \leq 1: \sum_i x_i \leq r \}"/>
+and symmetrized Truncated simplexes <img class="math" src="_images/math/bda44b6f1db23f2dc09af6aaa14140df226a4bd2.png" alt="\{x: \Vert x \Vert_\infty \leq 1, \Vert x \Vert_1\leq r \}"/>
+can be constructed with the function <a class="reference internal" href="tools.html#picos.tools.truncated_simplex" title="picos.tools.truncated_simplex"><tt class="xref py py-func docutils literal"><span class="pre">pic.truncated_simplex()</span></tt></a></li>
+</ul>
+</div></blockquote>
+<p>Membership of an affine expression to a set can be expressed with the overloaded operator <tt class="docutils literal"><span class="pre">&lt;&lt;</span></tt>.
+This returns a temporary object that can be passed to a picos problem with the function
+<a class="reference internal" href="problem.html#picos.Problem.add_constraint" title="picos.Problem.add_constraint"><tt class="xref py py-func docutils literal"><span class="pre">add_constraint()</span></tt></a> .</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">simplex</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go"># (5x1)-affine constraint: x in standard simplex #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">truncated_simplex</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go"># (9x1)-affine constraint: x in truncated simplex of radius 2 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">truncated_simplex</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">sym</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go"># symmetrized truncated simplex constraint : ||x||_{infty;1} &lt;= {1;2}#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">ball</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go"># (4x1)-SOC constraint: ||x|| &lt; 3.0 #</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pic</span><span class="o">.</span><span class="n">ball</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s">&#39;inf&#39;</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="n">x</span>
+<span class="go"># p-norm ineq : norm_inf( x)&lt;2.0#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">ball</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="go"># p-norm ineq : norm_3/2( x)&lt;4.0#</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="write-a-problem-to-a-file">
+<h2><em>Write a Problem to a file</em><a class="headerlink" href="#write-a-problem-to-a-file" title="Permalink to this headline">¶</a></h2>
+<p>It is possible to write a problem to a file, thanks to the
+function <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file()</span></tt></a>.
+Several file formats and file writers are available, have a look at the doc
+of <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file()</span></tt></a> for more explanations.</p>
+<p>Below is a <em>hello world</em> example, which writes a simple MIP to a <strong>.lp</strong> file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+<span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="s">&#39;integer&#39;</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">x</span><span class="o">&gt;</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">x</span><span class="o">&gt;</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="c">#let first picos display the problem</span>
+<span class="k">print</span> <span class="n">prob</span>
+<span class="k">print</span>
+<span class="c">#now write the problem to a .lp file...</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">write_to_file</span><span class="p">(</span><span class="s">&#39;helloworld.lp&#39;</span><span class="p">)</span>
+<span class="k">print</span>
+<span class="c">#and display the content of the freshly created file:</span>
+<span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;helloworld.lp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Generated output:</p>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (MIP):
+2 variables, 2 affine constraints
+
+y   : (1, 1), integer
+x   : (1, 1), continuous
+
+        minimize y
+such that
+x &gt; 1.5
+y -x &gt; 0.7
+---------------------
+
+writing problem in helloworld.lp...
+done.
+
+\* file helloworld.lp generated by picos*\
+Minimize
+obj : 1 y
+Subject To
+in0 : -1 y+ 1 x &lt;= -0.7
+Bounds
+y free
+1.5 &lt;= x&lt;= +inf
+Generals
+y
+Binaries
+End
+</pre></div>
+</div>
+</div>
+<div class="section" id="solve-a-problem">
+<h2><em>Solve a Problem</em><a class="headerlink" href="#solve-a-problem" title="Permalink to this headline">¶</a></h2>
+<p>To solve a problem, you have to use the method <a class="reference internal" href="problem.html#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a>
+of the class <a class="reference internal" href="problem.html#picos.Problem" title="picos.Problem"><tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt></a>.
+Alternatively, the functions <a class="reference internal" href="problem.html#picos.Problem.maximize" title="picos.Problem.maximize"><tt class="xref py py-func docutils literal"><span class="pre">maximize(obj)</span></tt></a>
+and <a class="reference internal" href="problem.html#picos.Problem.minimize" title="picos.Problem.minimize"><tt class="xref py py-func docutils literal"><span class="pre">minimize(obj)</span></tt></a>
+can be used to specify the objective function and call the solver in a single statement.
+These method accept several options. In particular the solver can be specified by passing
+an option of the form <tt class="docutils literal"><span class="pre">solver='solver_name'</span></tt>. For a list of available
+parameters with their default values, see the doc of the function
+<a class="reference internal" href="problem.html#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>.</p>
+<p>Once a problem has been solved, the optimal values of the variables are
+accessible with the <tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt> property.
+Depending on the solver, you
+can also obtain the slack and the optimal dual variables
+of the constraints thanks to the properties
+<a class="reference internal" href="constraint.html#picos.Constraint.dual" title="picos.Constraint.dual"><tt class="xref py py-attr docutils literal"><span class="pre">dual</span></tt></a> and
+<a class="reference internal" href="constraint.html#picos.Constraint.slack" title="picos.Constraint.slack"><tt class="xref py py-attr docutils literal"><span class="pre">slack</span></tt></a> of the class
+<a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.
+See the doc of <a class="reference internal" href="constraint.html#picos.Constraint.dual" title="picos.Constraint.dual"><tt class="xref py py-attr docutils literal"><span class="pre">dual</span></tt></a> for more explanations
+on the dual variables for second order cone programs (SOCP) and
+semidefinite programs (SDP).</p>
+<p>The class <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt></a> also has
+two interesting properties: <a class="reference internal" href="problem.html#picos.Problem.type" title="picos.Problem.type"><tt class="xref py py-attr docutils literal"><span class="pre">type</span></tt></a>, which
+indicates the class of the optimization problem (&#8216;LP&#8217;, &#8216;SOCP&#8217;, &#8216;MIP&#8217;, &#8216;SDP&#8217;,...),
+and <a class="reference internal" href="problem.html#picos.Problem.status" title="picos.Problem.status"><tt class="xref py py-attr docutils literal"><span class="pre">status</span></tt></a>, which indicates if the
+problem has been solved (the default is <tt class="docutils literal"><span class="pre">'unsolved'</span></tt>; after a call to
+<a class="reference internal" href="problem.html#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> this property can take the value of any
+code returned by a solver, such as <tt class="docutils literal"><span class="pre">'optimal'</span></tt>, <tt class="docutils literal"><span class="pre">'unbounded'</span></tt>, <tt class="docutils literal"><span class="pre">'near-optimal'</span></tt>,
+<tt class="docutils literal"><span class="pre">'primal</span> <span class="pre">infeasible'</span></tt>, <tt class="docutils literal"><span class="pre">'unknown'</span></tt>, ...).</p>
+<p>Below is a simple example, to solve the linear programm:</p>
+<div class="math">
+<p><img src="_images/math/85a830885b98f9ea495932dd186dbdbf84e6cf23.png" alt="\begin{center}
+$\begin{array}{ccc}
+\underset{x \in \mathbb{R}^2}{\mbox{minimize}}
+                   &amp; 0.5 x_1 + x_2 &amp;\\
+\mbox{subject to} &amp; x_1 &amp;\geq x_2\\
+                  &amp; \left[
+                     \begin{array}{cc}
+                     1 &amp; 0\\
+                     1 &amp; 1
+                     \end{array}
+                     \right] x &amp;\leq
+                     \left[
+                     \begin{array}{c} 3 \\4 \end{array}
+                     \right].
+\end{array}$
+\end{center}"/></p>
+</div><p>More examples can be found <a class="reference internal" href="examples.html#examples"><em>here</em></a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">P</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span> <span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">P</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">P</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="n">x</span><span class="o">&lt;</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">objective</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">P</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span> <span class="n">objective</span><span class="p">)</span> <span class="c">#or directly P.maximize(objective)</span>
+
+<span class="c">#display the problem and solve it</span>
+<span class="k">print</span> <span class="n">P</span>
+<span class="k">print</span> <span class="s">&#39;type:   &#39;</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">type</span>
+<span class="k">print</span> <span class="s">&#39;status: &#39;</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">status</span>
+<span class="n">P</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&#39;status: &#39;</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">status</span>
+
+<span class="c">#--------------------#</span>
+<span class="c">#  objective value   #</span>
+<span class="c">#--------------------#</span>
+
+<span class="k">print</span> <span class="s">&#39;the optimal value of this problem is:&#39;</span>
+<span class="k">print</span> <span class="n">P</span><span class="o">.</span><span class="n">obj_value</span><span class="p">()</span>                      <span class="c">#&quot;print objective&quot; would also work, because objective is valued</span>
+
+<span class="c">#--------------------#</span>
+<span class="c">#  optimal variable  #</span>
+<span class="c">#--------------------#</span>
+<span class="n">x_opt</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">value</span>
+<span class="k">print</span> <span class="s">&#39;The solution of the problem is:&#39;</span>
+<span class="k">print</span> <span class="n">x_opt</span>                              <span class="c">#&quot;print x&quot; would also work, since x is now valued</span>
+<span class="k">print</span>
+
+<span class="c">#--------------------#</span>
+<span class="c">#  slacks and duals  #</span>
+<span class="c">#--------------------#</span>
+<span class="n">c0</span><span class="o">=</span><span class="n">P</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&#39;The dual of the constraint&#39;</span>
+<span class="k">print</span> <span class="n">c0</span>
+<span class="k">print</span> <span class="s">&#39;is:&#39;</span>
+<span class="k">print</span> <span class="n">c0</span><span class="o">.</span><span class="n">dual</span>
+<span class="k">print</span> <span class="s">&#39;And its slack is:&#39;</span>
+<span class="k">print</span> <span class="n">c0</span><span class="o">.</span><span class="n">slack</span>
+<span class="k">print</span>
+
+<span class="n">c1</span><span class="o">=</span><span class="n">P</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&#39;The dual of the constraint&#39;</span>
+<span class="k">print</span> <span class="n">c1</span>
+<span class="k">print</span> <span class="s">&#39;is:&#39;</span>
+<span class="k">print</span> <span class="n">c1</span><span class="o">.</span><span class="n">dual</span>
+<span class="k">print</span> <span class="s">&#39;And its slack is:&#39;</span>
+<span class="k">print</span> <span class="n">c1</span><span class="o">.</span><span class="n">slack</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (LP):
+2 variables, 3 affine constraints
+
+x   : (2, 1), continuous
+
+    maximize 0.5*x[0] + x[1]
+such that
+  x[0] &gt; x[1]
+  A*x &lt; [ 2 x 1 MAT ]
+---------------------
+type:   LP
+status: unsolved
+status: optimal
+
+the optimal value of this problem is:
+3.0000000002
+The solution of the problem is:
+[ 2.00e+00]
+[ 2.00e+00]
+
+
+The dual of the constraint
+# (1x1)-affine constraint : x[0] &gt; x[1] #
+is:
+[ 2.50e-01]
+
+And its slack is:
+[ 1.83e-09]
+
+
+The dual of the constraint
+# (2x1)-affine constraint : A*x &lt; [ 2 x 1 MAT ] #
+is:
+[ 4.56e-10]
+[ 7.50e-01]
+
+And its slack is:
+[ 1.00e+00]
+[-8.71e-10]
+</pre></div>
+</div>
+<div class="section" id="a-note-on-dual-variables">
+<span id="noteduals"></span><h3>A note on dual variables<a class="headerlink" href="#a-note-on-dual-variables" title="Permalink to this headline">¶</a></h3>
+<p>For second order cone constraints of the form <img class="math" src="_images/math/8a27ad7cab3cd097eb6ec7bb6ab7d9ced5603ff5.png" alt="\Vert \mathbf{x} \Vert \leq t"/>,
+where <img class="math" src="_images/math/46aec6aaff80d183cc0ed35d77ce75c7c9ffd174.png" alt="\mathbf{x}"/> is a vector of dimension <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>,
+the dual variable is a vector of dimension <img class="math" src="_images/math/f1299887120e51fb9e64e2a29c4ede283c9fec3c.png" alt="n+1"/> of the form
+<img class="math" src="_images/math/1f9c30812a9b4234e3eb4123c524e5d11d6efe92.png" alt="[\lambda; \mathbf{z}]"/>, where the <img class="math" src="_images/math/d3ebe496f8c3308624daf3d22494ab3a9d4a9a06.png" alt="n-"/> dimensional vector
+<img class="math" src="_images/math/be6871b2eb6646598c04e6379204c04796646f33.png" alt="\mathbf{z}"/> satisfies <img class="math" src="_images/math/d40d803cc9e341882bed0d0442ff35c01822bdb4.png" alt="\Vert \mathbf{z} \Vert \leq \lambda"/>.</p>
+<p>Since <em>rotated</em> second order cone constraints of the form
+<img class="math" src="_images/math/2ddee7c01895b7bc9be77362229f898012076385.png" alt="\Vert \mathbf{x} \Vert^2 \leq t u,\ t \geq 0"/>,
+are handled as the equivalent ice-cream constraint
+<img class="math" src="_images/math/74e79b0653d17d13f2c9fa4271752aaf5ee8d048.png" alt="\Vert [2 \mathbf{x}; t-u ] \Vert \leq t+u"/>,
+the dual is given with respect to this reformulated, standard SOC constraint.</p>
+<p>In general, a linear problem with second order cone constraints (both standard and rotated)
+and semidefinite constraints can be written under the form:</p>
+<div class="math">
+<p><img src="_images/math/ed8ea3e224f814c91d7db080977880fcd3e17624.png" alt="\begin{center}
+$\begin{array}{cclc}
+\underset{\mathbf{x} \in \mathbb{R}^n}{\mbox{minimize}}
+                   &amp; \mathbf{c}^T \mathbf{x} &amp; &amp;\\
+\mbox{subject to} &amp; A^e \mathbf{x} + \mathbf{b^e} &amp; = 0 &amp;\\
+                  &amp; A^l \mathbf{x} + \mathbf{b^l} &amp; \leq 0 &amp;\\
+                  &amp; \Vert A^s_i \mathbf{x} + \mathbf{b^s_i} \Vert &amp;\leq \mathbf{f^s_i}^T \mathbf{x} +d^s_i, &amp; \forall i \in I\\
+                  &amp; \Vert A^r_j \mathbf{x} + \mathbf{b^r_j} \Vert^2 &amp;\leq (\mathbf{f^{r_1}_j}^T \mathbf{x} +d^{r_1}_j) (\mathbf{f^{r_2}_j}^T \mathbf{x} +d^{r_2}_j), &amp; \forall j \in J\\
+                  &amp; 0        &amp; \leq \mathbf{f^{r_1}_j}^T \mathbf{x} +d^{r_1}_j, &amp; \forall j \in J\\
+                  &amp; \sum_{i=1}^n x_i M_i &amp; \succeq M_0
+\end{array}$
+\end{center}"/></p>
+</div><p>where</p>
+<blockquote>
+<div><ul class="simple">
+<li><img class="math" src="_images/math/281f02abcc557f9ffaed8b93ce062629275e91b5.png" alt="\mathbf{c}, \big\{\mathbf{f^s_i}\big\}_{i\in I}, \big\{\mathbf{f^{r_1}_j}\big\}_{j \in J}, \big\{\mathbf{f^{r_2}_j}\big\}_{j \in J}"/>
+are vectors of dimension <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>;</li>
+<li><img class="math" src="_images/math/4430d9693d21be848e99f252fa04ca8893138637.png" alt="\big\{d^s_i\big\}_{i \in I}, \big\{d^{r_1}_j\big\}_{j \in J}, \big\{d^{r_2}_j\big\}_{j \in J}"/>
+are scalars;</li>
+<li><img class="math" src="_images/math/83381a223e7ef3237db810fe9c3758f96216bccd.png" alt="\big\{\mathbf{b^s_i}\big\}_{i\in I}"/> are vectors of dimension <img class="math" src="_images/math/984caf18414b766584767f510f8935040f410223.png" alt="n^s_i"/> and
+<img class="math" src="_images/math/2e8f4f46d1d77f7d0f45ace918b8a6d201ff5d4d.png" alt="\big\{A^s_i\big\}_{i\in I}"/> are matrices of size <img class="math" src="_images/math/0854c36d17fef9a28836fe5a6efbd447d0a3d244.png" alt="n^s_i \times n"/>;</li>
+<li><img class="math" src="_images/math/09bdde5c1f931c64aaa12150c5c040d797ec4b43.png" alt="\big\{\mathbf{b^r_j}\big\}_{j\in J}"/> are vectors of dimension <img class="math" src="_images/math/8ea6dfafb585f17735b476e865d66b970e0d44f4.png" alt="n^r_j"/> and
+<img class="math" src="_images/math/8b22b45e0952f27758da47fb09d42ad67156af69.png" alt="\big\{A^r_j\big\}_{j\in J}"/> are matrices of size <img class="math" src="_images/math/39e1c3373448bce7e9376a46f4dfd056dd07d5f4.png" alt="n^r_j \times n"/>;</li>
+<li><img class="math" src="_images/math/e82fd280761219a733b00979ce64d55914b5c058.png" alt="\mathbf{b^e}"/> is a vector of dimension <img class="math" src="_images/math/b51cb7f5ce34280f52b9a7ed98d071105d29b900.png" alt="n^e"/> and
+<img class="math" src="_images/math/ed030c9f9d6584e8b28cca3c9182c05e6b105f6e.png" alt="A^e"/> is a matrix of size <img class="math" src="_images/math/5175b2cb67a1d49d174018787f0b0a963f4918f9.png" alt="n^e \times n"/>;</li>
+<li><img class="math" src="_images/math/4ebc9da9e761a82e8b361ef846215baadd04165a.png" alt="\mathbf{b^l}"/> is a vector of dimension <img class="math" src="_images/math/dfd60f876cc81194be28e557d4a0c44eaf90e4ab.png" alt="n^l"/> and
+<img class="math" src="_images/math/3f53ec556bbf636b6865b176b7f73d1ced3cae1b.png" alt="A^l"/> is a matrix of size <img class="math" src="_images/math/f3d4bd428a31f0e06084c81f4bc45d228335c31e.png" alt="n^l \times n"/>;</li>
+<li><img class="math" src="_images/math/d629f890a9d97afa8dcc03c49ab7f3233937d1d6.png" alt="\big\{M_k\big\}_{k=0,\ldots,n}"/> are <img class="math" src="_images/math/745f3493312cd221d17617b05e1ff74af67b9c1f.png" alt="m \times m"/> symmetric
+matrices (<img class="math" src="_images/math/1e339cca630af2beb9572c8f829144af7393e6ed.png" alt="M_k \in \mathbb{S}_m"/>).</li>
+</ul>
+</div></blockquote>
+<p>Its dual problem can be written as:</p>
+<div class="math">
+<p><img src="_images/math/b387a4530e67905b9a94622a8adab8b9fa62285a.png" alt="\begin{center}
+$\begin{array}{cll}
+\mbox{maximize}   &amp; \mathbf{b^e}^T \mathbf{\mu^e}
+                    + \mathbf{b^l}^T \mathbf{\mu^l} &amp;
+                    + \sum_{i\in I} \big( \mathbf{b^s_i}^T \mathbf{z^s_i} - d^s_i \lambda_i \big)
+                    + \sum_{j\in J} \big( \mathbf{b^r_j}^T \mathbf{z^r_j} - d^{r_1}_j \alpha_j - d^{r_2}_j \beta_j \big)
+                    + \langle M_0, X \rangle\\
+\mbox{subject to} &amp; c + {A^e}^T \mathbf{\mu^e} + {A^l}^T \mathbf{\mu^l} &amp;
+                      + \sum_{i\in I} \big( {A^s_i}^T \mathbf{z^s_i} -\lambda_i \mathbf{f^s_i} \big)
+                      + \sum_{j\in J} \big( {A^r_j}^T \mathbf{z^r_j} -\alpha_j \mathbf{f^{r_1}_j} - \beta_j \mathbf{f^{r_2}_j} \big)
+                     = \mathcal{M} \bullet X \\
+                  &amp; \mu_l \geq 0 &amp;\\
+                  &amp; \Vert \mathbf{z^s_i} \Vert \leq \lambda_i, &amp;\forall i \in I\\
+                  &amp; \Vert \mathbf{z^r_j} \Vert^2 \leq 4 \alpha_j \beta_j, &amp;\forall j \in J\\
+                  &amp; \ \ 0 \ \ \ \leq \alpha_j, &amp;\forall j \in J\\
+                  &amp; X \succeq 0
+\end{array}$
+\end{center}"/></p>
+</div><p>where <img class="math" src="_images/math/c66ce5396ab14c77fbb13abe04ab81a1ca44004c.png" alt="\mathcal{M} \bullet X"/> stands for the vector of dimension <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>
+with <img class="math" src="_images/math/29399db5a25101f44de4671c05d9d5a1b83f9995.png" alt="\langle M_i, X \rangle"/> on the <img class="math" src="_images/math/a581f053bbfa5115f42c13094857cdd12a37ec49.png" alt="i"/> th coordinate, and the dual variables
+are</p>
+<blockquote>
+<div><ul class="simple">
+<li><img class="math" src="_images/math/f777dcee512ea533177bc4829a15022632beee79.png" alt="\mu^e \in \mathbb{R}^{n_e}"/></li>
+<li><img class="math" src="_images/math/fc86ea51793006cc2bd0e8634dad2417fe1e7af7.png" alt="\mu^l \in \mathbb{R}^{n_l}"/></li>
+<li><img class="math" src="_images/math/3013df9f09391d71e64819dbfff5f008546c6ffe.png" alt="z^s_i \in \mathbb{R}^{n^s_i},\ \forall i \in I"/></li>
+<li><img class="math" src="_images/math/170e098fabb75b4a4fae3fb52a56b14ddc1a44db.png" alt="\lambda_i \in \mathbb{R},\ \forall i \in I"/></li>
+<li><img class="math" src="_images/math/600c9b9ea644dca1665fc7429a39029d06ac2e38.png" alt="z^r_j \in \mathbb{R}^{n^r_j},\ \forall j \in J"/></li>
+<li><img class="math" src="_images/math/1d6aedc863e4ae8033de633b5208ed14fe67b2b7.png" alt="(\alpha_j,\beta_j) \in \mathbb{R}^2,\ \forall j \in J"/></li>
+<li><img class="math" src="_images/math/6710a37ffddbcfd838250089e5885fff8e268a7d.png" alt="X \in \mathbb{S}_m"/></li>
+</ul>
+</div></blockquote>
+<p>When quering the dual of a constraint of the above primal problem, <strong>picos will
+return</strong></p>
+<blockquote>
+<div><ul>
+<li><p class="first"><img class="math" src="_images/math/f244ffaa01921fb969c42231cf6abc4f329b6968.png" alt="\mu^e"/> for the constraint <img class="math" src="_images/math/0fdb56960a3691e5eb27c2e5fa4c546bf6ac5a4d.png" alt="A^e \mathbf{x} + \mathbf{b^e} = 0"/>;</p>
+</li>
+<li><p class="first"><img class="math" src="_images/math/0d82442fc8a70d939961f3fac9beb30b97e3e212.png" alt="\mu^l"/> for the constraint <img class="math" src="_images/math/ddef7691c1b397e43ea1d9bfdc38c5fa0ad1d089.png" alt="A^l \mathbf{x} + \mathbf{b^l} \geq 0"/>;</p>
+</li>
+<li><p class="first">The <img class="math" src="_images/math/a0b96df26bb7323b634f7cd2ee5772f8fa46f957.png" alt="(n^s_i+1)-"/> dimensional vector <img class="math" src="_images/math/0d87aeb2ccab63464f208b1f0c30f8e924a6b995.png" alt="\mu^s_i\ :=\ [\lambda_i;\mathbf{z^s_i}]\"/> for the constraint</p>
+<blockquote>
+<div><p><img class="math" src="_images/math/63f3dec909a1dc033b396953ad7fb27890ee0b81.png" alt="\Vert A^s_i \mathbf{x} + \mathbf{b^s_i} \Vert \leq \mathbf{f^s_i}^T \mathbf{x} +d^s_i"/>;</p>
+</div></blockquote>
+</li>
+<li><p class="first">The <img class="math" src="_images/math/8c91a9b6a01b3788eacba7d9dc9214626d657ab6.png" alt="(n^r_j+2)-"/> dimensional vector <img class="math" src="_images/math/859c824d8870282d3293a9bfa0c56e8c22e60a19.png" alt="\mu^r_j\:=\ \frac{1}{2}[\ (\beta_j+\alpha_j) ;\ \mathbf{z^r_j} ;\ (\beta_j-\alpha_j)\ ]\"/> for the constraint</p>
+<blockquote>
+<div><p><img class="math" src="_images/math/f07ad789ff81566ea298bd60e3f25f6bc4e385f1.png" alt="\Vert A^r_j \mathbf{x} + \mathbf{b^r_j} \Vert^2 \leq (\mathbf{f^{r_1}_j}^T \mathbf{x} +d^{r_1}_j) (\mathbf{f^{r_2}_j}^T \mathbf{x} +d^{r_2}_j)"/></p>
+</div></blockquote>
+<p>In other words, if the dual vector returned by picos is of the form
+<img class="math" src="_images/math/9b2fd3892f8f3e28e1baf66a9e2383f0a32fb309.png" alt="\mu^r_j\ = [\sigma^1_j;\mathbf{u_j};\sigma^2_j]"/>, where <img class="math" src="_images/math/d417e7cf2606dc8cffdfc835e77f75a7081219e9.png" alt="\mathbf{u_j}"/> is of dimension <img class="math" src="_images/math/8ea6dfafb585f17735b476e865d66b970e0d44f4.png" alt="n^r_j"/>,
+then the dual variables of the rotated conic constraint
+are <img class="math" src="_images/math/65641d4515f24e2a87a917bd3bf86f6c6ef1ec1b.png" alt="\alpha_j = \sigma^1_j - \sigma^2_j,\ \beta_j = \sigma^1_j + \sigma^2_j"/>
+and <img class="math" src="_images/math/82ce15fa14debd13c707b4d5d273766f07b8cfe7.png" alt="\mathbf{z^r_j} = 2 \mathbf{u_j}"/>;</p>
+</li>
+<li><p class="first">The symmetric positive definite matrix <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> for the constraint</p>
+<blockquote>
+<div><p><img class="math" src="_images/math/0f58de672b87c90f3e08a67edd0a345cae5f44d5.png" alt="\sum_{i=1}^n x_i M_i \succeq M_0"/>.</p>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<div class="section" id="references">
+<span id="tuto-refs"></span><h4>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><ol class="arabic simple">
+<li>&#8220;<cite>Applications of second-order cone programming</cite>&#8221;,
+M.S. Lobo, L. Vandenberghe, S. Boyd and H. Lebret,
+<em>Linear Algebra and its Applications</em>,
+284, p. <em>193-228</em>, 1998.</li>
+<li>&#8220;<a class="reference external" href="http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751">On the semidefinite representations of real functions applied to symmetric
+matrices</a>&#8221;, G. Sagnol,
+<em>Linear Algebra and its Applications</em>,
+439(10), p. <em>2829-2843</em>, 2013.</li>
+</ol>
+</div></blockquote>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="summary.html" class="btn btn-neutral" title="Summary of implemented functions"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
