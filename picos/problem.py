@@ -2051,11 +2051,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
@@ -2544,11 +2545,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
@@ -3392,11 +3394,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = cons.Exp1.size[0]*cons.Exp1.size[1]
@@ -3519,11 +3522,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]   
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)]   
                                 
                                 #add new eq. cons
                                 szcons = conexp.size[0] * conexp.size[1]
@@ -3644,11 +3648,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)] 
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)] 
                                 
                                 szcons = sdexp.size[0] * sdexp.size[1]
                                 rhstmp = sdexp.constant
@@ -3976,11 +3981,12 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
+                        if v:
+                                if i==lasti:
+                                        itojv[i].append((j,v))
+                                else:
+                                        lasti=i
+                                        itojv[i]=[(j,v)]
                         
                 for i,jv in itojv.iteritems():
                         exp=0
@@ -3995,11 +4001,12 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
+                        if v:
+                                if i==lasti:
+                                        itojv[i].append((j,v))
+                                else:
+                                        lasti=i
+                                        itojv[i]=[(j,v)]
                         
                 for i,jv in itojv.iteritems():
                         exp=0
@@ -6315,11 +6322,12 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
+                        if v:
+                                if i==lasti:
+                                        itojv[i].append((j,v))
+                                else:
+                                        lasti=i
+                                        itojv[i]=[(j,v)]
                 ieq=0
                 for i,jv in itojv.iteritems():
                         J=[jvk[0] for jvk in jv]
@@ -6345,11 +6353,12 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if i==lasti:
-                                itojv[i].append((j,v))
-                        else:
-                                lasti=i
-                                itojv[i]=[(j,v)]
+                        if v:
+                                if i==lasti:
+                                        itojv[i].append((j,v))
+                                else:
+                                        lasti=i
+                                        itojv[i]=[(j,v)]
                 iaff=0
                 for i,jv in itojv.iteritems():
                         J=[jvk[0] for jvk in jv]
@@ -6771,11 +6780,12 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if i==lasti:
-                                                itojv[i].append((j,v))
-                                        else:
-                                                lasti=i
-                                                itojv[i]=[(j,v)]
+                                        if v:
+                                                if i==lasti:
+                                                        itojv[i].append((j,v))
+                                                else:
+                                                        lasti=i
+                                                        itojv[i]=[(j,v)]
                                 
                                 if conetype:
                                         if conetype != '0':
