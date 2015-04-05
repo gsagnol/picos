@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -26,10 +26,13 @@
 #Germany 
 #-------------------------------------------------------------------
 
+from __future__ import print_function, division
+
 import cvxopt as cvx
 import numpy as np
 import sys
-from itertools import izip
+import six
+from six.moves import zip, range
 
 from .tools import *
 from .constraint import *
@@ -192,7 +195,7 @@ class AffinExp(Expression):
                           ``exp1-exp2 == (exp1-exp2).T`` if it is not clear from the data
                           that this matrix is symmetric.
                 
-        """
+        """        
         
         def __init__(self,factors=None,constant=None,
                         size=(1,1),
@@ -216,6 +219,9 @@ class AffinExp(Expression):
                 self._size=size
                 """size of the affine expression"""
                 #self.string=string
+
+        def __hash__(self):
+            return Expression.__hash__(self)
                 
         @property
         def size(self):
@@ -243,7 +249,7 @@ class AffinExp(Expression):
         def copy(self):
                 import copy
                 facopy={}
-                for f,m in self.factors.iteritems(): #copy matrices but not the variables (keys of the dict)
+                for f,m in six.iteritems(self.factors): #copy matrices but not the variables (keys of the dict)
                         facopy[f]=copy.deepcopy(m)
         
                 conscopy=copy.deepcopy(self.constant)
@@ -285,7 +291,7 @@ class AffinExp(Expression):
         def set_value(self,value):
                 #is it a complex variable?
                 if self.is_pure_complex_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_RE'):
                                 Zr=facs[0]
                                 Zi=facs[1]
@@ -300,7 +306,7 @@ class AffinExp(Expression):
                         return
                 #is it an antisym variable ?
                 if self.is_pure_antisym_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         vutri = facs[0]
                         n = int((vutri.size[0])**0.5)
                         value = _retrieve_matrix(value,(n,n))[0]
@@ -311,7 +317,7 @@ class AffinExp(Expression):
         def del_simple_var_value(self):
                 #is it a complex variable?
                 if self.is_pure_complex_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_RE'):
                                 Zr=facs[0]
                                 Zi=facs[1]
@@ -323,7 +329,7 @@ class AffinExp(Expression):
                         return
                 #is it an antisym variable ?
                 if self.is_pure_antisym_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         vutri = facs[0]
                         del vutri.value
                         return
@@ -352,7 +358,7 @@ class AffinExp(Expression):
         def get_real(self):
                 #is it a complex variable?
                 if self.is_pure_complex_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_RE'):
                                 return facs[0]
                         else:
@@ -371,7 +377,7 @@ class AffinExp(Expression):
         def get_imag(self):
                 #is it a complex variable?
                 if self.is_pure_complex_var():
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_RE'):
                                 return facs[1]
                         else:
@@ -391,7 +397,7 @@ class AffinExp(Expression):
                 if self.constant:
                         return False
                 if (len(self.factors)==2):
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_RE') and _is_idty(self.factors[facs[0]]):
                                 if facs[1].name.endswith('_IM') and _is_idty(-1j*self.factors[facs[1]]):
                                         return True
@@ -405,7 +411,7 @@ class AffinExp(Expression):
                 if self.constant:
                         return False
                 if (len(self.factors)==1):
-                        facs = self.factors.keys()
+                        facs = list(self.factors.keys())
                         if facs[0].name.endswith('_utri') and _is_idty(self.factors[facs[0]],'antisym'):
                                 return True
                 return False
@@ -413,7 +419,7 @@ class AffinExp(Expression):
         
         def is_real(self):
                 real = True
-                for (x,A) in self.factors.iteritems():
+                for (x,A) in six.iteritems(self.factors):
                         if x.vtype == 'complex':
                                 return False
                         if A.typecode == 'z' and bool(A.imag()):
@@ -497,7 +503,7 @@ class AffinExp(Expression):
                 for k in self.factors:
                         bsize=self.size[0]
                         bsize2=self.size[1]
-                        I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                        I0=[(i//bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
                         J=self.factors[k].J
                         V=self.factors[k].V
                         self.factors[k]=cvx.spmatrix(V,I0,J,self.factors[k].size)
@@ -582,15 +588,15 @@ class AffinExp(Expression):
                                 bsize2=self.size[1]
                                 vsize=k.size[0]
                                 vsize2=k.size[1]
-                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
-                                J0=[(j/vsize)+(j%vsize)*vsize2 for j in self.factors[k].J]
+                                I0=[(i//bsize)+(i%bsize)*bsize2 for i in self.factors[k].I]
+                                J0=[(j//vsize)+(j%vsize)*vsize2 for j in self.factors[k].J]
                                 V0=[v.conjugate() for v in self.factors[k].V]
                                 self.factors[k]=cvx.spmatrix(V0,I0,J0,self.factors[k].size)
                         else:
                                 F = self.factors[k] 
                                 bsize=self.size[0]
                                 bsize2=self.size[1]
-                                I0=[(i/bsize)+(i%bsize)*bsize2 for i in F.I]
+                                I0=[(i//bsize)+(i%bsize)*bsize2 for i in F.I]
                                 J=F.J
                                 V=[v.conjugate() for v in F.V]
                                 self.factors[k]=cvx.spmatrix(V,I0,J,F.size)
@@ -692,29 +698,29 @@ class AffinExp(Expression):
                 """hadamard (elementwise) product"""
                 return self^fact
         
-	def __xor__(self,fact):
+        def __xor__(self,fact):
                 """hadamard (elementwise) product"""
                 selfcopy=self.copy()
                 if isinstance(fact,AffinExp):
                         if fact.isconstant():
                                 fac,facString=cvx.sparse(fact.eval()),fact.string
                         else:
-				if self.isconstant():
-					return fact ^ self
-				else:
-					raise Exception('not implemented')
+                            if self.isconstant():
+                                return fact ^ self
+                            else:
+                                raise Exception('not implemented')
                 else:
                         fac,facString=_retrieve_matrix(fact,self.size[0])
-                if fac.size==(1,1) and selfcopy.size[0]<>1:
+                if fac.size==(1,1) and selfcopy.size[0] != 1:
                         fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[0])
-                if self.size==(1,1) and fac.size[1]<>1:
+                if self.size==(1,1) and fac.size[1] != 1:
                         oldstring=selfcopy.string
                         selfcopy=selfcopy.diag(fac.size[1])
                         selfcopy.string=oldstring
-                if selfcopy.size[0]<>fac.size[0] or selfcopy.size[1]<>fac.size[1]:
+                if selfcopy.size[0] != fac.size[0] or selfcopy.size[1] != fac.size[1]:
                         raise Exception('incompatible dimensions')
-		mm,nn = selfcopy.size
-		bfac=cvx.spmatrix([],[],[],(mm*nn,mm*nn))
+                mm,nn = selfcopy.size
+                bfac=cvx.spmatrix([],[],[],(mm*nn,mm*nn))
                 for i, j, v in zip(fac.I, fac.J, fac.V):
                     bfac[j*mm+i,j*mm+i] = v
                 for k in selfcopy.factors:
@@ -759,13 +765,13 @@ class AffinExp(Expression):
                                 raise Exception('not implemented')
                 else:
                         fac,facString=_retrieve_matrix(fact,self.size[0])               
-                if fac.size==(1,1) and selfcopy.size[0]<>1:
+                if fac.size==(1,1) and selfcopy.size[0] != 1:
                         fac=fac[0]*cvx.spdiag([1.]*selfcopy.size[0])
-                if self.size==(1,1) and fac.size[1]<>1:
+                if self.size==(1,1) and fac.size[1] != 1:
                         oldstring=selfcopy.string
                         selfcopy=selfcopy.diag(fac.size[1])
                         selfcopy.string=oldstring
-                if selfcopy.size[0]<>fac.size[1]:
+                if selfcopy.size[0] != fac.size[1]:
                         raise Exception('incompatible dimensions')
                 bfac=_blocdiag(fac,selfcopy.size[1])
                 for k in selfcopy.factors:
@@ -844,7 +850,7 @@ class AffinExp(Expression):
                 if fac.size==(1,1):
                         alpha = fac[0]
                         newfacs = {}
-                        for k,M in self.factors.iteritems():
+                        for k,M in six.iteritems(self.factors):
                                 newfacs[k] = cvx.spmatrix(alpha * M.V,M.I,M.J,M.size)
                         if self.constant is None:
                                 newcons = None
@@ -857,7 +863,7 @@ class AffinExp(Expression):
                         
                 selfcopy=self.copy()
                 
-                if self.size==(1,1) and fac.size[0]<>1:
+                if self.size==(1,1) and fac.size[0] != 1:
                         oldstring=selfcopy.string
                         selfcopy=selfcopy.diag(fac.size[0])
                         selfcopy.string=oldstring
@@ -891,7 +897,7 @@ class AffinExp(Expression):
                         fact=AffinExp({},constant=fac[:],size=fac.size,string=facString)
 
                 #now we must have an AffinExp
-                if self.size<>fact.size:
+                if self.size != fact.size:
                         raise Exception('incompatible dimensions')
                 
                 dotp = fact[:].H * self[:]
@@ -911,7 +917,7 @@ class AffinExp(Expression):
                         fact=AffinExp({},constant=fac[:],size=fac.size,string=facString)
 
                 #now we must have an AffinExp
-                if self.size<>fact.size:
+                if self.size != fact.size:
                         raise Exception('incompatible dimensions')
                 
                 dotp = self[:].H * fact[:]
@@ -935,17 +941,17 @@ class AffinExp(Expression):
         #inplace sum
         def __iadd__(self,term):
                 if isinstance(term,AffinExp):
-                        if term.size==(1,1) and self.size<>(1,1):
+                        if term.size==(1,1) and self.size != (1,1):
                                 oldstring=term.string
                                 term=cvx.matrix(1.,self.size)*term.diag(self.size[1])
                                 term.string='|'+oldstring+'|'
-                        if self.size==(1,1) and term.size<>(1,1):
+                        if self.size==(1,1) and term.size != (1,1):
                                 oldstring=self.string
                                 selfone=cvx.matrix(1.,term.size)*self.diag(term.size[1])
                                 selfone.string='|'+oldstring+'|'
                                 selfone+=term
                                 return selfone
-                        if term.size<>self.size:
+                        if term.size != self.size:
                                 raise Exception('incompatible dimension in the sum')
                         for k in term.factors:
                                 if k in self.factors:
@@ -1000,7 +1006,7 @@ class AffinExp(Expression):
                                         self.string+=' + '+term.affstring()
                         return self
                 elif isinstance(term,QuadExp):
-                        if self.size<>(1,1):
+                        if self.size != (1,1):
                                 raise Exception('LHS must be scalar')
                         self=QuadExp({},self,self.affstring())
                         self+=term
@@ -1012,7 +1018,7 @@ class AffinExp(Expression):
                         
         def __neg__(self):
                 selfneg=(-1)*self               
-                if self.string<>'':
+                if self.string != '':
                         if self.string[0]=='-':
                                 import re
                                 if ('+' not in self.string[1:]) and ('-' not in self.string[1:]):
@@ -1048,7 +1054,7 @@ class AffinExp(Expression):
                                 divi,diviString=divisor.value,divisor.string
                         else:
                                 raise Exception('not implemented')
-                        if divi.size<>(1,1):
+                        if divi.size != (1,1):
                                 raise Exception('not implemented')
                         divi=divi[0]
                         if divi==0:
@@ -1111,7 +1117,7 @@ class AffinExp(Expression):
                                 index=slice(ind,ind+1,None)                                
                 if isinstance(index,slice):
                         idx=index.indices(self.size[0]*self.size[1])
-                        rangeT=range(idx[0],idx[1],idx[2])
+                        rangeT=list(range(idx[0],idx[1],idx[2]))
                         #newfacs={}
                         #for k in self.factors:
                                 #newfacs[k]=self.factors[k][rangeT,:]
@@ -1136,8 +1142,8 @@ class AffinExp(Expression):
                                         index=(index[0],slice(ind,ind+1,None))
                         idx0=index[0].indices(self.size[0])
                         idx1=index[1].indices(self.size[1])
-                        rangei=xrange(idx0[0],idx0[1],idx0[2])
-                        rangej=xrange(idx1[0],idx1[1],idx1[2])
+                        rangei=range(idx0[0],idx0[1],idx0[2])
+                        rangej=range(idx1[0],idx1[1],idx1[2])
                         rangeT=[]
                         for j in rangej:
                                 rangei_translated=[]
@@ -1161,7 +1167,7 @@ class AffinExp(Expression):
                         Ridx,J,V = self.factors[k].T.CCS #fast row slicing
                         II,VV,JJ = [],[],[]
                         for l,i in enumerate(rangeT):
-                                idx = xrange(Ridx[i],Ridx[i+1])
+                                idx = range(Ridx[i],Ridx[i+1])
                                 for j in idx:
                                         II.append(l)
                                         JJ.append(J[j])
@@ -1192,11 +1198,11 @@ class AffinExp(Expression):
         
         def __lt__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size==(1,1) and self.size<>(1,1):
+                        if exp.size==(1,1) and self.size != (1,1):
                                 oldstring=exp.string
                                 exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
                                 exp.string='|'+oldstring+'|'
-                        if self.size==(1,1) and exp.size<>(1,1):
+                        if self.size==(1,1) and exp.size != (1,1):
                                 oldstring=self.string
                                 selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
                                 selfone.string='|'+oldstring+'|'
@@ -1228,11 +1234,11 @@ class AffinExp(Expression):
 
         def __gt__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size==(1,1) and self.size<>(1,1):
+                        if exp.size==(1,1) and self.size != (1,1):
                                 oldstring=exp.string
                                 exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
                                 exp.string='|'+oldstring+'|'
-                        if self.size==(1,1) and exp.size<>(1,1):
+                        if self.size==(1,1) and exp.size != (1,1):
                                 oldstring=self.string
                                 selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
                                 selfone.string='|'+oldstring+'|'
@@ -1251,11 +1257,11 @@ class AffinExp(Expression):
 
         def __eq__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size==(1,1) and self.size<>(1,1):
+                        if exp.size==(1,1) and self.size != (1,1):
                                 oldstring=exp.string
                                 exp=cvx.matrix(1.,self.size)*exp.diag(self.size[1])
                                 exp.string='|'+oldstring+'|'
-                        if self.size==(1,1) and exp.size<>(1,1):
+                        if self.size==(1,1) and exp.size != (1,1):
                                 oldstring=self.string
                                 selfone=cvx.matrix(1.,exp.size)*self.diag(exp.size[1])
                                 selfone.string='|'+oldstring+'|'
@@ -1278,7 +1284,7 @@ class AffinExp(Expression):
                                         size=(1,1),string='('+self.string+')**{0}'.format(exponent))
                         else:
                                 raise Exception('type of exponent not handled')
-                if self.size<>(1,1):
+                if self.size != (1,1):
                         raise Exception('not implemented')
                 if (exponent==2):
                         Q=QuadExp({},
@@ -1297,7 +1303,7 @@ class AffinExp(Expression):
                         return tracepow(self,exponent)
 
         def diag(self,dim):
-                if self.size<>(1,1):
+                if self.size != (1,1):
                         raise Exception('not implemented')
                 selfcopy=self.copy()
                 idx=cvx.spdiag([1.]*dim)[:].I
@@ -1326,7 +1332,7 @@ class AffinExp(Expression):
 
         def __iand__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size[0]<>self.size[0]:
+                        if exp.size[0] != self.size[0]:
                                 raise Exception('incompatible size for concatenation')
                         for k in list(set(exp.factors.keys()).union(set(self.factors.keys()))):
                                 if (k in self.factors) and (k in exp.factors):
@@ -1432,7 +1438,7 @@ class AffinExp(Expression):
         def __ifloordiv__(self,exp):
                 """inplace vertical concatenation"""
                 if isinstance(exp,AffinExp):
-                        if exp.size[1]<>self.size[1]:
+                        if exp.size[1] != self.size[1]:
                                 raise Exception('incompatible size for concatenation')
                         for k in list(set(exp.factors.keys()).union(set(self.factors.keys()))):
                                 if (k in self.factors) and (k in exp.factors):
@@ -1533,7 +1539,7 @@ class AffinExp(Expression):
                 if isinstance(exp,Set):
                         return exp >> self
                 
-                if self.size[0]<>self.size[1]:
+                if self.size[0] != self.size[1]:
                         raise Exception('both sides of << must be square')
                 if isinstance(exp,AffinExp):
                         return Constraint('sdp<',None,self,exp)
@@ -1544,7 +1550,7 @@ class AffinExp(Expression):
                        return (self << exp2)
                        
         def __rshift__(self,exp):
-                if self.size[0]<>self.size[1]:
+                if self.size[0] != self.size[1]:
                         raise Exception('both sides of << must be square')
                 if isinstance(exp,AffinExp):
                         return Constraint('sdp>',None,self,exp)
@@ -1596,7 +1602,7 @@ class Norm(Expression):
 
                 
         def __pow__(self,exponent):
-                if (exponent<>2):
+                if (exponent != 2):
                         raise Exception('not implemented')
                 
                 qq = (self.exp[:].T)*(self.exp[:])
@@ -1612,7 +1618,7 @@ class Norm(Expression):
 
         def __lt__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if self.exp.size<>(1,1):
+                        if self.exp.size != (1,1):
                                 return Constraint('SOcone',None,self.exp,exp)
                         else:
                                 cons = (self.exp // -self.exp) < (exp // exp)
@@ -1674,7 +1680,7 @@ class LogSumExp(Expression):
         value = property(eval,Expression.set_value,Expression.del_simple_var_value,"value of the logsumexp expression")
 
         def __lt__(self,exp):
-                if exp<>0 and not(isinstance(exp,AffinExp) and exp.is0()):
+                if exp != 0 and not(isinstance(exp,AffinExp) and exp.is0()):
                         raise Exception('rhs must be 0')
                 else:
                         return Constraint('lse',None,self.Exp,0)
@@ -1726,7 +1732,7 @@ class QuadExp(Expression):
         def copy(self):
                 import copy
                 qdcopy={}
-                for ij,m in self.quad.iteritems():
+                for ij,m in six.iteritems(self.quad):
                         qdcopy[ij]=copy.deepcopy(m)
 
                 if self.aff is None:
@@ -1818,7 +1824,7 @@ class QuadExp(Expression):
                                 divi,diviString=divisor.eval(),divisor.string
                         else:
                                 raise Exception('not implemented')
-                        if divi.size<>(1,1):
+                        if divi.size != (1,1):
                                 raise Exception('not implemented')
                         if divi[0]==0:
                                 raise Exception('Division By Zero')
@@ -1873,7 +1879,7 @@ class QuadExp(Expression):
                                         self.string+=' + '+term.string
                         return self
                 elif isinstance(term,AffinExp):
-                        if term.size<>(1,1):
+                        if term.size != (1,1):
                                 raise Exception('RHS must be scalar')
                         expQE=QuadExp({},term,term.affstring())
                         self+=expQE
@@ -1929,7 +1935,7 @@ class QuadExp(Expression):
                         else:
                                 return Constraint('quad',None,self-exp,0)
                 if isinstance(exp,AffinExp):
-                        if exp.size<>(1,1):
+                        if exp.size != (1,1):
                                 raise Exception('RHS must be scalar')
                         exp2=AffinExp(factors={},constant=cvx.matrix(1.,(1,1)),size=(1,1),string='1')
                         expQE=QuadExp({},exp,exp.affstring(),LR=(exp,exp2))
@@ -1945,7 +1951,7 @@ class QuadExp(Expression):
                                 return exp<self
                         return (-self)<(-exp)
                 if isinstance(exp,AffinExp):
-                        if exp.size<>(1,1):
+                        if exp.size != (1,1):
                                 raise Exception('RHS must be scalar')
                         if exp.isconstant():
                                 cst=AffinExp( factors={},constant=cvx.matrix(np.sqrt(exp.eval()),(1,1)),
@@ -2047,7 +2053,7 @@ class GeoMeanExp(_ConvexExp):
         
         def __gt__(self,exp):
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('upper bound of a geomean must be scalar')
                         if self.exp.size == (1,1):
                                 return self.exp > exp
@@ -2082,9 +2088,9 @@ class GeoMeanExp(_ConvexExp):
                         for k in K:
                                 i1=int(k.split('-')[0].split(':')[1])
                                 i2=k.split('-')[1]
-                                if i2<>'x': i2=int(i2)
+                                if i2 != 'x': i2=int(i2)
                                 if k[:2]=='1:':
-                                        if i2<>'x':
+                                        if i2 != 'x':
                                                 Ptmp.add_constraint(u[k]**2   <self.exp[i1]*self.exp[i2])
                                         else:
                                                 Ptmp.add_constraint(u[k]**2   <self.exp[i1]*exp)
@@ -2179,7 +2185,7 @@ class NormP_Exp(_ConvexExp):
                 if float(self.numerator)/self.denominator < 1:
                         raise Exception('<= operator can be used only when the function is convex (p>=1)')
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('upper bound of a norm must be scalar')
                         if self.exp.size == (1,1):
                                 return abs(self.exp) < exp
@@ -2245,21 +2251,21 @@ class NormP_Exp(_ConvexExp):
         def __gt__(self,exp):
                 p = float(self.numerator)/self.denominator
                 if p > 1 or p==0:
-                        raise Exception('>= operator can be used only when the function is concave (p<=1, p<>0)')
+                        raise Exception('>= operator can be used only when the function is concave (p<=1, p != 0)')
                 
                 if isinstance(exp,AffinExp):
                         from .problem import Problem
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('lower bound of a generalized p-norm must be scalar')
                         Ptmp = Problem()
                         m = self.exp.size[0]*self.exp.size[1]
                         if p == 1 :
                                 Ptmp.add_constraint(self.exp>0)
                                 Ptmp.add_constraint((1|self.exp) > exp)
-                                print "\033[1;31m*** Warning -- generalized norm inequality, expression is forced to be >=0 \033[0m"
+                                print("\033[1;31m*** Warning -- generalized norm inequality, expression is forced to be >=0 \033[0m")
                         elif p==float('-inf'):
                                 Ptmp.add_constraint(self.exp  >= exp)
-                                print "\033[1;31m*** Warning -- generalized norm inequality, norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m"
+                                print("\033[1;31m*** Warning -- generalized norm inequality, norm_-inf(x) is interpreted as min(x), not min(abs(x)) \033[0m")
                         elif p>=0:
                                 v = Ptmp.add_variable('v',m)
                                 
@@ -2395,7 +2401,7 @@ class TracePow_Exp(_ConvexExp):
                 elif p == 2:
                         return (self.exp)**2 < exp
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('upper bound of a tracepow must be scalar')
                         from .problem import Problem
                         Ptmp = Problem()
@@ -2497,7 +2503,7 @@ class TracePow_Exp(_ConvexExp):
                                 return (self.M | self.exp) > exp
                 
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('lower bound of a tracepow must be scalar')
                         from .problem import Problem
                         Ptmp = Problem()
@@ -2605,11 +2611,11 @@ class DetRootN_Exp(_ConvexExp):
         def __gt__(self,exp):
                 
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('lower bound of a detrootn must be scalar')
                         from .problem import Problem
                         Ptmp = Problem()
-                        nr = self.dim * (self.dim+1)/2
+                        nr = self.dim * (self.dim+1)//2
                         l = Ptmp.add_variable('l', (nr,1))
                         L = ltrim1(l,uptri=0)
                         dl = diag_vect(L)
@@ -2692,7 +2698,7 @@ class Sum_k_Largest_Exp(_ConvexExp):
         def __lt__(self,exp):
                 
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('upper bound of a sum_k_largest must be scalar')
                         from .problem import Problem
                         Ptmp = Problem()
@@ -2799,7 +2805,7 @@ class Sum_k_Smallest_Exp(_ConvexExp):
         def __gt__(self,exp):
                 
                 if isinstance(exp,AffinExp):
-                        if exp.size <> (1,1):
+                        if exp.size  !=  (1,1):
                                 raise Exception('lower bound of a sum_k_smallest must be scalar')
                         from .problem import Problem
                         Ptmp = Problem()
@@ -2861,12 +2867,12 @@ class Variable(AffinExp):
                                        string=name
                                        )
                 
-                self.parent_problem = parent_problem
-                """The Problem instance to which this variable belongs"""
-                
                 self.name=name
                 """The name of the variable (str)"""
 
+                self.parent_problem = parent_problem
+                """The Problem instance to which this variable belongs"""
+                
                 self.Id=Id
                 """An integer index (obsolete)"""
                 self._vtype=vtype
@@ -2878,7 +2884,7 @@ class Variable(AffinExp):
                 
                 
                 if vtype in ('symmetric',):
-                        self._endIndex=startIndex+(size[0]*(size[0]+1))/2 #end position +1
+                        self._endIndex=startIndex+(size[0]*(size[0]+1))//2 #end position +1
                 else:
                         self._endIndex=startIndex+size[0]*size[1] #end position +1
                 
@@ -2980,7 +2986,7 @@ class Variable(AffinExp):
         @semiDef.setter
         def semiDef(self,value):
                 if not(self._semiDef) and (value) and ('mosek' in self.passed):
-                       print "\033[1;31mWarning: this var has already been passed to mosek, so mosek will not be able to handle it as a bar variable.\033[0m"
+                       print("\033[1;31mWarning: this var has already been passed to mosek, so mosek will not be able to handle it as a bar variable.\033[0m")
                        
                 self._semiDef = value
                 
@@ -3051,7 +3057,7 @@ class Variable(AffinExp):
                 vv = []
                 ii = []
                 jj = []
-                for idx,lo in izip(indices,bnds):
+                for idx,lo in zip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
                         if self.vtype in ('symmetric',):
@@ -3073,7 +3079,7 @@ class Variable(AffinExp):
                 spLO = cvx.spmatrix(vv,ii,jj,self.size)
                 if self.vtype in ('symmetric',):
                         spLO = svec(spLO)
-                for i,j,v in izip(spLO.I,spLO.J,spLO.V):
+                for i,j,v in zip(spLO.I,spLO.J,spLO.V):
                         ii = s0*j + i
                         bil,biu = self.bnd.get(ii,(None,None))
                         self.bnd._set(ii,(v,biu))
@@ -3140,7 +3146,7 @@ class Variable(AffinExp):
                 vv = []
                 ii = []
                 jj = []
-                for idx,up in izip(indices,bnds):
+                for idx,up in zip(indices,bnds):
                         if isinstance(idx,int):
                                 idx = (idx%s0, idx//s0)
                         if self.vtype in ('symmetric',):
@@ -3163,7 +3169,7 @@ class Variable(AffinExp):
                 spUP = cvx.spmatrix(vv,ii,jj,self.size)
                 if self.vtype in ('symmetric',):
                         spUP = svec(spUP)
-                for i,j,v in izip(spUP.I,spUP.J,spUP.V):
+                for i,j,v in zip(spUP.I,spUP.J,spUP.V):
                         ii = s0*j + i
                         bil,biu = self.bnd.get(ii,(None,None))
                         self.bnd._set(ii,(bil,v))      
@@ -3322,8 +3328,8 @@ class Variable(AffinExp):
                                                 index=(index[0],slice(ind,ind+1,None))
                                 idx0=index[0].indices(self.size[0])
                                 idx1=index[1].indices(self.size[1])
-                                rangei=xrange(idx0[0],idx0[1],idx0[2])
-                                rangej=xrange(idx1[0],idx1[1],idx1[2])
+                                rangei=range(idx0[0],idx0[1],idx0[2])
+                                rangej=range(idx1[0],idx1[1],idx1[2])
                                 rangeT=[]
                                 for j in rangej:
                                         rangei_translated=[]

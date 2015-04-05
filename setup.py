@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='PICOS',
-    version='1.0.3',
+    version='1.0.2',
     author='G. Sagnol',
     author_email='sagnol@zib.de',
     packages=['picos'],
@@ -13,5 +13,6 @@ setup(
     install_requires=[
         "CVXOPT >= 1.1.4",
         "numpy  >= 1.6.2",
+        "six: >= 1.8.0"
     ],
 ) 

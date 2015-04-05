@@ -3,6 +3,8 @@
 #       which comes with the cplex distrubution
 #
 
+from __future__ import print_function
+
 import cplex
 from cplex.callbacks import MIPInfoCallback, IncumbentCallback, BranchCallback, NodeCallback
 import time
@@ -36,19 +38,19 @@ class PicosInfoCallback(MIPInfoCallback):
                 if not self.bounds is None:
                         self.bounds.append((timeused,self.lb,self.ub))
                 if (self.lbound is not None) and (self.lb > self.lbound):
-                        print "specified lower bound reached, quitting"
+                        print("specified lower bound reached, quitting")
                         self.aborted=1
                         self.abort()
                 if (self.ubound is not None) and (self.ub < self.ubound):
-                        print "specified upper bound reached, quitting"
+                        print("specified upper bound reached, quitting")
                         self.aborted=1
                         self.abort()
                 if (self.timelimit is not None):
                         gap = 100.0 * self.get_MIP_relative_gap()
                         if timeused > self.timelimit and (
                                 (self.acceptablegap is None) or (gap < self.acceptablegap)):
-                                print "Good enough solution at", timeused, "sec., gap =", \
-                                gap, "%, quitting."
+                                print("Good enough solution at", timeused, "sec., gap =",
+                                      gap, "%, quitting.")
                                 self.aborted = 1
                                 self.abort()                  
                         

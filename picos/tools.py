@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -26,11 +26,15 @@
 #Germany 
 #-------------------------------------------------------------------
 
+from __future__ import print_function, division
+
 import cvxopt as cvx
 import numpy as np
 import sys, os
-import pdb; 
+import pdb
 
+from six.moves import range, builtins
+import six
 
 __all__=['_retrieve_matrix',
         '_svecm1_identity',
@@ -144,8 +148,7 @@ def sum(lst,it=None,indices=None):
         if len(lst)==0:
                 return AffinExp({},constant=cvx.matrix([0.],(1,1)),size=(1,1),string='0')
         if not(all([isinstance(exi,Expression) for exi in lst])):
-                import __builtin__
-                return __builtin__.sum(lst)
+                return builtins.sum(lst)
         if 'z' in [m.typecode for exp in lst for m in exp.factors.values()]: #complex expression
                 affSum=new_param('',cvx.matrix(0.,lst[0].size,tc='z'))
         else:
@@ -184,8 +187,7 @@ def sum(lst,it=None,indices=None):
 
 def _bsum(lst):
         """builtin sum operator"""
-        import __builtin__
-        return __builtin__.sum(lst)
+        return builtins.sum(lst)
         
 def _break_cols(mat,sizes):
         n = len(sizes)
@@ -442,7 +444,7 @@ def lambda_max(exp):
 def sum_k_smallest(exp,k):
         """returns a :class:`Sum_k_Smallest_Exp <picos.Sum_k_Smallest_Exp>` object representing the sum
         of the ``k`` smallest elements of an affine expression ``exp``.
-        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i}^{\uparrow} \geq t`.
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k x_{i}^{\\uparrow} \geq t`.
         This kind of constraints is reformulated internally as a set of linear inequalities.
         
         **Example:**
@@ -468,7 +470,7 @@ def sum_k_smallest(exp,k):
 def sum_k_smallest_lambda(exp,k):
         """returns a :class:`Sum_k_Smallest_Exp <picos.Sum_k_Smallest_Exp>` object representing the sum
         of the ``k`` smallest eigenvalues of a square matrix affine expression ``exp``.
-        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i}^{\uparrow}(X) \geq t`. 
+        This can be used to enter constraints of the form :math:`\sum_{i=1}^k \lambda_{i}^{\\uparrow}(X) \geq t`. 
         This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
         Note that ``exp`` is assumed to be symmetric (picos does not check).
         
@@ -1268,7 +1270,7 @@ def svec(mat,ignore_sym = False):
                         if abs(mat[j,i]-v)>1e-6:
                                 raise ValueError('mat must be symmetric')
                 if i<=j:
-                        isvec=j*(j+1)/2+i
+                        isvec=j*(j+1)//2+i
                         J.append(0)
                         I.append(isvec)
                         if i==j:
@@ -1276,14 +1278,14 @@ def svec(mat,ignore_sym = False):
                         else:
                                 V.append(np.sqrt(2)*v)
 
-        return cvx.spmatrix(V,I,J,(s0*(s0+1)/2,1))
+        return cvx.spmatrix(V,I,J,(s0*(s0+1)//2,1))
 
 def svecm1(vec,triu=False):
         if vec.size[1]>1:
                 raise ValueError('should be a column vector')
         v=vec.size[0]
-        n=int(np.sqrt(1+8*v)-1)/2
-        if n*(n+1)/2 != v:
+        n=int(np.sqrt(1+8*v)-1)//2
+        if n*(n+1)//2 != v:
                 raise ValueError('vec should be of dimension n(n+1)/2')
         if not isinstance(vec,cvx.spmatrix):
                 vec=cvx.sparse(vec)
@@ -1291,8 +1293,8 @@ def svecm1(vec,triu=False):
         J=[]
         V=[]
         for i,v in zip(vec.I,vec.V):
-                c=int(np.sqrt(1+8*i)-1)/2
-                r=i-c*(c+1)/2
+                c=int(np.sqrt(1+8*i)-1)//2
+                r=i-c*(c+1)//2
                 I.append(r)
                 J.append(c)
                 if r==c:
@@ -1317,8 +1319,8 @@ def ltrim1(vec,uptri = True):
                 raise ValueError('should be a column vector')
         from .expression import AffinExp
         v=vec.size[0]
-        n=int(np.sqrt(1+8*v)-1)/2
-        if n*(n+1)/2 != v:
+        n=int(np.sqrt(1+8*v)-1)//2
+        if n*(n+1)//2 != v:
                 raise ValueError('vec should be of dimension n(n+1)/2')
         if isinstance(vec,cvx.matrix) or isinstance(vec,cvx.spmatrix):
                 if not isinstance(vec,cvx.matrix):
@@ -1396,7 +1398,7 @@ def lowtri(exp):
         [ 3.68e+02]
         [ 4.04e+02]
         """
-        if exp.size[0]<>exp.size[1]:
+        if exp.size[0]!=exp.size[1]:
                 raise ValueError('exp must be square')
         from .expression import AffinExp
         from itertools import izip
@@ -1414,7 +1416,7 @@ def lowtri(exp):
                         newrow[i] = nr
                         nr += 1
         nsz = nr#this should be (n*(n+1))/2
-        for var,mat in exp.factors.iteritems():
+        for var,mat in six.iteritems(exp.factors):
                 I,J,V=[],[],[]
                 for i,j,v in izip(mat.I,mat.J,mat.V):
                         col = i//n
@@ -1463,15 +1465,15 @@ def _svecm1_identity(vtype,size):
                 J=[]
                 V=[]
                 for i in I:
-                        rc= (i%s0,i/s0)
+                        rc= (i%s0,i//s0)
                         (r,c)=(min(rc),max(rc))
-                        j=c*(c+1)/2+r
+                        j=c*(c+1)//2+r
                         J.append(j)
                         if r==c:
                                 V.append(1)
                         else:
                                 V.append(1/np.sqrt(2))
-                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0+1)/2))
+                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0+1)//2))
         elif vtype == 'antisym':
                 s0=size[0]
                 if size[1]!=s0:
@@ -1489,7 +1491,7 @@ def _svecm1_identity(vtype,size):
                                 J.append(k)
                                 V.append(-1)
                                 k+=1
-                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0-1)/2))
+                idmat=cvx.spmatrix(V,I,J,(s0*s0,s0*(s0-1)//2))
         else:
                 sp=size[0]*size[1]
                 idmat=cvx.spmatrix([1]*sp,range(sp),range(sp),(sp,sp))
@@ -1584,28 +1586,28 @@ def available_solvers():
         except ImportError:
                 pass
         try:
-		import mosek7 as mo7
-		lst.append('mosek7')
-		del mo7
-		try:
-                        import mosek as mo
-                        version7 = not(hasattr(mo,'cputype'))
-                        if not version7:
-                                lst.append('mosek6')
-                        del mo
-                except ImportError:
-                        pass
-	except ImportError:#only one default mosek available
-		try:
-                        import mosek as mo
-                        version7 = not(hasattr(mo,'cputype')) #True if this is the beta version 7 of MOSEK
-                        del mo
-                        if version7:
-                                lst.append('mosek7')
-                        else:
-                                lst.append('mosek6')
-                except ImportError:
-                        pass
+            import mosek7 as mo7
+            lst.append('mosek7')
+            del mo7
+            try:
+                import mosek as mo
+                version7 = not(hasattr(mo,'cputype'))
+                if not version7:
+                    lst.append('mosek6')
+                del mo
+            except ImportError:
+                pass
+        except ImportError:#only one default mosek available
+            try:
+                import mosek as mo
+                version7 = not(hasattr(mo,'cputype')) #True if this is the beta version 7 of MOSEK
+                del mo
+                if version7:
+                    lst.append('mosek7')
+                else:
+                    lst.append('mosek6')
+            except ImportError:
+                pass
         try:
                 import cplex as cp
                 lst.append('cplex')
@@ -1720,7 +1722,7 @@ def _quad2norm(qd):
         #construct quadratic matrix
         Q = cvx.spmatrix([],[],[],(ofs,ofs))
         I,J,V=[],[],[]
-        for (xi,xj),Qij in qd.iteritems():
+        for (xi,xj),Qij in six.iteritems(qd):
                 oi=offsets[xi]
                 oj=offsets[xj]
                 Qtmp=cvx.spmatrix(Qij.V,Qij.I+oi,Qij.J+oj,(ofs,ofs))
@@ -1760,7 +1762,7 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
         #cf function _copy_exp_to_new_vars for an explanation of the 'complex' argument
         D = {}
         import copy
-        for var,value in dct.iteritems():
+        for var,value in six.iteritems(dct):
                 if isinstance(var,tuple):#quad
                         if var[0].vtype == 'hermitian' or var[1].vtype == 'hermitian':
                                 raise Exception('quadratic form involving hermitian variable')
@@ -1929,7 +1931,7 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
         
         mm = M.size[0]
         m = mm**0.5
-        if int(m)<>m:
+        if int(m)!=m:
                 raise NameError('first dimension must be a perfect square')
         m=int(m)
         
@@ -1937,13 +1939,13 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
         if sym:
                 nn = M.size[1]
                 n = nn**0.5
-                if int(n)<>n:
+                if int(n)!=n:
                         raise NameError('2d dimension must be a perfect square')
                 n=int(n)
 
-                for k in range(n*(n+1)/2):
-                        j=int(np.sqrt(1+8*k)-1)/2
-                        i=k-j*(j+1)/2
+                for k in range(n*(n+1)//2):
+                        j=int(np.sqrt(1+8*k)-1)//2
+                        i=k-j*(j+1)//2
                         if i==j:
                                 v=M[:,n*i+i]
                         else:
@@ -1973,7 +1975,7 @@ def _is_idty(mat,vtype='continuous'):
                                 return True
         elif vtype=='antisym':
                 n = int((mat.size[0])**0.5)
-                if n != int(n) or n*(n-1)/2 != mat.size[1]:
+                if n != int(n) or n*(n-1)//2 != mat.size[1]:
                         return False
                 if not (_svecm1_identity('antisym',(n,n)) - mat):
                         return True
@@ -2038,7 +2040,7 @@ def _read_sdpa(filename):
                                         if i>j and j>0:
                                                 isarrow = False
                                                 break
-                                isrsoc = isrsoc and isarrow and all([M[i,i]==M[1,1] for i in xrange(2,sz)])
+                                isrsoc = isrsoc and isarrow and all([M[i,i]==M[1,1] for i in range(2,sz)])
                                 issoc = issoc and isrsoc and (M[1,1]==M[0,0])
                                 if not(isrsoc): break
                                 
@@ -2087,7 +2089,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
         """
         # checking that we have the good number of variables
         if len(f)!=len(G.edges()):
-                print 'Error: The number of variables does not match with the number of edges.'
+                print('Error: The number of variables does not match with the number of edges.')
                 return False
 
         from .problem import Problem
@@ -2140,7 +2142,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
         #
         elif not type(source) is list:
                 if(len(sink)!=len(flow_value)):
-                        print 'Error: The number sink must match with the number of flows values.'
+                        print('Error: The number sink must match with the number of flows values.')
                         return False
 
 
@@ -2172,7 +2174,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
         #
         elif not type(sink) is list:
                 if(len(source)!=len(flow_value)):
-                        print 'Error: The number sink must match with the number of flows values.'
+                        print('Error: The number sink must match with the number of flows values.')
                         return False
 
                 # Adding the flow conservation
@@ -2206,13 +2208,13 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
         #
         elif type(sink) is list and type(source) is list:
                 if(len(source)!=len(flow_value)):
-                        print 'Error: The number of sinks must match with the number of flow values.'
+                        print('Error: The number of sinks must match with the number of flow values.')
                         return False
                 if(len(sink)!=len(source)):
-                        print 'Error: The number of sinks must macht with the number of sources.'
+                        print('Error: The number of sinks must macht with the number of sources.')
                         return False
                 if(len(sink)!=len(flow_value)):
-                        print 'Error: The number of sinks must match with the numver of flow values.'
+                        print('Error: The number of sinks must match with the numver of flow values.')
                         return False
 
 
@@ -2266,7 +2268,7 @@ def flow_Constraint(G, f, source, sink, flow_value, capacity = None, graphName='
         # Handle errors
         #
         else:
-                print 'Error: unexpected error.'
+                print('Error: unexpected error.')
                 return False
 
         from .constraint import Flow_Constraint
@@ -2421,11 +2423,11 @@ class _NonWritableDict(dict):
         return dict.__getitem__(self,key)
 
     def __setitem__(self,key,value):
-        print 'not writable'
+        print('not writable')
         raise Exception('NONO')
 
     def __delitem__(self,key):
-        print 'not writable'
+        print('not writable')
 
     def _set(self,key,value):
         dict.__setitem__(self,key,value)

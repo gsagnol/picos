@@ -1,5 +1,7 @@
 #generate data
 
+from __future__ import print_function
+
 import cvxopt as cvx
 import picos as pic
 
@@ -323,12 +325,12 @@ cc=pic.new_param('c',c)
 u=prob_multiresponse_multiconstraints.add_variable('u',c.size)
 lbd=prob_multiresponse_multiconstraints.add_variable('lbd',2)
 prob_multiresponse_multiconstraints.add_list_of_constraints(
-        [abs(AA[i]*u)**2<lbd[0] for i in range(s/2)], #constraints
+        [abs(AA[i]*u)**2<lbd[0] for i in range(s//2)], #constraints
         'i', #index
         '0..3' #set to which the index belongs
         )
 prob_multiresponse_multiconstraints.add_list_of_constraints(
-        [abs(AA[i]*u)**2<lbd[1] for i in range(s/2,s)], #constraints
+        [abs(AA[i]*u)**2<lbd[1] for i in range(s//2,s)], #constraints
         'i', #index
         '4..7' #set to which the index belongs
         )
@@ -616,7 +618,7 @@ bim.set_objective('max',x.T*(AA+BB)*y-alpha-beta)
 avs=pic.tools.available_solvers()
 
 def LP1Test(solver_to_test):
-        print 'LP1',solver_to_test
+        print('LP1',solver_to_test)
         #1st test: c optimality single response
         primal=prob_LP_c.copy()
         try:
@@ -656,7 +658,7 @@ def LP1Test(solver_to_test):
         return (True,primal.status)
         
 def LP2Test(solver_to_test):
-        print 'LP2',solver_to_test
+        print('LP2',solver_to_test)
         #1st test: LP in standard form
         primal=lp.copy()
         try:
@@ -699,7 +701,7 @@ def LP2Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP1Test(solver_to_test):
-        print 'SOCP1',solver_to_test
+        print('SOCP1',solver_to_test)
         #first test (A optimality)
         primal=prob_multiresponse_A.copy()
         try:
@@ -740,7 +742,7 @@ def SOCP1Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP2Test(solver_to_test):        
-        print 'SOCP2',solver_to_test
+        print('SOCP2',solver_to_test)
         #2d test (socp in standard form)
         primal=socp.copy()
         try:
@@ -785,7 +787,7 @@ def SOCP2Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP3Test(solver_to_test):    
-        print 'SOCP3',solver_to_test
+        print('SOCP3',solver_to_test)
         #3d test (socp with rotated cones)
         primal=prob_multiresponse_multiconstraints.copy()
         try:
@@ -834,7 +836,7 @@ def SOCP3Test(solver_to_test):
         return (True,primal.status)        
 
 def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
-        print 'SOCP4',solver_to_test
+        print('SOCP4',solver_to_test)
         #4th test (socp in standard form, with additional variable bounds)
         primal=socp.copy()
         #solve the problem a first time to check if constaints can be added afterwards
@@ -921,7 +923,7 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
         return (True,primal.status)
         
 def SDPTest(solver_to_test):
-        print 'SDP',solver_to_test
+        print('SDP',solver_to_test)
         primal=prob_SDP_c.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
@@ -964,7 +966,7 @@ def SDPTest(solver_to_test):
         return (True,primal.status)
 
 def CONEPTest(solver_to_test):
-        print 'CONEP',solver_to_test
+        print('CONEP',solver_to_test)
         primal=coneP.copy()
         try:
                 primal.solve(solver=solver_to_test,tol=1e-7,timelimit=1,maxit=50)
@@ -1040,40 +1042,40 @@ def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6,maxit=50):
         return (True,primal2.status)
                 
 def QCQPTest(solver_to_test):
-        print 'QCQP',solver_to_test
+        print('QCQP',solver_to_test)
         return testOnlyPrimal(solver_to_test,qcqp,
                                 -12.433985877219854)
         
 def MIXED_SOCP_QPTest(solver_to_test):
-        print 'MIXED SOCP QP',solver_to_test
+        print('MIXED SOCP QP',solver_to_test)
         return testOnlyPrimal(solver_to_test,soqcqp,
                                 -6.8780810803741055)
         
 def MIQCQPTest(solver_to_test):
-        print 'MIQCQP',solver_to_test
+        print('MIQCQP',solver_to_test)
         return testOnlyPrimal(solver_to_test,miqcqp,
                                 -10.21427246841899,tol=1e-4,maxit=500)
          
 def GPTest(solver_to_test):
-        print 'GP',solver_to_test
+        print('GP',solver_to_test)
         return testOnlyPrimal(solver_to_test,gp,
                                 1.0397207708399179)
 def MISOCPTest(solver_to_test):
-        print 'MISOCP',solver_to_test
+        print('MISOCP',solver_to_test)
         return testOnlyPrimal(solver_to_test,prob_exact_c,
                                 8.601831095537415,tol=1e-4,maxit=None)
 
 def MIPTest(solver_to_test):
-        print 'MIP',solver_to_test
+        print('MIP',solver_to_test)
         return testOnlyPrimal(solver_to_test,prob_exact_single_c,
                                 5.48076923076923,tol=1e-4,maxit=500)
 def CONEQCPTest(solver_to_test):
-        print 'CONEQCP',solver_to_test
+        print('CONEQCP',solver_to_test)
         return testOnlyPrimal(solver_to_test,coneQP,
                 1.1541072108276682)
 
 def NON_CONVEX_QPTest(solver_to_test):
-        print 'NONCONVEX QP',solver_to_test
+        print('NONCONVEX QP',solver_to_test)
         return testOnlyPrimal(solver_to_test,bim,0.)
                 
 #tests with cvxopt
@@ -1092,19 +1094,19 @@ for solver in avs:
         for pclas in prob_classes:
                 results[solver][pclas]=eval(pclas.upper()+'Test')(solver)
 
-for i in range(20): print
+for i in range(20): print()
                 
-print '------------------------------------------------------------------'
-print '----------------------  Results Summary  -------------------------'
-print '------------------------------------------------------------------'
-print
+print('------------------------------------------------------------------')
+print('----------------------  Results Summary  -------------------------')
+print('------------------------------------------------------------------')
+print()
 #Display available solvers
-print 'list of available solvers:'
-print '--------------------------'
+print('list of available solvers:')
+print('--------------------------')
 for solv in avs:
-        print '\t_'+solv
+        print('\t_'+solv)
 
-print        
+print()  
         
 linesep='+---------------+'+'----------+'*len(avs)
 emptyln='|               |'+'          |'*len(avs)
@@ -1114,11 +1116,11 @@ for solver in avs:
         header+='{0:^10}|'.format(solver)
 
 
-print linesep
-print emptyln
-print header
-print emptyln
-print linesep
+print(linesep)
+print(emptyln)
+print(header)
+print(emptyln)
+print(linesep)
 
 for pclas in prob_classes:
         clasln='|{0:^15}|'.format(pclas)
@@ -1155,17 +1157,17 @@ for pclas in prob_classes:
                                         clasln+='Dgap:'+inf+'|'
                         else:
                                 clasln+='  failed  |'
-        print clasln
-        print linesep
+        print(clasln)
+        print(linesep)
         
-print
-print 'explanation: OK*        = test passed (optimal primal and dual variables computed).'
-print '             OK         = test passed (only the primal vars are computed for this class of problems).'
-print '             OK(nodual) = Optimal primal solution, but no dual variables were computed'
-print '             Dinf:err   = Optimal primal solution, but the dual infeasibility in the order of (err)'
-print '             Dgap:err   = Optimal primal solution, but duality gap in the order of (err)'
-print '             Pinf:err   = Primal solution with has an infeasibility in the order of (err) '
-print '             gap: err   = Feasible but suboptimal solution (gap in the order of (err)'
-print '             <blank>    = class of problem not handled by this solver'
-print '             failed     = The problem was not solved'
+print()
+print('explanation: OK*        = test passed (optimal primal and dual variables computed).')
+print('             OK         = test passed (only the primal vars are computed for this class of problems).')
+print('             OK(nodual) = Optimal primal solution, but no dual variables were computed')
+print('             Dinf:err   = Optimal primal solution, but the dual infeasibility in the order of (err)')
+print('             Dgap:err   = Optimal primal solution, but duality gap in the order of (err)')
+print('             Pinf:err   = Primal solution with has an infeasibility in the order of (err)')
+print('             gap: err   = Feasible but suboptimal solution (gap in the order of (err)')
+print('             <blank>    = class of problem not handled by this solver')
+print('             failed     = The problem was not solved')
 

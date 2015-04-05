@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,8 @@
 #D-14195 Berlin-Dahlem
 #Germany 
 #-------------------------------------------------------------------
+
+from __future__ import division
 
 import cvxopt as cvx
 import numpy as np
@@ -88,15 +90,15 @@ class Constraint(object):
                 if typeOfConstraint=='RScone' and Exp3 is None:
                         raise NameError('I need a 3d expression')
                 if typeOfConstraint[:3]=='lin':
-                        if Exp1.size<>Exp2.size:
+                        if Exp1.size != Exp2.size:
                                 raise NameError('incoherent lhs and rhs')
                         #are there some bound constrainta ?
                         
                 if typeOfConstraint[2:]=='cone':                        
-                        if Exp2.size<>(1,1):
+                        if Exp2.size != (1,1):
                                 raise NameError('expression on the rhs should be scalar')
                         if not Exp3 is None:
-                                if Exp3.size<>(1,1):
+                                if Exp3.size != (1,1):
                                         raise NameError(
                                         'expression on the rhs should be scalar')
                         
@@ -109,14 +111,14 @@ class Constraint(object):
                                 raise NameError('lhs must be 0')
                         self.Exp2=AffinExp(factors={},constant=cvx.matrix(0,(1,1)),string='0',size=(1,1))
                 if typeOfConstraint[:3]=='sdp':
-                        if Exp1.size<>Exp2.size:
+                        if Exp1.size != Exp2.size:
                                 raise NameError('incoherent lhs and rhs')
-                        if Exp1.size[0]<>Exp1.size[1]:
+                        if Exp1.size[0] != Exp1.size[1]:
                                 raise NameError('lhs and rhs should be square')
                         #is it a simple constraint of the form X>>0 ?
                         fac1 = self.Exp1.factors
                         if len(fac1)==1:
-                                var = fac1.keys()[0]
+                                var = list(fac1.keys())[0]
                                 mat = fac1[var]
                                 idty = _svecm1_identity(var.vtype,var.size)
                                 if ( not(self.Exp1.constant) and
@@ -136,7 +138,7 @@ class Constraint(object):
                                         raise Exception("X>>0 with X of vtype complex. Use vtype='hermitian' instead")
                         fac2 = self.Exp2.factors
                         if len(fac2)==1:
-                                var = fac2.keys()[0]
+                                var = list(fac2.keys())[0]
                                 mat = fac2[var]
                                 idty = _svecm1_identity(var.vtype,var.size)
                                 if ( not(self.Exp2.constant) and
@@ -346,13 +348,13 @@ class Flow_Constraint(_Convex_Constraint):
         This class derives from :class:`Constraint <picos.Constraint>`.
         """
         def __init__(self,G, Ptmp,constring):
-					self.graph = G
-					_Convex_Constraint.__init__(self,Ptmp,constring,'flow constraint')
-					self.prefix='_flow'
-					"""prefix to be added to the names of the temporary variables when add_constraint() is called"""   
+            self.graph = G
+            _Convex_Constraint.__init__(self,Ptmp,constring,'flow constraint')
+            self.prefix='_flow'
+            """prefix to be added to the names of the temporary variables when add_constraint() is called"""   
         def draw(self):
-					from .tools import drawGraph
-					drawGraph(self.graph)
+            from .tools import drawGraph
+            drawGraph(self.graph)
            
 class GeoMeanConstraint(_Convex_Constraint):
         """ A temporary object used to pass geometric mean inequalities.

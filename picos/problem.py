@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.3 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -26,9 +26,13 @@
 #Germany 
 #-------------------------------------------------------------------
 
+from __future__ import print_function, division
+
 import cvxopt as cvx
 import numpy as np
 import sys
+import six
+from six.moves import zip, range
 
 from .tools import *
 from .expression import *
@@ -375,7 +379,7 @@ class Problem(object):
                 if typ=='find':
                         self.objective=(typ,expr)
                         return
-                if (isinstance(expr,AffinExp) and expr.size<>(1,1)):
+                if (isinstance(expr,AffinExp) and expr.size != (1,1)):
                         raise Exception('objective should be scalar')
                 if not (isinstance(expr,AffinExp) or isinstance(expr,LogSumExp)
                         or isinstance(expr,QuadExp) or isinstance(expr,GeneralFun)):
@@ -433,7 +437,7 @@ class Problem(object):
                 if not name in self.variables.keys():
                         raise Exception('unknown variable name')
                 valuemat,valueString=_retrieve_matrix(value,self.variables[name].size)
-                if valuemat.size<>self.variables[name].size:
+                if valuemat.size != self.variables[name].size:
                         raise Exception('should be of size {0}'.format(self.variables[name].size))
                 if ind is None:
                         #svectorization for symmetric is done by the value property
@@ -478,7 +482,7 @@ class Problem(object):
                         h=affExpr.constant
                 if not isinstance(h,cvx.matrix):
                         h=cvx.matrix(h,tc='d')
-                if h.typecode<>'d':
+                if h.typecode != 'd':
                         h=cvx.matrix(h,tc='d')
                 return G,h
 
@@ -760,7 +764,7 @@ class Problem(object):
                                 foundVars.update(obj.Exp.factors.keys())
                 
                 vars2del =[]
-                for vname,v in self.variables.iteritems():
+                for vname,v in six.iteritems(self.variables):
                         if v not in foundVars:
                                 vars2del.append(vname)
                 
@@ -850,11 +854,11 @@ class Problem(object):
                         if lisname in self.listOfVars:
                                 oldn=self.listOfVars[lisname]['numvars']
                                 self.listOfVars[lisname]['numvars']+=1
-                                if size<>self.listOfVars[lisname]['size']:
+                                if size != self.listOfVars[lisname]['size']:
                                         self.listOfVars[lisname]['size']='different'
-                                if vtype<>self.listOfVars[lisname]['vtype']:
+                                if vtype != self.listOfVars[lisname]['vtype']:
                                         self.listOfVars[lisname]['vtype']='different'
-                                if self.listOfVars[lisname]['type']=='list' and ind<>str(oldn):
+                                if self.listOfVars[lisname]['type']=='list' and ind != str(oldn):
                                         self.listOfVars[lisname]['type']='dict'
                         else:
                                 self.listOfVars[lisname]={'numvars':1,'size':size,'vtype':vtype}
@@ -870,7 +874,7 @@ class Problem(object):
                         if size[0]!=size[1]:
                                 raise ValueError('symmetric variables must be square')
                         s0=size[0]
-                        self.numberOfVars+=s0*(s0+1)/2
+                        self.numberOfVars+=s0*(s0+1)//2
                 elif vtype== 'antisym':
                         if size[0]!=size[1]:
                                 raise ValueError('antisymmetric variables must be square')
@@ -880,7 +884,7 @@ class Problem(object):
                         if not(lower is None and upper is None):
                                 raise ValueError('hard lower / upper bounds not supported for antisym variables. Add a constraint instead.')
                         idmat=_svecm1_identity(vtype,(s0,s0))
-                        Xv = self.add_variable(name+'_utri',(s0*(s0-1))/2, vtype = 'continuous',lower = None,upper =None)
+                        Xv = self.add_variable(name+'_utri',(s0*(s0-1))//2, vtype = 'continuous',lower = None,upper =None)
                         exp = idmat * Xv
                         exp.string = name
                         exp._size = (s0,s0)
@@ -928,10 +932,10 @@ class Problem(object):
                                         lower = lower,
                                         upper = upper)
                 if lisname is not None:
-                        if self.listOfVars[lisname].has_key('bnd'):
+                        if 'bnd' in self.listOfVars[lisname]:
                                 bndtext = self.listOfVars[lisname]['bnd']
                                 thisbnd = self.variables[name]._bndtext
-                                if bndtext <> thisbnd:
+                                if bndtext != thisbnd:
                                         self.listOfVars[lisname]['bnd'] = ', some bounds'
                         else:
                                 self.listOfVars[lisname]['bnd'] = self.variables[name]._bndtext
@@ -972,7 +976,7 @@ class Problem(object):
                         var = self.variables[nam]
                         var._startIndex=ind
                         if var.vtype in ('symmetric',):
-                                ind+=int((var.size[0]*(var.size[0]+1))/2)
+                                ind+=int((var.size[0]*(var.size[0]+1))//2)
                         else:
                                 ind+=var.size[0]*var.size[1]
                         var._endIndex=ind
@@ -1050,7 +1054,7 @@ class Problem(object):
                 """
                 #SPECIAL CASE OF A NONSTANDARD CONVEX CONSTRAINT
                 if isinstance(cons,_Convex_Constraint):
-                        for ui,vui in cons.Ptmp.variables.iteritems():
+                        for ui,vui in six.iteritems(cons.Ptmp.variables):
                                 uiname = cons.prefix+str(self.countGeomean)+'_'+ui
                                 self.add_variable(uiname,vui.size,vui.vtype)
                                 si = self.variables[uiname].startIndex
@@ -1089,7 +1093,7 @@ class Problem(object):
                                 else:
                                         raise
                                         
-                        for x,fac in exp.factors.iteritems():
+                        for x,fac in six.iteritems(exp.factors):
                                 if fac.typecode=='z':
                                         if fac.imag():
                                                 self._complex = True
@@ -1124,7 +1128,7 @@ class Problem(object):
                         self.numberQuadNNZ+=cons.Exp1.nnz()
                 elif cons.typeOfConstraint[:3]=='sdp':
                         self.numberSDPConstraints+=1
-                        self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                        self.numberSDPVars+=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))//2
                         #is it a simple constraint of the form X>>0 ?
                         if cons.semidefVar:
                                 cons.semidefVar.semiDef = True
@@ -1294,7 +1298,7 @@ class Problem(object):
                 """
                 exp=self.get_variable(name)
                 if isinstance(exp,list):
-                        for i in xrange(len(exp)):
+                        for i in range(len(exp)):
                                 exp[i]=exp[i].eval()
                 elif isinstance(exp,dict):
                         for i in exp:
@@ -1561,7 +1565,7 @@ class Problem(object):
                                 self.numberQuadNNZ-=cons.Exp1.nnz()
                         elif cons.typeOfConstraint[:3]=='sdp':
                                 self.numberSDPConstraints-=1
-                                self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                                self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))//2
                                 if cons.semidefVar:
                                         cons.semidefVar.semiDef = False
                                         
@@ -1630,7 +1634,7 @@ class Problem(object):
                                         self.numberQuadNNZ-=cons.Exp1.nnz()
                                 elif cons.typeOfConstraint[:3]=='sdp':
                                         self.numberSDPConstraints-=1
-                                        self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))/2
+                                        self.numberSDPVars-=(cons.Exp1.size[0]*(cons.Exp1.size[0]+1))//2
                                         
                                         if cons.semidefVar:
                                                 cons.semidefVar.semiDef = False
@@ -1639,7 +1643,7 @@ class Problem(object):
                         _remove_in_lil(self.consNumbering,lsind_top)
                         self.consNumbering=offset_in_lil(self.consNumbering,len(lsind),lsind[0])
                         #update this group of constraints
-                        for start,goc in self.groupsOfConstraints.iteritems():
+                        for start,goc in six.iteritems(self.groupsOfConstraints):
                                 if lsind[0]>=start and lsind[0]<=goc[0]: break
                         
                         self.groupsOfConstraints[start] = [goc[0]-len(lsind),
@@ -1708,7 +1712,7 @@ class Problem(object):
                                         return (False,-min(sl))
                 #integer feasibility
                 if not(self.is_continuous()):
-                        for vnam,v in self.variables.iteritems():
+                        for vnam,v in six.iteritems(self.variables):
                                 if v.vtype in ('binary','integer'):
                                         sl=v.value
                                         dsl=[min(s-int(s),int(s)+1-s) for s in sl]
@@ -1873,7 +1877,7 @@ class Problem(object):
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                         print('Creating variables...')
-                        print
+                        print()
                 
                 x=[]#list of new vars
                 
@@ -1884,7 +1888,7 @@ class Problem(object):
                         lb={j:-grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
-                                                in self.variables.iteritems()
+                                                in six.iteritems(self.variables)
                                                 if 'gurobi' not in variable.passed]:
                                 
                                 variable.gurobi_startIndex=variable.startIndex + OFFSET_CV
@@ -1892,14 +1896,14 @@ class Problem(object):
                                 sj=variable.gurobi_startIndex
                                 ej=variable.gurobi_endIndex
                                 
-                                for ind,(lo,up) in variable.bnd.iteritems():
+                                for ind,(lo,up) in six.iteritems(variable.bnd):
                                       if not(lo is None):
                                               lb[sj+ind]=lo
                                       if not(up is None):
                                               ub[sj+ind]=up
                         
                         vartopass = sorted([(variable.gurobi_startIndex,variable) for (kvar,variable)
-                                                in self.variables.iteritems()
+                                                in six.iteritems(self.variables)
                                                 if 'gurobi' not in variable.passed])
                         
                         
@@ -1923,20 +1927,20 @@ class Problem(object):
                                                 #<--display progress
                                                 prog.increment_amount()
                                                 if oldprog != str(prog):
-                                                        print prog, "\r",
+                                                        print(prog, "\r", end="")
                                                         sys.stdout.flush()
                                                         oldprog=str(prog)
                                                 #-->
                         
                         if self.options['verbose']>1:
                                 prog.update_amount(limitbar)
-                                print prog, "\r",
-                                print
+                                print(prog, "\r", end="")
+                                print()
                 
                 m.update()
                 #parse all vars for hotstart
                 if self.options['hotstart']:
-                        for kvar,variable in self.variables.iteritems():
+                        for kvar,variable in six.iteritems(self.variables):
                                 if variable.is_valued():
                                         vstart = variable.value
                                         varsize = variable.endIndex-variable.startIndex
@@ -1959,7 +1963,7 @@ class Problem(object):
                         m.setObjective(0)
                         m.update()
                         
-                        for variable,vect in objective.iteritems():
+                        for variable,vect in six.iteritems(objective):
                                 varsize = variable.endIndex-variable.startIndex
                                 for (k,v) in zip(vect.J,vect.V):
                                         name = variable.name+'_'+str(k)
@@ -2008,9 +2012,9 @@ class Problem(object):
                 
                 #progress bar
                 if self.options['verbose']>0:
-                        print
+                        print()
                         print('adding constraints...')
-                        print 
+                        print()
                 if self.options['verbose']>1:
                         limitbar= NUMCON_NEW
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
@@ -2024,7 +2028,7 @@ class Problem(object):
                         for i in it2: yield i
                         
                 allcons = join_iter(enumerate(self.constraints),
-                                    newcons.iteritems())
+                                    six.iteritems(newcons))
                 
                 irow=0
                 
@@ -2040,7 +2044,7 @@ class Problem(object):
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
-                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
+                                for var,fact in six.iteritems((constr.Exp1-constr.Exp2).factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         ijv.extend(zip( fact.I,
@@ -2051,12 +2055,11 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)]
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
@@ -2069,14 +2072,14 @@ class Problem(object):
                                         rhstmp = rhstmp+constant2
                                 
                                 #constraint of the form 0*x==a
-                                if len(itojv)<>szcons:
+                                if len(itojv) != szcons:
                                         for i in (set(range(szcons)) - set(itojv.keys())):
                                                 if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i]<0) or
                                                     (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i]>0) or
-                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i]<>0)):
+                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                                                         raise Exception('you try to add a constraint of the form 0 * x == 1')
                                 
-                                for i,jv in itojv.iteritems():
+                                for i,jv in six.iteritems(itojv):
                                         r=rhstmp[i]
                                         if len(jv)==1:
                                                 #BOUND
@@ -2118,7 +2121,7 @@ class Problem(object):
                                                 #<--display progress
                                                 prog.increment_amount()
                                                 if oldprog != str(prog):
-                                                        print prog, "\r",
+                                                        print(prog, "\r", end="")
                                                         sys.stdout.flush()
                                                         oldprog=str(prog)
                                                 #-->                                                
@@ -2166,7 +2169,7 @@ class Problem(object):
                                         #<--display progress
                                         prog.increment_amount()
                                         if oldprog != str(prog):
-                                                print prog, "\r",
+                                                print(prog, "\r", end="")
                                                 sys.stdout.flush()
                                                 oldprog=str(prog)
                                         #-->
@@ -2183,8 +2186,8 @@ class Problem(object):
 
                 if self.options['verbose']>1:
                         prog.update_amount(limitbar)
-                        print prog, "\r",
-                        print
+                        print(prog, "\r", end="")
+                        print()
                         
                 m.update()
                 
@@ -2197,8 +2200,8 @@ class Problem(object):
                         self._remove_temporary_variables()
                 
                 if self.options['verbose']>0:
-                        print 'Gurobi instance created'
-                        print                                
+                        print('Gurobi instance created')
+                        print()                             
                                 
         def is_continuous(self):
                 """ Returns ``True`` if there are only continuous variables"""
@@ -2209,11 +2212,11 @@ class Problem(object):
                 
                 
         def is_complex(self):
-		tps = [x.vtype for x in self.variables.values()]
-		if 'hermitian' in tps or 'complex' in tps:
-			return True
-                else:
-                        return self._complex
+            tps = [x.vtype for x in self.variables.values()]
+            if 'hermitian' in tps or 'complex' in tps:
+                return True
+            else:
+                return self._complex
                 """
                 TODO delete?
                 if self.numberSDPConstraints>0:
@@ -2376,7 +2379,7 @@ class Problem(object):
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
                         oldprog = str(prog)
                         print('Creating variables...')
-                        print
+                        print()
                 
                 colnames=[]
                 types=[]
@@ -2391,7 +2394,7 @@ class Problem(object):
                         
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
-                                                in self.variables.iteritems()
+                                                in six.iteritems(self.variables)
                                                 if 'cplex' not in variable.passed]:
                                 
                                 variable.cplex_startIndex=variable.startIndex + OFFSET_CV
@@ -2399,7 +2402,7 @@ class Problem(object):
                                 sj=variable.cplex_startIndex
                                 ej=variable.cplex_endIndex
                                 
-                                for ind,(lo,up) in variable.bnd.iteritems():
+                                for ind,(lo,up) in six.iteritems(variable.bnd):
                                       if not(lo is None):
                                               lb[sj+ind]=lo
                                       if not(up is None):
@@ -2407,7 +2410,7 @@ class Problem(object):
                                 
                         
                         vartopass = sorted([(variable.cplex_startIndex,variable) for (kvar,variable)
-                                                in self.variables.iteritems()
+                                                in six.iteritems(self.variables)
                                                 if 'cplex' not in variable.passed])
                         
                         for (vcsi,variable) in vartopass:
@@ -2422,15 +2425,15 @@ class Problem(object):
                                                 #<--display progress
                                                 prog.increment_amount()
                                                 if oldprog != str(prog):
-                                                        print prog, "\r",
+                                                        print(prog, "\r", end="")
                                                         sys.stdout.flush()
                                                         oldprog=str(prog)
                                                 #-->
                         
                         if self.options['verbose']>1:
                                 prog.update_amount(limitbar)
-                                print prog, "\r",
-                                print
+                                print(prog, "\r", end="")
+                                print()
                 
                 
                         
@@ -2438,7 +2441,7 @@ class Problem(object):
                 mipstart_ind=[]
                 mipstart_vals=[]
                 if self.options['hotstart']:
-                        for kvar,variable in self.variables.iteritems():
+                        for kvar,variable in six.iteritems(self.variables):
                                 sj=variable.cplex_startIndex
                                 ej=variable.cplex_endIndex
                                 if variable.is_valued():
@@ -2458,7 +2461,7 @@ class Problem(object):
                         elif isinstance(self.objective[1],AffinExp):
                                 objective = self.objective[1].factors
                         
-                        for variable,vect in objective.iteritems():
+                        for variable,vect in six.iteritems(objective):
                                 sj = variable.cplex_startIndex
                                 newobjcoefs.extend(zip(vect.J+sj,vect.V))
                     
@@ -2493,9 +2496,9 @@ class Problem(object):
                 
                 #progress bar
                 if self.options['verbose']>0:
-                        print
+                        print()
                         print('adding constraints...')
-                        print 
+                        print()
                 if self.options['verbose']>1:
                         limitbar= NUMCON_NEW
                         prog = ProgressBar(0,limitbar, None, mode='fixed')
@@ -2519,7 +2522,7 @@ class Problem(object):
                         for i in it2: yield i
                         
                 allcons = join_iter(enumerate(self.constraints),
-                                    newcons.iteritems())
+                                    six.iteritems(newcons))
                 
                 irow=0
                 
@@ -2535,7 +2538,7 @@ class Problem(object):
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
-                                for var,fact in (constr.Exp1-constr.Exp2).factors.iteritems():
+                                for var,fact in six.iteritems((constr.Exp1-constr.Exp2).factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         sj=var.cplex_startIndex
@@ -2545,12 +2548,11 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)]
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = constr.Exp1.size[0]*constr.Exp1.size[1]
@@ -2563,14 +2565,14 @@ class Problem(object):
                                         rhstmp = rhstmp+constant2
                                    
                                 #constraint of the form 0*x==a
-                                if len(itojv)<>szcons:
+                                if len(itojv) != szcons:
                                         for i in (set(range(szcons)) - set(itojv.keys())):
                                                 if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i]<0) or
                                                     (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i]>0) or
-                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i]<>0)):
+                                                    (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                                                         raise Exception('you try to add a constraint of the form 0 * x == 1')
                                     
-                                for i,jv in itojv.iteritems():
+                                for i,jv in six.iteritems(itojv):
                                         r=rhstmp[i]
                                         if len(jv)==1:
                                                 #BOUND
@@ -2618,7 +2620,7 @@ class Problem(object):
                                                 #<--display progress
                                                 prog.increment_amount()
                                                 if oldprog != str(prog):
-                                                        print prog, "\r",
+                                                        print(prog, "\r", end="")
                                                         sys.stdout.flush()
                                                         oldprog=str(prog)
                                                 #-->                                                
@@ -2666,7 +2668,7 @@ class Problem(object):
                                         #<--display progress
                                         prog.increment_amount()
                                         if oldprog != str(prog):
-                                                print prog, "\r",
+                                                print(prog, "\r", end="")
                                                 sys.stdout.flush()
                                                 oldprog=str(prog)
                                         #-->
@@ -2683,19 +2685,19 @@ class Problem(object):
 
                 if self.options['verbose']>1:
                         prog.update_amount(limitbar)
-                        print prog, "\r",
-                        print
+                        print(prog, "\r", end="")
+                        print()
                 
                 if self.options['verbose']>0:
-                        print
+                        print()
                         print('Passing to cplex...')
                 
                 
                 c.variables.add(names = colnames,types=types)
                 if lb:
-                        c.variables.set_lower_bounds(lb.iteritems())
+                        c.variables.set_lower_bounds(six.iteritems(lb))
                 if ub:
-                        c.variables.set_upper_bounds(ub.iteritems())
+                        c.variables.set_upper_bounds(six.iteritems(ub))
                 if newobjcoefs:
                         c.objective.set_linear(newobjcoefs)
                         
@@ -2848,7 +2850,7 @@ class Problem(object):
                                 #<--display progress
                                 prog.increment_amount()
                                 if oldprog != str(prog):
-                                        print prog, "\r",
+                                        print(prog, "\r", end="")
                                         sys.stdout.flush()
                                         oldprog=str(prog)
                                 #-->
@@ -2931,8 +2933,8 @@ class Problem(object):
                        
                 #hard-coded bounds
                 if hard_coded_bounds:
-                        for (var,variable) in self.variables.iteritems():
-                                for ind,(lo,up) in variable.bnd.iteritems():
+                        for (var,variable) in six.iteritems(self.variables):
+                                for ind,(lo,up) in six.iteritems(variable.bnd):
                                         if not(lo is None):
                                                 (G_lhs,h_lhs)=self._makeGandh(variable[ind])
                                                 self.cvxoptVars['Gl']=cvx.sparse([self.cvxoptVars['Gl'],-G_lhs])
@@ -2949,9 +2951,9 @@ class Problem(object):
                    
                 if self.options['verbose']>1:
                         prog.update_amount(limitbar)
-                        print prog, "\r",
+                        print(prog, "\r", end="")
                         sys.stdout.flush()
-                        print
+                        print()
 
         #-----------
         #mosek tool
@@ -2973,13 +2975,12 @@ class Problem(object):
                 vs=[]
                 mats=[]
                 offset = 0
-                from itertools import izip
                 if idx_sdp_vars:
                         idxsdpvars = [ti for ti in idx_sdp_vars]
                         nextsdp = idxsdpvars.pop()
                 else:
                         return J,V,[]
-                for (j,v) in izip(J,V):
+                for (j,v) in zip(J,V):
                         if j<nextsdp[0]:
                                 jj.append(j-offset)
                                 vv.append(v)
@@ -3020,7 +3021,6 @@ class Problem(object):
                 """
                 if self.options['verbose']>0:
                         print('build mosek instance')
-                from itertools import izip
                 #import mosek
                 if self.options['solver'] == 'mosek6': #force to use version 6.0 of mosek.
                         try:
@@ -3146,7 +3146,7 @@ class Problem(object):
                 if NUMVAR_NEW:
                         #shift in the linear constraints
                         if (NUMVAR_OLD > NUMVAR0_OLD):
-                                for j in xrange(NUMVAR0_OLD,NUMVAR_OLD):
+                                for j in range(NUMVAR0_OLD,NUMVAR_OLD):
                                         sj = [0]*NUMCON_OLD
                                         vj = [0]*NUMCON_OLD
                                         if version7:
@@ -3188,7 +3188,7 @@ class Problem(object):
                                
                 #find integer variables, put 0-1 bounds on binaries
                 ints = []
-                for k,var in self.variables.iteritems():
+                for k,var in six.iteritems(self.variables):
                         if var.vtype=='binary':
                                 for ind,i in enumerate(range(var.startIndex,var.endIndex)):
                                         ints.append(i)
@@ -3198,7 +3198,7 @@ class Problem(object):
                                         var.bnd._set(ind,(lb,ub))
                                         
                         elif self.variables[k].vtype=='integer':
-                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
+                                for i in range(self.variables[k].startIndex,self.variables[k].endIndex):
                                         ints.append(i)
                                         
                         elif self.variables[k].vtype not in ['continuous','symmetric']:
@@ -3261,7 +3261,7 @@ class Problem(object):
                                 JV=[]
                                 for var in obj.factors:
                                         mat = obj.factors[var]
-                                        for j,v in izip(mat.J,mat.V):
+                                        for j,v in zip(mat.J,mat.V):
                                                 JV.append((var.startIndex+j,v))
                                 JV = sorted(JV)
                                 J=[ji for (ji,_) in JV]
@@ -3282,7 +3282,7 @@ class Problem(object):
                                                 if (any([bool(mat) for mat in mat2]) or
                                                 any([bool(mat) for mat in mat3])):
                                                         raise Exception('quads with sdp bar vars are not supported')
-                                for j,v in izip(J,V):
+                                for j,v in zip(J,V):
                                         task.putcj(j,v)
                                 if subI:
                                         task.putqobj(subI,subJ,subV)
@@ -3304,7 +3304,7 @@ class Problem(object):
                                         si = si[0]
                                 bk,bl,bu = [0.]*sz,[0.]*sz,[0.]*sz
                                 task.getboundslice(mosek.accmode.var,si,si + sz,bk,bl,bu)
-                                for ind,(ky,l,u) in enumerate(izip(bk,bl,bu)):
+                                for ind,(ky,l,u) in enumerate(zip(bk,bl,bu)):
                                         if ky is mosek.boundkey.lo:
                                                 vbnds[var.startIndex+ind] = (l,None)
                                         elif ky is mosek.boundkey.up:
@@ -3314,7 +3314,7 @@ class Problem(object):
                                         else:#fx or ra
                                                 vbnds[var.startIndex+ind] = (l,u)
                                  
-                        for ind,(lo,up) in var.bnd.iteritems():
+                        for ind,(lo,up) in six.iteritems(var.bnd):
                                 (clo,cup) = vbnds.get(var.startIndex+ind,(None,None))
                                 if clo is None: clo = -INFINITY
                                 if cup is None: cup = INFINITY
@@ -3334,7 +3334,7 @@ class Problem(object):
                                 task.makesolutionstatusunknown(mosek.soltype.itg);
                         jj = []
                         sv = []
-                        for kvar,variable in self.variables.iteritems():
+                        for kvar,variable in six.iteritems(self.variables):
                                 if variable.is_valued():
                                         for i,v in enumerate(variable.value):
                                                 jj.append(variable.startIndex + i)
@@ -3345,7 +3345,7 @@ class Problem(object):
                                 if any([bool(mat) for mat in mats]):
                                         raise Exception('semidef vars hotstart is not supported')
                                 
-                        for j,v in izip(jj,sv):
+                        for j,v in zip(jj,sv):
                                 task.putsolutioni (
                                         mosek.accmode.var,
                                         j,
@@ -3384,7 +3384,7 @@ class Problem(object):
                                 fxdvars[idcons] = []
                                 #parse the (i,j,v) triple
                                 ijv=[]
-                                for var,fact in (cons.Exp1-cons.Exp2).factors.iteritems():
+                                for var,fact in six.iteritems((cons.Exp1-cons.Exp2).factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         sj=var.startIndex
@@ -3394,12 +3394,11 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)]
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
                                 
                                 #constant term
                                 szcons = cons.Exp1.size[0]*cons.Exp1.size[1]
@@ -3449,7 +3448,7 @@ class Problem(object):
                                                 bdj0 = vbnds.get(j0,(-INFINITY,INFINITY))
                                                 if cons.typeOfConstraint=='lin=':
                                                         fx = rhstmp[i]/v0
-                                                        if (bdj0[0] is None or fx>=bdj0[0]) and (bdj0[1] is None or fx<=bdj0[1]):
+                                                        if fx>=bdj0[0] and fx<=bdj0[1]:
                                                                 vbnds[j0] = (fx,fx)
                                                         else:
                                                                 raise Exception('an equality constraint is not feasible: xx_{0} = {1}'.format(
@@ -3457,11 +3456,11 @@ class Problem(object):
                                                         
                                                 elif (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
                                                         up = rhstmp[i]/v0
-                                                        if bdj0[1] is None or up<bdj0[1]:
+                                                        if up<bdj0[1]:
                                                                 vbnds[j0] = (bdj0[0],up)
                                                 else:
                                                         lo = rhstmp[i]/v0
-                                                        if bdj0[0] is None or lo>bdj0[0]:
+                                                        if lo>bdj0[0]:
                                                                 vbnds[j0] = (lo,bdj0[1])
                                                 
                                                 if cons.typeOfConstraint=='lin>':
@@ -3512,7 +3511,7 @@ class Problem(object):
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
-                                for var,fact in conexp.factors.iteritems():
+                                for var,fact in six.iteritems(conexp.factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         sj=var.startIndex
@@ -3522,12 +3521,11 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)]   
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]   
                                 
                                 #add new eq. cons
                                 szcons = conexp.size[0] * conexp.size[1]
@@ -3565,7 +3563,7 @@ class Problem(object):
                                                 conevars.append(J[0])
                                                 allconevars.append(J[0])
                                                 fxd.append((i,J[0]))
-                                                if V[0]<>-1:
+                                                if V[0] != -1:
                                                         scaled_cols[J[0]] = -V[0]
                                                         new_scaled_cols.append(J[0])
                                                 
@@ -3595,7 +3593,7 @@ class Problem(object):
                                 else:
                                         task.appendcone(mosek.conetype.quad, 0.0, conevars)
                                         
-                                for j in xrange(istart,iend):#make extra variable free
+                                for j in range(istart,iend):#make extra variable free
                                         task.putbound(mosek.accmode.var,j,mosek.boundkey.fr,0.,0.)
                                 fxdconevars.append(fxd)
                 
@@ -3638,7 +3636,7 @@ class Problem(object):
                                 
                                 #parse the (i,j,v) triple
                                 ijv=[]
-                                for var,fact in sdexp.factors.iteritems():
+                                for var,fact in six.iteritems(sdexp.factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         sj=var.startIndex
@@ -3648,19 +3646,18 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)] 
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)] 
                                 
                                 szcons = sdexp.size[0] * sdexp.size[1]
                                 rhstmp = sdexp.constant
                                 if rhstmp is None:
                                         rhstmp = cvx.matrix(0.,(szcons,1))
                                       
-                                szsym = (szk * (szk+1))/2
+                                szsym = (szk * (szk+1))//2
                                 if version7:
                                         task.appendcons(szsym)
                                 else:
@@ -3725,7 +3722,7 @@ class Problem(object):
                                 V = []
                                 for var in qexpr.aff.factors:
                                         mat = qexpr.aff.factors[var]
-                                        for j,v in izip(mat.J,mat.V):
+                                        for j,v in zip(mat.J,mat.V):
                                                 V.append(v)
                                                 J.append(var.startIndex+j)
                                                         
@@ -3772,7 +3769,7 @@ class Problem(object):
                 if self.options['handleBarVars']:
                         _,bndlo,matslo = self._separate_linear_cons(bndjj,bndlo,idxsdpvars)
                         bndjj,bndup,matsup = self._separate_linear_cons(bndjj,bndup,idxsdpvars)
-                for j,lo,up in izip(bndjj,bndlo,bndup):
+                for j,lo,up in zip(bndjj,bndlo,bndup):
                         if up>=INFINITY:
                                 task.putbound(mosek.accmode.var,j,mosek.boundkey.lo,lo,INFINITY)
                         elif lo<=-INFINITY:
@@ -3785,7 +3782,7 @@ class Problem(object):
                 if self.options['handleBarVars']:
                         #bounds on bar vars by taking the matslo and matsup one by one
                         for imat,(mlo,mup) in enumerate(zip(matslo,matsup)):
-                                for (i,j,v) in izip(mlo.I,mlo.J,mlo.V):
+                                for (i,j,v) in zip(mlo.I,mlo.J,mlo.V):
                                         if i==j:
                                                 matij = task.appendsparsesymmat(
                                                         mlo.size[0],
@@ -3811,7 +3808,7 @@ class Problem(object):
                                         iaff+=1
                 
                 #scale columns of variables in cones (simple change of variable which avoids adding an extra var)
-                for (j,v) in scaled_cols.iteritems():
+                for (j,v) in six.iteritems(scaled_cols):
                         sj = [0]*NUMCON
                         vj = [0]*NUMCON
                         isnewcone = j in new_scaled_cols
@@ -3884,7 +3881,7 @@ class Problem(object):
                                 newobj=newobj.aff
                                         
                         if not(newobj is None):
-                                for v,fac in newobj.factors.iteritems():
+                                for v,fac in six.iteritems(newobj.factors):
                                         if not isinstance(fac,cvx.spmatrix):
                                                 fac=cvx.sparse(fac)
                                         sv=v.startIndex
@@ -3931,10 +3928,10 @@ class Problem(object):
                 lb={}
                 ub={}
                 
-                for (var,variable) in self.variables.iteritems():
+                for (var,variable) in six.iteritems(self.variables):
                                 si=variable.startIndex
                                 ei=variable.endIndex
-                                for ind,(lo,up) in variable.bnd.iteritems():
+                                for ind,(lo,up) in six.iteritems(variable.bnd):
                                         if not(lo is None):
                                                 lb[si+ind]=lo
                                         if not(up is None):
@@ -3952,7 +3949,7 @@ class Problem(object):
                         
                 INFINITYZO = 1e10
                 
-                sortedvars = sorted([(var.startIndex,var) for varname,var in self.variables.iteritems()])
+                sortedvars = sorted([(var.startIndex,var) for varname,var in six.iteritems(self.variables)])
                 for si,var in sortedvars:
                         if 'scip' in var.passed:
                                 #TODO how do we modify type and bounds ? and coef if not obj_passed ?
@@ -3981,14 +3978,13 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if v:
-                                if i==lasti:
-                                        itojv[i].append((j,v))
-                                else:
-                                        lasti=i
-                                        itojv[i]=[(j,v)]
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
                         
-                for i,jv in itojv.iteritems():
+                for i,jv in six.iteritems(itojv):
                         exp=0
                         for term in jv:
                                 exp+= term[1]*x[term[0]]
@@ -4001,14 +3997,13 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if v:
-                                if i==lasti:
-                                        itojv[i].append((j,v))
-                                else:
-                                        lasti=i
-                                        itojv[i]=[(j,v)]
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
                         
-                for i,jv in itojv.iteritems():
+                for i,jv in six.iteritems(itojv):
                         exp=0
                         for term in jv:
                                 exp+= term[1]*x[term[0]]
@@ -4062,7 +4057,7 @@ class Problem(object):
                                         qd+=vv*x[ii+si]*x[jj+sj]
                         
                         if not(qexpr.aff is None):
-                                for v,fac in qexpr.aff.factors.iteritems():
+                                for v,fac in six.iteritems(qexpr.aff.factors):
                                         if not isinstance(fac,cvx.spmatrix):
                                                 fac=cvx.sparse(fac)
                                         sv=v.startIndex
@@ -4161,11 +4156,11 @@ class Problem(object):
                 #transform the problem in case of a complex SDP
                 if complexSDP:
                         if self.options['verbose']>0:
-                                print '*** Making the problem real...  ***'
+                                print('*** Making the problem real...  ***')
                         
                         realP = self.to_real()
                         if self.options['verbose']>0:
-                                print '*** OK, solve the real problem and transform the solution as in the original problem...  ***'
+                                print('*** OK, solve the real problem and transform the solution as in the original problem...  ***')
                         sol = realP.solve()
                         obj = sol['obj']
                         if 'noprimals' in self.options and self.options['noprimals']:
@@ -4190,9 +4185,9 @@ class Problem(object):
                                 for cst in realP.constraints:
                                         if cst.typeOfConstraint.startswith('sdp'):
                                                 n =  int(cst.dual.size[0] / 2.)
-                                                if cst.dual.size[1] <> cst.dual.size[0]:
+                                                if cst.dual.size[1] != cst.dual.size[0]:
                                                         raise Exception('Dual must be square matrix')
-                                                if cst.dual.size[1] <> 2*n:
+                                                if cst.dual.size[1] != 2*n:
                                                         raise Exception('dims must be even numbers')
                                                 F1  = cst.dual[:n,:n]
                                                 F1a = cst.dual[n:,n:]
@@ -4207,7 +4202,7 @@ class Problem(object):
                         raiseexp = False
                         try:
                                 if self.options['verbose']>0:
-                                        print '*** Dualizing the problem...  ***'
+                                        print('*** Dualizing the problem...  ***')
                                 dual = self.dualize()
                         except QuadAsSocpError as ex:
                                 if self.options['convert_quad_to_socp_if_needed']:
@@ -4231,8 +4226,8 @@ class Problem(object):
                                 if raiseexp:
                                         #raise(ex)
                                         if self.options['verbose']>0:
-                                                print ("\033[1;31m Error raised when dualizing the problem: \033[0m")
-                                                print ex
+                                                print("\033[1;31m Error raised when dualizing the problem: \033[0m")
+                                                print(ex)
                                                 print ('I retry to solve without dualizing')
                                         return self.solve(solve_via_dual=False) 
                                         
@@ -4290,13 +4285,13 @@ class Problem(object):
                                                         szcons = cons.Exp1.size[0] * cons.Exp1.size[1]
                                                         dd = []
                                                         for i in range(szcons):
-                                                                dd.append(eqiter.next())
+                                                                dd.append(six.next(eqiter))
                                                         duals.append(cvx.matrix(dd))
                                                 elif cons.typeOfConstraint.startswith('lin'):#lin ineq
                                                         szcons = cons.Exp1.size[0] * cons.Exp1.size[1]
                                                         dd = []
                                                         for i in range(szcons):
-                                                                dd.append(initer.next())
+                                                                dd.append(six.next(initer))
                                                         duals.append(cvx.matrix(dd))
                                                 elif cons.typeOfConstraint.startswith('sdp'):
                                                         X = dual.get_valued_variable('X[{0}]'.format(isdp))
@@ -4342,7 +4337,7 @@ class Problem(object):
                                         pcop.convert_quad_to_socp()
                                         sol=pcop.solve()
                                         self.status=sol['status']
-                                        for vname,v in self.variables.iteritems():
+                                        for vname,v in six.iteritems(self.variables):
                                                 v.value=pcop.get_variable(vname).value
                                         for i,cs in enumerate(self.constraints):
                                                 dui=pcop.constraints[i].dual
@@ -4446,9 +4441,9 @@ class Problem(object):
                 if self.numberLSEConstraints>0:#GP
                         probtype='GP'
                         if self.options['verbose']>0:
-                                print '-----------------------------------'
-                                print '         cvxopt GP solver'
-                                print '-----------------------------------'
+                                print('-----------------------------------')
+                                print('         cvxopt GP solver')
+                                print('-----------------------------------')
                         sol=cvx.solvers.gp(self.cvxoptVars['K'],
                                                 self.cvxoptVars['F'],self.cvxoptVars['g'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
@@ -4459,9 +4454,9 @@ class Problem(object):
                                 raise Exception('CVXOPT does not handle SDP with MOSEK')                            
                         if len(self.cvxoptVars['Gq'])+len(self.cvxoptVars['Gs']):
                                 if self.options['verbose']>0:
-                                        print '------------------------------------------'
-                                        print '  mosek LP solver interfaced by cvxopt'
-                                        print '------------------------------------------'
+                                        print('------------------------------------------')
+                                        print('  mosek LP solver interfaced by cvxopt')
+                                        print('------------------------------------------')
                                 sol=cvx.solvers.lp(self.cvxoptVars['c'],
                                                 self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                 self.cvxoptVars['A'],self.cvxoptVars['b'],
@@ -4469,9 +4464,9 @@ class Problem(object):
                                 probtype='LP'
                         else:
                                 if self.options['verbose']>0:
-                                        print '-------------------------------------------'
-                                        print '  mosek SOCP solver interfaced by cvxopt'
-                                        print '-------------------------------------------'
+                                        print('-------------------------------------------')
+                                        print('  mosek SOCP solver interfaced by cvxopt')
+                                        print('-------------------------------------------')
                                 sol=cvx.solvers.socp(self.cvxoptVars['c'],
                                                         self.cvxoptVars['Gl'],self.cvxoptVars['hl'],
                                                         self.cvxoptVars['Gq'],self.cvxoptVars['hq'],
@@ -4532,9 +4527,9 @@ class Problem(object):
                         else:
 
                                 if self.options['verbose']>0:
-                                        print '--------------------------'
-                                        print '  cvxopt CONELP solver'
-                                        print '--------------------------'
+                                        print('--------------------------')
+                                        print('  cvxopt CONELP solver')
+                                        print('--------------------------')
                                 sol=cvx.solvers.conelp(self.cvxoptVars['c'],
                                                         G,h,dims,
                                                         self.cvxoptVars['A'],
@@ -4547,7 +4542,7 @@ class Problem(object):
                 solv=currentsolver
                 if solv is None: solv='cvxopt'
                 if self.options['verbose']>0:
-                        print solv+' status: '+status
+                        print(solv+' status: '+status)
                                 
                 #----------------------#
                 # retrieve the primals #
@@ -4570,7 +4565,7 @@ class Problem(object):
                         except Exception as ex:
                                 primals = {}
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+                                        print("\033[1;31m*** Primal Solution not found\033[0m")
                                                
                 #--------------------#
                 # retrieve the duals #
@@ -4596,7 +4591,7 @@ class Problem(object):
                                 
                                 if currentsolver=='smcp':
                                         ieq=self.cvxoptVars['Gl'].size[0]
-                                        neq=(dims['l']-ieq)/2
+                                        neq=(dims['l']-ieq)//2
                                         soleq=sol['z'][ieq:ieq+neq]
                                         soleq-=sol['z'][ieq+neq:ieq+2*neq]
                                 else:
@@ -4666,13 +4661,13 @@ class Problem(object):
                                                 raise Exception('constraint cannot be handled')
                                         
                                 if printnodual and self.options['verbose']>0:
-                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                        print("\033[1;31m*** Dual Solution not found\033[0m")
                                 
                         
                         except Exception as ex:
                                 duals = []
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                        print("\033[1;31m*** Dual Solution not found\033[0m")
                 
                 #-----------------#
                 # objective value #
@@ -4852,7 +4847,7 @@ class Problem(object):
                 """
                    
                 #other cplex parameters
-                for par,val in self.options['cplex_params'].iteritems():
+                for par,val in six.iteritems(self.options['cplex_params']):
                         try:
                                 cplexpar=eval('c.parameters.'+par)
                                 cplexpar.set(val)
@@ -4869,7 +4864,7 @@ class Problem(object):
                         try:
                                 c.populate_solution_pool()
                         except:
-                                print "Exception raised during populate"
+                                print("Exception raised during populate")
                 else:
                         try:
                                 c.solve()
@@ -4877,14 +4872,14 @@ class Problem(object):
                                 if ex.args[2] == 5002:
                                         raise NonConvexError('Error raised during solve. Problem is nonconvex')
                                 else:
-                                        print "Exception raised during solve"
+                                        print("Exception raised during solve")
                 tend = time.time()                
         
                 self.cplex_Instance = c
                 
                 # solution.get_status() returns an integer code
                 if self.options['verbose']>0:
-                        print "Solution status = " +str(c.solution.get_status())+":"
+                        print("Solution status = " +str(c.solution.get_status())+":")
                         # the following line prints the corresponding string
                         print(c.solution.status[c.solution.get_status()])
                 status = c.solution.status[c.solution.get_status()]
@@ -4945,7 +4940,7 @@ class Problem(object):
                                 primals = {}
                                 obj = None
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+                                        print("\033[1;31m*** Primal Solution not found\033[0m")
 
                         
                 #--------------------#
@@ -5034,7 +5029,7 @@ class Problem(object):
                                                 
                                                 else:
                                                         if self.options['verbose']>0:
-                                                                print 'duals for this type of constraint not supported yet'
+                                                                print('duals for this type of constraint not supported yet')
                                                         duals.append(None)
                                 #version >= 12.4
                                 else:
@@ -5120,13 +5115,13 @@ class Problem(object):
                                                 
                                                 else:
                                                         if self.options['verbose']>0:
-                                                                print 'duals for this type of constraint not supported yet'
+                                                                print('duals for this type of constraint not supported yet')
                                                         duals.append(None)
                                                         
                                                         
                         except Exception as ex:
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                        print("\033[1;31m*** Dual Solution not found\033[0m")
                 #-----------------#
                 # return statement#
                 #-----------------#             
@@ -5163,7 +5158,7 @@ class Problem(object):
                         m.setParam('TimeLimit',self.options['timelimit'])
                 if not self.options['treememory'] is None:
                         if self.options['verbose']:
-                                print 'option treememory ignored with gurobi'
+                                print('option treememory ignored with gurobi')
                         #m.setParam('NodefileStart',self.options['treememory']/1024.)
                         # -> NO In fact this is a limit after which node files are written to disk
                 if not self.options['gaplim'] is None:
@@ -5209,7 +5204,7 @@ class Problem(object):
                 
                 
                 #other gurobi parameters
-                for par,val in self.options['gurobi_params'].iteritems():
+                for par,val in six.iteritems(self.options['gurobi_params']):
                         m.setParam(par,val)
                         
                 #QCPDuals
@@ -5234,14 +5229,14 @@ class Problem(object):
                         if str(ex).startswith('Objective Q not PSD'):
                                 raise NonConvexError('Error raised during solve. Problem is nonconvex')
                         else:
-                                print "Exception raised during solve"
+                                print("Exception raised during solve")
                 tend = time.time()
         
                 self.gurobi_Instance = m
                 
                 status = None
                 for st in dir(grb.GRB.Status):
-                        if st[0]<>'_':
+                        if st[0] != '_':
                                 if  m.status == eval('grb.GRB.'+st):
                                         status = st
                 if status is None:
@@ -5249,7 +5244,7 @@ class Problem(object):
                         warnings.warn('gurobi status not found')
                         status = m.status
                         if self.options['verbose']>0:
-                                print "\033[1;31m*** gurobi status not found \033[0m"
+                                print("\033[1;31m*** gurobi status not found \033[0m")
                 
                 #----------------------#
                 # retrieve the primals #
@@ -5280,7 +5275,7 @@ class Problem(object):
                                 primals = {}
                                 obj = None
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+                                        print("\033[1;31m*** Primal Solution not found\033[0m")
 
                         
                 #--------------------#
@@ -5375,12 +5370,12 @@ class Problem(object):
                                         
                                         else:
                                                 if self.options['verbose']>0:
-                                                        print 'duals for this type of constraint not supported yet'
+                                                        print('duals for this type of constraint not supported yet')
                                                 duals.append(None)
 
                         except Exception as ex:
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                        print("\033[1;31m*** Dual Solution not found\033[0m")
                 #-----------------#
                 # return statement#
                 #-----------------#             
@@ -5411,7 +5406,7 @@ class Problem(object):
                                         import mosek as mosek
                                         version7 = not(hasattr(mosek,'cputype')) #True if this is the version 7 of MOSEK
                                         if self.options['solver'] == 'mosek7' and not(version7):
-                                                print "\033[1;31m mosek7 not found. using default mosek instead.\033[0m"
+                                                print("\033[1;31m mosek7 not found. using default mosek instead.\033[0m")
                                 except:
                                         raise ImportError('mosek library not found')
 
@@ -5440,13 +5435,13 @@ class Problem(object):
                 
                 if self.options['verbose']>0:
                         if version7:
-                                print '-----------------------------------'
-                                print '         MOSEK version 7'
-                                print '-----------------------------------'
+                                print('-----------------------------------')
+                                print('         MOSEK version 7')
+                                print('-----------------------------------')
                         else:
-                                print '-----------------------------------'
-                                print '            MOSEK solver'
-                                print '-----------------------------------'
+                                print('-----------------------------------')
+                                print('            MOSEK solver')
+                                print('-----------------------------------')
                 
                 #---------------------#
                 #  setting parameters #
@@ -5516,7 +5511,7 @@ class Problem(object):
                         task.putintparam(mosek.iparam.mio_construct_sol,mosek.onoffkey.on)
                 
                 
-                for par,val in self.options['mosek_params'].iteritems():
+                for par,val in six.iteritems(self.options['mosek_params']):
                         try:
                                 mskpar=eval('mosek.iparam.'+par)
                                 task.putintparam(mskpar,val)
@@ -5546,7 +5541,7 @@ class Problem(object):
                                                              ):
                                 raise NonConvexError('Error raised during solve. Problem nonconvex ?')
                         else:
-                                print "Error raised during solve"
+                                print("Error raised during solve")
                                 
                 tend = time.time()                
                 
@@ -5581,7 +5576,7 @@ class Problem(object):
                 except Exception as ex:
                         obj=None
                         if self.options['verbose']>0:
-                                print "\033[1;31m*** Primal Solution not found\033[0m"
+                                print("\033[1;31m*** Primal Solution not found\033[0m")
 
                 #PRIMAL VARIABLES
                 primals={}
@@ -5590,7 +5585,7 @@ class Problem(object):
                         pass
                 else:
                         if self.options['verbose']>0:
-                                print 'Solution status is ' +repr(solsta)
+                                print('Solution status is ' +repr(solsta))
                         try:
                                 # Output a solution
                                 indices = [(v.startIndex,v.endIndex,v) for v in self.variables.values()]
@@ -5606,7 +5601,7 @@ class Problem(object):
                                 for si,ei,var in indices:
                                         if self.options['handleBarVars'] and var.semiDef:
                                                 #xjbar = np.zeros(int((var.size[0]*(var.size[0]+1))/2),float)
-                                                xjbar = [0.] * int((var.size[0]*(var.size[0]+1))/2)
+                                                xjbar = [0.] * int((var.size[0]*(var.size[0]+1))//2)
                                                 task.getbarxj(mosek.soltype.itr,indsdpvar[isdpvar],xjbar)
                                                 xjbar = ltrim1(cvx.matrix(xjbar))
                                                 primals[var.name]=cvx.matrix(xjbar,var.size)
@@ -5617,7 +5612,7 @@ class Problem(object):
                                                 xx = [0.] * (ei-si) #list instead of np.zeros to avoid PEEP 3118 buffer warning
                                                 (nsi,eim),_,_ = self._separate_linear_cons([si,ei-1],[0,0],idxsdpvars)
                                                 task.getsolutionslice(soltype,mosek.solitem.xx, nsi,eim+1, xx)
-                                                scaledx = [(j,v) for (j,v) in self.msk_scaledcols.iteritems() if j>=si and j<ei]
+                                                scaledx = [(j,v) for (j,v) in six.iteritems(self.msk_scaledcols) if j>=si and j<ei]
                                                 for (j,v) in scaledx: #do the change of variable the other way around.
                                                         xx[j-si]/=v
                                                 if var.vtype in ('symmetric',):
@@ -5643,7 +5638,7 @@ class Problem(object):
                                 primals={}
                                 obj=None
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+                                        print("\033[1;31m*** Primal Solution not found\033[0m")
 
                 #--------------------#
                 # retrieve the duals #
@@ -5776,7 +5771,7 @@ class Problem(object):
                                                 
                                         elif cons.typeOfConstraint[:3]=='sdp':
                                                 sz = cons.Exp1.size
-                                                xx = [0.] * ((sz[0]*(sz[0]+1))/2)
+                                                xx = [0.] * ((sz[0]*(sz[0]+1))//2)
                                                 #xx=np.zeros((sz[0]*(sz[0]+1))/2,float)
                                                 task.getbarsj(mosek.soltype.itr,idsdp,xx)
                                                 idsdp+=1
@@ -5790,7 +5785,7 @@ class Problem(object):
                                         duals=[-d for d in duals]
                         except Exception as ex:
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Dual Solution not found\033[0m"
+                                        print("\033[1;31m*** Dual Solution not found\033[0m")
                                 duals = []
                 #-----------------#
                 # return statement#
@@ -5871,7 +5866,7 @@ class Problem(object):
                         status='unknown'
                         
                 if self.options['verbose']>0:
-                        print 'zibopt solution status: '+status
+                        print('zibopt solution status: '+status)
                 
                 #----------------------#
                 # retrieve the primals #
@@ -5898,7 +5893,7 @@ class Problem(object):
                                 primals={}
                                 obj = None
                                 if self.options['verbose']>0:
-                                        print "\033[1;31m*** Primal Solution not found\033[0m"
+                                        print("\033[1;31m*** Primal Solution not found\033[0m")
 
                 #----------------------#
                 # retrieve the duals #
@@ -6262,10 +6257,10 @@ class Problem(object):
                         self._make_cvxopt_instance()
                 #variable names
                 varnames={}
-                for name,v in self.variables.iteritems():
+                for name,v in six.iteritems(self.variables):
                         j=0
                         k=0
-                        for i in xrange(v.startIndex,v.endIndex):
+                        for i in range(v.startIndex,v.endIndex):
                                 if v.size==(1,1):
                                         varnames[i]=name
                                 elif v.size[1]==1:
@@ -6298,7 +6293,7 @@ class Problem(object):
                                 s+=varnames[0]
                         return s
                 
-                print 'writing problem in '+filename+'...'
+                print('writing problem in '+filename+'...')
                 
                 #objective
                 if self.objective[0]=='max':
@@ -6322,14 +6317,13 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if v:
-                                if i==lasti:
-                                        itojv[i].append((j,v))
-                                else:
-                                        lasti=i
-                                        itojv[i]=[(j,v)]
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
                 ieq=0
-                for i,jv in itojv.iteritems():
+                for i,jv in six.iteritems(itojv):
                         J=[jvk[0] for jvk in jv]
                         V=[jvk[1] for jvk in jv]
                         if len(J)==1:
@@ -6353,14 +6347,13 @@ class Problem(object):
                 itojv={}
                 lasti=-1
                 for (i,j,v) in ijvs:
-                        if v:
-                                if i==lasti:
-                                        itojv[i].append((j,v))
-                                else:
-                                        lasti=i
-                                        itojv[i]=[(j,v)]
+                        if i==lasti:
+                                itojv[i].append((j,v))
+                        else:
+                                lasti=i
+                                itojv[i]=[(j,v)]
                 iaff=0
-                for i,jv in itojv.iteritems():
+                for i,jv in six.iteritems(itojv):
                         J=[jvk[0] for jvk in jv]
                         V=[jvk[1] for jvk in jv]
                         if len(J)==1 and (not (i in [t[1] for t in self.cvxoptVars['quadcons']])):
@@ -6388,7 +6381,7 @@ class Problem(object):
 
                 #bounds
                 f.write("Bounds\n")
-                for i in xrange(self.numberOfVars):
+                for i in range(self.numberOfVars):
                         if i in bounds:
                                 bl,bu=bounds[i]
                         else:
@@ -6413,20 +6406,20 @@ class Problem(object):
 
                 #general integers
                 f.write("Generals\n")
-                for name,v in self.variables.iteritems():
+                for name,v in six.iteritems(self.variables):
                         if v.vtype=='integer':
-                                for i in xrange(v.startIndex,v.endIndex):
+                                for i in range(v.startIndex,v.endIndex):
                                         f.write(varnames[i]+'\n')
                         if v.vtype=='semiint' or v.vtype=='semicont':
                                 raise Exception('semiint and semicont variables not handled by this LP writer')
                 #binary variables
                 f.write("Binaries\n")
-                for name,v in self.variables.iteritems():
+                for name,v in six.iteritems(self.variables):
                         if v.vtype=='binary':
-                                for i in xrange(v.startIndex,v.endIndex):
+                                for i in range(v.startIndex,v.endIndex):
                                         f.write(varnames[i]+'\n')
                 f.write("End\n")
-                print 'done.'
+                print('done.')
                 f.close()
 
          
@@ -6533,7 +6526,7 @@ class Problem(object):
                 f.write(str(list(-P_b)).replace('[', '{').replace(']', '}'))
                 f.write('\n')
                 #coefs
-                from itertools import izip
+                from itertools import zip
                 for k in range(P_m+1):
                         if k != 0:
                                 v = sparse(G[:, k-1])
@@ -6545,7 +6538,7 @@ class Problem(object):
                         # lin. constraints
                         if Nl:
                                 u = v[:Nl]
-                                for i, j, value in izip(u.I, u.I, u.V):
+                                for i, j, value in zip(u.I, u.I, u.V):
                                         f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(k, block+1, j+1, i+1, -value))
                                 ptr += Nl
                                 block += 1
@@ -6554,10 +6547,10 @@ class Problem(object):
                         for nq in Nq:
                                 u0 = v[ptr]
                                 u1 = v[ptr+1:ptr+nq]
-                                tmp = spmatrix(u1.V, [nq-1 for j in xrange(len(u1))], u1.I, (nq, nq))
+                                tmp = spmatrix(u1.V, [nq-1 for j in range(len(u1))], u1.I, (nq, nq))
                                 if not u0 == 0.0:
-                                        tmp += spmatrix(u0, xrange(nq), xrange(nq), (nq, nq))
-                                for i, j, value in izip(tmp.I, tmp.J, tmp.V):
+                                        tmp += spmatrix(u0, range(nq), range(nq), (nq, nq))
+                                for i, j, value in zip(tmp.I, tmp.J, tmp.V):
                                         f.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(k, block+1, j+1, i+1, -value))
                                 ptr += nq
                                 block += 1
@@ -6621,7 +6614,7 @@ class Problem(object):
                 
                 #find integer variables, put 0-1 bounds on binaries
                 ints = []
-                for k,var in self.variables.iteritems():
+                for k,var in six.iteritems(self.variables):
                         if var.vtype=='binary':
                                 for ind,i in enumerate(range(var.startIndex,var.endIndex)):
                                         ints.append(i)
@@ -6631,7 +6624,7 @@ class Problem(object):
                                         var.bnd._set(ind,(lb,ub))
                                         
                         elif self.variables[k].vtype=='integer':
-                                for i in xrange(self.variables[k].startIndex,self.variables[k].endIndex):
+                                for i in range(self.variables[k].startIndex,self.variables[k].endIndex):
                                         ints.append(i)
                                         
                         elif self.variables[k].vtype not in ['continuous','symmetric']:
@@ -6684,13 +6677,13 @@ class Problem(object):
                                 else:
                                         cones.append(('F',ei-si))
                                 if 'nonnegative' not in (v._bndtext):
-                                        for j,(l,u) in v.bnd.iteritems():
+                                        for j,(l,u) in six.iteritems(v.bnd):
                                                 if l is not None:
                                                         Acoord.append((iaff,si+j-offset,1.))
                                                         Bcoord.append((iaff,-l))
                                                         iaff+=1
                                 if 'nonpositive' not in (v._bndtext):
-                                        for j,(l,u) in v.bnd.iteritems():
+                                        for j,(l,u) in six.iteritems(v.bnd):
                                                 if u is not None:
                                                         Acoord.append((iaff,si+j-offset,-1.))
                                                         Bcoord.append((iaff,u))
@@ -6770,7 +6763,7 @@ class Problem(object):
                                 else:
                                         raise Exception('unexpected typeOfConstraint')
                                 ijv=[]
-                                for var,fact in (expcone).factors.iteritems():
+                                for var,fact in six.iteritems((expcone).factors):
                                         if type(fact)!=cvx.base.spmatrix:
                                                 fact = cvx.sparse(fact)
                                         sj=var.startIndex
@@ -6780,12 +6773,11 @@ class Problem(object):
                                 itojv={}
                                 lasti=-1
                                 for (i,j,v) in ijvs:
-                                        if v:
-                                                if i==lasti:
-                                                        itojv[i].append((j,v))
-                                                else:
-                                                        lasti=i
-                                                        itojv[i]=[(j,v)]
+                                        if i==lasti:
+                                                itojv[i].append((j,v))
+                                        else:
+                                                lasti=i
+                                                itojv[i]=[(j,v)]
                                 
                                 if conetype:
                                         if conetype != '0':
@@ -6796,7 +6788,7 @@ class Problem(object):
                                         psdcons.append(dim)
                                         
                                 if conetype:
-                                        for i,jv in itojv.iteritems():
+                                        for i,jv in six.iteritems(itojv):
                                                 J=[jvk[0] for jvk in jv]
                                                 V=[jvk[1] for jvk in jv]
                                                 J,V,mats = self._separate_linear_cons(J,V,idxsdpvars)
@@ -6825,7 +6817,7 @@ class Problem(object):
                                                         else:
                                                                 ObjBcoord.append(v)
                                 else:
-                                        for i,jv in itojv.iteritems():
+                                        for i,jv in six.iteritems(itojv):
                                                 col,row = divmod(i,dim)
                                                 if not(uptri) and row < col:
                                                         continue
@@ -6926,7 +6918,7 @@ class Problem(object):
                                 f.write('{0} {1} {2} {3}\n'.format(i,row,col,v))
                         f.write('\n')
                         
-                print 'done.'
+                print('done.')
                 f.close()
 
         def _read_cbf(self,filename):
@@ -6944,7 +6936,7 @@ class Problem(object):
                 
                 ver = int(f.readline())
                 if ver != 1:
-                        print 'WARNING, file has version > 1'
+                        print('WARNING, file has version > 1')
                 
                 
                 structure_keywords = ['OBJSENSE','PSDVAR','VAR','INT','PSDCON','CON']
@@ -7055,7 +7047,7 @@ class Problem(object):
                                                 consexp[i] += AA[i,j] * x[j]
                         
                         Fcoords = parsed_blocks.get('FCOORD',{})
-                        for k,mats in Fcoords.iteritems():
+                        for k,mats in six.iteritems(Fcoords):
                                 i,row = _block_idx(k,szcons)
                                 row_exp = AffinExp()
                                 for j,mat in enumerate(mats):
@@ -7093,7 +7085,7 @@ class Problem(object):
                                 DD[i] = new_param('D['+str(i)+']',Di)
                                 consexp.append(new_param('D['+str(i)+']',Di))
                                 
-                        for j,Hj in Hblocks.iteritems():
+                        for j,Hj in six.iteritems(Hblocks):
                                 i,col = _block_idx(j,varsz)
                                 for k,Hij in enumerate(Hj):
                                         if Hij:
@@ -7104,7 +7096,7 @@ class Problem(object):
                                 self.add_constraint(exp >> 0)
                                 
                         
-                print 'done.'
+                print('done.')
                 
                 params = {'aobj':aobj,
                           'bobj':bobj,
@@ -7290,7 +7282,7 @@ class Problem(object):
                 replace quadratic constraints by equivalent second order cone constraints
                 """
                 if self.options['verbose']>0:
-                        print 'reformulating quads as socp...'
+                        print('reformulating quads as socp...')
                 for i,c in enumerate(self.constraints):
                         if c.typeOfConstraint=='quad':
                                 qd=c.Exp1.quad
@@ -7324,7 +7316,7 @@ class Problem(object):
                 #reset solver instances
                 self.reset_solver_instances()
                 if self.options['verbose']>0:
-                        print 'done.'
+                        print('done.')
                                 
         def to_real(self):
                 """
@@ -7353,7 +7345,7 @@ class Problem(object):
                         if c.typeOfConstraint.startswith('sdp'):
                                 D = {}
                                 exp1=c.Exp1
-                                for var,value in exp1.factors.iteritems():
+                                for var,value in six.iteritems(exp1.factors):
                                         try:
                                                 if var.vtype == 'hermitian':
                                                         n = int(value.size[1]**(0.5))                                
@@ -7375,7 +7367,7 @@ class Problem(object):
                                 
                                 D = {}
                                 exp2=c.Exp2
-                                for var,value in exp2.factors.iteritems():
+                                for var,value in six.iteritems(exp2.factors):
                                         if var.vtype == 'hermitian':
                                                 D[cvars[var.name+'_RE']] = _cplx_vecmat_to_real_vecmat(value,sym=True,times_i=False)
                                                 D[cvars[var.name+'_IM_utri']] = _cplx_vecmat_to_real_vecmat(value,sym=False,times_i = True)
