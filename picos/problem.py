@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.1.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -3316,6 +3316,8 @@ class Problem(object):
                                  
                         for ind,(lo,up) in six.iteritems(var.bnd):
                                 (clo,cup) = vbnds.get(var.startIndex+ind,(None,None))
+                                if lo is None: lo = -INFINITY
+                                if up is None: up = INFINITY
                                 if clo is None: clo = -INFINITY
                                 if cup is None: cup = INFINITY
                                 nlo = max(clo,lo)
@@ -4776,7 +4778,7 @@ class Problem(object):
                      (not self.options['uboundlimit'] is None) or
                      (not self.options['lboundlimit'] is None) or
                      (self.options['boundMonitor'])):
-                        import cplex_callbacks
+                        from . import cplex_callbacks
                         picos_cb = c.register_callback(cplex_callbacks.PicosInfoCallback)
                         picos_cb.aborted = 0
                         picos_cb.ub = INFINITY

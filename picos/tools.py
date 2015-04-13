@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.0.2 : A pyton Interface To Conic Optimization Solvers
+#Picos 1.1.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,6 @@ from __future__ import print_function, division
 import cvxopt as cvx
 import numpy as np
 import sys, os
-import pdb
 
 from six.moves import range, builtins
 import six
@@ -1612,7 +1611,7 @@ def available_solvers():
                 import cplex as cp
                 lst.append('cplex')
                 del cp
-        except ImportError:
+        except (ImportError,SyntaxError):
                 pass
         try:
                 import zibopt as zo
