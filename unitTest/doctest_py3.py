@@ -13,6 +13,8 @@ SOLVER = 'cvxopt'
 #-------------#
 
 import picos as pic
+print('starting tests with picos'+str(pic.__version__))
+
 prob = pic.Problem()
 x = prob.add_variable('x',1, vtype='integer') #scalar integer variable
 prob.add_constraint(x<5.2)                    #x less or equal to 5.2

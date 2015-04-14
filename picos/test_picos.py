@@ -1095,6 +1095,8 @@ for solver in avs:
                 results[solver][pclas]=eval(pclas.upper()+'Test')(solver)
 
 for i in range(20): print()
+
+print('Test of PICOS Version '+pic.__version__)
                 
 print('------------------------------------------------------------------')
 print('----------------------  Results Summary  -------------------------')
