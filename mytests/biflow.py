@@ -111,6 +111,7 @@ diag = lambda M : cvx.matrix([M[i,i] for i in range(M.size[0])])
 A*X0 - est*diag(X0).T
 A*diag(X0) - est
 
+
 dmax = 0
 Lmax = 0
 for iter in range(40):
@@ -126,8 +127,8 @@ for iter in range(40):
         P.add_constraint(X>0)
         #P.set_objective('max', (L|X))
         P.set_objective('max', (L|X))
-        P.add_constraint(X[1,4]==0)
-        P.add_constraint(X[2,5]==0)
+        #P.add_constraint(X[1,4]==0)
+        #P.add_constraint(X[2,5]==0)
         #P.add_constraint(X[2,7]==0)
         P.solve()
 
@@ -144,3 +145,64 @@ for iter in range(40):
                 Lmax = L
         if delta > 1e-3:
                 break
+
+
+"""
+#series of parallel arcs
+
+count=0
+NNN = 10
+for iter in range(NNN):
+        V=6
+        s=0
+        c=2
+        t=V-1
+        A = cvx.spmatrix([],[],[],(V,c*(V-1)))
+        v = cvx.spmatrix([],[],[],(c*(V-1),1))
+        for i in range(V-1):
+                v[c*i] = 1.
+                for j in range(c):
+                        A[i,c*i+j]=-1
+                        A[i+1,c*i+j]=1
+        X0 = v*v.T
+        #TODO HERE, why is X0 not feasible ? 
+
+        est = cvx.spmatrix([-1,1],[s,t],[0,0],(V,1))
+        N = c*(V-1)
+
+        L = cvx.normal(N,N)
+        L = L + L.T
+        import picos as pic
+        P = pic.Problem()
+        X = P.add_variable('X',(N,N),'symmetric')
+        P.add_constraint(A*X == est*pic.diag_vect(X).T)
+        P.add_constraint(A*pic.diag_vect(X)==est)
+        P.add_constraint(X<1)
+        P.add_constraint(X>>0)
+        P.add_constraint(X>0)
+        #P.set_objective('max', (L|X))
+        P.set_objective('max', (L|X))
+        #P.add_constraint(X[1,4]==0)
+        #P.add_constraint(X[2,5]==0)
+        #P.add_constraint(X[2,7]==0)
+        P.solve()
+        if any([abs(x-0.5)<0.03 for x in X.value]):
+                count+=1
+                break
+
+
+print count/float(NNN)
+
+MP = []
+for iedp in itertools.product([0,1],[2,3],[4,5],[6,7],[8,9]):
+        ep = cvx.spmatrix([1]*len(iedp),iedp,[0]*len(iedp),(N,1))
+        MP.append(ep*ep.T) 
+        
+H = cvx.sparse([[MMP[:]] for MMP in MP])
+bX = X.value[:]
+Q = pic.Problem()
+lbd = Q.add_variable('lbd',H.size[1],lower=0)
+delta = Q.add_variable('delta',1)
+Q.add_constraint(pic.norm(H*lbd-bX,1)<delta)
+Q.minimize(delta)
+"""

@@ -7339,7 +7339,7 @@ class Problem(object):
                                 if force_sym:
                                         real.add_constraint(cvars[v.name+'_IM'] == -cvars[v.name+'_IM'].T)
                                 """
-                                cvars[v.name+'_IM_utri']=real.add_variable(v.name+'_IM',(v.size[0],v.size[1]),'antisym').factors.keys()[0]
+                                cvars[v.name+'_IM_utri']=list(real.add_variable(v.name+'_IM',(v.size[0],v.size[1]),'antisym').factors.keys())[0]
                         else:
                                 cvars[v.name]=real.add_variable(v.name,v.size,v.vtype)
                 

@@ -1794,7 +1794,7 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                 for i in range(vr.size[0]):
                                         v=vr[i,:]
                                         AA = cvx.matrix(v,(n,n))
-                                        AA = (AA + AA.T)/2.#symmetrize
+                                        AA = (AA + AA.T)*0.5#symmetrize
                                         vv.append(svec(AA).T)
                                 D[cvars[var.name+'_RE']] = cvx.sparse(vv)
                                 if complex:
@@ -1811,7 +1811,7 @@ def _copy_dictexp_to_new_vars(dct,cvars,complex = None):
                                         for i in range(vi.size[0]):
                                                 v=vi[i,:]
                                                 BB = cvx.matrix(v,(n,n))
-                                                BB = (BB + BB.T)/2.#symmetrize
+                                                BB = (BB + BB.T)*0.5#symmetrize
                                                 vv.append(svec(BB).T)
                                         Hre = cvx.sparse(vv)
                                         
@@ -1951,7 +1951,7 @@ def _cplx_vecmat_to_real_vecmat(M,sym=True,times_i = False):
                         else:
                                 i1 = n*i+j
                                 i2 = n*j+i
-                                v=(M[:,i1] + M[:,i2])/(2**0.5)
+                                v=(M[:,i1] + M[:,i2])*(1./(2**0.5))
                         vvv = _cplx_mat_to_real_mat(cvx.matrix(v,(m,m)))[:]
                         vv.append([vvv])        
                         
@@ -1969,8 +1969,8 @@ def _is_idty(mat,vtype='continuous'):
         if vtype=='continuous':
                 if (mat.size[0] == mat.size[1]):
                         n = mat.size[0]
-                        if (list(mat.I) == range(n) and
-                        list(mat.J) == range(n) and
+                        if (list(mat.I) == list(range(n)) and
+                        list(mat.J) == list(range(n)) and
                         list(mat.V) == [1.]*n):
                                 return True
         elif vtype=='antisym':

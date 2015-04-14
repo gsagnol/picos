@@ -130,11 +130,11 @@ assert(cleanspace(str(x_minus_1)) == cleanspace('# (4 x 1)-affine expression: x 
 # some tests with valued variables  #
 #-----------------------------------#
 
-Z[0].value = range(0,8)
-Z[1].value = range(8,16)
-Z[2].value = range(16,24)
-Z[3].value = range(24,32)
-Z[4].value = range(32,40)
+Z[0].value = list(range(0,8))
+Z[1].value = list(range(8,16))
+Z[2].value = list(range(16,24))
+Z[3].value = list(range(24,32))
+Z[4].value = list(range(32,40))
 t.value = -1
 w[0, 2].value = 0
 w[1, 4].value = 0
@@ -142,7 +142,7 @@ w[1, 3].value = 1
 w[3, 2].value = 1
 w[0, 4].value = 0
 w[2, 4].value = 1
-x.value = range(-5,-1)
+x.value = list(range(-5,-1))
 
 Zv = [Zi.eval() for Zi in Z]
 tv = t.value
@@ -196,5 +196,68 @@ assert((pic.norm(-x,'inf') < 2).slack[0] == -3)
 M = prob.add_variable('M',(5,5),'symmetric')
 M.value = [1+(i+j)+2*(i+j)**2-0.01*(i+j)**4 + (25 if i==j else 0) for i in range(5) for j in range(5)]
 assert( cvxcomp((t < pic.detrootn(M)).slack, np.linalg.det(M.value)**(1./5) - tv[0] ) < 1e-6)
+
+#---------------#
+#  Complex SDP  #
+#---------------#
+
+P = pic.Problem()
+Z = P.add_variable('Z',(3,2),'complex')
+
+assert(cleanspace(str(Z.real))==cleanspace('# variable Z_RE:(3 x 2),continuous #'))
+assert(cleanspace(str(Z.imag))==cleanspace('# variable Z_IM:(3 x 2),continuous #'))
+assert(Z.vtype == 'complex')
+
+P = cvx.matrix([ [1-1j , 2+2j  , 1    ],
+                [3j   , -2j   , -1-1j],
+                [1+2j, -0.5+1j, 1.5  ]
+                ])
+P = P * P.H
+
+Q = cvx.matrix([ [-1-2j , 2j   , 1.5   ],
+                [1+2j  ,-2j   , 2.-3j ],
+                [1+2j  ,-1+1j , 1+4j  ]
+                ])
+Q = Q * Q.H
+
+n=P.size[0]
+P = pic.new_param('P',P)
+Q = pic.new_param('Q',Q)
+
+#create the problem in picos
+F = pic.Problem()
+Z = F.add_variable('Z',(n,n),'complex')
+
+F.set_objective('max','I'|0.5*(Z+Z.H))       #('I' | Z.real) works as well
+F.add_constraint(((P & Z) // (Z.H & Q))>>0 )
+
+
+F.solve(solver=SOLVER,verbose = 0)
+assert(abs(F.obj_value()-37.4742)<1e-4)
+sol = cvx.matrix([
+        [ 1.51e+01+2.21e+00j, -7.17e+00-1.22e+00j,  2.52e+00+6.87e-01j],
+        [-4.88e+00+4.06e+00j,  1.00e+01-1.57e-01j,  8.33e+00+1.13e+01j],
+        [-4.32e-01+2.98e-01j,  3.84e+00-3.28e+00j,  1.24e+01-2.05e+00j]]).T
+        
+#very coarse test because I just pasted the string repr of the solution
+assert(max([abs(v)/abs(z) for v,z in zip(sol-Z.value,sol)])<0.005)
+
+M = pic.new_param('M',Q)
+n=3
+
+P = pic.Problem()
+U = P.add_variable('U',(n,n),'hermitian')
+P.add_list_of_constraints([U[i,i]==1 for i in range(n)],'i')
+P.add_constraint(U >> 0)
+
+P.set_objective('min', U | M)
+P.solve(solver=SOLVER,verbose=0)
+solstr = """
+[ 1.00e+00-j0.00e+00  9.97e-01-j7.20e-02 -9.22e-01-j3.86e-01]
+[ 9.97e-01+j7.20e-02  1.00e+00-j0.00e+00 -8.92e-01-j4.51e-01]
+[-9.22e-01+j3.86e-01 -8.92e-01+j4.51e-01  1.00e+00-j0.00e+00]
+        """
+
+assert(cleanspace(str(U))==cleanspace(solstr))
 
 print('everything seems to work fine')
