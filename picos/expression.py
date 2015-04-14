@@ -2381,7 +2381,7 @@ class TracePow_Exp(_ConvexExp):
         
         def eval(self,ind=None):
                 val=self.exp.eval(ind)
-                Mval = self.M.eval(ind)
+                
                 if not isinstance(val,cvx.base.matrix):
                         val = cvx.matrix(val)
                 p = float(self.numerator)/float(self.denominator)
@@ -2389,6 +2389,7 @@ class TracePow_Exp(_ConvexExp):
                         ev = np.linalg.eigvalsh(np.matrix(val))
                         return sum([vi**p for vi in ev])
                 else:
+                        Mval = self.M.eval(ind)
                         U,S,V = np.linalg.svd(val)
                         Xp = cvx.matrix(U)*cvx.spdiag([s**p for s in S])*cvx.matrix(V)
                         return np.trace(Mval*Xp)
@@ -2606,7 +2607,7 @@ class DetRootN_Exp(_ConvexExp):
                 val=self.exp.eval(ind)
                 if not isinstance(val,cvx.base.matrix):
                         val = cvx.matrix(val)
-                return (np.det(np.matrix(val)))**(1./self.dim)
+                return (np.linalg.det(np.matrix(val)))**(1./self.dim)
                 
         value = property(eval,Expression.set_value,Expression.del_simple_var_value)
         

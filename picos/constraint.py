@@ -449,7 +449,7 @@ class DetRootN_Constraint(_Convex_Constraint):
         """ A temporary object used to pass nth root of determinant inequalities.
         This class derives from :class:`Constraint <picos.Constraint>`
         """
-        def __init__(self,expdet,exprhs,Ptmp,constring):
+        def __init__(self,exprhs,expdet,Ptmp,constring):
                 self.expdet = expdet
                 self.exprhs = exprhs
                 _Convex_Constraint.__init__(self,Ptmp,constring,'nth root of det ineq')
@@ -457,7 +457,7 @@ class DetRootN_Constraint(_Convex_Constraint):
                 """prefix to be added to the names of the temporary variables when add_constraint() is called"""
         
         def slack_var(self):
-                return self.exprhs.value - detrootn(self.expdet).value
+                return detrootn(self.expdet).value - self.exprhs.value
                         
         slack = property(slack_var,Constraint.set_slack,Constraint.del_slack)
 

@@ -813,6 +813,7 @@ def eval_dict(dict_of_variables):
         this function returns the dictionary ``names -> variable values``. 
         """
         valued_dict={}
+        
         for k in dict_of_variables:
                 valued_dict[k] = dict_of_variables[k].eval()
                 if valued_dict[k].size == (1,1):
