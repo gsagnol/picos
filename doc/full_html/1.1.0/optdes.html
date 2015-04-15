@@ -1,0 +1,1379 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Examples from Optimal Experimental Design &mdash; picos 1.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.1.0 documentation" href="index.html"/>
+        <link rel="up" title="Examples" href="examples.html"/>
+        <link rel="next" title="The PICOS Reference" href="api.html"/>
+        <link rel="prev" title="Complex Semidefinite Programming" href="complex.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href=""><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="examples.html">Examples</a> &raquo;</li>
+      
+    <li><strong>Examples from Optimal Experimental Design</strong></li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/optdes.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="examples-from-optimal-experimental-design">
+<span id="optdes"></span><h1><strong>Examples from Optimal Experimental Design</strong><a class="headerlink" href="#examples-from-optimal-experimental-design" title="Permalink to this headline">¶</a></h1>
+<p>Optimal experimental design is a theory
+at the interface of statistics and optimization,
+which studies how to allocate some statistical trials
+within a set of available design points.
+The goal is to allow for the best possible
+estimation of an unknown parameter <img class="math" src="_images/math/a9cfbeb8ebee1f365919e147a79e242dcb67ee5d.png" alt="\theta"/>.
+In what follows, we assume the standard linear model with
+multiresponse experiments: a trial in the <img class="math" src="_images/math/0030a6ad146027f9a61e8aae9a1c9de265abbcd6.png" alt="i^{\textrm{th}}"/>
+design point gives a multidimensional observation that
+can be written as <img class="math" src="_images/math/a722771df779bec0b368611b8ca3709d3783fb73.png" alt="y_i = A_i^T \theta+\epsilon_i"/>,
+where <img class="math" src="_images/math/410a65f64e2a609a2a7f544ed72f0982b719807a.png" alt="y_i"/> is of dimension <img class="math" src="_images/math/88bc030a182566fd736c26624875aa9d76f683d3.png" alt="l_i"/>,
+<img class="math" src="_images/math/121e299726ed162074fcd7fe348b154ad4be1073.png" alt="A_i"/> is a <img class="math" src="_images/math/608ba826e7aa36011da12e9194e5dba0b1fea06a.png" alt="m \times l_i-"/> matrix,
+and the error vectors <img class="math" src="_images/math/f48bd294a6bca30ab97b3a92a17698fcde1bbd6e.png" alt="\epsilon_i"/> are i.i.d. with a unit variance.</p>
+<p>Several optimization criteria exist, leading to different SDP, SOCP and LP
+formulations.
+As such, optimal experimental design problens are natural examples for problems
+in conic optimization. For a review of the different formulations
+and more references, see <a class="reference internal" href="#optdes-refs"><em>[1]</em></a>.</p>
+<p>The code below initializes the data used in all the examples of this page.
+It should be run prior to any of the codes presented in this page.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+<span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
+
+<span class="c">#---------------------------------#</span>
+<span class="c"># First generate some data :      #</span>
+<span class="c">#       _ a list of 8 matrices A  #</span>
+<span class="c">#       _ a vector c              #</span>
+<span class="c">#---------------------------------#</span>
+<span class="n">A</span><span class="o">=</span><span class="p">[</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]]),</span>
+<span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="p">]</span>
+
+<span class="n">c</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="section" id="c-optimality-multi-response-socp">
+<h2><em>c-optimality, multi-response: SOCP</em><a class="headerlink" href="#c-optimality-multi-response-socp" title="Permalink to this headline">¶</a></h2>
+<p>We compute the c-optimal design (<tt class="docutils literal"><span class="pre">c=[1,2,3,4,5]</span></tt>)
+for the observation matrices <tt class="docutils literal"><span class="pre">A[i].T</span></tt> from the variable <tt class="docutils literal"><span class="pre">A</span></tt> defined above.
+The results below suggest that we should allocate 12.8% of the
+experimental effort on design point #5, and 87.2% on the design point #7.</p>
+<div class="section" id="primal-problem">
+<h3>Primal Problem<a class="headerlink" href="#primal-problem" title="Permalink to this headline">¶</a></h3>
+<p>The SOCP for multiresponse c-optimal design is:</p>
+<div class="math">
+<p><img src="_images/math/87dddee1a525540d1e82e6a18ac21c3c3c6875ef.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\substack{\mu \in \mathbb{R}^s\\
+                     \forall i \in [s],\ z_i \in \mathbb{R}^{l_i}}}{\mbox{minimize}}
+                   &amp; \sum_{i=1}^s \mu_i\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s A_i z_i = c\\
+&amp;                  &amp; \forall i \in [s],\ \Vert z_i \Vert_2 \leq \mu_i,
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_primal_c</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">prob_primal_c</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;z[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">mu</span><span class="o">=</span><span class="n">prob_primal_c</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_primal_c</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_primal_c</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+                <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+                <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+                <span class="p">)</span>
+        <span class="o">==</span> <span class="n">cc</span> <span class="p">)</span>
+<span class="n">prob_primal_c</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">mu</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the optimal weights of the optimal design.</span>
+<span class="k">print</span> <span class="n">prob_primal_c</span>
+<span class="n">prob_primal_c</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">)</span>
+
+<span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="o">.</span><span class="n">value</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<p>Generated output:</p>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+32 variables, 5 affine constraints, 32 vars in 8 SO cones
+
+z   : list of 8 variables, (3, 1), continuous
+mu  : (8, 1), continuous
+
+        minimize 〈 |1| | mu 〉
+such that
+||z[i]|| &lt; mu[i] for all i in [s]
+Σ_{i in [s]} A[i]*z[i] = c
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[...]
+[...]
+[ 1.28e-01]
+[...]
+[ 8.72e-01]
+[...]
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">[...]</span></tt> above indicate a numerical zero entry
+(<em>i.e., which can be something like 2.84e-10</em>).
+We use the ellipsis <tt class="docutils literal"><span class="pre">...</span></tt> instead for clarity and compatibility with <strong>doctest</strong>.</p>
+</div>
+<div class="section" id="dual-problem">
+<h3>Dual Problem<a class="headerlink" href="#dual-problem" title="Permalink to this headline">¶</a></h3>
+<p>This is only to check that we obtain the same solution with the dual problem,
+and to provide one additional example in this doc:</p>
+<div class="math">
+<p><img src="_images/math/e30cae0d8a981fbdb28dbb745513d7a8283193dd.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{u \in \mathbb{R}^m}{\mbox{maximize}}
+                   &amp; c^T u\\
+&amp;\mbox{subject to} &amp; \forall i \in [s],\ \Vert A_i^T u \Vert_2 \leq 1
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_dual_c</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">u</span><span class="o">=</span><span class="n">prob_dual_c</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;u&#39;</span><span class="p">,</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_dual_c</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">u</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_dual_c</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span> <span class="n">cc</span><span class="o">|</span><span class="n">u</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_dual_c</span>
+<span class="n">prob_dual_c</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">cons</span><span class="o">.</span><span class="n">dual</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cons</span> <span class="ow">in</span> <span class="n">prob_dual_c</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">0</span><span class="p">,))]</span> <span class="c">#Lagrangian duals of the SOC constraints</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<p>Generated output:</p>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+5 variables, 0 affine constraints, 32 vars in 8 SO cones
+
+u   : (5, 1), continuous
+
+        maximize 〈 c | u 〉
+such that
+||A[i].T*u|| &lt; 1 for all i in [s]
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[...]
+[...]
+[ 1.28e-01]
+[...]
+[ 8.72e-01]
+[...]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="c-optimality-single-response-lp">
+<h2><em>c-optimality, single-response: LP</em><a class="headerlink" href="#c-optimality-single-response-lp" title="Permalink to this headline">¶</a></h2>
+<p>When the observation matrices are row vectors (single-response framework),
+the SOCP above reduces to a simple LP, because the variables
+<img class="math" src="_images/math/0c9b8c78a7a049eca8f2168d0691afc6a65a9dad.png" alt="z_i"/> are scalar.
+We solve below the LP for the case where there are 11
+available design points, corresponding to the columns of the matrices
+<tt class="docutils literal"><span class="pre">A[4]</span></tt>, <tt class="docutils literal"><span class="pre">A[5]</span></tt>, <tt class="docutils literal"><span class="pre">A[6]</span></tt>, and <tt class="docutils literal"><span class="pre">A[7][:,:-1]</span></tt> defined in the preambule.</p>
+<p>The optimal design allocates 3.37% to point #5 (2nd column of <tt class="docutils literal"><span class="pre">A[5]</span></tt>),
+27.9% to point #7 (1st column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
+11.8% to point #8 (2nd column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
+27.6% to point #9 (3rd column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
+and 29.3% to point #11 (2nd column of <tt class="docutils literal"><span class="pre">A[7]</span></tt>).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_LP</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">[</span><span class="mi">4</span><span class="p">:]]</span> <span class="c">#12 column vectors</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">AA</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c">#remove the last design point (it is the same as the last-but-one)</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">prob_LP</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;z[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">mu</span><span class="o">=</span><span class="n">prob_LP</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_LP</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints handled as -mu_i &lt; z_i&lt; mu_i</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_LP</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+                <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+                <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+                <span class="p">)</span>
+        <span class="o">==</span> <span class="n">cc</span> <span class="p">)</span>
+<span class="n">prob_LP</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">mu</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_LP</span>
+<span class="n">prob_LP</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="o">.</span><span class="n">value</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<p>Note that there are no cone constraints, because
+the constraints of the form <img class="math" src="_images/math/204eaec01df647551ae0830ddfb5514a2669aafa.png" alt="|z_i| \leq \mu_i"/> are handled as two
+inequalities when <img class="math" src="_images/math/0c9b8c78a7a049eca8f2168d0691afc6a65a9dad.png" alt="z_i"/> is scalar, so the problem is a LP indeed:</p>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (LP):
+22 variables, 27 affine constraints
+
+z   : list of 11 variables, (1, 1), continuous
+mu  : (11, 1), continuous
+
+        minimize 〈 |1| | mu 〉
+such that
+||z[i]|| &lt; mu[i] for all i in [s]
+Σ_{i in [s]} A[i]*z[i] = c
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[...]
+[...]
+[ 3.37e-02]
+[...]
+[ 2.79e-01]
+[ 1.18e-01]
+[ 2.76e-01]
+[...]
+[ 2.93e-01]
+</pre></div>
+</div>
+</div>
+<div class="section" id="sdp-formulation-of-the-c-optimal-design-problem">
+<h2><em>SDP formulation of the c-optimal design problem</em><a class="headerlink" href="#sdp-formulation-of-the-c-optimal-design-problem" title="Permalink to this headline">¶</a></h2>
+<p>We give below the SDP for c-optimality, in primal and dual
+form. You can observe that we obtain the same results as
+with the SOCP presented earlier:
+12.8% on design point #5, and 87.2% on design point #7.</p>
+<div class="section" id="id1">
+<h3>Primal Problem<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>The SDP formulation of the c-optimal design problem is:</p>
+<div class="math">
+<p><img src="_images/math/5a4f47b2191493a95a29629d657b7fa0b862e512.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\mu \in \mathbb{R}^s}{\mbox{minimize}}
+                   &amp; \sum_{i=1}^s \mu_i\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s \mu_i A_i A_i^T \succeq c c^T,\\
+&amp;                  &amp; \mu \geq 0.
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_SDP_c_primal</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">mu</span><span class="o">=</span><span class="n">prob_SDP_c_primal</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_SDP_c_primal</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+        <span class="o">&gt;&gt;</span> <span class="n">cc</span><span class="o">*</span><span class="n">cc</span><span class="o">.</span><span class="n">T</span> <span class="p">)</span>
+<span class="n">prob_SDP_c_primal</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">mu</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">prob_SDP_c_primal</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">mu</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_SDP_c_primal</span>
+<span class="n">prob_SDP_c_primal</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">.</span><span class="n">value</span>
+<span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SDP):
+8 variables, 8 affine constraints, 15 vars in 1 SD cones
+
+mu  : (8, 1), continuous
+
+        minimize 〈 |1| | mu 〉
+such that
+Σ_{i in [s]} mu[i]*A[i]*A[i].T ≽ c*c.T
+mu &gt; |0|
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[...]
+[...]
+[ 1.28e-01]
+[...]
+[ 8.72e-01]
+[...]
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>Dual Problem<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>This is only to check that we obtain the same solution with the dual problem,
+and to provide one additional example in this doc:</p>
+<div class="math">
+<p><img src="_images/math/42fd22138d0d9131c2ede1eb3ce9c48c719b15fe.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{X \in \mathbb{R}^{m \times m}}{\mbox{maximize}}
+                   &amp;  c^T X c\\
+&amp;\mbox{subject to} &amp; \forall i \in [s],\ \langle A_i A_i^T,\ X \rangle \leq 1,\\
+&amp;                  &amp;  X \succeq 0.
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_SDP_c_dual</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">X</span><span class="o">=</span><span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="n">m</span><span class="p">,</span><span class="n">m</span><span class="p">),</span><span class="n">vtype</span><span class="o">=</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">|</span> <span class="n">X</span> <span class="p">)</span> <span class="o">&lt;</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">X</span><span class="o">&gt;&gt;</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span> <span class="n">cc</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">X</span><span class="o">*</span><span class="n">cc</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_SDP_c_dual</span>
+<span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">)</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">cons</span><span class="o">.</span><span class="n">dual</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cons</span> <span class="ow">in</span> <span class="n">prob_SDP_c_dual</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">0</span><span class="p">,))]</span> <span class="c">#Lagrangian duals of the SOC constraints</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+<span class="k">print</span> <span class="s">&#39;and the optimal positive semidefinite matrix X is&#39;</span>
+<span class="k">print</span> <span class="n">X</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SDP):
+15 variables, 8 affine constraints, 15 vars in 1 SD cones
+
+X   : (5, 5), symmetric
+
+        maximize c.T*X*c
+such that
+〈 A[i]*A[i].T | X 〉 &lt; 1.0 for all i in [s]
+X ≽ |0|
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[...]
+[...]
+[ 1.28e-01]
+[...]
+[ 8.72e-01]
+[...]
+
+and the optimal positive semidefinite matrix X is
+[ 5.92e-03  8.98e-03  2.82e-03 -3.48e-02 -1.43e-02]
+[ 8.98e-03  1.36e-02  4.27e-03 -5.28e-02 -2.17e-02]
+[ 2.82e-03  4.27e-03  1.34e-03 -1.66e-02 -6.79e-03]
+[-3.48e-02 -5.28e-02 -1.66e-02  2.05e-01  8.39e-02]
+[-1.43e-02 -2.17e-02 -6.79e-03  8.39e-02  3.44e-02]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="a-optimality-socp">
+<h2><em>A-optimality: SOCP</em><a class="headerlink" href="#a-optimality-socp" title="Permalink to this headline">¶</a></h2>
+<p>We compute the A-optimal design
+for the observation matrices <tt class="docutils literal"><span class="pre">A[i].T</span></tt> defined in the preambule.
+The optimal design allocates
+24.9% on design point #3,
+14.2% on point #4,
+8.51% on point #5,
+12.1% on point #6,
+13.2% on point #7,
+and 27.0% on point #8.</p>
+<div class="section" id="id3">
+<h3>Primal Problem<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>The SOCP for the A-optimal design problem is:</p>
+<div class="math">
+<p><img src="_images/math/40d1f4af0b0ea09d4ae767797325a9d54efd96b9.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\substack{\mu \in \mathbb{R}^s\\
+                     \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
+                   &amp; \sum_{i=1}^s \mu_i\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s A_i Z_i = I\\
+&amp;                  &amp; \forall i \in [s],\ \Vert Z_i \Vert_F \leq \mu_i,
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_primal_A</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">Z</span><span class="o">=</span><span class="p">[</span><span class="n">prob_primal_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Z[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">mu</span><span class="o">=</span><span class="n">prob_primal_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_primal_A</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_primal_A</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+        <span class="o">==</span> <span class="s">&#39;I&#39;</span> <span class="p">)</span>
+<span class="n">prob_primal_A</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">mu</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_primal_A</span>
+<span class="n">prob_primal_A</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">.</span><span class="n">value</span>
+<span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+128 variables, 25 affine constraints, 128 vars in 8 SO cones
+
+Z   : list of 8 variables, (3, 5), continuous
+mu  : (8, 1), continuous
+
+        minimize 〈 |1| | mu 〉
+such that
+||Z[i]|| &lt; mu[i] for all i in [s]
+Σ_{i in [s]} A[i]*Z[i] = I
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[ 2.49e-01]
+[ 1.42e-01]
+[ 8.51e-02]
+[ 1.21e-01]
+[ 1.32e-01]
+[ 2.70e-01]
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>Dual Problem<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>This is only to check that we obtain the same solution with the dual problem,
+and to provide one additional example in this doc:</p>
+<div class="math">
+<p><img src="_images/math/67f6a0fcd2dc2f04c4e0a09c26f14d46fe869449.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{U \in \mathbb{R}^{m \times m}}{\mbox{maximize}}
+                   &amp;  \mbox{trace}\ U\\
+&amp;\mbox{subject to} &amp; \forall i \in [s],\ \Vert A_i^T U \Vert_2 \leq 1
+\end{eqnarray*}
+\end{center}"/></p>
+</div><div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_dual_A</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">m</span><span class="o">=</span><span class="n">AA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">U</span><span class="o">=</span><span class="n">prob_dual_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;U&#39;</span><span class="p">,(</span><span class="n">m</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_dual_A</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">U</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_dual_A</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span> <span class="s">&#39;I&#39;</span><span class="o">|</span><span class="n">U</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_dual_A</span>
+<span class="n">prob_dual_A</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">cons</span><span class="o">.</span><span class="n">dual</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cons</span> <span class="ow">in</span> <span class="n">prob_dual_A</span><span class="o">.</span><span class="n">get_constraint</span><span class="p">((</span><span class="mi">0</span><span class="p">,))]</span> <span class="c">#Lagrangian duals of the SOC constraints</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">mu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="c">#normalize mu to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+25 variables, 0 affine constraints, 128 vars in 8 SO cones
+
+U   : (5, 5), continuous
+
+        maximize trace( U )
+such that
+||A[i].T*U|| &lt; 1 for all i in [s]
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[ 2.49e-01]
+[ 1.42e-01]
+[ 8.51e-02]
+[ 1.21e-01]
+[ 1.32e-01]
+[ 2.70e-01]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="a-optimality-with-multiple-constraints-socp">
+<h2><em>A-optimality with multiple constraints: SOCP</em><a class="headerlink" href="#a-optimality-with-multiple-constraints-socp" title="Permalink to this headline">¶</a></h2>
+<p>A-optimal designs can also be computed by SOCP
+when the vector of weights <img class="math" src="_images/math/b3cd7f5d85b385867a69a28467acf1814158ced8.png" alt="\mathbf{w}"/> is subject
+to several linear constraints.
+To give an example, we compute the A-optimal design for
+the observation matrices given in the preambule, when the weights
+must satisfy: <img class="math" src="_images/math/159dc338ad87f9242edbd7fb438091d809dd6950.png" alt="\sum_{i=0}^3 w_i \leq 0.5"/> and <img class="math" src="_images/math/27b36f14e97d4e6ecb2faf0c6a4bd0d50b9d09f7.png" alt="\sum_{i=4}^7 w_i \leq 0.5"/>.
+This problem has the following SOCP formulation:</p>
+<div class="math">
+<p><img src="_images/math/8190f9aae83f44c11b0344803e1b8b189b8070f4.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\substack{\mathbf{w} \in \mathbb{R}^s\\
+                     \mu \in \mathbb{R}^s\\
+                     \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
+                   &amp; \sum_{i=1}^s \mu_i\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s A_i Z_i = I\\
+&amp;                  &amp; \sum_{i=0}^3 w_i \leq 0.5\\
+&amp;                  &amp; \sum_{i=4}^7 w_i \leq 0.5\\
+&amp;                  &amp; \forall i \in [s],\ \Vert Z_i \Vert_F^2 \leq \mu_i w_i,
+\end{eqnarray*}
+\end{center}"/></p>
+</div><p>The optimal solution allocates 29.7% and 20.3% to the design points #3 and #4,
+and  respectively 6.54%, 11.9%, 9.02% and 22.5% to the design points #5 to #8:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+
+<span class="n">mu</span><span class="o">=</span><span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+<span class="n">w</span> <span class="o">=</span><span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+<span class="n">Z</span><span class="o">=</span><span class="p">[</span><span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Z[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+        <span class="o">==</span> <span class="s">&#39;I&#39;</span> <span class="p">)</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span> <span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">w</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span> <span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">w</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="o">&lt;</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[s]&#39;</span><span class="p">)</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">mu</span><span class="p">)</span>
+
+<span class="c">#solve the problem and retrieve the weights of the optimal design</span>
+<span class="k">print</span> <span class="n">prob_A_multiconstraints</span>
+<span class="n">prob_A_multiconstraints</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="o">.</span><span class="n">value</span>
+<span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="c">#normalize w to get the optimal weights</span>
+<span class="k">print</span>
+<span class="k">print</span> <span class="s">&#39;The optimal design is:&#39;</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+136 variables, 27 affine constraints, 136 vars in 8 SO cones
+
+Z   : list of 8 variables, (3, 5), continuous
+mu  : (8, 1), continuous
+w   : (8, 1), continuous
+
+        minimize 〈 |1| | mu 〉
+such that
+Σ_{i in [s]} A[i]*Z[i] = I
+〈 |1| | w[:4] 〉 &lt; 0.5
+〈 |1| | w[4:] 〉 &lt; 0.5
+||Z[i]||^2 &lt; ( mu[i])( w[i]) for all i in [s]
+---------------------
+
+The optimal design is:
+[...]
+[...]
+[ 2.97e-01]
+[ 2.03e-01]
+[ 6.54e-02]
+[ 1.19e-01]
+[ 9.02e-02]
+[ 2.25e-01]
+</pre></div>
+</div>
+</div>
+<div class="section" id="exact-a-optimal-design-misocp">
+<h2><em>Exact A-optimal design: MISOCP</em><a class="headerlink" href="#exact-a-optimal-design-misocp" title="Permalink to this headline">¶</a></h2>
+<p>In the exact version of A-optimality, a number <img class="math" src="_images/math/9427cdaf31c32c03536dac6d020f7fb467057e3c.png" alt="N \in \mathbb{N}"/>
+of trials is given, and the goal is to find the optimal number of times
+<img class="math" src="_images/math/9592dab7221869faf2abd0a1369aec9e43a8aa2f.png" alt="n_i \in \mathbb{N}"/> that a trial on design point #i should be performed,
+with <img class="math" src="_images/math/0f06c08db382d901e120e937dda6a0449079e7c8.png" alt="\sum_i n_i =N"/>.</p>
+<p>The SOCP formulation of A-optimality for constrained designs
+also accept integer constraints, which results in a MISOCP for exact A-optimality:</p>
+<div class="math">
+<p><img src="_images/math/ac7881c2f363e6cdc109979be18e8557871a80f1.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\substack{\mathbf{t} \in \mathbb{R}^s\\
+                     \mathbf{n} \in \mathbb{N}^s\\
+                     \forall i \in [s],\ Z_i \in \mathbb{R}^{l_i \times m}}}{\mbox{minimize}}
+                   &amp; \sum_{i=1}^s t_i\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s A_i Z_i = I\\
+&amp;                  &amp; \forall i \in [s],\ \Vert Z_i \Vert_F^2 \leq n_i t_i,\\
+&amp;                  &amp; \sum_{i=1}^s n_i = N.
+\end{eqnarray*}
+\end{center}"/></p>
+</div><p>The exact optimal design is <img class="math" src="_images/math/eb502445bfa655db627753dc415eff360bec5064.png" alt="\mathbf{n}=[0,0,5,3,2,2,3,5]"/>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_exact_A</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">m</span><span class="o">=</span><span class="n">AA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">cc</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="n">N</span> <span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;N&#39;</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span> <span class="c">#number of trials allowed</span>
+<span class="n">I</span> <span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;I&#39;</span><span class="p">,</span><span class="n">cvx</span><span class="o">.</span><span class="n">spmatrix</span><span class="p">([</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">),(</span><span class="n">m</span><span class="p">,</span><span class="n">m</span><span class="p">)))</span> <span class="c">#identity matrix</span>
+<span class="n">Z</span><span class="o">=</span><span class="p">[</span><span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Z[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">n</span><span class="o">=</span><span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="s">&#39;integer&#39;</span><span class="p">)</span>
+<span class="n">t</span><span class="o">=</span><span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="o">&lt;</span><span class="n">n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#constraints</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+<span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+        <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span> <span class="c">#summands</span>
+        <span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="c">#index</span>
+        <span class="s">&#39;[s]&#39;</span> <span class="c">#set to which the index belongs</span>
+        <span class="p">)</span>
+        <span class="o">==</span> <span class="n">I</span> <span class="p">)</span>
+
+<span class="n">prob_exact_A</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span> <span class="mi">1</span><span class="o">|</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">N</span> <span class="p">)</span>
+<span class="n">prob_exact_A</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="mi">1</span><span class="o">|</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c">#solve the problem and display the optimal design</span>
+<span class="k">print</span> <span class="n">prob_exact_A</span>
+<span class="n">prob_exact_A</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;mosek&#39;</span><span class="p">,</span><span class="n">verbose</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">n</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (MISOCP):
+136 variables, 26 affine constraints, 136 vars in 8 SO cones
+
+Z       : list of 8 variables, (3, 5), continuous
+n       : (8, 1), integer
+t       : (8, 1), continuous
+
+        minimize 〈 |1| | t 〉
+such that
+||Z[i]||^2 &lt; ( n[i])( t[i]) for all i in [s]
+Σ_{i in [s]} A[i]*Z[i] = I
+〈 |1| | n 〉 &lt; N
+---------------------
+[...]
+[...]
+[ 5.00e+00]
+[ 3.00e+00]
+[ 2.00e+00]
+[ 2.00e+00]
+[ 3.00e+00]
+[ 5.00e+00]
+</pre></div>
+</div>
+</div>
+<div class="section" id="approximate-and-exact-d-optimal-design-mi-socp">
+<h2><em>approximate and exact D-optimal design: (MI)SOCP</em><a class="headerlink" href="#approximate-and-exact-d-optimal-design-mi-socp" title="Permalink to this headline">¶</a></h2>
+<p>The D-optimal design problem has a SOCP formulation involving a
+geometric mean in the objective function:</p>
+<div class="math">
+<p><img src="_images/math/6f2225eea093182717a8b7dd2c914802b15f2090.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{\substack{\mathbf{L} \in \mathbb{R}^{m \times m}\\
+                     \mathbf{w} \in \mathbb{R}^s\\
+                     \forall i \in [s],\ V_i \in \mathbb{R}^{l_i \times m}}}{\mbox{maximize}}
+                   &amp; \left(\prod_{i=1}^m L_{i,i}\right)^{1/m}\\
+&amp;\mbox{subject to} &amp; \sum_{i=1}^s A_i V_i = L,\\
+&amp;                  &amp; L\ \mbox{lower triangular},\\
+&amp;                  &amp; \Vert V_i \Vert_F \leq \sqrt{m}\ w_i,\\
+&amp;                  &amp; \sum_{i=1}^s w_i \leq 1.
+\end{eqnarray*}
+\end{center}"/></p>
+</div><p>By introducing a new variable <img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/> such that
+<img class="math" src="_images/math/1df06b49dc26314e09f50b4933e25cbfa6a02519.png" alt="t \leq \left(\prod_{i=1}^m L_{i,i}\right)^{1/m}"/>, we can pass
+this problem to PICOS with the function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></tt></a>,
+which reformulates the geometric mean inequality as a set of equivalent second order cone
+constraints.
+The example below allocates respectively 22.7%, 3.38%, 1.65%, 5.44%, 31.8% and 35.1%
+to the design points #3 to #8.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_D</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">m</span><span class="o">=</span><span class="n">AA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">mm</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;m&#39;</span><span class="p">,</span><span class="n">m</span><span class="p">)</span>
+<span class="n">L</span><span class="o">=</span><span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,(</span><span class="n">m</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+<span class="n">V</span><span class="o">=</span><span class="p">[</span><span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;V[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">w</span><span class="o">=</span><span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+<span class="c">#additional variable to handle the geometric mean in the objective function</span>
+<span class="n">t</span><span class="o">=</span> <span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+                <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[s]&#39;</span><span class="p">)</span>
+                <span class="o">==</span> <span class="n">L</span><span class="p">)</span>
+<span class="c">#L is lower triangular</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span> <span class="p">[</span><span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+                                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">m</span><span class="p">)],[</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;j&#39;</span><span class="p">],</span><span class="s">&#39;upper triangle&#39;</span><span class="p">)</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="p">(</span><span class="n">mm</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[s]&#39;</span><span class="p">)</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">w</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t</span><span class="o">&lt;</span><span class="n">pic</span><span class="o">.</span><span class="n">geomean</span><span class="p">(</span><span class="n">pic</span><span class="o">.</span><span class="n">diag_vect</span><span class="p">(</span><span class="n">L</span><span class="p">)))</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c">#solve the problem and display the optimal design</span>
+<span class="k">print</span> <span class="n">prob_D</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (SOCP):
+159 variables, 36 affine constraints, 146 vars in 14 SO cones
+
+V   : list of 8 variables, (3, 5), continuous
+L   : (5, 5), continuous
+t   : (1, 1), continuous
+w   : (8, 1), continuous
+
+        maximize t
+such that
+L = Σ_{i in [s]} A[i]*V[i]
+L[i,j] = 0 for all (i,j) in upper triangle
+||V[i]|| &lt; (m)**0.5*w[i] for all i in [s]
+〈 |1| | w 〉 &lt; 1.0
+t&lt;geomean( diag(L))
+---------------------
+[...]
+[...]
+[ 2.27e-01]
+[ 3.38e-02]
+[ 1.65e-02]
+[ 5.44e-02]
+[ 3.18e-01]
+[ 3.51e-01]
+</pre></div>
+</div>
+<p>We point out that until
+the version 0.1.3 of PICOS, the SOC constraints used to
+represent the geometric mean had to be added manually. For the previous example,
+a possible trick consists in creating a variable <img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/>
+that must satisfies <img class="math" src="_images/math/bdf02e697137eccbf19d926ad9901f46a7848306.png" alt="t^8 \leq \prod_{i=0}^4 L_{i,i}"/>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#remove the geometric mean inequality</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">remove_constraint</span><span class="p">((</span><span class="mi">4</span><span class="p">,))</span>
+<span class="c">#additional variables to handle the product of the diagonal elements of L</span>
+<span class="n">u</span><span class="o">=</span><span class="p">{}</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;01&#39;</span><span class="p">,</span><span class="s">&#39;23&#39;</span><span class="p">,</span><span class="s">&#39;4.&#39;</span><span class="p">,</span><span class="s">&#39;0123&#39;</span><span class="p">,</span><span class="s">&#39;4...&#39;</span><span class="p">]:</span>
+        <span class="n">u</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;u[&#39;</span><span class="o">+</span><span class="n">k</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c">#SOC constraints to define u[&#39;01234&#39;] such that u[&#39;01234&#39;]**8 &lt; L[0,0] * L[1,1] * ... * L[4,4]</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;01&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>   <span class="o">&lt;</span><span class="n">L</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">L</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;23&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>   <span class="o">&lt;</span><span class="n">L</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">L</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;4.&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>   <span class="o">&lt;</span><span class="n">L</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;0123&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;01&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;23&#39;</span><span class="p">])</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;4...&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;4.&#39;</span><span class="p">])</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="o">&lt;</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;0123&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="s">&#39;4...&#39;</span><span class="p">])</span>
+
+<span class="c">#solve the problem and display the optimal design</span>
+<span class="k">print</span> <span class="n">prob_D</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<p>As for the A-optimal problem, there is an alternative SOCP formulation
+of D-optimality <a class="reference internal" href="#optdes-refs"><em>[2]</em></a>, in which integer constraints may be added.
+This allows us to formulate the exact D-optimal problem as a MISOCP.
+For <img class="math" src="_images/math/a9c063cb8351f7af81db871d176c9e23d3db2995.png" alt="N=20"/>,
+we obtain the following N-exact D-optimal design:
+<img class="math" src="_images/math/c1f119e1c9f50053e7375f94d17567c18bf7df43.png" alt="\mathbf{n}=[0,0,5,1,0,1,6,7]"/>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
+<span class="n">prob_exact_D</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">L</span><span class="o">=</span><span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,(</span><span class="n">m</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+<span class="n">V</span><span class="o">=</span><span class="p">[</span><span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;V[&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;]&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+<span class="n">T</span><span class="o">=</span><span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;T&#39;</span><span class="p">,(</span><span class="n">s</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+<span class="n">n</span><span class="o">=</span><span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="s">&#39;integer&#39;</span><span class="p">)</span>
+<span class="n">N</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;N&#39;</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+<span class="c">#additional variable to handle the geomean inequality</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c">#define the constraints and objective function</span>
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span>
+                <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;[s]&#39;</span><span class="p">)</span>
+                <span class="o">==</span> <span class="n">L</span><span class="p">)</span>
+<span class="c">#L is lower triangular</span>
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">(</span> <span class="p">[</span><span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+                                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">m</span><span class="p">)],[</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;j&#39;</span><span class="p">],</span><span class="s">&#39;upper triangle&#39;</span><span class="p">)</span>
+
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span><span class="n">k</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="o">&lt;</span><span class="n">n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">N</span><span class="o">*</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)],[</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;k&#39;</span><span class="p">])</span>
+
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_list_of_constraints</span><span class="p">([(</span><span class="mi">1</span><span class="o">|</span><span class="n">T</span><span class="p">[:,</span><span class="n">k</span><span class="p">])</span><span class="o">&lt;</span><span class="mi">1</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)],</span><span class="s">&#39;k&#39;</span><span class="p">)</span>
+
+
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">n</span><span class="o">&lt;</span><span class="n">N</span><span class="p">)</span>
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t</span><span class="o">&lt;</span><span class="n">pic</span><span class="o">.</span><span class="n">geomean</span><span class="p">(</span> <span class="n">pic</span><span class="o">.</span><span class="n">diag_vect</span><span class="p">(</span><span class="n">L</span><span class="p">)))</span>
+
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c">#solve the problem and display the optimal design</span>
+<span class="k">print</span> <span class="n">prob_exact_D</span>
+<span class="n">prob_exact_D</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;mosek&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">n</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (MISOCP):
+199 variables, 41 affine constraints, 218 vars in 46 SO cones
+
+V   : list of 8 variables, (3, 5), continuous
+L   : (5, 5), continuous
+T   : (8, 5), continuous
+n   : (8, 1), integer
+t   : (1, 1), continuous
+
+        maximize t
+such that
+L = Σ_{i in [s]} A[i]*V[i]
+L[i,j] = 0 for all (i,j) in upper triangle
+||V[i][:,k]||^2 &lt; ( n[i] / N)( T[i,k]) for all (i,k)
+〈 |1| | T[:,k] 〉 &lt; 1.0 for all k
+〈 |1| | n 〉 &lt; N
+t&lt;geomean( diag(L))
+---------------------
+[...]
+[...]
+[ 5.00e+00]
+[ 1.00e+00]
+[...]
+[ 1.00e+00]
+[ 6.00e+00]
+[ 7.00e+00]
+</pre></div>
+</div>
+</div>
+<div class="section" id="former-maxdet-formulation-of-the-d-optimal-design-sdp">
+<h2><em>Former MAXDET formulation of the D-optimal design: SDP</em><a class="headerlink" href="#former-maxdet-formulation-of-the-d-optimal-design-sdp" title="Permalink to this headline">¶</a></h2>
+<p>A so-called MAXDET Programming formulation of the D-optimal design
+has been known since the late 90&#8217;s <a class="reference internal" href="#optdes-refs"><em>[3]</em></a>, and
+can be reformulated as a SDP thanks to the <a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">detrootn()</span></tt></a> function.
+The following code finds the same design as the SOCP approach presented above.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#problem, variables and parameters</span>
+<span class="n">prob_D</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">m</span><span class="o">=</span><span class="n">AA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">prob_D</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c">#constraint and objective</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">Mw</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">detrootn</span><span class="p">(</span><span class="n">Mw</span><span class="p">))</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+
+<span class="c">#solve and display</span>
+<span class="k">print</span> <span class="n">prob_D</span>
+<span class="n">prob_D</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">w</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>---------------------
+optimization problem  (ConeP):
+29 variables, 1 affine constraints, 18 vars in 6 SO cones, 55 vars in 1 SD cones
+
+t   : (1, 1), continuous
+w   : (8, 1), continuous, nonnegative
+
+        maximize t
+such that
+〈 |1| | w 〉 &lt; 1.0
+det( Σ_i w[i]*A[i]*A[i].T)**1/5&gt;t
+---------------------
+[ ...]
+[ ...]
+[ 2.27e-01]
+[ 3.38e-02]
+[ 1.65e-02]
+[ 5.44e-02]
+[ 3.18e-01]
+[ 3.51e-01]
+</pre></div>
+</div>
+</div>
+<div class="section" id="general-phi-p-optimal-design-problem-sdp">
+<h2><em>General Phi_p optimal design Problem: SDP</em><a class="headerlink" href="#general-phi-p-optimal-design-problem-sdp" title="Permalink to this headline">¶</a></h2>
+<p>The A- and D-optimal design problems presented above can be obtained as special cases of the general
+Kiefer <img class="math" src="_images/math/48936d1b3ea7332a2abc6c11ec6d33d67be06167.png" alt="\Phi_p-"/> optimal design problem, where <img class="math" src="_images/math/3eca8557203e86160952e1c0f735f7417f3285b1.png" alt="p"/> is a real in <img class="math" src="_images/math/1d710bab8b59a86e7edbd8651fee846a226fda6d.png" alt="(-\infty,1]"/> :</p>
+<div class="math">
+<p><img src="_images/math/d9dabe90c8a79416cf18b8e7a5876570963b6765.png" alt="\begin{center}
+\begin{eqnarray*}
+&amp;\underset{w \in \mathbb{R}^s}{\mbox{maximize}}
+                   &amp;\quad \left( \frac{1}{m} \operatorname{trace}\ \big(\sum_{i=1}^s w_i A_i A_i^T \big)^p \right)^{1/p} \\
+&amp;\textrm{subject to} &amp;\quad w\geq0,\ \sum_{i=1}^s w_i \leq 1.
+\end{eqnarray*}
+
+\end{center}"/></p>
+</div><p>These problems are easy to enter in PICOS, thanks to the <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">tracepow()</span></tt></a> function,
+that automatically replaces inequalities involving trace of matrix powers as a set of equivalent linear matrix
+inequalities (SDP) (cf. <a class="reference internal" href="#optdes-refs"><em>[4]</em></a> ). Below are two examples with <img class="math" src="_images/math/3560a03d643d55e1920522e01fa9ff846dcb1f05.png" alt="p=0.2"/> and <img class="math" src="_images/math/9d3df2952578c30c3866122000f9f78aff29e218.png" alt="p=-3"/>,
+allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and
+(24.8%, 16.6%, 10.8%, 14.1%, 7.84%, 26.0%) of the trials to the design points 3 to 8.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#problems, variables and parameters</span>
+<span class="n">prob_0dot2</span>  <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">probminus3</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">]</span> <span class="c">#each AA[i].T is a 3 x 5 observation matrix</span>
+<span class="n">s</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">AA</span><span class="p">)</span>
+<span class="n">m</span><span class="o">=</span><span class="n">AA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">AA</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span><span class="n">AA</span><span class="p">)</span>
+
+<span class="n">w02</span> <span class="o">=</span> <span class="n">prob_0dot2</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">wm3</span> <span class="o">=</span> <span class="n">probminus3</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;w&#39;</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">t02</span> <span class="o">=</span> <span class="n">prob_0dot2</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">tm3</span> <span class="o">=</span> <span class="n">probminus3</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c">#constraint and objective</span>
+<span class="n">prob_0dot2</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">w02</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">probminus3</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="mi">1</span><span class="o">|</span><span class="n">wm3</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">Mw02</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">w02</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+<span class="n">prob_0dot2</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">t02</span> <span class="o">&lt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">tracepow</span><span class="p">(</span><span class="n">Mw02</span><span class="p">,</span><span class="mf">0.2</span><span class="p">))</span>
+<span class="n">prob_0dot2</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;max&#39;</span><span class="p">,</span><span class="n">t02</span><span class="p">)</span>
+
+<span class="n">Mwm3</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">wm3</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">AA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s</span><span class="p">)],</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+<span class="n">probminus3</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">tm3</span> <span class="o">&gt;</span> <span class="n">pic</span><span class="o">.</span><span class="n">tracepow</span><span class="p">(</span><span class="n">Mwm3</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">probminus3</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="s">&#39;min&#39;</span><span class="p">,</span><span class="n">tm3</span><span class="p">)</span>
+
+<span class="c">#solve and display</span>
+<span class="n">prob_0dot2</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">probminus3</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="s">&#39;*** p=0.2 ***&#39;</span>
+<span class="k">print</span> <span class="n">prob_0dot2</span>
+<span class="k">print</span> <span class="n">w02</span>
+
+<span class="k">print</span> <span class="s">&#39;*** p= -3 ***&#39;</span>
+<span class="k">print</span> <span class="n">probminus3</span>
+<span class="k">print</span> <span class="n">wm3</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>*** p=0.2 ***
+---------------------
+optimization problem  (SDP):
+54 variables, 2 affine constraints, 165 vars in 3 SD cones
+
+t   : (1, 1), continuous
+w   : (8, 1), continuous, nonnegative
+
+        maximize t
+such that
+〈 |1| | w 〉 &lt; 1.0
+trace( Σ_i w[i]*A[i]*A[i].T)**1/5&gt;t
+---------------------
+[ ...]
+[ ...]
+[ 2.06e-01]
+[ ...]
+[ ...]
+[ 9.21e-03]
+[ 4.08e-01]
+[ 3.77e-01]
+
+*** p= -3 ***
+---------------------
+optimization problem  (SDP):
+39 variables, 2 affine constraints, 110 vars in 2 SD cones
+
+t   : (1, 1), continuous
+w   : (8, 1), continuous, nonnegative
+
+        minimize t
+such that
+〈 |1| | w 〉 &lt; 1.0
+trace( Σ_i w[i]*A[i]*A[i].T)**-3&lt;t
+---------------------
+[ ...]
+[ ...]
+[ 2.48e-01]
+[ 1.66e-01]
+[ 1.08e-01]
+[ 1.41e-01]
+[ 7.83e-02]
+[ 2.60e-01]
+</pre></div>
+</div>
+</div>
+<div class="section" id="references">
+<span id="optdes-refs"></span><h2><em>References</em><a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li>&#8220;<a class="reference external" href="http://arxiv.org/abs/0912.5467">Computing Optimal Designs of multiresponse Experiments reduces to
+Second-Order Cone Programming</a>&#8221;, G. Sagnol,
+<em>Journal of Statistical Planning and Inference</em>,
+141(5), p. <em>1684-1708</em>, 2011.</li>
+<li>&#8220;<a class="reference external" href="http://arxiv.org/abs/1307.4953">Computing exact D-optimal designs by mixed integer second order cone
+programming</a>&#8221;,
+G. Sagnol and R. Harman, Submitted: arXiv:1307.4953.</li>
+<li>&#8220;<a class="reference external" href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.38.7483&amp;rep=rep1&amp;type=pdf">Determinant maximization with linear matrix inequality
+constraints</a>&#8221;,
+L. Vandenberghe, S. Boyd and S.P. Wu, <em>SIAM journal on matrix analysis and applications</em>,
+19(2), 499-533, 1998.</li>
+<li>&#8220;<a class="reference external" href="http://opus4.kobv.de/opus4-zib/frontdoor/index/index/docId/1751">On the semidefinite representations of real functions applied to symmetric
+matrices</a>&#8221;, G. Sagnol,
+<em>Linear Algebra and its Applications</em>,
+439(10), p. <em>2829-2843</em>, 2013.</li>
+</ol>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api.html" class="btn btn-neutral float-right" title="The PICOS Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="complex.html" class="btn btn-neutral" title="Complex Semidefinite Programming"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

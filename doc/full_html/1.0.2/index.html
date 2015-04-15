@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>PICOS: A Python Interface for Conic Optimization Solvers &mdash; picos 1.0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.0.2 documentation" href="#"/>
+        <link rel="next" title="Introduction" href="intro.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="#" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="#">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+      
+    <li>PICOS: A Python Interface for Conic Optimization Solvers</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+<div role="main" class="document"><div class="admonition warning" id="api"><p class="first admonition-title">Warning</p><p class="last">You are consulting the doc of a former version of PICOS. The latest version is <a href="../index.html">HERE</a>. </p></div>            
+  <div class="section" id="picos-a-python-interface-for-conic-optimization-solvers">
+<h1>PICOS: A Python Interface for Conic Optimization Solvers<a class="headerlink" href="#picos-a-python-interface-for-conic-optimization-solvers" title="Permalink to this headline">¶</a></h1>
+<img alt="_images/picos_big_trans.gif" src="_images/picos_big_trans.gif" />
+<p>Welcome to the documentation of PICOS,
+a user-friendly python interface to many linear and conic optimization solvers,
+see more about PICOS in the <a class="reference internal" href="intro.html#intro"><em>introduction</em></a>.</p>
+<p>The latest version can be downloaded <a class="reference internal" href="download.html#download"><em>here</em></a>,
+and can be installed by following <a class="reference internal" href="intro.html#requirements"><em>these instructions</em></a>.</p>
+<p>This documentation contains a <a class="reference internal" href="tuto_summary.html#tuto"><em>tutorial</em></a> and some <a class="reference internal" href="examples.html#examples"><em>examples</em></a>,
+which should already be enough for a quick start with PICOS. To go deeper,
+have a look at the <a class="reference internal" href="api.html#api"><em>picos reference</em></a>, which provides information
+on every function of PICOS.</p>
+<p><strong>News</strong></p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt>30 Jan. 15: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.2</em></a> <strong>Released</strong></dt>
+<dd><dl class="first last docutils">
+<dt>Major release with following new functionalities:</dt>
+<dd><ul class="first last simple">
+<li>Support (read and write) for <tt class="docutils literal"><span class="pre">.cbf</span></tt> problem files (<a class="reference external" href="http://cblib.zib.de/">conic benchmark format</a> ), which should be the standard for (mixed integer) conic optimization problems, cf. <a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file</span></tt></a> and <a class="reference internal" href="tools.html#picos.tools.import_cbf" title="picos.tools.import_cbf"><tt class="xref py py-func docutils literal"><span class="pre">import_cbf</span></tt></a> .</li>
+<li>Improved support for complex SDP (more efficient implementation of <a class="reference internal" href="problem.html#picos.Problem.to_real" title="picos.Problem.to_real"><tt class="xref py py-func docutils literal"><span class="pre">to_real()</span></tt></a> , corrected bug in the implementation of the scalar product for Hermitian matrices and the conjugate of a complex expression, support for equality constraints involving complex coefficients)</li>
+<li>Support for inequalities involving the sum of k largest elements of an affine expression, or the k largest eigenvalues of a symmetric matrix expression, cf. the functions <a class="reference internal" href="tools.html#picos.tools.sum_k_largest" title="picos.tools.sum_k_largest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.sum_k_smallest" title="picos.tools.sum_k_smallest"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.sum_k_largest_lambda" title="picos.tools.sum_k_largest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_largest_lambda()</span></tt></a>, <a class="reference internal" href="tools.html#picos.tools.sum_k_smallest_lambda" title="picos.tools.sum_k_smallest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">sum_k_smallest_lambda()</span></tt></a>, <a class="reference internal" href="tools.html#picos.tools.lambda_max" title="picos.tools.lambda_max"><tt class="xref py py-func docutils literal"><span class="pre">lambda_max()</span></tt></a> and <a class="reference internal" href="tools.html#picos.tools.lambda_min" title="picos.tools.lambda_min"><tt class="xref py py-func docutils literal"><span class="pre">lambda_min()</span></tt></a> .</li>
+<li>Support for inequalities involving the <img class="math" src="_images/math/ed7239a554be683d1c627394db65406808336314.png" alt="L_{p,q}-"/> norm of an affine expresison, cf. <a class="reference internal" href="tools.html#picos.tools.norm" title="picos.tools.norm"><tt class="xref py py-func docutils literal"><span class="pre">norm()</span></tt></a> .</li>
+<li>New <tt class="docutils literal"><span class="pre">vtype</span></tt> for antisymmetric matrix variables ( <a class="reference internal" href="expression.html#picos.Variable.vtype" title="picos.Variable.vtype"><tt class="xref py py-attr docutils literal"><span class="pre">vtype</span></tt></a> <tt class="docutils literal"><span class="pre">=</span> <span class="pre">antisym</span></tt>).</li>
+<li>Constraints can be specified as membership in a <a class="reference internal" href="expression.html#picos.Set" title="picos.Set"><tt class="xref py py-class docutils literal"><span class="pre">Set</span></tt></a> . Sets can be created by the functions <a class="reference internal" href="tools.html#picos.tools.ball" title="picos.tools.ball"><tt class="xref py py-func docutils literal"><span class="pre">ball()</span></tt></a> , <a class="reference internal" href="tools.html#picos.tools.simplex" title="picos.tools.simplex"><tt class="xref py py-func docutils literal"><span class="pre">simplex()</span></tt></a>, and <a class="reference internal" href="tools.html#picos.tools.truncated_simplex" title="picos.tools.truncated_simplex"><tt class="xref py py-func docutils literal"><span class="pre">truncated_simplex()</span></tt></a> .</li>
+<li>New functions <a class="reference internal" href="problem.html#picos.Problem.maximize" title="picos.Problem.maximize"><tt class="xref py py-func docutils literal"><span class="pre">maximize</span></tt></a> and <a class="reference internal" href="problem.html#picos.Problem.minimize" title="picos.Problem.minimize"><tt class="xref py py-func docutils literal"><span class="pre">maximize</span></tt></a> to specify the objective function of a problem and solve it.</li>
+</ul>
+</dd>
+<dt>And many thanks to <a class="reference external" href="http://peterwittek.com/">Petter Wittek</a> for the following improvements, who were motivated by the use of PICOS in the package <a class="reference external" href="http://peterwittek.github.io/ncpol2sdpa/">ncpol2sdpa</a> for optimization over noncommutative polynomials:</dt>
+<dd><ul class="first last simple">
+<li>More efficient implementation of the writer to the sparse - SDPA file format (<a class="reference internal" href="problem.html#picos.Problem.write_to_file" title="picos.Problem.write_to_file"><tt class="xref py py-func docutils literal"><span class="pre">write_to_file</span></tt></a>)</li>
+<li>Hadamard (elementwise) product of affine expression is implemented, as an overload of the <tt class="docutils literal"><span class="pre">^</span></tt> operator,   cf. an example <a class="reference internal" href="tuto.html#overloads"><em>here</em></a> .</li>
+<li>Partial transposition of an Affine Expression, cf. <a class="reference internal" href="tools.html#picos.tools.partial_transpose" title="picos.tools.partial_transpose"><tt class="xref py py-func docutils literal"><span class="pre">partial_transpose()</span></tt></a> or the <a class="reference internal" href="expression.html#picos.AffinExp.Tx" title="picos.AffinExp.Tx"><tt class="xref py py-attr docutils literal"><span class="pre">Tx</span></tt></a> attribute.</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>19 Jul. 13: <strong>Picos</strong> <a class="reference internal" href="download.html#download"><em>1.0.0</em></a> <strong>Released</strong> <br /></dt>
+<dd><p class="first last">with Semidefinite Programming Interface for MOSEK 7.0 !!!</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Former changes are listed <a class="reference internal" href="changes.html#changes"><em>here</em></a>.</p>
+</li>
+</ul>
+</div></blockquote>
+<p id="contents"><strong>PICOS Documentation contents</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="intro.html" class="btn btn-neutral float-right" title="Introduction">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

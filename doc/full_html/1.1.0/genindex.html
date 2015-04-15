@@ -1,0 +1,1056 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Index &mdash; picos 1.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="picos 1.1.0 documentation" href="index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+
+
+  <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-33037163-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+  </script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> picos</a>
+        
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#first-example">First Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#solvers">Solvers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#author-and-contributors">Author and contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tuto_summary.html">User&#8217;s guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="summary.html"><strong>Summary of implemented functions</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-to-manipulate-picos-expressions"><em>Operators to manipulate PICOS Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#operators-that-create-constraints"><em>Operators that create constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-affine-expressions"><em>functions that create affine expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-to-create-convex-constraints"><em>functions to create convex constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#functions-that-create-sets"><em>functions that create sets</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="summary.html#other-useful-functions"><em>Other useful functions</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tuto.html"><strong>Tutorial</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#variables"><em>Variables</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#affine-expressions"><em>Affine Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#norm-of-an-affine-expression"><em>Norm of an affine Expression</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#quadratic-expressions"><em>Quadratic Expressions</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#constraints"><em>Constraints</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#set-membership"><em>Set membership</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#write-a-problem-to-a-file"><em>Write a Problem to a file</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tuto.html#solve-a-problem"><em>Solve a Problem</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="graphs.html"><strong>Cut problems in graphs</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#max-flow-min-cut-lp"><em>Max-flow, Min-cut (LP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#multicut-mip"><em>Multicut (MIP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#maxcut-relaxation-sdp"><em>Maxcut relaxation (SDP)</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="graphs.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html"><strong>Complex Semidefinite Programming</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#fidelity-in-quantum-information-theory"><em>Fidelity in Quantum Information Theory</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#phase-recovery-in-signal-processing"><em>Phase Recovery in Signal Processing</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html#references"><em>References</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="optdes.html"><strong>Examples from Optimal Experimental Design</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-multi-response-socp"><em>c-optimality, multi-response: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#c-optimality-single-response-lp"><em>c-optimality, single-response: LP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#sdp-formulation-of-the-c-optimal-design-problem"><em>SDP formulation of the c-optimal design problem</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-socp"><em>A-optimality: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#a-optimality-with-multiple-constraints-socp"><em>A-optimality with multiple constraints: SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#exact-a-optimal-design-misocp"><em>Exact A-optimal design: MISOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#approximate-and-exact-d-optimal-design-mi-socp"><em>approximate and exact D-optimal design: (MI)SOCP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#former-maxdet-formulation-of-the-d-optimal-design-sdp"><em>Former MAXDET formulation of the D-optimal design: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#general-phi-p-optimal-design-problem-sdp"><em>General Phi_p optimal design Problem: SDP</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="optdes.html#references"><em>References</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The PICOS Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="problem.html"><strong>Problem</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html"><strong>picos.tools</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="expression.html"><strong>Expression</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#affinexp"><em>AffinExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#variable"><em>Variable</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#norm"><em>Norm</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#quadexp"><em>QuadExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#logsumexp"><em>LogSumExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#geomeanexp"><em>GeoMeanExp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#normp-exp"><em>NormP_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#tracepow-exp"><em>TracePow_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#detrootn-exp"><em>DetRootN_Exp</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#set"><em>Set</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#ball"><em>Ball</em></a></li>
+<li class="toctree-l3"><a class="reference internal" href="expression.html#truncated-simplex"><em>Truncated_Simplex</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="constraint.html"><strong>Constraint</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">Change History</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">picos</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li></li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ 
+</div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools._retrieve_matrix">_retrieve_matrix() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.add_constraint">add_constraint() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.add_list_of_constraints">add_list_of_constraints() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.add_variable">add_variable() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.QuadExp.aff">aff (picos.QuadExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.AffinExp">AffinExp (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.available_solvers">available_solvers() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Ball">Ball (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.ball">ball() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Variable.bnd">bnd (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.boundCons">boundCons (picos.Constraint attribute)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.check_current_value_feasibility">check_current_value_feasibility() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.AffinExp.conj">conj (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.AffinExp.constant">constant (picos.AffinExp attribute)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="constraint.html#picos.Constraint">Constraint (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.convert_quad_to_socp">convert_quad_to_socp() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.copy">copy() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.NormP_Exp.den2">den2 (picos.NormP_Exp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.NormP_Exp.denominator">denominator (picos.NormP_Exp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.TracePow_Exp.denominator">(picos.TracePow_Exp attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="tools.html#picos.tools.detrootn">detrootn() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.DetRootN_Constraint">DetRootN_Constraint (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.DetRootN_Exp">DetRootN_Exp (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools.diag">diag() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.diag_vect">diag_vect() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.DetRootN_Exp.dim">dim (picos.DetRootN_Exp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.TracePow_Exp.dim">(picos.TracePow_Exp attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="constraint.html#picos.Constraint.dual">dual (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.dualize">dualize() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Variable.endIndex">endIndex (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.eval_dict">eval_dict() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.DetRootN_Exp.exp">exp (picos.DetRootN_Exp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.GeoMeanExp.exp">(picos.GeoMeanExp attribute)</a>
+  </dt>
+
+        
+  <dt><a href="expression.html#picos.Norm.exp">(picos.Norm attribute)</a>
+  </dt>
+
+        
+  <dt><a href="expression.html#picos.NormP_Exp.exp">(picos.NormP_Exp attribute)</a>
+  </dt>
+
+        
+  <dt><a href="expression.html#picos.TracePow_Exp.exp">(picos.TracePow_Exp attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="constraint.html#picos.Constraint.Exp1">Exp1 (picos.Constraint attribute)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="constraint.html#picos.Constraint.Exp2">Exp2 (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.Exp3">Exp3 (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.exp3ConeVar">exp3ConeVar (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Expression">Expression (class in picos)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.factors">factors (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Flow_Constraint">Flow_Constraint (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools.flow_Constraint">flow_Constraint() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools.geomean">geomean() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.GeoMeanConstraint">GeoMeanConstraint (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.GeoMeanExp">GeoMeanExp (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.get_constraint">get_constraint() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.get_valued_variable">get_valued_variable() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.get_variable">get_variable() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.H">H (picos.AffinExp attribute)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.hadamard">hadamard() (picos.AffinExp method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="constraint.html#picos.Constraint.Id">Id (picos.Constraint attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.Variable.Id">(picos.Variable attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="expression.html#picos.AffinExp.imag">imag (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.import_cbf">import_cbf() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.is0">is0() (picos.AffinExp method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.is_continuous">is_continuous() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.AffinExp.isconstant">isconstant() (picos.AffinExp method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="constraint.html#picos.Constraint.key">key (picos.Constraint attribute)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools.lambda_max">lambda_max() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.lambda_min">lambda_min() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.LogSumExp">LogSumExp (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#picos.tools.lowtri">lowtri() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.QuadExp.LR">LR (picos.QuadExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.lse">lse() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.TracePow_Exp.M">M (picos.TracePow_Exp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.maximize">maximize() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.minimize">minimize() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Variable.name">name (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.new_param">new_param() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Norm">Norm (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.norm">norm() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.NormP_Constraint">NormP_Constraint (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.NormP_Exp">NormP_Exp (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.NormPQ_Constraint">NormPQ_Constraint (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.NormP_Exp.num2">num2 (picos.NormP_Exp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.NormP_Exp.numerator">numerator (picos.NormP_Exp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.TracePow_Exp.numerator">(picos.TracePow_Exp attribute)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.obj_value">obj_value() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Variable.parent_problem">parent_problem (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.partial_transpose">partial_transpose() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.passed">passed (picos.Constraint attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.Variable.passed">(picos.Variable attribute)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="tools.html#module-picos.tools">picos.tools (module)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.DetRootN_Constraint.prefix">prefix (picos.DetRootN_Constraint attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="constraint.html#picos.Flow_Constraint.prefix">(picos.Flow_Constraint attribute)</a>
+  </dt>
+
+        
+  <dt><a href="constraint.html#picos.GeoMeanConstraint.prefix">(picos.GeoMeanConstraint attribute)</a>
+  </dt>
+
+        
+  <dt><a href="constraint.html#picos.NormPQ_Constraint.prefix">(picos.NormPQ_Constraint attribute)</a>
+  </dt>
+
+        
+  <dt><a href="constraint.html#picos.NormP_Constraint.prefix">(picos.NormP_Constraint attribute)</a>
+  </dt>
+
+        
+  <dt><a href="constraint.html#picos.Sumklargest_Constraint.prefix">(picos.Sumklargest_Constraint attribute)</a>
+  </dt>
+
+        
+  <dt><a href="constraint.html#picos.TracePow_Constraint.prefix">(picos.TracePow_Constraint attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="problem.html#picos.Problem">Problem (class in picos)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.QuadExp.quad">quad (picos.QuadExp attribute)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.QuadExp">QuadExp (class in picos)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.real">real (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.remove_all_constraints">remove_all_constraints() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.remove_all_variable_bounds">remove_all_variable_bounds() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.remove_constraint">remove_constraint() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.remove_variable">remove_variable() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.reset_cplex_instance">reset_cplex_instance() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.reset_cvxopt_instance">reset_cvxopt_instance() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.reset_gurobi_instance">reset_gurobi_instance() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.reset_mosek_instance">reset_mosek_instance() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.reset_scip_instance">reset_scip_instance() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.Variable.semiDef">semiDef (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.semidefVar">semidefVar (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Set">Set (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.set_all_options_to_default">set_all_options_to_default() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Variable.set_lower">set_lower() (picos.Variable method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.set_objective">set_objective() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.set_option">set_option() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Variable.set_sparse_lower">set_sparse_lower() (picos.Variable method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Variable.set_sparse_upper">set_sparse_upper() (picos.Variable method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Variable.set_upper">set_upper() (picos.Variable method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.set_var_value">set_var_value() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.simplex">simplex() (in module picos.tools)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.size">size (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.slack">slack (picos.Constraint attribute)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.solve">solve() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.solver_selection">solver_selection() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Variable.startIndex">startIndex (picos.Variable attribute)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.sum">sum() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.sum_k_largest">sum_k_largest() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.sum_k_largest_lambda">sum_k_largest_lambda() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.sum_k_smallest">sum_k_smallest() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.sum_k_smallest_lambda">sum_k_smallest_lambda() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Sumklargest_Constraint">Sumklargest_Constraint (class in picos)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.T">T (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="problem.html#picos.Problem.to_real">to_real() (picos.Problem method)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.trace">trace() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.tracepow">tracepow() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.TracePow_Constraint">TracePow_Constraint (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.TracePow_Exp">TracePow_Exp (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.Truncated_Simplex">Truncated_Simplex (class in picos)</a>
+  </dt>
+
+      
+  <dt><a href="tools.html#picos.tools.truncated_simplex">truncated_simplex() (in module picos.tools)</a>
+  </dt>
+
+      
+  <dt><a href="expression.html#picos.AffinExp.Tx">Tx (picos.AffinExp attribute)</a>
+  </dt>
+
+      
+  <dt><a href="constraint.html#picos.Constraint.typeOfConstraint">typeOfConstraint (picos.Constraint attribute)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.update_options">update_options() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.value">value (picos.AffinExp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.LogSumExp.value">(picos.LogSumExp attribute)</a>
+  </dt>
+
+        
+  <dt><a href="expression.html#picos.Variable.value">(picos.Variable attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="expression.html#picos.Variable">Variable (class in picos)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="expression.html#picos.AffinExp.vtype">vtype (picos.AffinExp attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="expression.html#picos.Variable.vtype">(picos.Variable attribute)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="problem.html#picos.Problem.write_to_file">write_to_file() (picos.Problem method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2012, Guillaume Sagnol.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
