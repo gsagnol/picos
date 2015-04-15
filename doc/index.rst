@@ -18,9 +18,13 @@ see more about PICOS in the :ref:`introduction <intro>`.
 
 The latest version can be downloaded :ref:`here <download>`,
 and can be installed by following :ref:`these instructions <requirements>`.
+Alternatively, you can clone the latest development version from **github**:
+``$ git clone https://github.com/gsagnol/picos.git``.
 
 This documentation contains a :ref:`tutorial <tuto>` and some :ref:`examples <examples>`,
-which should already be enough for a quick start with PICOS. To go deeper,
+which should already be enough for a quick start with PICOS.
+There is also a :ref:`summary <summary>` of useful implemented functions.
+To go deeper,
 have a look at the :ref:`picos reference <api>`, which provides information
 on every function of PICOS.
 
@@ -28,9 +32,9 @@ on every function of PICOS.
 **News**
 
  * 15 Apr. 15: **Picos** :ref:`1.1.0 <download>` **Released**
-    * PICOS is now compatible with **python 3+** (and remains compatible with python 2.6+). Many thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ for this compatibility layer !     If you plan to work with PICOS and python3, think to install the most recent version of your solver (Mosek, Cplex, Gurobi, or Cvxopt). SCIP is not supported in python3+ at this point (but remains supported with python 2.x).
+    * PICOS is now compatible with **python 3+** (and remains compatible with python 2.6+). Many thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ for this compatibility layer ! If you plan to work with PICOS and python3, think to install the most recent version of your solver (Mosek, Cplex, Gurobi, or Cvxopt). SCIP is not supported in python3+ at this point (but remains supported with python 2.x).
     
-    * PICOS is now available on **github**. 
+    * PICOS is now available on `github <http://github.com/gsagnol/picos>`_.
     
 
  * 30 Jan. 15: **Picos** :ref:`1.0.2 <download>` **Released**

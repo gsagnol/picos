@@ -273,7 +273,7 @@ returns the list of correctly installed solvers.
 Requirements
 ============
 
-PICOS has two dependencies: `numpy <http://numpy.scipy.org/>`_ 
+PICOS has three dependencies: `six <http://pythonhosted.org//six/>`_ , `numpy <http://numpy.scipy.org/>`_ 
 and
 `cvxopt <http://abel.ee.ucla.edu/cvxopt/>`_. (cvxopt is needed even if you
 do not use the cvxopt solvers, because picos relies on the
@@ -312,6 +312,15 @@ To test your installation, you can run the test file:
 This will generate a table with a list of results
 for each available solver and class of optimization problems.
 
+
+Alternatively, you can clone the latest development version from `github <http://github.com/gsagnol/picos>`_:
+
+.. code-block:: guess
+        
+        $ git clone https://github.com/gsagnol/picos.git
+
+in a directory that lies in your ``PYTHONPATH``.
+
 License
 =======
 
@@ -337,9 +346,13 @@ Author and contributors
 
         * Contributors: People who actively contributed to the code of Picos (in no particular order)
         
+                        * `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ 
+                        
                         * `Petter Wittek <http://peterwittek.com/>`_
         
                         * Paul Fournel
+                        
+                        * Arno Ulbricht
                         
                         * Bertrand Omont
         
