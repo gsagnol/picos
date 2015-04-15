@@ -16,6 +16,12 @@ make new directory in the full_html directory and update the symolic link "last"
 
 #git clone https://github.com/gsagnol/picos.git (to clone)
 merge master into master_github:
+git checkout master_github
+git merge master
+<if needed git rm of files that should not be there (RELEASE_CHECK?)>
 
 commit and push on master_github:
 git push github master_github
+<login with sagnol@zib.de>
+git checkout master
+

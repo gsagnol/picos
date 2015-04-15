@@ -19,7 +19,8 @@ see more about PICOS in the :ref:`introduction <intro>`.
 The latest version can be downloaded :ref:`here <download>`,
 and can be installed by following :ref:`these instructions <requirements>`.
 Alternatively, you can clone the latest development version from **github**:
-``$ git clone https://github.com/gsagnol/picos.git``.
+``$ git clone https://github.com/gsagnol/picos.git``. If you whish to collaborate on PICOS,
+please make a pull request on `github <http://github.com/gsagnol/picos>`_.
 
 This documentation contains a :ref:`tutorial <tuto>` and some :ref:`examples <examples>`,
 which should already be enough for a quick start with PICOS.
