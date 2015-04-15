@@ -27,6 +27,12 @@ on every function of PICOS.
 
 **News**
 
+ * 15 Apr. 15: **Picos** :ref:`1.1.0 <download>` **Released**
+    * PICOS is now compatible with **python 3+** (and remains compatible with python 2.6+). Many thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ for this compatibility layer !     If you plan to work with PICOS and python3, think to install the most recent version of your solver (Mosek, Cplex, Gurobi, or Cvxopt). SCIP is not supported in python3+ at this point (but remains supported with python 2.x).
+    
+    * PICOS is now available on **github**. 
+    
+
  * 30 Jan. 15: **Picos** :ref:`1.0.2 <download>` **Released**
     Major release with following new functionalities:
      * Support (read and write) for ``.cbf`` problem files (`conic benchmark format <http://cblib.zib.de/>`_ ), which should be the standard for (mixed integer) conic optimization problems, cf. :func:`write_to_file <picos.Problem.write_to_file>` and :func:`import_cbf <picos.tools.import_cbf>` . 
@@ -41,10 +47,6 @@ on every function of PICOS.
      * More efficient implementation of the writer to the sparse - SDPA file format (:func:`write_to_file <picos.Problem.write_to_file>`)
      * Hadamard (elementwise) product of affine expression is implemented, as an overload of the ``^`` operator,   cf. an example :ref:`here <overloads>` .
      * Partial transposition of an Affine Expression, cf. :func:`partial_transpose() <picos.tools.partial_transpose>` or the :attr:`Tx <picos.AffinExp.Tx>` attribute.
-
-
- * 19 Jul. 13: **Picos** :ref:`1.0.0 <download>` **Released** |br|
-        with Semidefinite Programming Interface for MOSEK 7.0 !!!
      
  * Former changes are listed :ref:`here <changes>`.
 
