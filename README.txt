@@ -1,7 +1,7 @@
 PICOS is a user friendly interface
 to several conic and integer programming solvers,
-very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_ under
-`MATLAB <http://www.mathworks.com/>`_.
+very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_
+or `CVX <http://cvxr.com/cvx/>`_  under `MATLAB <http://www.mathworks.com/>`_.
 
 The main motivation for PICOS is to have the possibility to
 enter an optimization problem as a *high level model*,
@@ -18,14 +18,40 @@ construct a list of constraints by using python list comprehensions,
 take slices of multidimensional variables, etc. 
 
 
+Author
+======
+
+Picos initial author and current primary developer is:
+                
+                  `Guillaume Sagnol <http://www.zib.de/sagnol>`_, <sagnol( a t )zib.de>
+
 Contributors
 ============
+                  
+People who actively contributed to the code of Picos (in no particular order)
 
-`Guillaume Sagnol <http://www.zib.de/sagnol>`_
+        * `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ 
+
+        * `Petter Wittek <http://peterwittek.com/>`_
+
+        * Paul Fournel
+        
+        * Arno Ulbricht
+
+        * Bertrand Omont
 
 Thanks also to
 ==============
 
-Bertrand Omont
+People who contributed to the improvement of Picos by sending
+their comments, ideas, questions, ... (in no particular order):
 
-`Elmar Swarat <http://www.zib.de/swarat>`_
+        * `Dan Stahlke <http://www.stahlke.org/>`_
+        
+        * `Marco Dalai <http://www.ing.unibs.it/~marco.dalai/>`_
+
+        * `Matteo Seminaroti <http://www.cwi.nl/people/2683/>`_
+        
+        * `Warren Schudy <http://cs.brown.edu/~ws/>`_
+        
+        * `Elmar Swarat <http://www.zib.de/swarat>`_
