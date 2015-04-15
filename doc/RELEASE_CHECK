@@ -15,13 +15,19 @@ et change version num dans conf.py and setup.py and __init__.py
 make new directory in the full_html directory and update the symolic link "last" with the ".." trick
 
 #git clone https://github.com/gsagnol/picos.git (to clone)
-merge master into master_github:
+
+##merge master into master_github:
 git checkout master_github
 git merge master
-<if needed git rm of files that should not be there (RELEASE_CHECK?)>
+##<if needed git rm of files that should not be there>
+git rm doc/RELEASE_CHECK
+git rm doc/_build
+git rm doc/full_html
 
-commit and push on master_github:
+##commit and push on master_github:
+git commit -a -m 'new rev'
+git push origin master_github
 git push github master_github
-<login with sagnol@zib.de>
+##<login with sagnol@zib.de>
 git checkout master
 
