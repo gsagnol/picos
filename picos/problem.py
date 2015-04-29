@@ -6528,7 +6528,6 @@ class Problem(object):
                 f.write(str(list(-P_b)).replace('[', '{').replace(']', '}'))
                 f.write('\n')
                 #coefs
-                from itertools import zip
                 for k in range(P_m+1):
                         if k != 0:
                                 v = sparse(G[:, k-1])
