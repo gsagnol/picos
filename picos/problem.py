@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.1.1dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.1.0 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -1884,8 +1884,8 @@ class Problem(object):
                 #TODO pb if bounds of old variables changed
                 if NUMVAR_NEW:
                         
-                        ub={j:grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
-                        lb={j:-grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
+                        ub=dict((j, grb.GRB.INFINITY) for j in range(NUMVAR_OLD,NUMVAR))
+                        lb=dict((j, -grb.GRB.INFINITY) for j in range(NUMVAR_OLD,NUMVAR))
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
                                                 in six.iteritems(self.variables)
@@ -2389,8 +2389,8 @@ class Problem(object):
                 if NUMVAR_NEW:
 
                         #specify bounds later, in constraints
-                        ub={j:cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
-                        lb={j:-cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
+                        ub=dict((j, cplex.infinity) for j in range(NUMVAR_OLD,NUMVAR))
+                        lb=dict((j, -cplex.infinity) for j in range(NUMVAR_OLD,NUMVAR))
                         
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
@@ -6528,6 +6528,7 @@ class Problem(object):
                 f.write(str(list(-P_b)).replace('[', '{').replace(']', '}'))
                 f.write('\n')
                 #coefs
+                from itertools import zip
                 for k in range(P_m+1):
                         if k != 0:
                                 v = sparse(G[:, k-1])
