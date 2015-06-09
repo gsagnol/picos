@@ -36,22 +36,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -62,7 +46,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,6 +150,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -201,44 +188,44 @@
 <span id="id1"></span><h1><strong>Constraint</strong><a class="headerlink" href="#constraint" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="picos.Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Constraint</tt><big>(</big><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#picos.Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">Constraint</code><span class="sig-paren">(</span><em>typeOfConstraint</em>, <em>Id</em>, <em>Exp1</em>, <em>Exp2</em>, <em>Exp3=None</em>, <em>dualVariable=None</em>, <em>key=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class for describing a constraint.</p>
 <dl class="attribute">
 <dt id="picos.Constraint.Exp1">
-<tt class="descname">Exp1</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp1" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Exp1</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp1" title="Permalink to this definition">¶</a></dt>
 <dd><p>LHS</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.Exp2">
-<tt class="descname">Exp2</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp2" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Exp2</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp2" title="Permalink to this definition">¶</a></dt>
 <dd><p>RHS
-(ignored for constraints of type <tt class="docutils literal"><span class="pre">lse</span></tt> and <tt class="docutils literal"><span class="pre">quad</span></tt>, where
-<tt class="docutils literal"><span class="pre">Exp2</span></tt> is set to <tt class="docutils literal"><span class="pre">0</span></tt>)</p>
+(ignored for constraints of type <code class="docutils literal"><span class="pre">lse</span></code> and <code class="docutils literal"><span class="pre">quad</span></code>, where
+<code class="docutils literal"><span class="pre">Exp2</span></code> is set to <code class="docutils literal"><span class="pre">0</span></code>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.Exp3">
-<tt class="descname">Exp3</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Second factor of the RHS for <tt class="docutils literal"><span class="pre">RScone</span></tt> constraints
-(see <a class="reference internal" href="#picos.Constraint.typeOfConstraint" title="picos.Constraint.typeOfConstraint"><tt class="xref py py-attr docutils literal"><span class="pre">typeOfConstraint</span></tt></a>).</p>
+<code class="descname">Exp3</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Exp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Second factor of the RHS for <code class="docutils literal"><span class="pre">RScone</span></code> constraints
+(see <a class="reference internal" href="#picos.Constraint.typeOfConstraint" title="picos.Constraint.typeOfConstraint"><code class="xref py py-attr docutils literal"><span class="pre">typeOfConstraint</span></code></a>).</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.Id">
-<tt class="descname">Id</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Id" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Id</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.Id" title="Permalink to this definition">¶</a></dt>
 <dd><p>An integer identifier</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.boundCons">
-<tt class="descname">boundCons</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.boundCons" title="Permalink to this definition">¶</a></dt>
+<code class="descname">boundCons</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.boundCons" title="Permalink to this definition">¶</a></dt>
 <dd><p>stores  list of bounds of the form (var,index,lower,upper)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.dual">
-<tt class="descname">dual</tt><a class="headerlink" href="#picos.Constraint.dual" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dual</code><a class="headerlink" href="#picos.Constraint.dual" title="Permalink to this definition">¶</a></dt>
 <dd><p>Value of the dual variable associated to this constraint</p>
 <p>See the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> in the tutorial
 for more information.</p>
@@ -246,54 +233,54 @@ for more information.</p>
 
 <dl class="attribute">
 <dt id="picos.Constraint.exp3ConeVar">
-<tt class="descname">exp3ConeVar</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.exp3ConeVar" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exp3ConeVar</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.exp3ConeVar" title="Permalink to this definition">¶</a></dt>
 <dd><p>for a constraint of the form ||x||&lt;u or ||x||^2&lt;u v, stores x, u and v</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.key">
-<tt class="descname">key</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.key" title="Permalink to this definition">¶</a></dt>
+<code class="descname">key</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.key" title="Permalink to this definition">¶</a></dt>
 <dd><p>A string to give a key name to the constraint</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.passed">
-<tt class="descname">passed</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.passed" title="Permalink to this definition">¶</a></dt>
+<code class="descname">passed</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.passed" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of solvers to which this constraints was already passed</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.semidefVar">
-<tt class="descname">semidefVar</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.semidefVar" title="Permalink to this definition">¶</a></dt>
+<code class="descname">semidefVar</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.semidefVar" title="Permalink to this definition">¶</a></dt>
 <dd><p>for a constraint of the form X&gt;&gt;0, stores the semidef variable</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.slack">
-<tt class="descname">slack</tt><a class="headerlink" href="#picos.Constraint.slack" title="Permalink to this definition">¶</a></dt>
+<code class="descname">slack</code><a class="headerlink" href="#picos.Constraint.slack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Value of the slack variable associated to this constraint
 (should be nonnegative/zero if the inequality/equality
-is satisfied: for an inequality of the type <tt class="docutils literal"><span class="pre">lhs&lt;rhs</span></tt>,
-the slack is <tt class="docutils literal"><span class="pre">rhs-lhs</span></tt>, and for <tt class="docutils literal"><span class="pre">lhs&gt;rhs</span></tt>
-the slack is <tt class="docutils literal"><span class="pre">lhs-rhs</span></tt>)</p>
+is satisfied: for an inequality of the type <code class="docutils literal"><span class="pre">lhs&lt;rhs</span></code>,
+the slack is <code class="docutils literal"><span class="pre">rhs-lhs</span></code>, and for <code class="docutils literal"><span class="pre">lhs&gt;rhs</span></code>
+the slack is <code class="docutils literal"><span class="pre">lhs-rhs</span></code>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="picos.Constraint.typeOfConstraint">
-<tt class="descname">typeOfConstraint</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.typeOfConstraint" title="Permalink to this definition">¶</a></dt>
+<code class="descname">typeOfConstraint</code><em class="property"> = None</em><a class="headerlink" href="#picos.Constraint.typeOfConstraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A string from the following values,
 indicating the type of constraint:</p>
 <blockquote>
 <div><ul class="simple">
-<li><tt class="docutils literal"><span class="pre">lin&lt;</span></tt>, <tt class="docutils literal"><span class="pre">lin=</span></tt> or <tt class="docutils literal"><span class="pre">lin&gt;</span></tt> : Linear (in)equality
-<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≤</span> <span class="pre">Exp2</span></tt>, <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">=</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≥</span> <span class="pre">Exp2</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">SOcone</span></tt> : Second Order Cone constraint <tt class="docutils literal"><span class="pre">||Exp1||</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">RScone</span></tt> : Rotated Cone constraint
-<tt class="docutils literal"><span class="pre">||Exp1||**2</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span> <span class="pre">*</span> <span class="pre">Exp3</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">lse</span></tt> : Geometric Programming constraint <tt class="docutils literal"><span class="pre">LogSumExp(Exp1)&lt;0</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">quad</span></tt>: scalar quadratic constraint <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">&lt;</span> <span class="pre">0</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">sdp&lt;</span></tt> or <tt class="docutils literal"><span class="pre">sdp&gt;</span></tt>: semidefinite constraint
-<tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≼</span> <span class="pre">Exp2</span></tt> or <tt class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≽</span> <span class="pre">Exp2</span></tt>.</li>
+<li><code class="docutils literal"><span class="pre">lin&lt;</span></code>, <code class="docutils literal"><span class="pre">lin=</span></code> or <code class="docutils literal"><span class="pre">lin&gt;</span></code> : Linear (in)equality
+<code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≤</span> <span class="pre">Exp2</span></code>, <code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">=</span> <span class="pre">Exp2</span></code> or <code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≥</span> <span class="pre">Exp2</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">SOcone</span></code> : Second Order Cone constraint <code class="docutils literal"><span class="pre">||Exp1||</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">RScone</span></code> : Rotated Cone constraint
+<code class="docutils literal"><span class="pre">||Exp1||**2</span> <span class="pre">&lt;</span> <span class="pre">Exp2</span> <span class="pre">*</span> <span class="pre">Exp3</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">lse</span></code> : Geometric Programming constraint <code class="docutils literal"><span class="pre">LogSumExp(Exp1)&lt;0</span></code></li>
+<li><code class="docutils literal"><span class="pre">quad</span></code>: scalar quadratic constraint <code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">sdp&lt;</span></code> or <code class="docutils literal"><span class="pre">sdp&gt;</span></code>: semidefinite constraint
+<code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≼</span> <span class="pre">Exp2</span></code> or <code class="docutils literal"><span class="pre">Exp1</span> <span class="pre">≽</span> <span class="pre">Exp2</span></code>.</li>
 </ul>
 </div></blockquote>
 </dd></dl>
@@ -302,12 +289,12 @@ indicating the type of constraint:</p>
 
 <dl class="class">
 <dt id="picos.GeoMeanConstraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">GeoMeanConstraint</tt><big>(</big><em>expaff</em>, <em>expgeo</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.GeoMeanConstraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">GeoMeanConstraint</code><span class="sig-paren">(</span><em>expaff</em>, <em>expgeo</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.GeoMeanConstraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass geometric mean inequalities.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a>.</p>
 <dl class="attribute">
 <dt id="picos.GeoMeanConstraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.GeoMeanConstraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.GeoMeanConstraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -315,12 +302,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.NormP_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">NormP_Constraint</tt><big>(</big><em>expaff</em>, <em>expnorm</em>, <em>alpha</em>, <em>beta</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.NormP_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">NormP_Constraint</code><span class="sig-paren">(</span><em>expaff</em>, <em>expnorm</em>, <em>alpha</em>, <em>beta</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.NormP_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass p-norm inequalities.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 <dl class="attribute">
 <dt id="picos.NormP_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.NormP_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -328,12 +315,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.NormPQ_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">NormPQ_Constraint</tt><big>(</big><em>expaff</em>, <em>expnorm</em>, <em>p</em>, <em>q</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.NormPQ_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">NormPQ_Constraint</code><span class="sig-paren">(</span><em>expaff</em>, <em>expnorm</em>, <em>p</em>, <em>q</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.NormPQ_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass (p,q)-norm inequalities.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 <dl class="attribute">
 <dt id="picos.NormPQ_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.NormPQ_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.NormPQ_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -341,12 +328,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.TracePow_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">TracePow_Constraint</tt><big>(</big><em>exprhs</em>, <em>explhs</em>, <em>alpha</em>, <em>beta</em>, <em>M</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.TracePow_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">TracePow_Constraint</code><span class="sig-paren">(</span><em>exprhs</em>, <em>explhs</em>, <em>alpha</em>, <em>beta</em>, <em>M</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.TracePow_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass (trace of) pth power inequalities
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 <dl class="attribute">
 <dt id="picos.TracePow_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.TracePow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -354,12 +341,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.Flow_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Flow_Constraint</tt><big>(</big><em>G</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.Flow_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">Flow_Constraint</code><span class="sig-paren">(</span><em>G</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Flow_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass a flow constraint.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a>.</p>
 <dl class="attribute">
 <dt id="picos.Flow_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Flow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.Flow_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -367,12 +354,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.DetRootN_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">DetRootN_Constraint</tt><big>(</big><em>exprhs</em>, <em>expdet</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.DetRootN_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">DetRootN_Constraint</code><span class="sig-paren">(</span><em>exprhs</em>, <em>expdet</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.DetRootN_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass nth root of determinant inequalities.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 <dl class="attribute">
 <dt id="picos.DetRootN_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.DetRootN_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.DetRootN_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 
@@ -380,12 +367,12 @@ This class derives from <a class="reference internal" href="#picos.Constraint" t
 
 <dl class="class">
 <dt id="picos.Sumklargest_Constraint">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Sumklargest_Constraint</tt><big>(</big><em>rhs</em>, <em>exp</em>, <em>k</em>, <em>eigenvalues</em>, <em>islargest</em>, <em>Ptmp</em>, <em>constring</em><big>)</big><a class="headerlink" href="#picos.Sumklargest_Constraint" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">Sumklargest_Constraint</code><span class="sig-paren">(</span><em>rhs</em>, <em>exp</em>, <em>k</em>, <em>eigenvalues</em>, <em>islargest</em>, <em>Ptmp</em>, <em>constring</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Sumklargest_Constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>A temporary object used to pass constraints involving &#8220;sum of k largest elements&#8221;.
-This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+This class derives from <a class="reference internal" href="#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 <dl class="attribute">
 <dt id="picos.Sumklargest_Constraint.prefix">
-<tt class="descname">prefix</tt><em class="property"> = None</em><a class="headerlink" href="#picos.Sumklargest_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">prefix</code><em class="property"> = None</em><a class="headerlink" href="#picos.Sumklargest_Constraint.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>prefix to be added to the names of the temporary variables when add_constraint() is called</p>
 </dd></dl>
 

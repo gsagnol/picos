@@ -36,22 +36,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -62,7 +46,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,6 +150,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -201,23 +188,23 @@
 <span id="id1"></span><h1><strong>Problem</strong><a class="headerlink" href="#problem" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="picos.Problem">
-<em class="property">class </em><tt class="descclassname">picos.</tt><tt class="descname">Problem</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#picos.Problem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">picos.</code><code class="descname">Problem</code><span class="sig-paren">(</span><em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class represents an optimization problem.
 The constructor creates an empty problem.
 Some options can be provided under the form
-<tt class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></tt>.
+<code class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></code>.
 See the list of available options
-in the doc of <a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a></p>
+in the doc of <a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><code class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></code></a></p>
 <dl class="method">
 <dt id="picos.Problem.add_constraint">
-<tt class="descname">add_constraint</tt><big>(</big><em>cons</em>, <em>key=None</em>, <em>ret=False</em><big>)</big><a class="headerlink" href="#picos.Problem.add_constraint" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_constraint</code><span class="sig-paren">(</span><em>cons</em>, <em>key=None</em>, <em>ret=False</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.add_constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a constraint in the problem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>cons</strong> (<a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>) &#8211; The constraint to be added.</li>
+<li><strong>cons</strong> (<a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a>) &#8211; The constraint to be added.</li>
 <li><strong>key</strong> (<em>str.</em>) &#8211; Optional parameter to describe the constraint with a key string.</li>
 <li><strong>ret</strong> (<em>bool.</em>) &#8211; Do you want the added constraint to be returned ?
 This can be useful to access the dual of this constraint.</li>
@@ -230,7 +217,7 @@ This can be useful to access the dual of this constraint.</li>
 
 <dl class="method">
 <dt id="picos.Problem.add_list_of_constraints">
-<tt class="descname">add_list_of_constraints</tt><big>(</big><em>lst</em>, <em>it=None</em>, <em>indices=None</em>, <em>key=None</em>, <em>ret=False</em><big>)</big><a class="headerlink" href="#picos.Problem.add_list_of_constraints" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_list_of_constraints</code><span class="sig-paren">(</span><em>lst</em>, <em>it=None</em>, <em>indices=None</em>, <em>key=None</em>, <em>ret=False</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.add_list_of_constraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>adds a list of constraints in the problem.
 This fonction can be used with python list comprehensions
 (see the example below).</p>
@@ -239,7 +226,7 @@ This fonction can be used with python list comprehensions
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>lst</strong> &#8211; list of <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</li>
+<li><strong>lst</strong> &#8211; list of <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a>.</li>
 <li><strong>it</strong> (<em>None or str or list.</em>) &#8211; Description of the letters which should
 be used to replace the dummy indices.
 The function tries to find a template
@@ -249,12 +236,12 @@ list, their letters should be given as a
 list of strings, in their order of appearance in the
 resulting string. For example, if three indices
 change in the constraints, and you want them to be named
-<tt class="docutils literal"><span class="pre">'i'</span></tt>, <tt class="docutils literal"><span class="pre">'j'</span></tt> and <tt class="docutils literal"><span class="pre">'k'</span></tt>, set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">['i','j','k']</span></tt>.
+<code class="docutils literal"><span class="pre">'i'</span></code>, <code class="docutils literal"><span class="pre">'j'</span></code> and <code class="docutils literal"><span class="pre">'k'</span></code>, set <code class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">['i','j','k']</span></code>.
 You can also group two indices which always appear together,
-e.g. if <tt class="docutils literal"><span class="pre">'i'</span></tt> always appear next to <tt class="docutils literal"><span class="pre">'j'</span></tt> you
-could set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">[('ij',2),'k']</span></tt>. Here, the number 2
-indicates that <tt class="docutils literal"><span class="pre">'ij'</span></tt> replaces 2 indices.
-If <tt class="docutils literal"><span class="pre">it</span></tt> is set to <tt class="docutils literal"><span class="pre">None</span></tt>, or if the function is not
+e.g. if <code class="docutils literal"><span class="pre">'i'</span></code> always appear next to <code class="docutils literal"><span class="pre">'j'</span></code> you
+could set <code class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">[('ij',2),'k']</span></code>. Here, the number 2
+indicates that <code class="docutils literal"><span class="pre">'ij'</span></code> replaces 2 indices.
+If <code class="docutils literal"><span class="pre">it</span></code> is set to <code class="docutils literal"><span class="pre">None</span></code>, or if the function is not
 able to find a template,
 the string of the first constraint will be used for
 the string representation of the list of constraints.</li>
@@ -321,9 +308,9 @@ This can be useful to access the duals of these constraints.</li>
 
 <dl class="method">
 <dt id="picos.Problem.add_variable">
-<tt class="descname">add_variable</tt><big>(</big><em>name</em>, <em>size=1</em>, <em>vtype='continuous'</em>, <em>lower=None</em>, <em>upper=None</em><big>)</big><a class="headerlink" href="#picos.Problem.add_variable" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_variable</code><span class="sig-paren">(</span><em>name</em>, <em>size=1</em>, <em>vtype='continuous'</em>, <em>lower=None</em>, <em>upper=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.add_variable" title="Permalink to this definition">¶</a></dt>
 <dd><p>adds a variable in the problem,
-and returns the corresponding instance of the <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>.</p>
+and returns the corresponding instance of the <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><code class="xref py py-class docutils literal"><span class="pre">Variable</span></code></a>.</p>
 <p>For example,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
@@ -341,39 +328,39 @@ and returns the corresponding instance of the <a class="reference internal" href
 <p>Can be either:</p>
 <blockquote>
 <div><ul>
-<li>an <tt class="docutils literal"><span class="pre">int</span></tt> <em>n</em> , in which case the variable is a <strong>vector of dimension n</strong></li>
-<li>or a <tt class="docutils literal"><span class="pre">tuple</span></tt> <em>(n,m)</em>, and the variable is a <strong>n x m-matrix</strong>.</li>
+<li>an <code class="docutils literal"><span class="pre">int</span></code> <em>n</em> , in which case the variable is a <strong>vector of dimension n</strong></li>
+<li>or a <code class="docutils literal"><span class="pre">tuple</span></code> <em>(n,m)</em>, and the variable is a <strong>n x m-matrix</strong>.</li>
 </ul>
 </div></blockquote>
 </li>
-<li><strong>vtype</strong> (<em>str.</em>) &#8211; <p>variable <a class="reference internal" href="expression.html#picos.Variable.vtype" title="picos.Variable.vtype"><tt class="xref py py-attr docutils literal"><span class="pre">type</span></tt></a>. 
+<li><strong>vtype</strong> (<em>str.</em>) &#8211; <p>variable <a class="reference internal" href="expression.html#picos.Variable.vtype" title="picos.Variable.vtype"><code class="xref py py-attr docutils literal"><span class="pre">type</span></code></a>. 
 Can be:</p>
 <blockquote>
 <div><ul>
-<li><tt class="docutils literal"><span class="pre">'continuous'</span></tt> (default),</li>
-<li><tt class="docutils literal"><span class="pre">'binary'</span></tt>: 0/1 variable</li>
-<li><tt class="docutils literal"><span class="pre">'integer'</span></tt>: integer valued variable</li>
-<li><tt class="docutils literal"><span class="pre">'symmetric'</span></tt>: symmetric matrix</li>
-<li><tt class="docutils literal"><span class="pre">'antisym'</span></tt>: antisymmetric matrix</li>
-<li><tt class="docutils literal"><span class="pre">'complex'</span></tt>: complex matrix variable</li>
-<li><tt class="docutils literal"><span class="pre">'hermitian'</span></tt>: complex hermitian matrix</li>
-<li><tt class="docutils literal"><span class="pre">'semicont'</span></tt>: 0 or continuous variable satisfying its bounds (supported by CPLEX and GUROBI only)</li>
-<li><tt class="docutils literal"><span class="pre">'semiint'</span></tt>: 0 or integer variable satisfying its bounds (supported by CPLEX and GUROBI only)</li>
+<li><code class="docutils literal"><span class="pre">'continuous'</span></code> (default),</li>
+<li><code class="docutils literal"><span class="pre">'binary'</span></code>: 0/1 variable</li>
+<li><code class="docutils literal"><span class="pre">'integer'</span></code>: integer valued variable</li>
+<li><code class="docutils literal"><span class="pre">'symmetric'</span></code>: symmetric matrix</li>
+<li><code class="docutils literal"><span class="pre">'antisym'</span></code>: antisymmetric matrix</li>
+<li><code class="docutils literal"><span class="pre">'complex'</span></code>: complex matrix variable</li>
+<li><code class="docutils literal"><span class="pre">'hermitian'</span></code>: complex hermitian matrix</li>
+<li><code class="docutils literal"><span class="pre">'semicont'</span></code>: 0 or continuous variable satisfying its bounds (supported by CPLEX and GUROBI only)</li>
+<li><code class="docutils literal"><span class="pre">'semiint'</span></code>: 0 or integer variable satisfying its bounds (supported by CPLEX and GUROBI only)</li>
 </ul>
 </div></blockquote>
 </li>
 <li><strong>lower</strong> (Any type recognized by the function
-<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>.) &#8211; a lower bound for the variable. Can be either a vector/matrix of the
+<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>.) &#8211; a lower bound for the variable. Can be either a vector/matrix of the
 same size as the variable, or a scalar (in which case all elements
 of the variable have the same lower bound).</li>
 <li><strong>upper</strong> (Any type recognized by the function
-<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>.) &#8211; an upper bound for the variable. Can be either a vector/matrix of the
+<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>.) &#8211; an upper bound for the variable. Can be either a vector/matrix of the
 same size as the variable, or a scalar (in which case all elements
 of the variable have the same upper bound).</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An instance of the class <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An instance of the class <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><code class="xref py py-class docutils literal"><span class="pre">Variable</span></code></a>.</p>
 </td>
 </tr>
 </tbody>
@@ -382,31 +369,31 @@ of the variable have the same upper bound).</li>
 
 <dl class="method">
 <dt id="picos.Problem.check_current_value_feasibility">
-<tt class="descname">check_current_value_feasibility</tt><big>(</big><em>tol=1e-05</em><big>)</big><a class="headerlink" href="#picos.Problem.check_current_value_feasibility" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns <tt class="docutils literal"><span class="pre">True</span></tt> if the
+<code class="descname">check_current_value_feasibility</code><span class="sig-paren">(</span><em>tol=1e-05</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.check_current_value_feasibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns <code class="docutils literal"><span class="pre">True</span></code> if the
 current value of the variabless
 is a feasible solution, up to the
-tolerance <tt class="docutils literal"><span class="pre">tol</span></tt>. If <tt class="docutils literal"><span class="pre">tol</span></tt> is set to <tt class="docutils literal"><span class="pre">None</span></tt>,
-the option parameter <tt class="docutils literal"><span class="pre">options['tol']</span></tt> is used instead.
+tolerance <code class="docutils literal"><span class="pre">tol</span></code>. If <code class="docutils literal"><span class="pre">tol</span></code> is set to <code class="docutils literal"><span class="pre">None</span></code>,
+the option parameter <code class="docutils literal"><span class="pre">options['tol']</span></code> is used instead.
 The integer feasibility is checked with a tolerance of 1e-3.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.convert_quad_to_socp">
-<tt class="descname">convert_quad_to_socp</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.convert_quad_to_socp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">convert_quad_to_socp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.convert_quad_to_socp" title="Permalink to this definition">¶</a></dt>
 <dd><p>replace quadratic constraints by equivalent second order cone constraints</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.copy">
-<tt class="descname">copy</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.copy" title="Permalink to this definition">¶</a></dt>
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>creates a copy of the problem.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.dualize">
-<tt class="descname">dualize</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.dualize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a Problem containing the Lagrangian dual of the current problem <tt class="docutils literal"><span class="pre">self</span></tt>.
+<code class="descname">dualize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.dualize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Problem containing the Lagrangian dual of the current problem <code class="docutils literal"><span class="pre">self</span></code>.
 More precisely, the current problem is parsed as a problem
 in a canonical primal form (cf. the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> of the tutorial),
 and the corresponding dual form is returned.</p>
@@ -414,7 +401,7 @@ and the corresponding dual form is returned.</p>
 
 <dl class="method">
 <dt id="picos.Problem.get_constraint">
-<tt class="descname">get_constraint</tt><big>(</big><em>ind</em><big>)</big><a class="headerlink" href="#picos.Problem.get_constraint" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_constraint</code><span class="sig-paren">(</span><em>ind</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.get_constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a constraint of the problem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -422,16 +409,16 @@ and the corresponding dual form is returned.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>int or tuple.</em>) &#8211; <p>There are two ways to index a constraint.</p>
 <ul class="simple">
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is an <em>int</em> <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, then the nth constraint (starting from 0)
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is an <em>int</em> <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, then the nth constraint (starting from 0)
 will be returned, where all the constraints are counted
 in the order where they were passed to the problem.</li>
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is a <em>tuple</em> <img class="math" src="_images/math/b5fce3e8349eac1e13ce1b0454b105ecb8eab595.png" alt="(k,i)"/>, then the ith constraint
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is a <em>tuple</em> <img class="math" src="_images/math/b5fce3e8349eac1e13ce1b0454b105ecb8eab595.png" alt="(k,i)"/>, then the ith constraint
 from the kth group of constraints is returned
 (starting from 0). By            
 <em>group of constraints</em>, it is meant a single constraint
 or a list of constraints added together with the
-function <a class="reference internal" href="#picos.Problem.add_list_of_constraints" title="picos.Problem.add_list_of_constraints"><tt class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></tt></a>.</li>
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is a tuple of length 1 <img class="math" src="_images/math/3d731a755bd962f48c7df66553fbfc2ce9a6e734.png" alt="(k,)"/>,
+function <a class="reference internal" href="#picos.Problem.add_list_of_constraints" title="picos.Problem.add_list_of_constraints"><code class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></code></a>.</li>
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is a tuple of length 1 <img class="math" src="_images/math/3d731a755bd962f48c7df66553fbfc2ce9a6e734.png" alt="(k,)"/>,
 then the list of constraints of the kth group is returned.</li>
 </ul>
 </td>
@@ -482,11 +469,11 @@ then the list of constraints of the kth group is returned.</li>
 
 <dl class="method">
 <dt id="picos.Problem.get_valued_variable">
-<tt class="descname">get_valued_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#picos.Problem.get_valued_variable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the value of the variable (as an <tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt>)
-with the given <tt class="docutils literal"><span class="pre">name</span></tt>.
-If <tt class="docutils literal"><span class="pre">name</span></tt> refers to a list (resp. dict) of variables,
-named with the template <tt class="docutils literal"><span class="pre">name[index]</span></tt> (resp. <tt class="docutils literal"><span class="pre">name[key]</span></tt>),
+<code class="descname">get_valued_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.get_valued_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the variable (as an <code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></code>)
+with the given <code class="docutils literal"><span class="pre">name</span></code>.
+If <code class="docutils literal"><span class="pre">name</span></code> refers to a list (resp. dict) of variables,
+named with the template <code class="docutils literal"><span class="pre">name[index]</span></code> (resp. <code class="docutils literal"><span class="pre">name[key]</span></code>),
 then the function returns the list (resp. dict)
 of these variables.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -507,11 +494,11 @@ this function will raise an Exception.</p>
 
 <dl class="method">
 <dt id="picos.Problem.get_variable">
-<tt class="descname">get_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#picos.Problem.get_variable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the variable (as a <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt></a>)
-with the given <tt class="docutils literal"><span class="pre">name</span></tt>.
-If <tt class="docutils literal"><span class="pre">name</span></tt> refers to a list (resp. dict) of variables,
-named with the template <tt class="docutils literal"><span class="pre">name[index]</span></tt> (resp. <tt class="docutils literal"><span class="pre">name[key]</span></tt>),
+<code class="descname">get_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.get_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the variable (as a <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><code class="xref py py-class docutils literal"><span class="pre">Variable</span></code></a>)
+with the given <code class="docutils literal"><span class="pre">name</span></code>.
+If <code class="docutils literal"><span class="pre">name</span></code> refers to a list (resp. dict) of variables,
+named with the template <code class="docutils literal"><span class="pre">name[index]</span></code> (resp. <code class="docutils literal"><span class="pre">name[key]</span></code>),
 then the function returns the list (resp. dict)
 of these variables.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -526,66 +513,66 @@ of these variables.</p>
 
 <dl class="method">
 <dt id="picos.Problem.is_continuous">
-<tt class="descname">is_continuous</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.is_continuous" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if there are only continuous variables</p>
+<code class="descname">is_continuous</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.is_continuous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="docutils literal"><span class="pre">True</span></code> if there are only continuous variables</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.maximize">
-<tt class="descname">maximize</tt><big>(</big><em>obj</em>, <em>**options</em><big>)</big><a class="headerlink" href="#picos.Problem.maximize" title="Permalink to this definition">¶</a></dt>
-<dd><p>sets the objective (&#8216;max&#8217;,``obj``) and calls the function <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> .</p>
+<code class="descname">maximize</code><span class="sig-paren">(</span><em>obj</em>, <em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.maximize" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets the objective (&#8216;max&#8217;,``obj``) and calls the function <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><code class="xref py py-func docutils literal"><span class="pre">solve()</span></code></a> .</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.minimize">
-<tt class="descname">minimize</tt><big>(</big><em>obj</em>, <em>**options</em><big>)</big><a class="headerlink" href="#picos.Problem.minimize" title="Permalink to this definition">¶</a></dt>
-<dd><p>sets the objective (&#8216;min&#8217;,``obj``) and calls the function <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> .</p>
+<code class="descname">minimize</code><span class="sig-paren">(</span><em>obj</em>, <em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.minimize" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets the objective (&#8216;min&#8217;,``obj``) and calls the function <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><code class="xref py py-func docutils literal"><span class="pre">solve()</span></code></a> .</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.obj_value">
-<tt class="descname">obj_value</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.obj_value" title="Permalink to this definition">¶</a></dt>
+<code class="descname">obj_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.obj_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>If the problem was already solved, returns the objective value.
-Otherwise, it raises an <tt class="docutils literal"><span class="pre">AttributeError</span></tt>.</p>
+Otherwise, it raises an <code class="docutils literal"><span class="pre">AttributeError</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.remove_all_constraints">
-<tt class="descname">remove_all_constraints</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.remove_all_constraints" title="Permalink to this definition">¶</a></dt>
+<code class="descname">remove_all_constraints</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.remove_all_constraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes all constraints from the problem
 This function does not remove <em>hard-coded bounds</em> on variables;
-use the function <a class="reference internal" href="#picos.Problem.remove_all_variable_bounds" title="picos.Problem.remove_all_variable_bounds"><tt class="xref py py-func docutils literal"><span class="pre">remove_all_variable_bounds()</span></tt></a>
+use the function <a class="reference internal" href="#picos.Problem.remove_all_variable_bounds" title="picos.Problem.remove_all_variable_bounds"><code class="xref py py-func docutils literal"><span class="pre">remove_all_variable_bounds()</span></code></a>
 to do so.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.remove_all_variable_bounds">
-<tt class="descname">remove_all_variable_bounds</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.remove_all_variable_bounds" title="Permalink to this definition">¶</a></dt>
+<code class="descname">remove_all_variable_bounds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.remove_all_variable_bounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>remove all the lower and upper bounds on variables (i.e,, 
-<em>hard-coded bounds</em> passed in the attribute <tt class="docutils literal"><span class="pre">bnd</span></tt> of the variables.</p>
+<em>hard-coded bounds</em> passed in the attribute <code class="docutils literal"><span class="pre">bnd</span></code> of the variables.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.remove_constraint">
-<tt class="descname">remove_constraint</tt><big>(</big><em>ind</em><big>)</big><a class="headerlink" href="#picos.Problem.remove_constraint" title="Permalink to this definition">¶</a></dt>
+<code class="descname">remove_constraint</code><span class="sig-paren">(</span><em>ind</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.remove_constraint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes a constraint or a list of constraints of the problem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>int or tuple.</em>) &#8211; <p>The indexing of constraints works as in the
-function <a class="reference internal" href="#picos.Problem.get_constraint" title="picos.Problem.get_constraint"><tt class="xref py py-func docutils literal"><span class="pre">get_constraint()</span></tt></a>:</p>
+function <a class="reference internal" href="#picos.Problem.get_constraint" title="picos.Problem.get_constraint"><code class="xref py py-func docutils literal"><span class="pre">get_constraint()</span></code></a>:</p>
 <blockquote>
 <div><ul class="simple">
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is an integer <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, the nth constraint
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is an integer <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, the nth constraint
 (numbered from 0) is deleted</li>
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is a <em>tuple</em> <img class="math" src="_images/math/b5fce3e8349eac1e13ce1b0454b105ecb8eab595.png" alt="(k,i)"/>, then the ith constraint
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is a <em>tuple</em> <img class="math" src="_images/math/b5fce3e8349eac1e13ce1b0454b105ecb8eab595.png" alt="(k,i)"/>, then the ith constraint
 from the kth group of constraints is deleted
 (starting from 0). By            
 <em>group of constraints</em>, it is meant a single constraint
 or a list of constraints added together with the
-function <a class="reference internal" href="#picos.Problem.add_list_of_constraints" title="picos.Problem.add_list_of_constraints"><tt class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></tt></a>.</li>
-<li>if <tt class="docutils literal"><span class="pre">ind</span></tt> is a tuple of length 1 <img class="math" src="_images/math/3d731a755bd962f48c7df66553fbfc2ce9a6e734.png" alt="(k,)"/>,
+function <a class="reference internal" href="#picos.Problem.add_list_of_constraints" title="picos.Problem.add_list_of_constraints"><code class="xref py py-func docutils literal"><span class="pre">add_list_of_constraints()</span></code></a>.</li>
+<li>if <code class="docutils literal"><span class="pre">ind</span></code> is a tuple of length 1 <img class="math" src="_images/math/3d731a755bd962f48c7df66553fbfc2ce9a6e734.png" alt="(k,)"/>,
 then the whole kth group of constraints is deleted.</li>
 </ul>
 </div></blockquote>
@@ -655,8 +642,8 @@ then the whole kth group of constraints is deleted.</li>
 
 <dl class="method">
 <dt id="picos.Problem.remove_variable">
-<tt class="descname">remove_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#picos.Problem.remove_variable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes the variable <tt class="docutils literal"><span class="pre">name</span></tt> from the problem.
+<code class="descname">remove_variable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.remove_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the variable <code class="docutils literal"><span class="pre">name</span></code> from the problem.
 :param name: name of the variable to remove.
 :type name: str.</p>
 <div class="admonition warning">
@@ -668,161 +655,161 @@ to be removed.</p>
 
 <dl class="method">
 <dt id="picos.Problem.reset_cplex_instance">
-<tt class="descname">reset_cplex_instance</tt><big>(</big><em>onlyvar=True</em><big>)</big><a class="headerlink" href="#picos.Problem.reset_cplex_instance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_cplex_instance</code><span class="sig-paren">(</span><em>onlyvar=True</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.reset_cplex_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>reset the variables used by the solver cplex</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.reset_cvxopt_instance">
-<tt class="descname">reset_cvxopt_instance</tt><big>(</big><em>onlyvar=True</em><big>)</big><a class="headerlink" href="#picos.Problem.reset_cvxopt_instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>reset the variable <tt class="docutils literal"><span class="pre">cvxoptVars</span></tt>, used by the solver cvxopt (and smcp)</p>
+<code class="descname">reset_cvxopt_instance</code><span class="sig-paren">(</span><em>onlyvar=True</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.reset_cvxopt_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>reset the variable <code class="docutils literal"><span class="pre">cvxoptVars</span></code>, used by the solver cvxopt (and smcp)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.reset_gurobi_instance">
-<tt class="descname">reset_gurobi_instance</tt><big>(</big><em>onlyvar=True</em><big>)</big><a class="headerlink" href="#picos.Problem.reset_gurobi_instance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_gurobi_instance</code><span class="sig-paren">(</span><em>onlyvar=True</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.reset_gurobi_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>reset the variables used by the solver gurobi</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.reset_mosek_instance">
-<tt class="descname">reset_mosek_instance</tt><big>(</big><em>onlyvar=True</em><big>)</big><a class="headerlink" href="#picos.Problem.reset_mosek_instance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_mosek_instance</code><span class="sig-paren">(</span><em>onlyvar=True</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.reset_mosek_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>reset the variables used by the solver mosek</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.reset_scip_instance">
-<tt class="descname">reset_scip_instance</tt><big>(</big><em>onlyvar=True</em><big>)</big><a class="headerlink" href="#picos.Problem.reset_scip_instance" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_scip_instance</code><span class="sig-paren">(</span><em>onlyvar=True</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.reset_scip_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>reset the variables used by the solver scip</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.set_all_options_to_default">
-<tt class="descname">set_all_options_to_default</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.set_all_options_to_default" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_all_options_to_default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.set_all_options_to_default" title="Permalink to this definition">¶</a></dt>
 <dd><p>set all the options to their default.
 The following options are available, and can be passed
-as pairs of the form <tt class="docutils literal"><span class="pre">key=value</span></tt> to <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a> :</p>
+as pairs of the form <code class="docutils literal"><span class="pre">key=value</span></code> to <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><code class="xref py py-func docutils literal"><span class="pre">solve()</span></code></a> :</p>
 <ul>
 <li><p class="first">General options common to all solvers:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></tt> : verbosity level [0(quiet)|1|2(loud)]</li>
-<li><tt class="docutils literal"><span class="pre">solver</span> <span class="pre">=</span> <span class="pre">None</span></tt> : currently the available solvers are
-<tt class="docutils literal"><span class="pre">'cvxopt'</span></tt>, <tt class="docutils literal"><span class="pre">'cplex'</span></tt>, <tt class="docutils literal"><span class="pre">'mosek'</span></tt>, <tt class="docutils literal"><span class="pre">'gurobi'</span></tt>, <tt class="docutils literal"><span class="pre">'smcp'</span></tt>, <tt class="docutils literal"><span class="pre">'zibopt'</span></tt>.
+<li><code class="docutils literal"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></code> : verbosity level [0(quiet)|1|2(loud)]</li>
+<li><code class="docutils literal"><span class="pre">solver</span> <span class="pre">=</span> <span class="pre">None</span></code> : currently the available solvers are
+<code class="docutils literal"><span class="pre">'cvxopt'</span></code>, <code class="docutils literal"><span class="pre">'cplex'</span></code>, <code class="docutils literal"><span class="pre">'mosek'</span></code>, <code class="docutils literal"><span class="pre">'gurobi'</span></code>, <code class="docutils literal"><span class="pre">'smcp'</span></code>, <code class="docutils literal"><span class="pre">'zibopt'</span></code>.
 The default
-<tt class="docutils literal"><span class="pre">None</span></tt> means that you let picos select a suitable solver for you.</li>
-<li><tt class="docutils literal"><span class="pre">tol</span> <span class="pre">=</span> <span class="pre">1e-8</span></tt> : Relative gap termination tolerance
+<code class="docutils literal"><span class="pre">None</span></code> means that you let picos select a suitable solver for you.</li>
+<li><code class="docutils literal"><span class="pre">tol</span> <span class="pre">=</span> <span class="pre">1e-8</span></code> : Relative gap termination tolerance
 for interior-point optimizers (feasibility and complementary slackness).</li>
-<li><tt class="docutils literal"><span class="pre">maxit</span> <span class="pre">=</span> <span class="pre">None</span></tt> : maximum number of iterations
+<li><code class="docutils literal"><span class="pre">maxit</span> <span class="pre">=</span> <span class="pre">None</span></code> : maximum number of iterations
 (for simplex or interior-point optimizers).
 <em>This option is currently ignored by zibopt</em>.</li>
-<li><tt class="docutils literal"><span class="pre">lp_root_method</span> <span class="pre">=</span> <span class="pre">None</span></tt> : algorithm used to solve continuous LP
+<li><code class="docutils literal"><span class="pre">lp_root_method</span> <span class="pre">=</span> <span class="pre">None</span></code> : algorithm used to solve continuous LP
 problems, including the root relaxation of mixed integer problems.
-The default <tt class="docutils literal"><span class="pre">None</span></tt> selects automatically an algorithm.
-If set to <tt class="docutils literal"><span class="pre">psimplex</span></tt> (resp. <tt class="docutils literal"><span class="pre">dsimplex</span></tt>, <tt class="docutils literal"><span class="pre">interior</span></tt>), the solver
+The default <code class="docutils literal"><span class="pre">None</span></code> selects automatically an algorithm.
+If set to <code class="docutils literal"><span class="pre">psimplex</span></code> (resp. <code class="docutils literal"><span class="pre">dsimplex</span></code>, <code class="docutils literal"><span class="pre">interior</span></code>), the solver
 will use a primal simplex (resp. dual simplex, interior-point) algorithm.
 <em>This option currently works only with cplex, mosek and gurobi</em>.</li>
-<li><tt class="docutils literal"><span class="pre">lp_node_method</span> <span class="pre">=</span> <span class="pre">None</span></tt> : algorithm used to solve subproblems
+<li><code class="docutils literal"><span class="pre">lp_node_method</span> <span class="pre">=</span> <span class="pre">None</span></code> : algorithm used to solve subproblems
 at nodes of the branching trees of mixed integer programs.
-The default <tt class="docutils literal"><span class="pre">None</span></tt> selects automatically an algorithm.
-If set to <tt class="docutils literal"><span class="pre">psimplex</span></tt> (resp. <tt class="docutils literal"><span class="pre">dsimplex</span></tt>, <tt class="docutils literal"><span class="pre">interior</span></tt>), the solver
+The default <code class="docutils literal"><span class="pre">None</span></code> selects automatically an algorithm.
+If set to <code class="docutils literal"><span class="pre">psimplex</span></code> (resp. <code class="docutils literal"><span class="pre">dsimplex</span></code>, <code class="docutils literal"><span class="pre">interior</span></code>), the solver
 will use a primal simplex (resp. dual simplex, interior-point) algorithm.
 <em>This option currently works only with cplex, mosek and gurobi</em>.</li>
-<li><tt class="docutils literal"><span class="pre">timelimit</span> <span class="pre">=</span> <span class="pre">None</span></tt> : time limit for the solver, in seconds. The default
-<tt class="docutils literal"><span class="pre">None</span></tt> means no time limit.
+<li><code class="docutils literal"><span class="pre">timelimit</span> <span class="pre">=</span> <span class="pre">None</span></code> : time limit for the solver, in seconds. The default
+<code class="docutils literal"><span class="pre">None</span></code> means no time limit.
 <em>This option is currently ignored by cvxopt and smcp</em>.</li>
-<li><tt class="docutils literal"><span class="pre">treememory</span> <span class="pre">=</span> <span class="pre">None</span></tt>  : size of the buffer for the branch and bound tree,
+<li><code class="docutils literal"><span class="pre">treememory</span> <span class="pre">=</span> <span class="pre">None</span></code>  : size of the buffer for the branch and bound tree,
 in Megabytes. 
 <em>This option currently works only with cplex</em>.</li>
-<li><tt class="docutils literal"><span class="pre">gaplim</span> <span class="pre">=</span> <span class="pre">1e-4</span></tt> : For mixed integer problems,
+<li><code class="docutils literal"><span class="pre">gaplim</span> <span class="pre">=</span> <span class="pre">1e-4</span></code> : For mixed integer problems,
 the solver returns a solution as soon as this value for the gap is reached
 (relative gap between the primal and the dual bound).</li>
-<li><tt class="docutils literal"><span class="pre">noprimals</span> <span class="pre">=</span> <span class="pre">False</span></tt> : if <tt class="docutils literal"><span class="pre">True</span></tt>, do not copy the optimal variable values in the
-<a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> attribute of the problem variables.</li>
-<li><tt class="docutils literal"><span class="pre">noduals</span> <span class="pre">=</span> <span class="pre">False</span></tt> : if <tt class="docutils literal"><span class="pre">True</span></tt>, do not try to retrieve the dual variables.</li>
-<li><tt class="docutils literal"><span class="pre">nbsol</span> <span class="pre">=</span> <span class="pre">None</span></tt> : maximum number of feasible solution nodes visited
+<li><code class="docutils literal"><span class="pre">noprimals</span> <span class="pre">=</span> <span class="pre">False</span></code> : if <code class="docutils literal"><span class="pre">True</span></code>, do not copy the optimal variable values in the
+<a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><code class="xref py py-attr docutils literal"><span class="pre">value</span></code></a> attribute of the problem variables.</li>
+<li><code class="docutils literal"><span class="pre">noduals</span> <span class="pre">=</span> <span class="pre">False</span></code> : if <code class="docutils literal"><span class="pre">True</span></code>, do not try to retrieve the dual variables.</li>
+<li><code class="docutils literal"><span class="pre">nbsol</span> <span class="pre">=</span> <span class="pre">None</span></code> : maximum number of feasible solution nodes visited
 when solving a mixed integer problem.</li>
-<li><tt class="docutils literal"><span class="pre">hotstart</span> <span class="pre">=</span> <span class="pre">False</span></tt> : if <tt class="docutils literal"><span class="pre">True</span></tt>, the MIP optimizer tries to start from
+<li><code class="docutils literal"><span class="pre">hotstart</span> <span class="pre">=</span> <span class="pre">False</span></code> : if <code class="docutils literal"><span class="pre">True</span></code>, the MIP optimizer tries to start from
 the solution
-specified (even partly) in the <a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> attribute of the
+specified (even partly) in the <a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><code class="xref py py-attr docutils literal"><span class="pre">value</span></code></a> attribute of the
 problem variables.
 <em>This option currently works only with cplex, mosek and gurobi</em>.</li>
-<li><tt class="docutils literal"><span class="pre">convert_quad_to_socp_if_needed</span> <span class="pre">=</span> <span class="pre">True</span></tt> : Do we convert the convex quadratics to
+<li><code class="docutils literal"><span class="pre">convert_quad_to_socp_if_needed</span> <span class="pre">=</span> <span class="pre">True</span></code> : Do we convert the convex quadratics to
 second order cone constraints when the solver does not handle them directly ?</li>
-<li><tt class="docutils literal"><span class="pre">solve_via_dual</span> <span class="pre">=</span> <span class="pre">None</span></tt> : If set to <tt class="docutils literal"><span class="pre">True</span></tt>, the Lagrangian Dual (computed with the
-function <a class="reference internal" href="#picos.Problem.dualize" title="picos.Problem.dualize"><tt class="xref py py-func docutils literal"><span class="pre">dualize()</span></tt></a> ) is passed to the
+<li><code class="docutils literal"><span class="pre">solve_via_dual</span> <span class="pre">=</span> <span class="pre">None</span></code> : If set to <code class="docutils literal"><span class="pre">True</span></code>, the Lagrangian Dual (computed with the
+function <a class="reference internal" href="#picos.Problem.dualize" title="picos.Problem.dualize"><code class="xref py py-func docutils literal"><span class="pre">dualize()</span></code></a> ) is passed to the
 solver, instead of the problem itself. In some situations this can yield an
 important speed-up. In particular for Mosek and SOCPs/SDPs whose form is close to the
 standard primal form (as in the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> of the tutorial),
 since the MOSEK interface is better adapted for problems given in a <em>dual form</em>.
-When this option is set to <tt class="docutils literal"><span class="pre">None</span></tt> (default), PICOS chooses automatically whether the problem
+When this option is set to <code class="docutils literal"><span class="pre">None</span></code> (default), PICOS chooses automatically whether the problem
 itself should be passed to the solver, or rather its dual.</li>
 </ul>
 </li>
 <li><p class="first">Specific options available for cvxopt/smcp:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">feastol</span> <span class="pre">=</span> <span class="pre">None</span></tt> : feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
-If <tt class="docutils literal"><span class="pre">feastol</span></tt> has the default value <tt class="docutils literal"><span class="pre">None</span></tt>,
-then the value of the option <tt class="docutils literal"><span class="pre">tol</span></tt> is used.</li>
-<li><tt class="docutils literal"><span class="pre">abstol</span> <span class="pre">=</span> <span class="pre">None</span></tt> : absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
-If <tt class="docutils literal"><span class="pre">abstol</span></tt> has the default value <tt class="docutils literal"><span class="pre">None</span></tt>,
-then the value of the option <tt class="docutils literal"><span class="pre">tol</span></tt> is used.</li>
-<li><tt class="docutils literal"><span class="pre">reltol</span> <span class="pre">=</span> <span class="pre">None</span></tt> : relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
-If <tt class="docutils literal"><span class="pre">reltol</span></tt> has the default value <tt class="docutils literal"><span class="pre">None</span></tt>,
-then the value of the option <tt class="docutils literal"><span class="pre">tol</span></tt>, multiplied by <tt class="docutils literal"><span class="pre">10</span></tt>, is used.</li>
+<li><code class="docutils literal"><span class="pre">feastol</span> <span class="pre">=</span> <span class="pre">None</span></code> : feasibility tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
+If <code class="docutils literal"><span class="pre">feastol</span></code> has the default value <code class="docutils literal"><span class="pre">None</span></code>,
+then the value of the option <code class="docutils literal"><span class="pre">tol</span></code> is used.</li>
+<li><code class="docutils literal"><span class="pre">abstol</span> <span class="pre">=</span> <span class="pre">None</span></code> : absolute tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
+If <code class="docutils literal"><span class="pre">abstol</span></code> has the default value <code class="docutils literal"><span class="pre">None</span></code>,
+then the value of the option <code class="docutils literal"><span class="pre">tol</span></code> is used.</li>
+<li><code class="docutils literal"><span class="pre">reltol</span> <span class="pre">=</span> <span class="pre">None</span></code> : relative tolerance passed to <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters">cvx.solvers.options</a>
+If <code class="docutils literal"><span class="pre">reltol</span></code> has the default value <code class="docutils literal"><span class="pre">None</span></code>,
+then the value of the option <code class="docutils literal"><span class="pre">tol</span></code>, multiplied by <code class="docutils literal"><span class="pre">10</span></code>, is used.</li>
 </ul>
 </li>
 <li><p class="first">Specific options available for cplex:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">cplex_params</span> <span class="pre">=</span> <span class="pre">{}</span></tt> : a dictionary of
+<li><code class="docutils literal"><span class="pre">cplex_params</span> <span class="pre">=</span> <span class="pre">{}</span></code> : a dictionary of
 <a class="reference external" href="http://pic.dhe.ibm.com/infocenter/cosinfoc/v12r2/index.jsp?topic=%2Filog.odms.cplex.help%2FContent%2FOptimization%2FDocumentation%2FCPLEX%2F_pubskel%2FCPLEX934.html">cplex parameters</a>
 to be set before the cplex
 optimizer is called. For example,
-<tt class="docutils literal"><span class="pre">cplex_params={'mip.limits.cutpasses'</span> <span class="pre">:</span> <span class="pre">5}</span></tt>
+<code class="docutils literal"><span class="pre">cplex_params={'mip.limits.cutpasses'</span> <span class="pre">:</span> <span class="pre">5}</span></code>
 will limit the number of cutting plane passes when solving the root node
-to <tt class="docutils literal"><span class="pre">5</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">acceptable_gap_at_timelimit</span> <span class="pre">=</span> <span class="pre">None</span></tt> : If the the time limit is reached,
+to <code class="docutils literal"><span class="pre">5</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">acceptable_gap_at_timelimit</span> <span class="pre">=</span> <span class="pre">None</span></code> : If the the time limit is reached,
 the optimization process is aborted only if the current gap is less
-than this value. The default value <tt class="docutils literal"><span class="pre">None</span></tt> means that we
+than this value. The default value <code class="docutils literal"><span class="pre">None</span></code> means that we
 interrupt the computation regardless of the achieved gap.</li>
-<li><tt class="docutils literal"><span class="pre">uboundlimit</span> <span class="pre">=</span> <span class="pre">None</span></tt> : tells CPLEX to stop as soon as an upper
+<li><code class="docutils literal"><span class="pre">uboundlimit</span> <span class="pre">=</span> <span class="pre">None</span></code> : tells CPLEX to stop as soon as an upper
 bound smaller than this value is found.</li>
-<li><tt class="docutils literal"><span class="pre">lboundlimit</span> <span class="pre">=</span> <span class="pre">None</span></tt> : tells CPLEX to stop as soon as a lower
+<li><code class="docutils literal"><span class="pre">lboundlimit</span> <span class="pre">=</span> <span class="pre">None</span></code> : tells CPLEX to stop as soon as a lower
 bound larger than this value is found.</li>
-<li><tt class="docutils literal"><span class="pre">boundMonitor</span> <span class="pre">=</span> <span class="pre">True</span></tt> : tells CPLEX to store information about
+<li><code class="docutils literal"><span class="pre">boundMonitor</span> <span class="pre">=</span> <span class="pre">True</span></code> : tells CPLEX to store information about
 the evolution of the bounds during the solving process. At the end
-of the computation, a list of triples <tt class="docutils literal"><span class="pre">(time,lowerbound,upperbound)</span></tt>
-will be provided in the field <tt class="docutils literal"><span class="pre">bounds_monitor</span></tt> of the dictionary
-returned by <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><tt class="xref py py-func docutils literal"><span class="pre">solve()</span></tt></a>.</li>
+of the computation, a list of triples <code class="docutils literal"><span class="pre">(time,lowerbound,upperbound)</span></code>
+will be provided in the field <code class="docutils literal"><span class="pre">bounds_monitor</span></code> of the dictionary
+returned by <a class="reference internal" href="#picos.Problem.solve" title="picos.Problem.solve"><code class="xref py py-func docutils literal"><span class="pre">solve()</span></code></a>.</li>
 </ul>
 </li>
 <li><p class="first">Specific options available for mosek:</p>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">mosek_params</span> <span class="pre">=</span> <span class="pre">{}</span></tt> : a dictionary of
+<li><p class="first"><code class="docutils literal"><span class="pre">mosek_params</span> <span class="pre">=</span> <span class="pre">{}</span></code> : a dictionary of
 <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node017.html">mosek parameters</a>
 to be set before the mosek
 optimizer is called. For example,
-<tt class="docutils literal"><span class="pre">mosek_params={'simplex_abs_tol_piv'</span> <span class="pre">:</span> <span class="pre">1e-4}</span></tt>
+<code class="docutils literal"><span class="pre">mosek_params={'simplex_abs_tol_piv'</span> <span class="pre">:</span> <span class="pre">1e-4}</span></code>
 sets the absolute pivot tolerance of the
-simplex optimizer to <tt class="docutils literal"><span class="pre">1e-4</span></tt>.</p>
+simplex optimizer to <code class="docutils literal"><span class="pre">1e-4</span></code>.</p>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">handleBarVars</span> <span class="pre">=</span> <span class="pre">True</span></tt> : For semidefinite programming,
+<li><p class="first"><code class="docutils literal"><span class="pre">handleBarVars</span> <span class="pre">=</span> <span class="pre">True</span></code> : For semidefinite programming,
 Mosek handles the Linear Matrix Inequalities by using a separate
 class of variables, called <em>bar variables</em>, representing semidefinite positive matrices.</p>
-<p>If this option is set to <tt class="docutils literal"><span class="pre">False</span></tt>, Mosek adds a new <em>bar variable</em> for every LMI, and let the
+<p>If this option is set to <code class="docutils literal"><span class="pre">False</span></code>, Mosek adds a new <em>bar variable</em> for every LMI, and let the
 elements of the slack variable of the LMIs match the bar variables by adding equality constraints.</p>
-<p>If set to <tt class="docutils literal"><span class="pre">True</span></tt> (default), PICOS avoid creating useless bar variables for LMIs of the form <tt class="docutils literal"><span class="pre">X</span> <span class="pre">&gt;&gt;</span> <span class="pre">0</span></tt>: in this
-case <tt class="docutils literal"><span class="pre">X</span></tt> will be added in mosek directly as a <tt class="docutils literal"><span class="pre">bar</span> <span class="pre">variable</span></tt>. This can avoid
+<p>If set to <code class="docutils literal"><span class="pre">True</span></code> (default), PICOS avoid creating useless bar variables for LMIs of the form <code class="docutils literal"><span class="pre">X</span> <span class="pre">&gt;&gt;</span> <span class="pre">0</span></code>: in this
+case <code class="docutils literal"><span class="pre">X</span></code> will be added in mosek directly as a <code class="docutils literal"><span class="pre">bar</span> <span class="pre">variable</span></code>. This can avoid
 creating a lot of unnecessary variables for problems whose form is close to the canonical
 dual form (See the <a class="reference internal" href="tuto.html#noteduals"><em>note on dual variables</em></a> in the tutorial).</p>
-<p>See also the option <tt class="docutils literal"><span class="pre">solve_via_dual</span></tt>.</p>
+<p>See also the option <code class="docutils literal"><span class="pre">solve_via_dual</span></code>.</p>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">handleConeVars</span> <span class="pre">=</span> <span class="pre">True</span></tt> : For Second Order Cone Programming, Mosek handles the SOC inequalities
+<li><p class="first"><code class="docutils literal"><span class="pre">handleConeVars</span> <span class="pre">=</span> <span class="pre">True</span></code> : For Second Order Cone Programming, Mosek handles the SOC inequalities
 by <em>appending a standard cone</em>. This must be done in a careful way, since
 a single variable is not allowed to belong to several standard cones.</p>
-<p>If this option is set to <tt class="docutils literal"><span class="pre">False</span></tt>, Picos adds a new variable for each coordinate of a vector
+<p>If this option is set to <code class="docutils literal"><span class="pre">False</span></code>, Picos adds a new variable for each coordinate of a vector
 in a second order cone inequality, as well as an equality constraint to match the value of
 this coordinate with the value of the new variable.</p>
-<p>If set to <tt class="docutils literal"><span class="pre">True</span></tt>, additional variables are added only when needed, and simple changes of variables
+<p>If set to <code class="docutils literal"><span class="pre">True</span></code>, additional variables are added only when needed, and simple changes of variables
 are done in order to reduce the number of necessary additional variables.
 This can avoid
 creating a lot of unnecessary variables for problems whose form is close to the canonical
@@ -832,17 +819,17 @@ the SOC inequality <img class="math" src="_images/math/fd36bf6bb90d889c4c3b826c7
 and <img class="math" src="_images/math/0e22076955898e6c9bb38aa079135195c24dc81e.png" alt="v"/> will be added, with the constraint <img class="math" src="_images/math/9f4b9a0680a079f4449bf624855a62845a798e3f.png" alt="x-y=u"/> and <img class="math" src="_images/math/36dfe8dbee4715da02ce2323ce767d93d2c9ebe1.png" alt="5t=v"/>,
 and a change of variable <img class="math" src="_images/math/b0461631ee233576e8526ea6724b15918f38a324.png" alt="z'=3z"/> will be done. Then a standard cone with the variables 
 <img class="math" src="_images/math/dda3d714eed2336245eab4b54d84d06f1c2dd66c.png" alt="(v,x,u,z',t)"/> will be appended (cf. the doc of the mosek interface).</p>
-<p>See also the option <tt class="docutils literal"><span class="pre">solve_via_dual</span></tt>.</p>
+<p>See also the option <code class="docutils literal"><span class="pre">solve_via_dual</span></code>.</p>
 </li>
 </ul>
 </li>
 <li><p class="first">Specific options available for gurobi:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">gurobi_params</span> <span class="pre">=</span> <span class="pre">{}</span></tt> : a dictionary of
+<li><code class="docutils literal"><span class="pre">gurobi_params</span> <span class="pre">=</span> <span class="pre">{}</span></code> : a dictionary of
 <a class="reference external" href="http://www.gurobi.com/documentation/5.0/reference-manual/node653">gurobi parameters</a>
 to be set before the gurobi
 optimizer is called. For example,
-<tt class="docutils literal"><span class="pre">gurobi_params={'NodeLimit'</span> <span class="pre">:</span> <span class="pre">25}</span></tt>
+<code class="docutils literal"><span class="pre">gurobi_params={'NodeLimit'</span> <span class="pre">:</span> <span class="pre">25}</span></code>
 limits the number of nodes visited by the MIP optimizer to 25.</li>
 </ul>
 </li>
@@ -851,19 +838,19 @@ limits the number of nodes visited by the MIP optimizer to 25.</li>
 
 <dl class="method">
 <dt id="picos.Problem.set_objective">
-<tt class="descname">set_objective</tt><big>(</big><em>typ</em>, <em>expr</em><big>)</big><a class="headerlink" href="#picos.Problem.set_objective" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_objective</code><span class="sig-paren">(</span><em>typ</em>, <em>expr</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.set_objective" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the objective function of the problem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>typ</strong> (<em>str.</em>) &#8211; can be either <tt class="docutils literal"><span class="pre">'max'</span></tt> (maximization problem),
-<tt class="docutils literal"><span class="pre">'min'</span></tt> (minimization problem),
-or <tt class="docutils literal"><span class="pre">'find'</span></tt> (feasibility problem).</li>
-<li><strong>expr</strong> &#8211; an <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>. The expression to be minimized
+<li><strong>typ</strong> (<em>str.</em>) &#8211; can be either <code class="docutils literal"><span class="pre">'max'</span></code> (maximization problem),
+<code class="docutils literal"><span class="pre">'min'</span></code> (minimization problem),
+or <code class="docutils literal"><span class="pre">'find'</span></code> (feasibility problem).</li>
+<li><strong>expr</strong> &#8211; an <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><code class="xref py py-class docutils literal"><span class="pre">Expression</span></code></a>. The expression to be minimized
 or maximized. This parameter will be ignored
-if <tt class="docutils literal"><span class="pre">typ=='find'</span></tt>.</li>
+if <code class="docutils literal"><span class="pre">typ=='find'</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -873,7 +860,7 @@ if <tt class="docutils literal"><span class="pre">typ=='find'</span></tt>.</li>
 
 <dl class="method">
 <dt id="picos.Problem.set_option">
-<tt class="descname">set_option</tt><big>(</big><em>key</em>, <em>val</em><big>)</big><a class="headerlink" href="#picos.Problem.set_option" title="Permalink to this definition">¶</a></dt>
+<code class="descname">set_option</code><span class="sig-paren">(</span><em>key</em>, <em>val</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.set_option" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the option <strong>key</strong> to the value <strong>val</strong>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -882,7 +869,7 @@ if <tt class="docutils literal"><span class="pre">typ=='find'</span></tt>.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>key</strong> (<em>str.</em>) &#8211; The key of an option
 (see the list of keys in the doc of
-<a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>).</li>
+<a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><code class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></code></a>).</li>
 <li><strong>val</strong> &#8211; New value for the option.</li>
 </ul>
 </td>
@@ -893,8 +880,8 @@ if <tt class="docutils literal"><span class="pre">typ=='find'</span></tt>.</li>
 
 <dl class="method">
 <dt id="picos.Problem.set_var_value">
-<tt class="descname">set_var_value</tt><big>(</big><em>name</em>, <em>value</em>, <em>optimalvar=False</em><big>)</big><a class="headerlink" href="#picos.Problem.set_var_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the <a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> attribute of the
+<code class="descname">set_var_value</code><span class="sig-paren">(</span><em>name</em>, <em>value</em>, <em>optimalvar=False</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.set_var_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the <a class="reference internal" href="expression.html#picos.Variable.value" title="picos.Variable.value"><code class="xref py py-attr docutils literal"><span class="pre">value</span></code></a> attribute of the
 given variable.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -903,9 +890,9 @@ given variable.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> (<em>str.</em>) &#8211; name of the variable to which the value will be given</li>
 <li><strong>value</strong> &#8211; The value to be given. The type of
-<tt class="docutils literal"><span class="pre">value</span></tt> must be recognized by the function
-<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>,
-so that it can be parsed into a <tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt>
+<code class="docutils literal"><span class="pre">value</span></code> must be recognized by the function
+<a class="reference internal" href="tools.html#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>,
+so that it can be parsed into a <code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></code>
 of the desired size.</li>
 </ul>
 </td>
@@ -926,14 +913,14 @@ of the desired size.</li>
 
 <dl class="method">
 <dt id="picos.Problem.solve">
-<tt class="descname">solve</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#picos.Problem.solve" title="Permalink to this definition">¶</a></dt>
+<code class="descname">solve</code><span class="sig-paren">(</span><em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves the problem.</p>
 <p>Once the problem has been solved, the optimal variables
-can be obtained thanks to the property <tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt>
-of the class <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a>.
+can be obtained thanks to the property <code class="xref py py-attr docutils literal"><span class="pre">value</span></code>
+of the class <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><code class="xref py py-class docutils literal"><span class="pre">Expression</span></code></a>.
 The optimal dual variables can be accessed by the property
-<a class="reference internal" href="constraint.html#picos.Constraint.dual" title="picos.Constraint.dual"><tt class="xref py py-attr docutils literal"><span class="pre">dual</span></tt></a> of the class
-<a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a>.</p>
+<a class="reference internal" href="constraint.html#picos.Constraint.dual" title="picos.Constraint.dual"><code class="xref py py-attr docutils literal"><span class="pre">dual</span></code></a> of the class
+<a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -942,10 +929,10 @@ The optimal dual variables can be accessed by the property
 the call to the solver. In particular, 
 the solver can
 be specified here,
-under the form <tt class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></tt>.
+under the form <code class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></code>.
 See the list of available options
 in the doc of 
-<a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a></td>
+<a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><code class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary which contains the objective value of the problem,
 the time used by the solver, the status of the solver, and an object
@@ -957,14 +944,14 @@ which depends on the solver and contains information about the solving process.<
 
 <dl class="method">
 <dt id="picos.Problem.solver_selection">
-<tt class="descname">solver_selection</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.solver_selection" title="Permalink to this definition">¶</a></dt>
+<code class="descname">solver_selection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.solver_selection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Selects an appropriate solver for this problem
-and sets the option <tt class="docutils literal"><span class="pre">'solver'</span></tt>.</p>
+and sets the option <code class="docutils literal"><span class="pre">'solver'</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.to_real">
-<tt class="descname">to_real</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.Problem.to_real" title="Permalink to this definition">¶</a></dt>
+<code class="descname">to_real</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.to_real" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an equivalent problem,
 where the n x n- hermitian matrices have been replaced by 
 symmetric matrices of size 2n x 2n.</p>
@@ -972,15 +959,15 @@ symmetric matrices of size 2n x 2n.</p>
 
 <dl class="method">
 <dt id="picos.Problem.update_options">
-<tt class="descname">update_options</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#picos.Problem.update_options" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update_options</code><span class="sig-paren">(</span><em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.update_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>update the option dictionary, for each pair of the form
-<tt class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></tt>. For a list of available options and their default values,
-see the doc of <a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><tt class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></tt></a>.</p>
+<code class="docutils literal"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></code>. For a list of available options and their default values,
+see the doc of <a class="reference internal" href="#picos.Problem.set_all_options_to_default" title="picos.Problem.set_all_options_to_default"><code class="xref py py-func docutils literal"><span class="pre">set_all_options_to_default()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="picos.Problem.write_to_file">
-<tt class="descname">write_to_file</tt><big>(</big><em>filename</em>, <em>writer='picos'</em><big>)</big><a class="headerlink" href="#picos.Problem.write_to_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_to_file</code><span class="sig-paren">(</span><em>filename</em>, <em>writer='picos'</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.Problem.write_to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function writes the problem to a file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -992,30 +979,30 @@ extension of the file (if provided) indicates the format
 of the export:</p>
 <blockquote>
 <div><ul>
-<li><tt class="docutils literal"><span class="pre">'.cbf'</span></tt>: CBF (Conic Benchmark Format). This format
+<li><code class="docutils literal"><span class="pre">'.cbf'</span></code>: CBF (Conic Benchmark Format). This format
 is suitable for optimization problems involving
 second order and/or semidefinite cone constraints. This is
 the standard to use for conic optimization problems,
 cf. <a class="reference external" href="http://cblib.zib.de/">CBLIB</a> and 
 <a class="reference external" href="http://www.optimization-online.org/DB_HTML/2014/03/4301.html">this paper</a> from Henrik Friberg.</li>
-<li><tt class="docutils literal"><span class="pre">'.lp'</span></tt>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node022.html">LP format</a>
-. This format handles only linear constraints, unless the writer <tt class="docutils literal"><span class="pre">'cplex'</span></tt>
+<li><code class="docutils literal"><span class="pre">'.lp'</span></code>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node022.html">LP format</a>
+. This format handles only linear constraints, unless the writer <code class="docutils literal"><span class="pre">'cplex'</span></code>
 is used, and the file is saved in the extended
 <a class="reference external" href="http://pic.dhe.ibm.com/infocenter/cplexzos/v12r4/index.jsp?topic=%2Fcom.ibm.cplex.zos.help%2Fhomepages%2Freffileformatscplex.html">cplex LP format</a></li>
-<li><tt class="docutils literal"><span class="pre">'.mps'</span></tt>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node021.html">MPS format</a>
+<li><code class="docutils literal"><span class="pre">'.mps'</span></code>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node021.html">MPS format</a>
 (recquires mosek, gurobi or cplex).</li>
-<li><tt class="docutils literal"><span class="pre">'.opf'</span></tt>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node023.html">OPF format</a>
+<li><code class="docutils literal"><span class="pre">'.opf'</span></code>: <a class="reference external" href="http://docs.mosek.com/6.0/pyapi/node023.html">OPF format</a>
 (recquires mosek).</li>
-<li><tt class="docutils literal"><span class="pre">'.dat-s'</span></tt>: <a class="reference external" href="http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa">sparse SDPA format</a>
+<li><code class="docutils literal"><span class="pre">'.dat-s'</span></code>: <a class="reference external" href="http://sdpa.indsys.chuo-u.ac.jp/sdpa/download.html#sdpa">sparse SDPA format</a>
 This format is suitable to save semidefinite programs (SDP). SOC constraints are
 stored as semidefinite constraints with an <em>arrow pattern</em>.</li>
 </ul>
 </div></blockquote>
 </li>
-<li><strong>writer</strong> (<em>str.</em>) &#8211; The default writer is <tt class="docutils literal"><span class="pre">picos</span></tt>, which has its own <em>LP</em>, <em>CBF</em>, and
+<li><strong>writer</strong> (<em>str.</em>) &#8211; The default writer is <code class="docutils literal"><span class="pre">picos</span></code>, which has its own <em>LP</em>, <em>CBF</em>, and
 <em>sparse SDPA</em> write functions. If cplex, mosek or gurobi is installed,
-the user can pass the option <tt class="docutils literal"><span class="pre">writer='cplex'</span></tt>, <tt class="docutils literal"><span class="pre">writer='gurobi'</span></tt> or
-<tt class="docutils literal"><span class="pre">writer='mosek'</span></tt>, and the write function of this solver
+the user can pass the option <code class="docutils literal"><span class="pre">writer='cplex'</span></code>, <code class="docutils literal"><span class="pre">writer='gurobi'</span></code> or
+<code class="docutils literal"><span class="pre">writer='mosek'</span></code>, and the write function of this solver
 will be used.</li>
 </ul>
 </td>
@@ -1025,22 +1012,22 @@ will be used.</li>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <ul class="last">
-<li><p class="first">In the case of a SOCP, when the selected writer is <tt class="docutils literal"><span class="pre">'mosek'</span></tt>, the written file may
+<li><p class="first">In the case of a SOCP, when the selected writer is <code class="docutils literal"><span class="pre">'mosek'</span></code>, the written file may
 contain some changes of variables with respect to the original formulation
-when the option <tt class="docutils literal"><span class="pre">handleConeVars</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt> (this is the default).</p>
-<p>If this is an issue, turn the option <tt class="docutils literal"><span class="pre">handleConeVars</span></tt> to <tt class="docutils literal"><span class="pre">False</span></tt> and reset the
-mosek instance by calling <a class="reference internal" href="#picos.Problem.reset_mosek_instance" title="picos.Problem.reset_mosek_instance"><tt class="xref py py-func docutils literal"><span class="pre">reset_mosek_instance()</span></tt></a>,
+when the option <code class="docutils literal"><span class="pre">handleConeVars</span></code> is set to <code class="docutils literal"><span class="pre">True</span></code> (this is the default).</p>
+<p>If this is an issue, turn the option <code class="docutils literal"><span class="pre">handleConeVars</span></code> to <code class="docutils literal"><span class="pre">False</span></code> and reset the
+mosek instance by calling <a class="reference internal" href="#picos.Problem.reset_mosek_instance" title="picos.Problem.reset_mosek_instance"><code class="xref py py-func docutils literal"><span class="pre">reset_mosek_instance()</span></code></a>,
 but turning off this option may increase the number of variables and constraints.</p>
-<p>Otherwise, the set of change of variables can be queried by <tt class="docutils literal"><span class="pre">self.msk_scaledcols</span></tt>.
-Each (Key,Value) pair <tt class="docutils literal"><span class="pre">i</span> <span class="pre">-&gt;</span> <span class="pre">alpha</span></tt> of this dictionary indicates that
-the <tt class="docutils literal"><span class="pre">i</span></tt> th column has been rescaled by a factor <tt class="docutils literal"><span class="pre">alpha</span></tt>.</p>
+<p>Otherwise, the set of change of variables can be queried by <code class="docutils literal"><span class="pre">self.msk_scaledcols</span></code>.
+Each (Key,Value) pair <code class="docutils literal"><span class="pre">i</span> <span class="pre">-&gt;</span> <span class="pre">alpha</span></code> of this dictionary indicates that
+the <code class="docutils literal"><span class="pre">i</span></code> th column has been rescaled by a factor <code class="docutils literal"><span class="pre">alpha</span></code>.</p>
 </li>
 <li><p class="first">The CBF writer tries to write symmetric variables <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> in
-the section <tt class="docutils literal"><span class="pre">PSDVAR</span></tt> of the .cbf file. However, this is possible
+the section <code class="docutils literal"><span class="pre">PSDVAR</span></code> of the .cbf file. However, this is possible
 only if the constraint <img class="math" src="_images/math/c2f38d7ff9523a926636d12041eeb94aa61de08b.png" alt="X\succeq 0"/> appears in the problem,
 and no other LMI involves <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> . If these two conditions are
 not satisfied, then the symmetric-vectorization of <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> is
-used as a (free) variable of the section <tt class="docutils literal"><span class="pre">VAR</span></tt> in the .cbf file (cf. next paragraph).</p>
+used as a (free) variable of the section <code class="docutils literal"><span class="pre">VAR</span></code> in the .cbf file (cf. next paragraph).</p>
 </li>
 <li><p class="first">For problems involving a symmetric matrix variable <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/>
 (typically, semidefinite programs), the expressions

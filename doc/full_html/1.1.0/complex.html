@@ -36,22 +36,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -62,7 +46,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,6 +150,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -207,16 +194,16 @@ as relaxtions of combinatorial optimization problems, and
 has applications
 e.g. in Quantum Information Theory <a class="reference internal" href="#complex-refs"><em>[2]</em></a>, or
 for the phase recovery problem in signal processing <a class="reference internal" href="#complex-refs"><em>[3]</em></a>.</p>
-<p>To handle complex SDPs in Picos, we have introduced two new variable types: <tt class="docutils literal"><span class="pre">'complex'</span></tt>
-and <tt class="docutils literal"><span class="pre">'hermitian'</span></tt>. A complex variable can be created as follows:</p>
+<p>To handle complex SDPs in Picos, we have introduced two new variable types: <code class="docutils literal"><span class="pre">'complex'</span></code>
+and <code class="docutils literal"><span class="pre">'hermitian'</span></code>. A complex variable can be created as follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;Z&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="s">&#39;complex&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>it automatically creates two variables called <tt class="docutils literal"><span class="pre">Z_RE</span></tt> and <tt class="docutils literal"><span class="pre">Z_IM</span></tt> which contains the
-real and imaginary part of <tt class="docutils literal"><span class="pre">Z</span></tt>, and that be accessed by using the <tt class="docutils literal"><span class="pre">real</span></tt> and <tt class="docutils literal"><span class="pre">imag</span></tt> properties:</p>
+<p>it automatically creates two variables called <code class="docutils literal"><span class="pre">Z_RE</span></code> and <code class="docutils literal"><span class="pre">Z_IM</span></code> which contains the
+real and imaginary part of <code class="docutils literal"><span class="pre">Z</span></code>, and that be accessed by using the <code class="docutils literal"><span class="pre">real</span></code> and <code class="docutils literal"><span class="pre">imag</span></code> properties:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="o">.</span><span class="n">real</span>
 <span class="go"># variable Z_RE:(3 x 2),continuous #</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Z</span><span class="o">.</span><span class="n">imag</span>
@@ -225,13 +212,13 @@ real and imaginary part of <tt class="docutils literal"><span class="pre">Z</spa
 <span class="go">&#39;complex&#39;</span>
 </pre></div>
 </div>
-<p>The python variable <tt class="docutils literal"><span class="pre">Z</span></tt> contains an affine expression equal to <tt class="docutils literal"><span class="pre">Z_RE</span> <span class="pre">+</span> <span class="pre">1j</span> <span class="pre">*</span> <span class="pre">Z_IM</span></tt>,
+<p>The python variable <code class="docutils literal"><span class="pre">Z</span></code> contains an affine expression equal to <code class="docutils literal"><span class="pre">Z_RE</span> <span class="pre">+</span> <span class="pre">1j</span> <span class="pre">*</span> <span class="pre">Z_IM</span></code>,
 and that can be used to easily define a complex SDP.</p>
-<p>The variable type <tt class="docutils literal"><span class="pre">'hermitian'</span></tt> can be used to create a complex variable that is forced to be Hermitian.
-The following properties can now be used with every affine expression: <tt class="docutils literal"><span class="pre">conj</span></tt> (complex conjugate),
-<tt class="docutils literal"><span class="pre">real</span></tt> (real part, i.e. <tt class="docutils literal"><span class="pre">exp.real</span></tt> returns <tt class="docutils literal"><span class="pre">0.5</span> <span class="pre">*</span> <span class="pre">(exp+exp.conj)</span></tt> ),
-<tt class="docutils literal"><span class="pre">imag</span></tt> (imaginary part, i.e. <tt class="docutils literal"><span class="pre">exp.imag</span></tt> returns <tt class="docutils literal"><span class="pre">-0.5</span> <span class="pre">*</span> <span class="pre">1j</span> <span class="pre">*</span> <span class="pre">(exp-exp.conj)</span></tt> ),
-anf <tt class="docutils literal"><span class="pre">H</span></tt> (Hermitian transposition, i.e. <tt class="docutils literal"><span class="pre">exp.H</span></tt> returns <tt class="docutils literal"><span class="pre">exp.conj.T</span></tt> ).</p>
+<p>The variable type <code class="docutils literal"><span class="pre">'hermitian'</span></code> can be used to create a complex variable that is forced to be Hermitian.
+The following properties can now be used with every affine expression: <code class="docutils literal"><span class="pre">conj</span></code> (complex conjugate),
+<code class="docutils literal"><span class="pre">real</span></code> (real part, i.e. <code class="docutils literal"><span class="pre">exp.real</span></code> returns <code class="docutils literal"><span class="pre">0.5</span> <span class="pre">*</span> <span class="pre">(exp+exp.conj)</span></code> ),
+<code class="docutils literal"><span class="pre">imag</span></code> (imaginary part, i.e. <code class="docutils literal"><span class="pre">exp.imag</span></code> returns <code class="docutils literal"><span class="pre">-0.5</span> <span class="pre">*</span> <span class="pre">1j</span> <span class="pre">*</span> <span class="pre">(exp-exp.conj)</span></code> ),
+anf <code class="docutils literal"><span class="pre">H</span></code> (Hermitian transposition, i.e. <code class="docutils literal"><span class="pre">exp.H</span></code> returns <code class="docutils literal"><span class="pre">exp.conj.T</span></code> ).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="s">&#39;hermitian&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">&gt;&gt;</span> <span class="mi">0</span>
 <span class="go"># (3x3)-LMI constraint X ≽ |0| #</span>
@@ -262,15 +249,15 @@ Z^* &amp; Q
 \end{center}"/></p>
 </div><p>This Problem can be solved as follows in PICOS</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#generate two (arbitrary) positive hermitian operators</span>
-<span class="n">P</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span> <span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="mi">1j</span> <span class="p">,</span> <span class="mi">2</span><span class="o">+</span><span class="mi">2j</span>  <span class="p">,</span> <span class="mi">1</span>    <span class="p">],</span>
-                 <span class="p">[</span><span class="mi">3j</span>   <span class="p">,</span> <span class="o">-</span><span class="mi">2j</span>   <span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">1j</span><span class="p">],</span>
-                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2j</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">1j</span><span class="p">,</span> <span class="mf">1.5</span>  <span class="p">]</span>
+<span class="n">P</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span> <span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="p">,</span> <span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="n">j</span>  <span class="p">,</span> <span class="mi">1</span>    <span class="p">],</span>
+                 <span class="p">[</span><span class="mi">3</span><span class="n">j</span>   <span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="n">j</span>   <span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="n">j</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mf">1.5</span>  <span class="p">]</span>
                 <span class="p">])</span>
 <span class="n">P</span> <span class="o">=</span> <span class="n">P</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">H</span>
 
-<span class="n">Q</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">2j</span> <span class="p">,</span> <span class="mi">2j</span>   <span class="p">,</span> <span class="mf">1.5</span>   <span class="p">],</span>
-                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2j</span>  <span class="p">,</span><span class="o">-</span><span class="mi">2j</span>   <span class="p">,</span> <span class="mf">2.</span><span class="o">-</span><span class="mi">3j</span> <span class="p">],</span>
-                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2j</span>  <span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">+</span><span class="mi">1j</span> <span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">4j</span>  <span class="p">]</span>
+<span class="n">Q</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">2</span><span class="n">j</span> <span class="p">,</span> <span class="mi">2</span><span class="n">j</span>   <span class="p">,</span> <span class="mf">1.5</span>   <span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="n">j</span>  <span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="n">j</span>   <span class="p">,</span> <span class="mf">2.</span><span class="o">-</span><span class="mi">3</span><span class="n">j</span> <span class="p">],</span>
+                 <span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="n">j</span>  <span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span><span class="n">j</span> <span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="mi">4</span><span class="n">j</span>  <span class="p">]</span>
                 <span class="p">])</span>
 <span class="n">Q</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">*</span> <span class="n">Q</span><span class="o">.</span><span class="n">H</span>
 
@@ -364,7 +351,7 @@ Otherwise, the leading singular vector of <img class="math" src="_images/math/73
 <span class="n">n</span>    <span class="o">=</span> <span class="mi">5</span>
 <span class="n">rank</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c">#we take a singular M for the sake of generality</span>
 
-<span class="n">M</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">normal</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">rank</span><span class="p">)</span> <span class="o">+</span><span class="mi">1j</span><span class="o">*</span><span class="n">cvx</span><span class="o">.</span><span class="n">normal</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">rank</span><span class="p">)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">normal</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">rank</span><span class="p">)</span> <span class="o">+</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">cvx</span><span class="o">.</span><span class="n">normal</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">rank</span><span class="p">)</span>
 <span class="n">M</span> <span class="o">=</span> <span class="n">M</span> <span class="o">*</span> <span class="n">M</span><span class="o">.</span><span class="n">H</span>
 <span class="n">M</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">new_param</span><span class="p">(</span><span class="s">&#39;M&#39;</span><span class="p">,</span><span class="n">M</span><span class="p">)</span>
 

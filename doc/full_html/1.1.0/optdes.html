@@ -36,22 +36,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -62,7 +46,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,6 +150,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -258,8 +245,8 @@ It should be run prior to any of the codes presented in this page.</p>
 </div>
 <div class="section" id="c-optimality-multi-response-socp">
 <h2><em>c-optimality, multi-response: SOCP</em><a class="headerlink" href="#c-optimality-multi-response-socp" title="Permalink to this headline">¶</a></h2>
-<p>We compute the c-optimal design (<tt class="docutils literal"><span class="pre">c=[1,2,3,4,5]</span></tt>)
-for the observation matrices <tt class="docutils literal"><span class="pre">A[i].T</span></tt> from the variable <tt class="docutils literal"><span class="pre">A</span></tt> defined above.
+<p>We compute the c-optimal design (<code class="docutils literal"><span class="pre">c=[1,2,3,4,5]</span></code>)
+for the observation matrices <code class="docutils literal"><span class="pre">A[i].T</span></code> from the variable <code class="docutils literal"><span class="pre">A</span></code> defined above.
 The results below suggest that we should allocate 12.8% of the
 experimental effort on design point #5, and 87.2% on the design point #7.</p>
 <div class="section" id="primal-problem">
@@ -335,9 +322,9 @@ The optimal design is:
 [...]
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">[...]</span></tt> above indicate a numerical zero entry
+<p>The <code class="docutils literal"><span class="pre">[...]</span></code> above indicate a numerical zero entry
 (<em>i.e., which can be something like 2.84e-10</em>).
-We use the ellipsis <tt class="docutils literal"><span class="pre">...</span></tt> instead for clarity and compatibility with <strong>doctest</strong>.</p>
+We use the ellipsis <code class="docutils literal"><span class="pre">...</span></code> instead for clarity and compatibility with <strong>doctest</strong>.</p>
 </div>
 <div class="section" id="dual-problem">
 <h3>Dual Problem<a class="headerlink" href="#dual-problem" title="Permalink to this headline">¶</a></h3>
@@ -411,12 +398,12 @@ the SOCP above reduces to a simple LP, because the variables
 <img class="math" src="_images/math/0c9b8c78a7a049eca8f2168d0691afc6a65a9dad.png" alt="z_i"/> are scalar.
 We solve below the LP for the case where there are 11
 available design points, corresponding to the columns of the matrices
-<tt class="docutils literal"><span class="pre">A[4]</span></tt>, <tt class="docutils literal"><span class="pre">A[5]</span></tt>, <tt class="docutils literal"><span class="pre">A[6]</span></tt>, and <tt class="docutils literal"><span class="pre">A[7][:,:-1]</span></tt> defined in the preambule.</p>
-<p>The optimal design allocates 3.37% to point #5 (2nd column of <tt class="docutils literal"><span class="pre">A[5]</span></tt>),
-27.9% to point #7 (1st column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
-11.8% to point #8 (2nd column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
-27.6% to point #9 (3rd column of <tt class="docutils literal"><span class="pre">A[6]</span></tt>),
-and 29.3% to point #11 (2nd column of <tt class="docutils literal"><span class="pre">A[7]</span></tt>).</p>
+<code class="docutils literal"><span class="pre">A[4]</span></code>, <code class="docutils literal"><span class="pre">A[5]</span></code>, <code class="docutils literal"><span class="pre">A[6]</span></code>, and <code class="docutils literal"><span class="pre">A[7][:,:-1]</span></code> defined in the preambule.</p>
+<p>The optimal design allocates 3.37% to point #5 (2nd column of <code class="docutils literal"><span class="pre">A[5]</span></code>),
+27.9% to point #7 (1st column of <code class="docutils literal"><span class="pre">A[6]</span></code>),
+11.8% to point #8 (2nd column of <code class="docutils literal"><span class="pre">A[6]</span></code>),
+27.6% to point #9 (3rd column of <code class="docutils literal"><span class="pre">A[6]</span></code>),
+and 29.3% to point #11 (2nd column of <code class="docutils literal"><span class="pre">A[7]</span></code>).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#create the problem, variables and params</span>
 <span class="n">prob_LP</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
 <span class="n">AA</span><span class="o">=</span><span class="p">[</span><span class="n">cvx</span><span class="o">.</span><span class="n">sparse</span><span class="p">(</span><span class="n">a</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="n">tc</span><span class="o">=</span><span class="s">&#39;d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">[</span><span class="mi">4</span><span class="p">:]]</span> <span class="c">#12 column vectors</span>
@@ -634,7 +621,7 @@ and the optimal positive semidefinite matrix X is
 <div class="section" id="a-optimality-socp">
 <h2><em>A-optimality: SOCP</em><a class="headerlink" href="#a-optimality-socp" title="Permalink to this headline">¶</a></h2>
 <p>We compute the A-optimal design
-for the observation matrices <tt class="docutils literal"><span class="pre">A[i].T</span></tt> defined in the preambule.
+for the observation matrices <code class="docutils literal"><span class="pre">A[i].T</span></code> defined in the preambule.
 The optimal design allocates
 24.9% on design point #3,
 14.2% on point #4,
@@ -965,7 +952,7 @@ geometric mean in the objective function:</p>
 \end{center}"/></p>
 </div><p>By introducing a new variable <img class="math" src="_images/math/ef9270877405055756d345facd044e4ab297f858.png" alt="t"/> such that
 <img class="math" src="_images/math/1df06b49dc26314e09f50b4933e25cbfa6a02519.png" alt="t \leq \left(\prod_{i=1}^m L_{i,i}\right)^{1/m}"/>, we can pass
-this problem to PICOS with the function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><tt class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></tt></a>,
+this problem to PICOS with the function <a class="reference internal" href="tools.html#picos.tools.geomean" title="picos.tools.geomean"><code class="xref py py-func docutils literal"><span class="pre">picos.geomean()</span></code></a>,
 which reformulates the geometric mean inequality as a set of equivalent second order cone
 constraints.
 The example below allocates respectively 22.7%, 3.38%, 1.65%, 5.44%, 31.8% and 35.1%
@@ -1137,7 +1124,7 @@ t&lt;geomean( diag(L))
 <h2><em>Former MAXDET formulation of the D-optimal design: SDP</em><a class="headerlink" href="#former-maxdet-formulation-of-the-d-optimal-design-sdp" title="Permalink to this headline">¶</a></h2>
 <p>A so-called MAXDET Programming formulation of the D-optimal design
 has been known since the late 90&#8217;s <a class="reference internal" href="#optdes-refs"><em>[3]</em></a>, and
-can be reformulated as a SDP thanks to the <a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><tt class="xref py py-func docutils literal"><span class="pre">detrootn()</span></tt></a> function.
+can be reformulated as a SDP thanks to the <a class="reference internal" href="tools.html#picos.tools.detrootn" title="picos.tools.detrootn"><code class="xref py py-func docutils literal"><span class="pre">detrootn()</span></code></a> function.
 The following code finds the same design as the SOCP approach presented above.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#problem, variables and parameters</span>
 <span class="n">prob_D</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -1196,7 +1183,7 @@ Kiefer <img class="math" src="_images/math/48936d1b3ea7332a2abc6c11ec6d33d67be06
 \end{eqnarray*}
 
 \end{center}"/></p>
-</div><p>These problems are easy to enter in PICOS, thanks to the <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><tt class="xref py py-func docutils literal"><span class="pre">tracepow()</span></tt></a> function,
+</div><p>These problems are easy to enter in PICOS, thanks to the <a class="reference internal" href="tools.html#picos.tools.tracepow" title="picos.tools.tracepow"><code class="xref py py-func docutils literal"><span class="pre">tracepow()</span></code></a> function,
 that automatically replaces inequalities involving trace of matrix powers as a set of equivalent linear matrix
 inequalities (SDP) (cf. <a class="reference internal" href="#optdes-refs"><em>[4]</em></a> ). Below are two examples with <img class="math" src="_images/math/3560a03d643d55e1920522e01fa9ff846dcb1f05.png" alt="p=0.2"/> and <img class="math" src="_images/math/9d3df2952578c30c3866122000f9f78aff29e218.png" alt="p=-3"/>,
 allocating respectively (20.6%, 0.0%, 0.0%, 0.92%, 40.8%, 37.7%), and

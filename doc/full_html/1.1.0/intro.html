@@ -35,22 +35,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -61,7 +45,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -163,6 +149,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -424,12 +411,12 @@ features that are <em>not handled by PICOS</em>.</p>
 </ul>
 </div></blockquote>
 <p>To use one of these solver, make sure that the python interface to this solver is correctly
-installed and linked in your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> variable. The sites of the solvers
+installed and linked in your <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> variable. The sites of the solvers
 give instructions to do this, except for <em>zibopt</em>, for which you must install
 a separate interface: <a class="reference external" href="http://code.google.com/p/python-zibopt/">python-zibopt</a>.
 To check your installation, you can simply verify that
-<tt class="docutils literal"><span class="pre">import</span> <span class="pre">cvxopt</span></tt> (resp. <tt class="docutils literal"><span class="pre">smcp</span></tt>, <tt class="docutils literal"><span class="pre">mosek</span></tt>, <tt class="docutils literal"><span class="pre">cplex</span></tt>, <tt class="docutils literal"><span class="pre">zibopt</span></tt>, <tt class="docutils literal"><span class="pre">gurobipy</span></tt>) does
-not raise an <tt class="docutils literal"><span class="pre">ImportError</span></tt>. The command</p>
+<code class="docutils literal"><span class="pre">import</span> <span class="pre">cvxopt</span></code> (resp. <code class="docutils literal"><span class="pre">smcp</span></code>, <code class="docutils literal"><span class="pre">mosek</span></code>, <code class="docutils literal"><span class="pre">cplex</span></code>, <code class="docutils literal"><span class="pre">zibopt</span></code>, <code class="docutils literal"><span class="pre">gurobipy</span></code>) does
+not raise an <code class="docutils literal"><span class="pre">ImportError</span></code>. The command</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span><span class="p">;</span><span class="n">picos</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">available_solvers</span><span class="p">()</span> 
 </pre></div>
 </div>
@@ -441,7 +428,7 @@ not raise an <tt class="docutils literal"><span class="pre">ImportError</span></
 and
 <a class="reference external" href="http://abel.ee.ucla.edu/cvxopt/">cvxopt</a>. (cvxopt is needed even if you
 do not use the cvxopt solvers, because picos relies on the
-<tt class="xref py py-func docutils literal"><span class="pre">sparse</span> <span class="pre">matrices</span></tt> defined in cvxopt.)</p>
+<code class="xref py py-func docutils literal"><span class="pre">sparse</span> <span class="pre">matrices</span></code> defined in cvxopt.)</p>
 <p>In addition, you must install separately the python interfaces to each <a class="reference internal" href="#solvers"><em>solver</em></a>
 you want to use.</p>
 </div>
@@ -450,27 +437,27 @@ you want to use.</p>
 <p>After having <a class="reference internal" href="download.html#download"><em>downloaded</em></a> the latest version of picos,
 and extracted it in the directory of your choice,
 you can install it by typing the following line as root in a terminal:</p>
-<div class="highlight-guess"><div class="highlight"><pre><span class="err">$</span> <span class="n">python</span> <span class="n">setup</span><span class="p">.</span><span class="n">py</span> <span class="n">install</span>
+<div class="highlight-guess"><div class="highlight"><pre><span class="nv">$</span> <span class="nv">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
 </pre></div>
 </div>
 <p>If you do not have administrator rights, you can also do a local
 installation of picos with the <em>prefix scheme</em>. For example:</p>
-<div class="highlight-guess"><div class="highlight"><pre><span class="err">$</span> <span class="n">python</span> <span class="n">setup</span><span class="p">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span> <span class="o">~/</span><span class="n">python</span>
+<div class="highlight-guess"><div class="highlight"><pre><span class="nv">$</span> <span class="nv">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span> <span class="o">~/</span><span class="n">python</span>
 </pre></div>
 </div>
-<p>and make sure that <tt class="docutils literal"><span class="pre">$HOME'/python/lib/python2.x/site-packages/'</span></tt>
-is in your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> variable.</p>
+<p>and make sure that <code class="docutils literal"><span class="pre">$HOME'/python/lib/python2.x/site-packages/'</span></code>
+is in your <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> variable.</p>
 <p>To test your installation, you can run the test file:</p>
-<div class="highlight-guess"><div class="highlight"><pre><span class="err">$</span> <span class="n">python</span> <span class="n">picos</span><span class="o">/</span><span class="n">test_picos</span><span class="p">.</span><span class="n">py</span>
+<div class="highlight-guess"><div class="highlight"><pre><span class="nv">$</span> <span class="nv">python</span> <span class="n">picos</span><span class="o">/</span><span class="n">test_picos</span><span class="o">.</span><span class="n">py</span>
 </pre></div>
 </div>
 <p>This will generate a table with a list of results
 for each available solver and class of optimization problems.</p>
 <p>Alternatively, you can clone the latest development version from <a class="reference external" href="http://github.com/gsagnol/picos">github</a>:</p>
-<div class="highlight-guess"><div class="highlight"><pre><span class="err">$</span> <span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="o">:</span><span class="c1">//github.com/gsagnol/picos.git</span>
+<div class="highlight-guess"><div class="highlight"><pre><span class="nv">$</span> <span class="nv">git</span> <span class="n">clone</span> <span class="n">https:</span><span class="sr">//gi</span><span class="n">thub</span><span class="o">.</span><span class="n">com</span><span class="sr">/gsagnol/</span><span class="n">picos</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
-<p>in a directory that lies in your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt>.</p>
+<p>in a directory that lies in your <code class="docutils literal"><span class="pre">PYTHONPATH</span></code>.</p>
 </div>
 <div class="section" id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>

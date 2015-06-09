@@ -36,22 +36,6 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
-
-
-  <script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-33037163-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-  </script>
-
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -62,7 +46,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
         
-          <a href="index.html" class="fa fa-home"> picos</a>
+              
+              <a href="index.html" class="fa fa-home"> Home <img src="_static/picos_big_trans.gif" height="50px" width="200px"/> </a>
+              
         
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,6 +150,7 @@
 </ul>
 
         
+
       </div>
       &nbsp;
     </nav>
@@ -201,17 +188,17 @@
 <span id="picos-tools"></span><span id="tools"></span><h1><strong>picos.tools</strong><a class="headerlink" href="#module-picos.tools" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="picos.tools.available_solvers">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">available_solvers</tt><big>(</big><big>)</big><a class="headerlink" href="#picos.tools.available_solvers" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">picos.tools.</code><code class="descname">available_solvers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.available_solvers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lists all available solvers</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="picos.tools.ball">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">ball</tt><big>(</big><em>r</em>, <em>p=2</em><big>)</big><a class="headerlink" href="#picos.tools.ball" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Ball</span></tt> object representing:</p>
+<code class="descclassname">picos.tools.</code><code class="descname">ball</code><span class="sig-paren">(</span><em>r</em>, <em>p=2</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.ball" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Ball</span></code> object representing:</p>
 <blockquote>
 <div><ul class="simple">
-<li>a L_p Ball of radius <tt class="docutils literal"><span class="pre">r</span></tt> (<img class="math" src="_images/math/4e998f865cdee3c43dfdb27ee4b621a3d65a6e48.png" alt="\{x: \Vert x \Vert_p \geq r \}"/>) if <img class="math" src="_images/math/fa99e36e6445a47c08eca906a721f98545a5fe9c.png" alt="p \geq 1"/></li>
+<li>a L_p Ball of radius <code class="docutils literal"><span class="pre">r</span></code> (<img class="math" src="_images/math/4e998f865cdee3c43dfdb27ee4b621a3d65a6e48.png" alt="\{x: \Vert x \Vert_p \geq r \}"/>) if <img class="math" src="_images/math/fa99e36e6445a47c08eca906a721f98545a5fe9c.png" alt="p \geq 1"/></li>
 <li>the convex set <img class="math" src="_images/math/ff0c225822364a489a18c7a976e41976b8e9b80b.png" alt="\{x\geq 0: \Vert x \Vert_p \geq r \}"/> <img class="math" src="_images/math/6558063ec9c3e84e7b0a165f3e816d36e942234f.png" alt="p &lt; 1"/>.</li>
 </ul>
 </div></blockquote>
@@ -229,9 +216,9 @@
 
 <dl class="function">
 <dt id="picos.tools.detrootn">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">detrootn</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.detrootn" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <a class="reference internal" href="expression.html#picos.DetRootN_Exp" title="picos.DetRootN_Exp"><tt class="xref py py-class docutils literal"><span class="pre">DetRootN_Exp</span></tt></a> object representing the determinant of the
-<img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> th-root of the symmetric matrix <tt class="docutils literal"><span class="pre">exp</span></tt>, where <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> is the dimension of the matrix.
+<code class="descclassname">picos.tools.</code><code class="descname">detrootn</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.detrootn" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <a class="reference internal" href="expression.html#picos.DetRootN_Exp" title="picos.DetRootN_Exp"><code class="xref py py-class docutils literal"><span class="pre">DetRootN_Exp</span></code></a> object representing the determinant of the
+<img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> th-root of the symmetric matrix <code class="docutils literal"><span class="pre">exp</span></code>, where <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/> is the dimension of the matrix.
 This can be used to enter constraints of the form <img class="math" src="_images/math/9856d17e7b6252fda4fd352a2f7a55d5819a7a57.png" alt="(\operatorname{det} X)^{1/n} \geq t"/>.
 Note that <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> is forced to be positive semidefinite when a constraint of this form is entered in PICOS.
 Determinant inequalities are internally reformulated as a set of Linear Matrix Inequalities (SDP).</p>
@@ -248,17 +235,17 @@ Determinant inequalities are internally reformulated as a set of Linear Matrix I
 
 <dl class="function">
 <dt id="picos.tools.diag">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">diag</tt><big>(</big><em>exp</em>, <em>dim=1</em><big>)</big><a class="headerlink" href="#picos.tools.diag" title="Permalink to this definition">¶</a></dt>
-<dd><p>if <tt class="docutils literal"><span class="pre">exp</span></tt> is an affine expression of size (n,m),
-<tt class="docutils literal"><span class="pre">diag(exp,dim)</span></tt> returns a diagonal matrix of size <tt class="docutils literal"><span class="pre">dim*n*m</span></tt> <img class="math" src="_images/math/c69691d64985442217922c8d34e835a9dea60178.png" alt="\times"/> <tt class="docutils literal"><span class="pre">dim*n*m</span></tt>,
-with <tt class="docutils literal"><span class="pre">dim</span></tt> copies of the vectorized expression <tt class="docutils literal"><span class="pre">exp[:]</span></tt> on the diagonal.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">diag</code><span class="sig-paren">(</span><em>exp</em>, <em>dim=1</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.diag" title="Permalink to this definition">¶</a></dt>
+<dd><p>if <code class="docutils literal"><span class="pre">exp</span></code> is an affine expression of size (n,m),
+<code class="docutils literal"><span class="pre">diag(exp,dim)</span></code> returns a diagonal matrix of size <code class="docutils literal"><span class="pre">dim*n*m</span></code> <img class="math" src="_images/math/c69691d64985442217922c8d34e835a9dea60178.png" alt="\times"/> <code class="docutils literal"><span class="pre">dim*n*m</span></code>,
+with <code class="docutils literal"><span class="pre">dim</span></code> copies of the vectorized expression <code class="docutils literal"><span class="pre">exp[:]</span></code> on the diagonal.</p>
 <p>In particular:</p>
 <blockquote>
 <div><ul class="simple">
-<li>when <tt class="docutils literal"><span class="pre">exp</span></tt> is scalar, <tt class="docutils literal"><span class="pre">diag(exp,n)</span></tt> returns a diagonal
-matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e51f16263d9f8.png" alt="n \times n"/>, with all diagonal elements equal to <tt class="docutils literal"><span class="pre">exp</span></tt>.</li>
-<li>when <tt class="docutils literal"><span class="pre">exp</span></tt> is a vector of size <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, <tt class="docutils literal"><span class="pre">diag(exp)</span></tt> returns the diagonal
-matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e51f16263d9f8.png" alt="n \times n"/> with the vector <tt class="docutils literal"><span class="pre">exp</span></tt> on the diagonal</li>
+<li>when <code class="docutils literal"><span class="pre">exp</span></code> is scalar, <code class="docutils literal"><span class="pre">diag(exp,n)</span></code> returns a diagonal
+matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e51f16263d9f8.png" alt="n \times n"/>, with all diagonal elements equal to <code class="docutils literal"><span class="pre">exp</span></code>.</li>
+<li>when <code class="docutils literal"><span class="pre">exp</span></code> is a vector of size <img class="math" src="_images/math/413f8a8e40062a9090d9d50b88bc7b551b314c26.png" alt="n"/>, <code class="docutils literal"><span class="pre">diag(exp)</span></code> returns the diagonal
+matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e51f16263d9f8.png" alt="n \times n"/> with the vector <code class="docutils literal"><span class="pre">exp</span></code> on the diagonal</li>
 </ul>
 </div></blockquote>
 <p><strong>Example</strong></p>
@@ -276,8 +263,8 @@ matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e5
 
 <dl class="function">
 <dt id="picos.tools.diag_vect">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">diag_vect</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.diag_vect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the vector with the diagonal elements of the matrix expression <tt class="docutils literal"><span class="pre">exp</span></tt></p>
+<code class="descclassname">picos.tools.</code><code class="descname">diag_vect</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.diag_vect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vector with the diagonal elements of the matrix expression <code class="docutils literal"><span class="pre">exp</span></code></p>
 <p><strong>Example</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span><span class="o">=</span><span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -290,36 +277,36 @@ matrix of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e5
 
 <dl class="function">
 <dt id="picos.tools.eval_dict">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">eval_dict</tt><big>(</big><em>dict_of_variables</em><big>)</big><a class="headerlink" href="#picos.tools.eval_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>if <tt class="docutils literal"><span class="pre">dict_of_variables</span></tt> is a dictionary
-mapping variable names (strings) to <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><tt class="xref py py-class docutils literal"><span class="pre">variables</span></tt></a>,
-this function returns the dictionary <tt class="docutils literal"><span class="pre">names</span> <span class="pre">-&gt;</span> <span class="pre">variable</span> <span class="pre">values</span></tt>.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">eval_dict</code><span class="sig-paren">(</span><em>dict_of_variables</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.eval_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>if <code class="docutils literal"><span class="pre">dict_of_variables</span></code> is a dictionary
+mapping variable names (strings) to <a class="reference internal" href="expression.html#picos.Variable" title="picos.Variable"><code class="xref py py-class docutils literal"><span class="pre">variables</span></code></a>,
+this function returns the dictionary <code class="docutils literal"><span class="pre">names</span> <span class="pre">-&gt;</span> <span class="pre">variable</span> <span class="pre">values</span></code>.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="picos.tools.flow_Constraint">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">flow_Constraint</tt><big>(</big><em>G</em>, <em>f</em>, <em>source</em>, <em>sink</em>, <em>flow_value</em>, <em>capacity=None</em>, <em>graphName=''</em><big>)</big><a class="headerlink" href="#picos.tools.flow_Constraint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an object of the class <tt class="xref py py-class docutils literal"><span class="pre">_Flow_Constraint</span></tt> that can be passed to a 
-problem with <a class="reference internal" href="problem.html#picos.Problem.add_constraint" title="picos.Problem.add_constraint"><tt class="xref py py-func docutils literal"><span class="pre">add_constraint()</span></tt></a>.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">flow_Constraint</code><span class="sig-paren">(</span><em>G</em>, <em>f</em>, <em>source</em>, <em>sink</em>, <em>flow_value</em>, <em>capacity=None</em>, <em>graphName=''</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.flow_Constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object of the class <code class="xref py py-class docutils literal"><span class="pre">_Flow_Constraint</span></code> that can be passed to a 
+problem with <a class="reference internal" href="problem.html#picos.Problem.add_constraint" title="picos.Problem.add_constraint"><code class="xref py py-func docutils literal"><span class="pre">add_constraint()</span></code></a>.</p>
 <blockquote>
-<div><p><tt class="docutils literal"><span class="pre">G</span></tt> a directed graph (class DiGraph of <a class="reference external" href="http://networkx.lanl.gov/index.html">networkx</a>)</p>
-<p><tt class="docutils literal"><span class="pre">f</span></tt> must be a dictionary of variables indexed by the edges of <tt class="docutils literal"><span class="pre">G</span></tt></p>
-<p><tt class="docutils literal"><span class="pre">source</span></tt> can be eiter a node of <tt class="docutils literal"><span class="pre">G</span></tt>, or a list of nodes in case of a multisource-single sink flow</p>
-<p><tt class="docutils literal"><span class="pre">sink</span></tt> can be eiter a node of <tt class="docutils literal"><span class="pre">G</span></tt>, or a list of nodes in case of a single source-multising flow</p>
-<p><tt class="docutils literal"><span class="pre">flow_value</span></tt> is the value of the flow, or a list of values in case of a single source - multisink flow. In the latter case,
+<div><p><code class="docutils literal"><span class="pre">G</span></code> a directed graph (class DiGraph of <a class="reference external" href="http://networkx.lanl.gov/index.html">networkx</a>)</p>
+<p><code class="docutils literal"><span class="pre">f</span></code> must be a dictionary of variables indexed by the edges of <code class="docutils literal"><span class="pre">G</span></code></p>
+<p><code class="docutils literal"><span class="pre">source</span></code> can be eiter a node of <code class="docutils literal"><span class="pre">G</span></code>, or a list of nodes in case of a multisource-single sink flow</p>
+<p><code class="docutils literal"><span class="pre">sink</span></code> can be eiter a node of <code class="docutils literal"><span class="pre">G</span></code>, or a list of nodes in case of a single source-multising flow</p>
+<p><code class="docutils literal"><span class="pre">flow_value</span></code> is the value of the flow, or a list of values in case of a single source - multisink flow. In the latter case,
 the values represent the demands of each sink (resp. of each source for a multisource - single sink flow). The values
-can be either constants or <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>.</p>
-<p><tt class="docutils literal"><span class="pre">capacity</span></tt> must be either <tt class="docutils literal"><span class="pre">None</span></tt> or a string. If this is a string, it indicates the key of the edge
-dictionaries of <tt class="docutils literal"><span class="pre">G</span></tt> that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.</p>
-<p><tt class="docutils literal"><span class="pre">graphName</span></tt> is a string used in the string representation of the constraint.</p>
+can be either constants or <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a>.</p>
+<p><code class="docutils literal"><span class="pre">capacity</span></code> must be either <code class="docutils literal"><span class="pre">None</span></code> or a string. If this is a string, it indicates the key of the edge
+dictionaries of <code class="docutils literal"><span class="pre">G</span></code> that is used for the capacity of the links. Otherwise, edges have an unbounded capacity.</p>
+<p><code class="docutils literal"><span class="pre">graphName</span></code> is a string used in the string representation of the constraint.</p>
 </div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="picos.tools.geomean">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">geomean</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.geomean" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <a class="reference internal" href="expression.html#picos.GeoMeanExp" title="picos.GeoMeanExp"><tt class="xref py py-class docutils literal"><span class="pre">GeoMeanExp</span></tt></a> object representing the geometric mean of the entries of <tt class="docutils literal"><span class="pre">exp[:]</span></tt>.
-This can be used to enter inequalities of the form <tt class="docutils literal"><span class="pre">t</span> <span class="pre">&lt;=</span> <span class="pre">geomean(x)</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">geomean</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.geomean" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <a class="reference internal" href="expression.html#picos.GeoMeanExp" title="picos.GeoMeanExp"><code class="xref py py-class docutils literal"><span class="pre">GeoMeanExp</span></code></a> object representing the geometric mean of the entries of <code class="docutils literal"><span class="pre">exp[:]</span></code>.
+This can be used to enter inequalities of the form <code class="docutils literal"><span class="pre">t</span> <span class="pre">&lt;=</span> <span class="pre">geomean(x)</span></code>.
 Note that geometric mean inequalities are internally reformulated as a
 set of SOC inequalities.</p>
 <p><strong>Example:</strong></p>
@@ -335,32 +322,32 @@ set of SOC inequalities.</p>
 
 <dl class="function">
 <dt id="picos.tools.import_cbf">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">import_cbf</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#picos.tools.import_cbf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports the data from a CBF file, and creates a <tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt> object.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">import_cbf</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.import_cbf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports the data from a CBF file, and creates a <code class="xref py py-class docutils literal"><span class="pre">Problem</span></code> object.</p>
 <p>The created problem contains one (multidimmensional) variable
-for each cone specified in the section <tt class="docutils literal"><span class="pre">VAR</span></tt> of the .cbf file,
+for each cone specified in the section <code class="docutils literal"><span class="pre">VAR</span></code> of the .cbf file,
 and one (multidimmensional) constraint for each cone
-specified in the sections <tt class="docutils literal"><span class="pre">CON</span></tt> and <tt class="docutils literal"><span class="pre">PSDCON</span></tt>.</p>
-<p>Semidefinite variables defined in the section <tt class="docutils literal"><span class="pre">PSDVAR</span></tt> of the .cbf file
-are represented by a matrix picos variable <tt class="docutils literal"><span class="pre">X</span></tt> with <tt class="docutils literal"><span class="pre">X.vtype='symmetric'</span></tt>.</p>
-<p>This function returns a tuple <tt class="docutils literal"><span class="pre">(P,x,X,data)</span></tt>,
+specified in the sections <code class="docutils literal"><span class="pre">CON</span></code> and <code class="docutils literal"><span class="pre">PSDCON</span></code>.</p>
+<p>Semidefinite variables defined in the section <code class="docutils literal"><span class="pre">PSDVAR</span></code> of the .cbf file
+are represented by a matrix picos variable <code class="docutils literal"><span class="pre">X</span></code> with <code class="docutils literal"><span class="pre">X.vtype='symmetric'</span></code>.</p>
+<p>This function returns a tuple <code class="docutils literal"><span class="pre">(P,x,X,data)</span></code>,
 where:</p>
 <blockquote>
 <div><ul class="simple">
-<li><tt class="docutils literal"><span class="pre">P</span></tt> is the imported picos <tt class="xref py py-class docutils literal"><span class="pre">Problem</span></tt> object.</li>
-<li><tt class="docutils literal"><span class="pre">x</span></tt> is a list of <tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt> objects, representing the (multidimmensional) scalar variables.</li>
-<li><tt class="docutils literal"><span class="pre">X</span></tt> is a list of <tt class="xref py py-class docutils literal"><span class="pre">Variable</span></tt> objects, representing the symmetric semidefinite positive variables.</li>
-<li><tt class="docutils literal"><span class="pre">data</span></tt> is a dictionary containing picos parameters (<tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt> objects) used
+<li><code class="docutils literal"><span class="pre">P</span></code> is the imported picos <code class="xref py py-class docutils literal"><span class="pre">Problem</span></code> object.</li>
+<li><code class="docutils literal"><span class="pre">x</span></code> is a list of <code class="xref py py-class docutils literal"><span class="pre">Variable</span></code> objects, representing the (multidimmensional) scalar variables.</li>
+<li><code class="docutils literal"><span class="pre">X</span></code> is a list of <code class="xref py py-class docutils literal"><span class="pre">Variable</span></code> objects, representing the symmetric semidefinite positive variables.</li>
+<li><code class="docutils literal"><span class="pre">data</span></code> is a dictionary containing picos parameters (<code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code> objects) used
 to define the problem. Indexing is with respect to the blocks of variables as defined
-in thes sections <tt class="docutils literal"><span class="pre">VAR</span></tt> and  <tt class="docutils literal"><span class="pre">CON</span></tt> of the .cbf file.</li>
+in thes sections <code class="docutils literal"><span class="pre">VAR</span></code> and  <code class="docutils literal"><span class="pre">CON</span></code> of the .cbf file.</li>
 </ul>
 </div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="picos.tools.lambda_max">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">lambda_max</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.lambda_max" title="Permalink to this definition">¶</a></dt>
-<dd><p>largest eigenvalue of a square matrix expression (cf. <a class="reference internal" href="#picos.tools.sum_k_largest_lambda" title="picos.tools.sum_k_largest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">pic.sum_k_largest(exp,1)</span></tt></a>)</p>
+<code class="descclassname">picos.tools.</code><code class="descname">lambda_max</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.lambda_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>largest eigenvalue of a square matrix expression (cf. <a class="reference internal" href="#picos.tools.sum_k_largest_lambda" title="picos.tools.sum_k_largest_lambda"><code class="xref py py-func docutils literal"><span class="pre">pic.sum_k_largest(exp,1)</span></code></a>)</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
@@ -372,8 +359,8 @@ in thes sections <tt class="docutils literal"><span class="pre">VAR</span></tt> 
 
 <dl class="function">
 <dt id="picos.tools.lambda_min">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">lambda_min</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.lambda_min" title="Permalink to this definition">¶</a></dt>
-<dd><p>smallest eigenvalue of a square matrix expression (cf. <a class="reference internal" href="#picos.tools.sum_k_smallest_lambda" title="picos.tools.sum_k_smallest_lambda"><tt class="xref py py-func docutils literal"><span class="pre">pic.sum_k_smallest(exp,1)</span></tt></a>)</p>
+<code class="descclassname">picos.tools.</code><code class="descname">lambda_min</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.lambda_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>smallest eigenvalue of a square matrix expression (cf. <a class="reference internal" href="#picos.tools.sum_k_smallest_lambda" title="picos.tools.sum_k_smallest_lambda"><code class="xref py py-func docutils literal"><span class="pre">pic.sum_k_smallest(exp,1)</span></code></a>)</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">add_variable</span><span class="p">(</span><span class="s">&#39;X&#39;</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="s">&#39;symmetric&#39;</span><span class="p">)</span>
@@ -385,9 +372,9 @@ in thes sections <tt class="docutils literal"><span class="pre">VAR</span></tt> 
 
 <dl class="function">
 <dt id="picos.tools.lowtri">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">lowtri</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.lowtri" title="Permalink to this definition">¶</a></dt>
-<dd><p>if <tt class="docutils literal"><span class="pre">exp</span></tt> is a square affine expression of size (n,n),
-<tt class="docutils literal"><span class="pre">lowtri(exp)</span></tt> returns the (n(n+1)/2)-vector of the lower triangular elements of <tt class="docutils literal"><span class="pre">exp</span></tt>.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">lowtri</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.lowtri" title="Permalink to this definition">¶</a></dt>
+<dd><p>if <code class="docutils literal"><span class="pre">exp</span></code> is a square affine expression of size (n,n),
+<code class="docutils literal"><span class="pre">lowtri(exp)</span></code> returns the (n(n+1)/2)-vector of the lower triangular elements of <code class="docutils literal"><span class="pre">exp</span></code>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
@@ -419,8 +406,8 @@ in thes sections <tt class="docutils literal"><span class="pre">VAR</span></tt> 
 
 <dl class="function">
 <dt id="picos.tools.lse">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">lse</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.lse" title="Permalink to this definition">¶</a></dt>
-<dd><p>shorter name for the constructor of the class <a class="reference internal" href="expression.html#picos.LogSumExp" title="picos.LogSumExp"><tt class="xref py py-class docutils literal"><span class="pre">LogSumExp</span></tt></a></p>
+<code class="descclassname">picos.tools.</code><code class="descname">lse</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.lse" title="Permalink to this definition">¶</a></dt>
+<dd><p>shorter name for the constructor of the class <a class="reference internal" href="expression.html#picos.LogSumExp" title="picos.LogSumExp"><code class="xref py py-class docutils literal"><span class="pre">LogSumExp</span></code></a></p>
 <p><strong>Example</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
@@ -435,19 +422,19 @@ in thes sections <tt class="docutils literal"><span class="pre">VAR</span></tt> 
 
 <dl class="function">
 <dt id="picos.tools.new_param">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">new_param</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#picos.tools.new_param" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">picos.tools.</code><code class="descname">new_param</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.new_param" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declare a parameter for the problem, that will be stored
-as a <tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt>.
+as a <code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></code>.
 It is possible to give a list or a dictionary of parameters.
-The function returns a constant <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> 
-(or a <tt class="docutils literal"><span class="pre">list</span></tt> or a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>) representing this parameter.</p>
+The function returns a constant <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a> 
+(or a <code class="docutils literal"><span class="pre">list</span></code> or a <code class="docutils literal"><span class="pre">dict</span></code> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a>) representing this parameter.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Declaring parameters is optional, since the expression can
 as well be given by using normal variables. (see Example below).
 However, if you use this function to declare your parameters,
 the names of the parameters will be displayed when you <strong>print</strong>
-an <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><tt class="xref py py-class docutils literal"><span class="pre">Expression</span></tt></a> or a <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><tt class="xref py py-class docutils literal"><span class="pre">Constraint</span></tt></a></p>
+an <a class="reference internal" href="expression.html#picos.Expression" title="picos.Expression"><code class="xref py py-class docutils literal"><span class="pre">Expression</span></code></a> or a <a class="reference internal" href="constraint.html#picos.Constraint" title="picos.Constraint"><code class="xref py py-class docutils literal"><span class="pre">Constraint</span></code></a></p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -455,16 +442,16 @@ an <a class="reference internal" href="expression.html#picos.Expression" title="
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>name</strong> (<em>str.</em>) &#8211; The name given to this parameter.</li>
-<li><strong>value</strong> &#8211; The value (resp <tt class="docutils literal"><span class="pre">list</span></tt> of values, <tt class="docutils literal"><span class="pre">dict</span></tt> of values) of the parameter.
-The type of <strong>value</strong> (resp. the elements of the <tt class="docutils literal"><span class="pre">list</span></tt> <strong>value</strong>,
-the values of the <tt class="docutils literal"><span class="pre">dict</span></tt> <strong>value</strong>) should be understandable by
-the function <a class="reference internal" href="#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><tt class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></tt></a>.</li>
+<li><strong>value</strong> &#8211; The value (resp <code class="docutils literal"><span class="pre">list</span></code> of values, <code class="docutils literal"><span class="pre">dict</span></code> of values) of the parameter.
+The type of <strong>value</strong> (resp. the elements of the <code class="docutils literal"><span class="pre">list</span></code> <strong>value</strong>,
+the values of the <code class="docutils literal"><span class="pre">dict</span></code> <strong>value</strong>) should be understandable by
+the function <a class="reference internal" href="#picos.tools._retrieve_matrix" title="picos.tools._retrieve_matrix"><code class="xref py py-func docutils literal"><span class="pre">_retrieve_matrix()</span></code></a>.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>)
-(resp. a <tt class="docutils literal"><span class="pre">list</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> of the same length as <strong>value</strong>,
-a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> indexed by the keys of <strong>value</strong>)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A constant affine expression (<a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a>)
+(resp. a <code class="docutils literal"><span class="pre">list</span></code> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a> of the same length as <strong>value</strong>,
+a <code class="docutils literal"><span class="pre">dict</span></code> of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a> indexed by the keys of <strong>value</strong>)</p>
 </td>
 </tr>
 </tbody>
@@ -487,8 +474,8 @@ a <tt class="docutils literal"><span class="pre">dict</span></tt> of <a class="r
 
 <dl class="function">
 <dt id="picos.tools.norm">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">norm</tt><big>(</big><em>exp</em>, <em>num=2</em>, <em>denom=1</em><big>)</big><a class="headerlink" href="#picos.tools.norm" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <a class="reference internal" href="expression.html#picos.NormP_Exp" title="picos.NormP_Exp"><tt class="xref py py-class docutils literal"><span class="pre">NormP_Exp</span></tt></a> object representing the (generalized-) p-norm of the entries of <tt class="docutils literal"><span class="pre">exp[:]</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">norm</code><span class="sig-paren">(</span><em>exp</em>, <em>num=2</em>, <em>denom=1</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <a class="reference internal" href="expression.html#picos.NormP_Exp" title="picos.NormP_Exp"><code class="xref py py-class docutils literal"><span class="pre">NormP_Exp</span></code></a> object representing the (generalized-) p-norm of the entries of <code class="docutils literal"><span class="pre">exp[:]</span></code>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/cd87c534b94a3cd0c1be6fa1cd9e27b6943bde01.png" alt="\Vert x \Vert_p \leq t"/> with <img class="math" src="_images/math/d1788fbadb54115d3e1e0f298dad0b7cd05107af.png" alt="p\geq1"/>.
 Generalized norms are also defined for <img class="math" src="_images/math/b23ecfd4f289e4750fac84669650098eed1573f2.png" alt="p&lt;1"/>, by using the usual formula
 <img class="math" src="_images/math/a43900d91088a039e0f3e34bcfb133db0d8ecdeb.png" alt="\operatorname{norm}(x,p) := \Big(\sum_i x_i^p\Big)^{1/p}"/>. Note that this function
@@ -499,10 +486,10 @@ When a constraint of the form <img class="math" src="_images/math/357ff6ef684f06
 that is, the p-norm of the vector formed with the q-norms of the rows of <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/>.</p>
 <p>The exponent <img class="math" src="_images/math/3eca8557203e86160952e1c0f735f7417f3285b1.png" alt="p"/> of the norm must be specified either by
 a couple numerator (2d argument) / denominator (3d arguments),
-or directly by a float <tt class="docutils literal"><span class="pre">p</span></tt> given as second argument. In the latter case a rational
-approximation of <tt class="docutils literal"><span class="pre">p</span></tt> will be used. It is also possible to pass <tt class="docutils literal"><span class="pre">'inf'</span></tt>  as
+or directly by a float <code class="docutils literal"><span class="pre">p</span></code> given as second argument. In the latter case a rational
+approximation of <code class="docutils literal"><span class="pre">p</span></code> will be used. It is also possible to pass <code class="docutils literal"><span class="pre">'inf'</span></code>  as
 second argument for the infinity-norm (aka max-norm).</p>
-<p>For the case of <img class="math" src="_images/math/3fb5c139c9d3ea683b8d622f3ed230b1fa5c6e44.png" alt="(p,q)"/>-norms, <tt class="docutils literal"><span class="pre">p</span></tt> and <tt class="docutils literal"><span class="pre">q</span></tt> must be specified by a tuple of floats
+<p>For the case of <img class="math" src="_images/math/3fb5c139c9d3ea683b8d622f3ed230b1fa5c6e44.png" alt="(p,q)"/>-norms, <code class="docutils literal"><span class="pre">p</span></code> and <code class="docutils literal"><span class="pre">q</span></code> must be specified by a tuple of floats
 in the second argument (rational approximations will be used), and the third argument will
 be ignored.</p>
 <p><strong>Example:</strong></p>
@@ -525,21 +512,21 @@ be ignored.</p>
 
 <dl class="function">
 <dt id="picos.tools.partial_transpose">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">partial_transpose</tt><big>(</big><em>exp</em>, <em>dim=None</em><big>)</big><a class="headerlink" href="#picos.tools.partial_transpose" title="Permalink to this definition">¶</a></dt>
-<dd><p>Partial transpose of the Affine Expression. If <tt class="docutils literal"><span class="pre">exp</span></tt> is matrix
-<a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> partitionned
-in subblocks <img class="math" src="_images/math/265372c0586d65a5c492bfc4a430699fa34523a4.png" alt="A_{ij}"/>, the partial transpose of <tt class="docutils literal"><span class="pre">exp</span></tt> is
+<code class="descclassname">picos.tools.</code><code class="descname">partial_transpose</code><span class="sig-paren">(</span><em>exp</em>, <em>dim=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.partial_transpose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partial transpose of the Affine Expression. If <code class="docutils literal"><span class="pre">exp</span></code> is matrix
+<a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a> partitionned
+in subblocks <img class="math" src="_images/math/265372c0586d65a5c492bfc4a430699fa34523a4.png" alt="A_{ij}"/>, the partial transpose of <code class="docutils literal"><span class="pre">exp</span></code> is
 a block matrix whose (i,j)-block equals <img class="math" src="_images/math/dc1c1afad3a25da9f75aa41c50e5cd3bdd76fda5.png" alt="A_{ij}^T"/>
 (as opposed to <img class="math" src="_images/math/d3babb1e041f09f9d5ba775394d34d6bf4dc4874.png" alt="A_{ji}^T"/> in the case of a regular transposition).</p>
-<p>The optional parameter <tt class="docutils literal"><span class="pre">dim</span></tt> is a tuple of int can be used to specify
+<p>The optional parameter <code class="docutils literal"><span class="pre">dim</span></code> is a tuple of int can be used to specify
 the dimension of the subblocks (all subblocks must have the same size,
-so <tt class="docutils literal"><span class="pre">exp.size[0]</span></tt> must be divisible by <tt class="docutils literal"><span class="pre">dim[0]</span></tt>
-and <tt class="docutils literal"><span class="pre">exp.size[1]</span></tt> must be divisible by <tt class="docutils literal"><span class="pre">dim[1]</span></tt>).</p>
-<p>The default value <tt class="docutils literal"><span class="pre">dim=None</span></tt> automatically computes the size of the subblocks,
-assuming that <tt class="docutils literal"><span class="pre">exp</span></tt> is a <img class="math" src="_images/math/06b7cd669c37dd035e0683dd98bb07d67f389194.png" alt="n^2 \times n^2"/>-square matrix
+so <code class="docutils literal"><span class="pre">exp.size[0]</span></code> must be divisible by <code class="docutils literal"><span class="pre">dim[0]</span></code>
+and <code class="docutils literal"><span class="pre">exp.size[1]</span></code> must be divisible by <code class="docutils literal"><span class="pre">dim[1]</span></code>).</p>
+<p>The default value <code class="docutils literal"><span class="pre">dim=None</span></code> automatically computes the size of the subblocks,
+assuming that <code class="docutils literal"><span class="pre">exp</span></code> is a <img class="math" src="_images/math/06b7cd669c37dd035e0683dd98bb07d67f389194.png" alt="n^2 \times n^2"/>-square matrix
 with blocks of size <img class="math" src="_images/math/e7df745df933619c7987cb698a5e51f16263d9f8.png" alt="n \times n"/>.
 The partial transpose of a <img class="math" src="_images/math/06b7cd669c37dd035e0683dd98bb07d67f389194.png" alt="n^2 \times n^2"/> -matrix can also
-be constructed with the property <tt class="xref py py-attr docutils literal"><span class="pre">Tx</span></tt> of an affine expression.</p>
+be constructed with the property <code class="xref py py-attr docutils literal"><span class="pre">Tx</span></code> of an affine expression.</p>
 <p><strong>Example:</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
@@ -565,8 +552,8 @@ be constructed with the property <tt class="xref py py-attr docutils literal"><s
 
 <dl class="function">
 <dt id="picos.tools._retrieve_matrix">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">_retrieve_matrix</tt><big>(</big><em>mat</em>, <em>exSize=None</em><big>)</big><a class="headerlink" href="#picos.tools._retrieve_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>parses the variable <em>mat</em> and convert it to a <tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">_retrieve_matrix</code><span class="sig-paren">(</span><em>mat</em>, <em>exSize=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools._retrieve_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>parses the variable <em>mat</em> and convert it to a <code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></code>.
 If the variable <strong>exSize</strong> is provided, the function tries
 to return a matrix that matches this expected size, or raise an
 error.</p>
@@ -586,22 +573,22 @@ format it to a vector/matrix. <em>mat</em> can be of one
 of the following types:</p>
 <blockquote>
 <div><ul>
-<li><tt class="docutils literal"><span class="pre">list</span></tt> [creates a vecor of dimension len(list)]</li>
-<li><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></tt></li>
-<li><tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt></li>
-<li><tt class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">real</span></tt> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
+<li><code class="docutils literal"><span class="pre">list</span></code> [creates a vecor of dimension len(list)]</li>
+<li><code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">matrix</span></code></li>
+<li><code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></code></li>
+<li><code class="xref py py-func docutils literal"><span class="pre">numpy</span> <span class="pre">array</span></code></li>
+<li><code class="docutils literal"><span class="pre">int</span></code> or <code class="docutils literal"><span class="pre">real</span></code> [creates a vector/matrix of the size exSize <em>(or of size (1,1) if exSize is None)</em>,
 whith all entries equal to <strong>mat</strong>.</li>
 <li>following strings:<blockquote>
 <div><ul class="simple">
-<li>&#8216;<tt class="docutils literal"><span class="pre">|a|</span></tt>&#8216; for a matrix with all terms equal to a</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">|a|(n,m)</span></tt>&#8216; for a matrix forced to be of size n x m, with all terms equal to a</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">e_i(n,m)</span></tt>&#8216; matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">e_i,j(n,m)</span></tt>&#8216; matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">I</span></tt>&#8216; for the identity matrix</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">I(n)</span></tt>&#8216; for the identity matrix, forced to be of size n x n.</li>
-<li>&#8216;<tt class="docutils literal"><span class="pre">a%s</span></tt>&#8216;, where <tt class="docutils literal"><span class="pre">%s</span></tt> is one of the above string: the matrix that 
-should be returned when <strong>mat</strong> == <tt class="docutils literal"><span class="pre">%s</span></tt>, multiplied by the scalar a.</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">|a|</span></code>&#8216; for a matrix with all terms equal to a</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">|a|(n,m)</span></code>&#8216; for a matrix forced to be of size n x m, with all terms equal to a</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">e_i(n,m)</span></code>&#8216; matrix of size (n,m), with a 1 on the ith coordinate (and 0 elsewhere)</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">e_i,j(n,m)</span></code>&#8216; matrix  of size (n,m), with a 1 on the (i,j)-entry (and 0 elsewhere)</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">I</span></code>&#8216; for the identity matrix</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">I(n)</span></code>&#8216; for the identity matrix, forced to be of size n x n.</li>
+<li>&#8216;<code class="docutils literal"><span class="pre">a%s</span></code>&#8216;, where <code class="docutils literal"><span class="pre">%s</span></code> is one of the above string: the matrix that 
+should be returned when <strong>mat</strong> == <code class="docutils literal"><span class="pre">%s</span></code>, multiplied by the scalar a.</li>
 </ul>
 </div></blockquote>
 </li>
@@ -610,7 +597,7 @@ should be returned when <strong>mat</strong> == <tt class="docutils literal"><sp
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of the form (<strong>M</strong>, <strong>s</strong>), where <strong>M</strong> is the conversion of <strong>mat</strong> into a
-<tt class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></tt>, and <strong>s</strong>
+<code class="xref py py-func docutils literal"><span class="pre">cvxopt</span> <span class="pre">sparse</span> <span class="pre">matrix</span></code>, and <strong>s</strong>
 is a string representation of <strong>mat</strong></td>
 </tr>
 </tbody>
@@ -637,8 +624,8 @@ is a string representation of <strong>mat</strong></td>
 
 <dl class="function">
 <dt id="picos.tools.simplex">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">simplex</tt><big>(</big><em>gamma=1</em><big>)</big><a class="headerlink" href="#picos.tools.simplex" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Truncated_Simplex</span></tt> object representing the set <img class="math" src="_images/math/0883358625cdcc703951d1633fcac335bbc398b7.png" alt="\{x\geq 0: ||x||_1 \leq \gamma \}"/>.</p>
+<code class="descclassname">picos.tools.</code><code class="descname">simplex</code><span class="sig-paren">(</span><em>gamma=1</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.simplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Truncated_Simplex</span></code> object representing the set <img class="math" src="_images/math/0883358625cdcc703951d1633fcac335bbc398b7.png" alt="\{x\geq 0: ||x||_1 \leq \gamma \}"/>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -653,7 +640,7 @@ is a string representation of <strong>mat</strong></td>
 
 <dl class="function">
 <dt id="picos.tools.sum">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">sum</tt><big>(</big><em>lst</em>, <em>it=None</em>, <em>indices=None</em><big>)</big><a class="headerlink" href="#picos.tools.sum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">picos.tools.</code><code class="descname">sum</code><span class="sig-paren">(</span><em>lst</em>, <em>it=None</em>, <em>indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>sum of a list of affine expressions.
 This fonction can be used with python list comprehensions
 (see the example below).</p>
@@ -662,7 +649,7 @@ This fonction can be used with python list comprehensions
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>lst</strong> &#8211; list of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a>.</li>
+<li><strong>lst</strong> &#8211; list of <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a>.</li>
 <li><strong>it</strong> (<em>None or str or list.</em>) &#8211; Description of the letters which should
 be used to replace the dummy indices.
 The function tries to find a template
@@ -673,12 +660,12 @@ list, their letters should be given as a
 list of strings, in their order of appearance in
 the resulting string. For example, if three indices
 change in the summands, and you want them to be
-named <tt class="docutils literal"><span class="pre">'i'</span></tt>, <tt class="docutils literal"><span class="pre">'j'</span></tt> and <tt class="docutils literal"><span class="pre">'k'</span></tt>, set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">['i','j','k']</span></tt>.
+named <code class="docutils literal"><span class="pre">'i'</span></code>, <code class="docutils literal"><span class="pre">'j'</span></code> and <code class="docutils literal"><span class="pre">'k'</span></code>, set <code class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">['i','j','k']</span></code>.
 You can also group two indices which always appear together,
-e.g. if <tt class="docutils literal"><span class="pre">'i'</span></tt> always appear next to <tt class="docutils literal"><span class="pre">'j'</span></tt> you
-could set <tt class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">[('ij',2),'k']</span></tt>. Here, the number 2
-indicates that <tt class="docutils literal"><span class="pre">'ij'</span></tt> replaces 2 indices.
-If <tt class="docutils literal"><span class="pre">it</span></tt> is set to <tt class="docutils literal"><span class="pre">None</span></tt>, or if the function is not
+e.g. if <code class="docutils literal"><span class="pre">'i'</span></code> always appear next to <code class="docutils literal"><span class="pre">'j'</span></code> you
+could set <code class="docutils literal"><span class="pre">it</span> <span class="pre">=</span> <span class="pre">[('ij',2),'k']</span></code>. Here, the number 2
+indicates that <code class="docutils literal"><span class="pre">'ij'</span></code> replaces 2 indices.
+If <code class="docutils literal"><span class="pre">it</span></code> is set to <code class="docutils literal"><span class="pre">None</span></code>, or if the function is not
 able to find a template, the string of
 the first summand will be used for
 the string representation of the sum.</li>
@@ -712,9 +699,9 @@ the string representation of the sum.</li>
 
 <dl class="function">
 <dt id="picos.tools.sum_k_largest">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">sum_k_largest</tt><big>(</big><em>exp</em>, <em>k</em><big>)</big><a class="headerlink" href="#picos.tools.sum_k_largest" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Sum_k_Largest_Exp</span></tt> object representing the sum
-of the <tt class="docutils literal"><span class="pre">k</span></tt> largest elements of an affine expression <tt class="docutils literal"><span class="pre">exp</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">sum_k_largest</code><span class="sig-paren">(</span><em>exp</em>, <em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.sum_k_largest" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Sum_k_Largest_Exp</span></code> object representing the sum
+of the <code class="docutils literal"><span class="pre">k</span></code> largest elements of an affine expression <code class="docutils literal"><span class="pre">exp</span></code>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/1608baef2228cafe9ed5655951a910f1ca83160f.png" alt="\sum_{i=1}^k x_{i}^{\downarrow} \leq t"/>.
 This kind of constraints is reformulated internally as a set of linear inequalities.</p>
 <p><strong>Example:</strong></p>
@@ -732,12 +719,12 @@ This kind of constraints is reformulated internally as a set of linear inequalit
 
 <dl class="function">
 <dt id="picos.tools.sum_k_largest_lambda">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">sum_k_largest_lambda</tt><big>(</big><em>exp</em>, <em>k</em><big>)</big><a class="headerlink" href="#picos.tools.sum_k_largest_lambda" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Sum_k_Largest_Exp</span></tt> object representing the sum
-of the <tt class="docutils literal"><span class="pre">k</span></tt> largest eigenvalues of a square matrix affine expression <tt class="docutils literal"><span class="pre">exp</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">sum_k_largest_lambda</code><span class="sig-paren">(</span><em>exp</em>, <em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.sum_k_largest_lambda" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Sum_k_Largest_Exp</span></code> object representing the sum
+of the <code class="docutils literal"><span class="pre">k</span></code> largest eigenvalues of a square matrix affine expression <code class="docutils literal"><span class="pre">exp</span></code>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/37953f22380a2f7265b228dbfafbcd4ee1409e2c.png" alt="\sum_{i=1}^k \lambda_{i}^{\downarrow}(X) \leq t"/>. 
 This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
-Note that <tt class="docutils literal"><span class="pre">exp</span></tt> is assumed to be symmetric (picos does not check).</p>
+Note that <code class="docutils literal"><span class="pre">exp</span></code> is assumed to be symmetric (picos does not check).</p>
 <p><strong>Example:</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -753,9 +740,9 @@ Note that <tt class="docutils literal"><span class="pre">exp</span></tt> is assu
 
 <dl class="function">
 <dt id="picos.tools.sum_k_smallest">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">sum_k_smallest</tt><big>(</big><em>exp</em>, <em>k</em><big>)</big><a class="headerlink" href="#picos.tools.sum_k_smallest" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Sum_k_Smallest_Exp</span></tt> object representing the sum
-of the <tt class="docutils literal"><span class="pre">k</span></tt> smallest elements of an affine expression <tt class="docutils literal"><span class="pre">exp</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">sum_k_smallest</code><span class="sig-paren">(</span><em>exp</em>, <em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.sum_k_smallest" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Sum_k_Smallest_Exp</span></code> object representing the sum
+of the <code class="docutils literal"><span class="pre">k</span></code> smallest elements of an affine expression <code class="docutils literal"><span class="pre">exp</span></code>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/d2d529b7b4d4df4064da72e41e5d0b3a6f4c7e60.png" alt="\sum_{i=1}^k x_{i}^{\uparrow} \geq t"/>.
 This kind of constraints is reformulated internally as a set of linear inequalities.</p>
 <p><strong>Example:</strong></p>
@@ -773,12 +760,12 @@ This kind of constraints is reformulated internally as a set of linear inequalit
 
 <dl class="function">
 <dt id="picos.tools.sum_k_smallest_lambda">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">sum_k_smallest_lambda</tt><big>(</big><em>exp</em>, <em>k</em><big>)</big><a class="headerlink" href="#picos.tools.sum_k_smallest_lambda" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Sum_k_Smallest_Exp</span></tt> object representing the sum
-of the <tt class="docutils literal"><span class="pre">k</span></tt> smallest eigenvalues of a square matrix affine expression <tt class="docutils literal"><span class="pre">exp</span></tt>.
+<code class="descclassname">picos.tools.</code><code class="descname">sum_k_smallest_lambda</code><span class="sig-paren">(</span><em>exp</em>, <em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.sum_k_smallest_lambda" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Sum_k_Smallest_Exp</span></code> object representing the sum
+of the <code class="docutils literal"><span class="pre">k</span></code> smallest eigenvalues of a square matrix affine expression <code class="docutils literal"><span class="pre">exp</span></code>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/220ea8c9e5c6d918e7eaba8db6d782a75aff7cce.png" alt="\sum_{i=1}^k \lambda_{i}^{\uparrow}(X) \geq t"/>. 
 This kind of constraints is reformulated internally as a set of linear matrix inequalities (SDP).
-Note that <tt class="docutils literal"><span class="pre">exp</span></tt> is assumed to be symmetric (picos does not check).</p>
+Note that <code class="docutils literal"><span class="pre">exp</span></code> is assumed to be symmetric (picos does not check).</p>
 <p><strong>Example:</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -794,25 +781,25 @@ Note that <tt class="docutils literal"><span class="pre">exp</span></tt> is assu
 
 <dl class="function">
 <dt id="picos.tools.trace">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">trace</tt><big>(</big><em>exp</em><big>)</big><a class="headerlink" href="#picos.tools.trace" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">picos.tools.</code><code class="descname">trace</code><span class="sig-paren">(</span><em>exp</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.trace" title="Permalink to this definition">¶</a></dt>
 <dd><p>trace of a square AffinExp</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="picos.tools.tracepow">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">tracepow</tt><big>(</big><em>exp</em>, <em>num=1</em>, <em>denom=1</em>, <em>coef=None</em><big>)</big><a class="headerlink" href="#picos.tools.tracepow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <a class="reference internal" href="expression.html#picos.TracePow_Exp" title="picos.TracePow_Exp"><tt class="xref py py-class docutils literal"><span class="pre">TracePow_Exp</span></tt></a> object representing the trace of the pth-power of the symmetric matrix <tt class="docutils literal"><span class="pre">exp</span></tt>, where <tt class="docutils literal"><span class="pre">exp</span></tt> is an <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><tt class="xref py py-class docutils literal"><span class="pre">AffinExp</span></tt></a> which we denote by <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/>.
+<code class="descclassname">picos.tools.</code><code class="descname">tracepow</code><span class="sig-paren">(</span><em>exp</em>, <em>num=1</em>, <em>denom=1</em>, <em>coef=None</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.tracepow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <a class="reference internal" href="expression.html#picos.TracePow_Exp" title="picos.TracePow_Exp"><code class="xref py py-class docutils literal"><span class="pre">TracePow_Exp</span></code></a> object representing the trace of the pth-power of the symmetric matrix <code class="docutils literal"><span class="pre">exp</span></code>, where <code class="docutils literal"><span class="pre">exp</span></code> is an <a class="reference internal" href="expression.html#picos.AffinExp" title="picos.AffinExp"><code class="xref py py-class docutils literal"><span class="pre">AffinExp</span></code></a> which we denote by <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/>.
 This can be used to enter constraints of the form <img class="math" src="_images/math/35f3f885d18e7f20ebc9dd7ffbd4330204ed9114.png" alt="\operatorname{trace} X^p \leq t"/> with <img class="math" src="_images/math/d1788fbadb54115d3e1e0f298dad0b7cd05107af.png" alt="p\geq1"/> or <img class="math" src="_images/math/9e8a58e9f97a62e72c9da8aea8bd55f6d9a238eb.png" alt="p &lt; 0"/>, or <img class="math" src="_images/math/9650a6c7779b78f73acf93661fcb7fdebc25c17d.png" alt="\operatorname{trace} X^p \geq t"/> with <img class="math" src="_images/math/73006bb3a24a9f63c4597de8665d5bf790ac2edb.png" alt="0 \leq p \leq 1"/>.
 Note that <img class="math" src="_images/math/f026aecf11ec7f6141ab863f260d395f94b10f51.png" alt="X"/> is forced to be positive semidefinite when a constraint of this form is entered in PICOS.</p>
-<p>It is also possible to specify a <tt class="docutils literal"><span class="pre">coef</span></tt> matrix (<img class="math" src="_images/math/2de38926392ba23abeac75effc66c37a5f5be5fd.png" alt="M"/>) of the same size as <tt class="docutils literal"><span class="pre">exp</span></tt>, in order to represent the expression  <img class="math" src="_images/math/b76f2fa23d32d6b5ca5b9044abb466b1ca160401.png" alt="\operatorname{trace} (M X^p)"/>.
+<p>It is also possible to specify a <code class="docutils literal"><span class="pre">coef</span></code> matrix (<img class="math" src="_images/math/2de38926392ba23abeac75effc66c37a5f5be5fd.png" alt="M"/>) of the same size as <code class="docutils literal"><span class="pre">exp</span></code>, in order to represent the expression  <img class="math" src="_images/math/b76f2fa23d32d6b5ca5b9044abb466b1ca160401.png" alt="\operatorname{trace} (M X^p)"/>.
 The constraint <img class="math" src="_images/math/97894f9041abb6bfd8f14d5bd1729835c5bc75e6.png" alt="\operatorname{trace} (M X^p)\geq t"/> can be reformulated with SDP constraints if <img class="math" src="_images/math/2de38926392ba23abeac75effc66c37a5f5be5fd.png" alt="M"/> is positive
 semidefinite and <img class="math" src="_images/math/eaefb689569d36bc921fe09ae34e70055519ae2c.png" alt="0&lt;p&lt;1"/>.</p>
 <p>Trace of power inequalities are internally reformulated as a set of Linear Matrix Inequalities (SDP),
-or second order cone inequalities if <tt class="docutils literal"><span class="pre">exp</span></tt> is a scalar.</p>
+or second order cone inequalities if <code class="docutils literal"><span class="pre">exp</span></code> is a scalar.</p>
 <p>The exponent <img class="math" src="_images/math/3eca8557203e86160952e1c0f735f7417f3285b1.png" alt="p"/> of the norm must be specified either by
 a couple numerator (2d argument) / denominator (3d arguments),
-or directly by a float <tt class="docutils literal"><span class="pre">p</span></tt> given as second argument. In the latter case a rational
-approximation of <tt class="docutils literal"><span class="pre">p</span></tt> will be used.</p>
+or directly by a float <code class="docutils literal"><span class="pre">p</span></code> given as second argument. In the latter case a rational
+approximation of <code class="docutils literal"><span class="pre">p</span></code> will be used.</p>
 <p><strong>Example:</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">picos</span> <span class="kn">as</span> <span class="nn">pic</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prob</span> <span class="o">=</span> <span class="n">pic</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
@@ -834,12 +821,12 @@ approximation of <tt class="docutils literal"><span class="pre">p</span></tt> wi
 
 <dl class="function">
 <dt id="picos.tools.truncated_simplex">
-<tt class="descclassname">picos.tools.</tt><tt class="descname">truncated_simplex</tt><big>(</big><em>gamma=1</em>, <em>sym=False</em><big>)</big><a class="headerlink" href="#picos.tools.truncated_simplex" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns a <tt class="xref py py-class docutils literal"><span class="pre">Truncated_Simplex</span></tt> object representing object representing the set:</p>
+<code class="descclassname">picos.tools.</code><code class="descname">truncated_simplex</code><span class="sig-paren">(</span><em>gamma=1</em>, <em>sym=False</em><span class="sig-paren">)</span><a class="headerlink" href="#picos.tools.truncated_simplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a <code class="xref py py-class docutils literal"><span class="pre">Truncated_Simplex</span></code> object representing object representing the set:</p>
 <blockquote>
 <div><ul class="simple">
-<li><img class="math" src="_images/math/884498479554d72c258c54362f737efc0002fd4e.png" alt="\{x \geq  0: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}"/> if <tt class="docutils literal"><span class="pre">sym=False</span></tt> (default)</li>
-<li><img class="math" src="_images/math/ecfb92587c8cb68c1feb40f9631e1104bd7f8b94.png" alt="\{x: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}"/> if <tt class="docutils literal"><span class="pre">sym=True</span></tt>.</li>
+<li><img class="math" src="_images/math/884498479554d72c258c54362f737efc0002fd4e.png" alt="\{x \geq  0: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}"/> if <code class="docutils literal"><span class="pre">sym=False</span></code> (default)</li>
+<li><img class="math" src="_images/math/ecfb92587c8cb68c1feb40f9631e1104bd7f8b94.png" alt="\{x: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}"/> if <code class="docutils literal"><span class="pre">sym=True</span></code>.</li>
 </ul>
 </div></blockquote>
 <p><strong>Example</strong></p>
