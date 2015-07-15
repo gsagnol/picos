@@ -33,6 +33,7 @@ import numpy as np
 import sys
 import six
 from six.moves import zip, range
+import itertools
 
 from .tools import *
 from .constraint import *
@@ -693,6 +694,71 @@ class AffinExp(Expression):
         """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n).
            cf. doc of :func:`picos.partial_transpose() <picos.tools.partial_transpose>`
         """
+        
+        def partial_trace(self,k=1,dim=None):
+                """partial trace
+                   cf. doc of :func:`picos.partial_trace() <picos.tools.partial_trace>`
+                """
+                sz = self.size
+                if dim is None:
+                        if sz[0] == sz[1] and (sz[0]**0.5) == int(sz[0]**0.5) and (sz[1]**0.5) == int(sz[1]**0.5):
+                                dim = (int(sz[0]**0.5),int(sz[1]**0.5))
+                        else:
+                                raise ValueError('The default parameter dim=None assumes X is a n**2 x n**2 matrix')
+                
+                pdim = np.product(dim)
+                if pdim !=  sz[0] or  pdim !=  sz[1]:
+                        raise ValueError('The product of the sub-dimensions does not match the size of X')
+                
+                
+                if k > len(dim):
+                    raise Exception('we must have k <= len(dim)')
+                
+                dim_reduced = [d for d in dim]
+                del dim_reduced[k]
+                dim_reduced = tuple(dim_reduced)
+                pdimred = np.product(dim_reduced)
+                
+                
+                fact = cvx.spmatrix([],[],[],(pdimred**2, pdim**2))
+                
+                for iii in itertools.product(*[range(i) for i in dim_reduced]):
+                    for jjj in itertools.product(*[range(j) for j in dim_reduced]):
+                        #element iii,jjj of the partial trace
+                        
+                        row = int(sum([iii[j] * np.product(dim_reduced[j+1:]) for j in range(len(dim_reduced))]))
+                        col = int(sum([jjj[j] * np.product(dim_reduced[j+1:]) for j in range(len(dim_reduced))]))
+                        #this corresponds to the element row,col in the matrix basis
+                        
+                        rowij = col * pdimred + row
+                        #this corresponds to the elem rowij in vectorized form
+                        
+                        #computes the partial trace for iii,jjj
+                        for l in range(dim[k]):
+                            iili = list(iii)
+                            iili.insert(k,l)
+                            iili = tuple(iili)
+                            
+                            jjlj = list(jjj)
+                            jjlj.insert(k,l)
+                            jjlj = tuple(jjlj)
+                            
+                            row_l = int(sum([iili[j] * np.product(dim[j+1:]) for j in range(len(dim))]))
+                            col_l = int(sum([jjlj[j] * np.product(dim[j+1:]) for j in range(len(dim))]))
+                            
+                            colij_l = col_l * pdim + row_l
+                            fact[rowij,colij_l] = 1
+                            
+                newfacs = {}
+                for x in self.factors:
+                    newfacs[x] = fact * self.factors[x]
+                if self.constant:
+                    cons = fact * self.constant
+                else:
+                    cons = None
+                
+                return AffinExp(newfacs,cons,(pdimred,pdimred),'Tr_'+str(k)+'('+self.string+')')
+                            
         
         def hadamard(self,fact):
                 """hadamard (elementwise) product"""

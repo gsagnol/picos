@@ -1884,8 +1884,8 @@ class Problem(object):
                 #TODO pb if bounds of old variables changed
                 if NUMVAR_NEW:
                         
-                        ub={j:grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
-                        lb={j:-grb.GRB.INFINITY for j in range(NUMVAR_OLD,NUMVAR)}
+                        ub=dict((j, grb.GRB.INFINITY) for j in range(NUMVAR_OLD,NUMVAR))
+                        lb=dict((j, -grb.GRB.INFINITY) for j in range(NUMVAR_OLD,NUMVAR))
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
                                                 in six.iteritems(self.variables)
@@ -2389,8 +2389,8 @@ class Problem(object):
                 if NUMVAR_NEW:
 
                         #specify bounds later, in constraints
-                        ub={j:cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
-                        lb={j:-cplex.infinity for j in range(NUMVAR_OLD,NUMVAR)}
+                        ub=dict((j, cplex.infinity) for j in range(NUMVAR_OLD,NUMVAR))
+                        lb=dict((j, -cplex.infinity) for j in range(NUMVAR_OLD,NUMVAR))
                         
                         
                         for kvar,variable in [(kvar,variable) for (kvar,variable)
