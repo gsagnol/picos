@@ -1,4 +1,4 @@
-PICOS is a user friendly interface
+`PICOS <http://picos.zib.de/>`_ is a user friendly interface
 to several conic and integer programming solvers,
 very much like `YALMIP <http://users.isy.liu.se/johanl/yalmip/>`_
 or `CVX <http://cvxr.com/cvx/>`_  under `MATLAB <http://www.mathworks.com/>`_.
