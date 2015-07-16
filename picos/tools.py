@@ -547,15 +547,13 @@ def partial_transpose(exp,dim = None):
         """
         return exp.partial_transpose(dim)
         
-def partial_transpose(X,k=1,dim = None):
-        r"""Partial trace of an Affine Expression,
-        with respect to the ``k``th subsystem for a tensor product of dimensions ``dim``.
-        
+def partial_trace(X,k=1,dim = None):
+        r"""Partial trace of an Affine Expression, with respect to the ``k`` th subsystem for a tensor product of dimensions ``dim``.
         If ``X`` is matrix
         :class:`AffinExp <picos.AffinExp>` 
         that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
-        for some *square matrices* :math:`A_0,\ldots,A[n-1]`
-        of respective size ``dim[0]``, ..., ``dim[n-1]``,
+        for some **square matrices** :math:`A_0,\ldots,A_{n-1}`
+        of respective size ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]``,
         this function returns the matrix
         :math:`Y = \operatorname{trace}(A_k)\quad A_0 \otimes \cdots A_{k-1} \otimes A_{k+1} \otimes \cdots \otimes A_{n-1}`.
         
@@ -564,7 +562,7 @@ def partial_transpose(X,k=1,dim = None):
         with blocks of size :math:`n \times n`.
         
         **Example:**
-        #TODO !!!
+        
         >>> import picos as pic
         >>> import cvxopt as cvx
         >>> P = pic.Problem()
