@@ -553,7 +553,7 @@ def partial_trace(X,k=1,dim = None):
         :class:`AffinExp <picos.AffinExp>` 
         that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
         for some **square matrices** :math:`A_0,\ldots,A_{n-1}`
-        of respective size ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]``,
+        of respective sizes ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]``,
         this function returns the matrix
         :math:`Y = \operatorname{trace}(A_k)\quad A_0 \otimes \cdots A_{k-1} \otimes A_{k+1} \otimes \cdots \otimes A_{n-1}`.
         
