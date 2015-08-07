@@ -9,7 +9,7 @@ setup(
     url='http://pypi.python.org/pypi/PICOS/',
     license='LICENSE.txt',
     description='A Python Interface to Conic Optimization Solvers.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     install_requires=[
         "CVXOPT >= 1.1.4",
         "numpy  >= 1.6.2",
