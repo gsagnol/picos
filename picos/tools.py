@@ -72,6 +72,7 @@ __all__=['_retrieve_matrix',
         'tracepow',
         'trace',
         'partial_transpose',
+        'partial_trace',
         'detrootn',
         'ball',
         'sum_k_largest',
@@ -545,6 +546,43 @@ def partial_transpose(exp,dim = None):
 
         """
         return exp.partial_transpose(dim)
+        
+def partial_trace(X,k=1,dim = None):
+        r"""Partial trace of an Affine Expression, with respect to the ``k`` th subsystem for a tensor product of dimensions ``dim``.
+        If ``X`` is matrix
+        :class:`AffinExp <picos.AffinExp>` 
+        that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
+        for some **square matrices** :math:`A_0,\ldots,A_{n-1}`
+        of respective size ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]``,
+        this function returns the matrix
+        :math:`Y = \operatorname{trace}(A_k)\quad A_0 \otimes \cdots A_{k-1} \otimes A_{k+1} \otimes \cdots \otimes A_{n-1}`.
+        
+        The default value ``dim=None`` automatically computes the size of the subblocks,
+        assuming that ``X`` is a :math:`n^2 \times n^2`-square matrix
+        with blocks of size :math:`n \times n`.
+        
+        **Example:**
+        
+        >>> import picos as pic
+        >>> import cvxopt as cvx
+        >>> P = pic.Problem()
+        >>> X = P.add_variable('X',(4,4))
+        >>> X.value = cvx.matrix(range(16),(4,4))
+        >>> print X #doctest: +NORMALIZE_WHITESPACE
+        [ 0.00e+00  4.00e+00  8.00e+00  1.20e+01]
+        [ 1.00e+00  5.00e+00  9.00e+00  1.30e+01]
+        [ 2.00e+00  6.00e+00  1.00e+01  1.40e+01]
+        [ 3.00e+00  7.00e+00  1.10e+01  1.50e+01]
+        >>> print pic.partial_trace(X) #partial transpose with respect to second subsystem (k=1) #doctest: +NORMALIZE_WHITESPACE
+        [ 5.00e+00  2.10e+01]
+        [ 9.00e+00  2.50e+01]
+        >>> print pic.partial_trace(X,0) #and now with respect to first subsystem (k=0) #doctest: +NORMALIZE_WHITESPACE
+        [ 1.00e+01  1.80e+01]
+        [ 1.20e+01  2.00e+01]
+
+        """
+        return X.partial_trace(k,dim)
+        
         
 def detrootn(exp):
         """returns a :class:`DetRootN_Exp <picos.DetRootN_Exp>` object representing the determinant of the
