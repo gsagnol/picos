@@ -3450,7 +3450,7 @@ class Problem(object):
                                                 bdj0 = vbnds.get(j0,(-INFINITY,INFINITY))
                                                 if cons.typeOfConstraint=='lin=':
                                                         fx = rhstmp[i]/v0
-                                                        if fx>=bdj0[0] and fx<=bdj0[1]:
+                                                        if (bdj0[0] is None or fx>=bdj0[0]) and (bdj0[1] is None or fx<=bdj0[1]):
                                                                 vbnds[j0] = (fx,fx)
                                                         else:
                                                                 raise Exception('an equality constraint is not feasible: xx_{0} = {1}'.format(
@@ -3458,11 +3458,11 @@ class Problem(object):
                                                         
                                                 elif (v0>0 and cons.typeOfConstraint=='lin<') or (v0<0 and cons.typeOfConstraint=='lin>'):
                                                         up = rhstmp[i]/v0
-                                                        if up<bdj0[1]:
+                                                        if bdj0[1] is None or up<bdj0[1]:
                                                                 vbnds[j0] = (bdj0[0],up)
                                                 else:
                                                         lo = rhstmp[i]/v0
-                                                        if lo>bdj0[0]:
+                                                        if bdj0[0] is None or lo>bdj0[0]:
                                                                 vbnds[j0] = (lo,bdj0[1])
                                                 
                                                 if cons.typeOfConstraint=='lin>':
