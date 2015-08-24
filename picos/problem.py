@@ -847,10 +847,12 @@ class Problem(object):
 
                 if name in self.variables:
                         raise Exception('this variable already exists')
-                if isinstance(size,int):
-                        size=(size,1)
+                if isinstance(size,six.integer_types):
+                        size=(int(size),1)
+                else:
+                        size=tuple(int(x) for x in size)
                 if len(size)==1:
-                        size=(size[0],1)
+                        size=(int(size[0]),1)
 
                 lisname = None
                 if '[' in name and ']' in name:#list or dict of variables
