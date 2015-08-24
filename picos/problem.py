@@ -110,6 +110,11 @@ class Problem(object):
                 self.scip_vars = None
                 self.scip_obj = None
                 
+                self.sdpa_executable = None
+                self.sdpa_dats_filename = None
+                self.sdpa_out_filename = None
+
+                
                 self.groupsOfConstraints = {}
                 self.listOfVars = {}
                 self.consNumbering=[]
@@ -3846,6 +3851,42 @@ class Problem(object):
                 if self.options['verbose']>0:
                         print('mosek instance built')
                    
+
+        def _make_sdpaopt(self):
+                """
+                Defines the variables sdpa_executable, sdpa_dats_filename, and
+                sdpa_out_filename used by the sdpa solver.
+                """
+                def which(program):
+                    import os
+                    def is_exe(fpath):
+                        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+                    fpath, fname = os.path.split(program)
+                    if fpath:
+                        if is_exe(program):
+                            return program
+                    else:
+                        for path in os.environ["PATH"].split(os.pathsep):
+                            path = path.strip('"')
+                            exe_file = os.path.join(path, program)
+                            if is_exe(exe_file):
+                                return exe_file
+
+                    return None
+
+                self.sdpa_executable = "sdpa"
+                if which(self.sdpa_executable) is None:
+                    raise OSError(solverexecutable +" is not in the path")
+
+                import tempfile
+                tempfile_ = tempfile.NamedTemporaryFile()
+                tmp_filename = tempfile_.name
+                tempfile_.close()
+                self.sdpa_dats_filename = tmp_filename + ".dat-s"
+                self.sdpa_out_filename = tmp_filename + ".out"
+                self._write_sdpa(self.sdpa_dats_filename)
+
                         
         def _make_zibopt(self):
                 """
@@ -4330,7 +4371,10 @@ class Problem(object):
                                 #for gurobi
                                 elif (self.options['solver']=='gurobi'):
                                         primals,duals,obj,sol=self._gurobi_solve()
-                                        
+                                
+                                #for SDPA
+                                elif (self.options['solver']=='sdpa'):
+                                        primals,duals,obj,sol=self._sdpa_solve()
                                 else:
                                         raise Exception('unknown solver')
                         except QuadAsSocpError:
@@ -5912,6 +5956,105 @@ class Problem(object):
                 solt['status']=status
                 solt['time'] = tend - tstart
                 return (primals,duals,obj,solt)
+
+        def _sdpa_solve(self):
+                """
+                Solves the problem with SDPA
+                """
+                
+                #-------------------------------#
+                #  Can we solve it with SDPA? #
+                #-------------------------------#
+                if self.type in ('unknown type','LP','QCQP,QP','SOCP','ConeP',
+                                 'GP','general-obj','MIP','MIQCP','MIQP',
+                                 'Mixed (SOCP+quad)','MISOCP',
+                                 'Mixed (MISOCP+quad)','Mixed (SDP+quad)'):
+                        raise NotAppropriateSolverError("'SDPA' cannot solve problems of type {0}".format(self.type))
+                
+                #-----------------------------#
+                #  create the sdpaopt instance #
+                #-----------------------------#
+                self._make_sdpaopt()
+                       
+                #--------------------#
+                #  call the solver   #
+                #--------------------#
+                import time
+                from subprocess import call
+                tstart = time.time()
+                if self.options['verbose']>=1:
+                    call([self.sdpa_executable, self.sdpa_dats_filename, 
+                          self.sdpa_out_filename])                  
+                else:
+                    with open(os.devnull, "w") as fnull:
+                        call([self.sdpa_executable, self.sdpa_dats_filename, 
+                              self.sdpa_out_filename], stdout=fnull, stderr=fnull)
+                tend = time.time()
+                #-----------------------#
+                # retrieve the solution #
+                #-----------------------#
+                def parse_solution_matrix(iterator):
+                    solution_matrix = []
+                    while True:
+                        sol_mat = None
+                        in_matrix = False
+                        i = 0
+                        for row in iterator:
+                            if row.find('}') < 0:
+                                continue
+                            if row.startswith('}'):
+                                break
+                            if row.find('{') != row.rfind('{'):
+                                in_matrix = True
+                            numbers = row[row.rfind('{')+1:row.find('}')].strip().split(',')
+                            if sol_mat is None:
+                                sol_mat = np.empty((len(numbers), len(numbers)))
+                            for j, number in enumerate(numbers):
+                                sol_mat[i, j] = float(number)
+                            if row.find('}') != row.rfind('}') or not in_matrix:
+                                break
+                            i += 1
+                        solution_matrix.append(sol_mat)
+                        if row.startswith('}'):
+                            break
+                    return solution_matrix
+
+                file_ = open(self.sdpa_out_filename, 'r')
+                for line in file_:
+                    if line.find("phase.value") > -1:
+                        if line.find("pdOPT") > -1:
+                                status='optimal'
+                        elif line.find("INF") > -1:
+                                status='infeasible'
+                        elif line.find("UNBD") > -1:
+                                status='unbounded'
+                        else:
+                                status='unknown'
+                    if line.find("objValPrimal") > -1:
+                        obj = float((line.split())[2])
+                    if line.find("xMat =") > -1:
+                        x_mat = parse_solution_matrix(file_)
+                    if line.find("yMat =") > -1:
+                        y_mat = parse_solution_matrix(file_)
+                file_.close()
+                import os
+                os.remove(self.sdpa_dats_filename)
+                os.remove(self.sdpa_out_filename)
+
+                        
+                if self.options['verbose']>0:
+                        print('SDPA solution status: '+status)
+                
+                primals, duals = {}, {}
+
+                #------------------#
+                # return statement #
+                #------------------#  
+                
+                solt={}
+                solt['status']=status
+                solt['time'] = tend - tstart
+                return (primals,duals,obj,solt)
                 
                 
         def _sqpsolve(self,options):
@@ -6528,7 +6671,6 @@ class Problem(object):
                 f.write(str(list(-P_b)).replace('[', '{').replace(']', '}'))
                 f.write('\n')
                 #coefs
-                from itertools import zip
                 for k in range(P_m+1):
                         if k != 0:
                                 v = sparse(G[:, k-1])
