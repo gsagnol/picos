@@ -8,6 +8,13 @@
 Change History
 ==============
 
+ * 29 Aug. 15: **Picos** :ref:`1.1.1 <download>` **Released**
+    Minor release with following changes:
+     * Partial trace of an Affine Expression, cf. :func:`partial_trace() <picos.tools.partial_trace>`
+     * Bugfix for compatibility with python3 (thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_)
+     * Initial support for the SDPA solver (with the option ``solver='sdpa'``, picos works as a wrapper around the SDPA executable based on the :func:`write_to_file() <picos.Problem.write_to_file()>` function; thanks to `Petter Wittek <http://peterwittek.com/>`_ )
+     * Better PEP8-compliance
+
  * 15 Apr. 15: **Picos** :ref:`1.1.0 <download>` **Released**
     * PICOS is now compatible with **python 3+** (and remains compatible with python 2.6+). Many thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ for this compatibility layer ! If you plan to work with PICOS and python3, think to install the most recent version of your solver (Mosek, Cplex, Gurobi, or Cvxopt). SCIP is not supported in python3+ at this point (but remains supported with python 2.x).
     

@@ -32,7 +32,7 @@ on every function of PICOS.
 
 **News**
 
- * xx Aug. 15: **Picos** :ref:`1.1.1 <download>` **Released**
+ * 29 Aug. 15: **Picos** :ref:`1.1.1 <download>` **Released**
     Minor release with following changes:
      * Partial trace of an Affine Expression, cf. :func:`partial_trace() <picos.tools.partial_trace>`
      * Bugfix for compatibility with python3 (thanks to `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_)
