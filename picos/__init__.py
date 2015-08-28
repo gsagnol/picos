@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-#Picos 1.1.1dev : A pyton Interface To Conic Optimization Solvers
+#Picos 1.1.1 : A pyton Interface To Conic Optimization Solvers
 #Copyright (C) 2012  Guillaume Sagnol
 #
 #This program is free software: you can redistribute it and/or modify
@@ -28,9 +28,9 @@
 from .problem import *
 from .expression import *
 from .constraint import *
-from .tools import sum,lse,new_param,diag,diag_vect,geomean,norm,tracepow,trace,detrootn,QuadAsSocpError,NotAppropriateSolverError,NonConvexError,flow_Constraint,ball,simplex,truncated_simplex,partial_transpose,import_cbf,sum_k_largest,sum_k_largest_lambda,lambda_max,sum_k_smallest,sum_k_smallest_lambda,lambda_min
+from .tools import sum,lse,new_param,diag,diag_vect,geomean,norm,tracepow,trace,detrootn,QuadAsSocpError,NotAppropriateSolverError,NonConvexError,flow_Constraint,ball,simplex,truncated_simplex,partial_trace,partial_transpose,import_cbf,sum_k_largest,sum_k_largest_lambda,lambda_max,sum_k_smallest,sum_k_smallest_lambda,lambda_min
 
 __all__=['tools','constraint','expression','problem']
 
-__version_info__ = ('1', '1', '1dev')
+__version_info__ = ('1', '1', '1')
 __version__ = '.'.join(__version_info__)
