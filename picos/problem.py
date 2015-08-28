@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-# Picos 1.1.1dev : A pyton Interface To Conic Optimization Solvers
+# Picos 1.1.1 : A pyton Interface To Conic Optimization Solvers
 # Copyright (C) 2012  Guillaume Sagnol
 #
 # This program is free software: you can redistribute it and/or modify
@@ -4957,7 +4957,7 @@ class Problem(object):
                 obj = -obj
 
         solt = {'cvxopt_sol': sol, 'status': status, 'time': tend - tstart}
-        return (primals, duals, obj, solt)
+        return primals, duals, obj, solt
 
     def _cplex_solve(self):
         """
