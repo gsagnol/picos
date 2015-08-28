@@ -1139,7 +1139,7 @@ class AffinExp(Expression):
             if self.string[0] == '-':
                 import re
                 if ('+' not in self.string[1:]
-                    ) and ('-' not in self.string[1:]):
+                        ) and ('-' not in self.string[1:]):
                     selfneg.string = self.string[1:]
                 elif (self.string[1] == '(') and (
                         re.search('.*\)((\[.*\])|(.T))*$', self.string)):  # a group in a (...)
@@ -1342,8 +1342,8 @@ class AffinExp(Expression):
             return Constraint('lin<', None, self, exp)
         elif isinstance(exp, QuadExp):
             if (self.isconstant() and self.size == (1, 1)
-                        and (not exp.LR is None) and (not exp.LR[1] is None)
-                    ):
+                and (not exp.LR is None) and (not exp.LR[1] is None)
+                ):
                 cst = AffinExp(
                     factors={}, constant=cvx.matrix(
                         np.sqrt(

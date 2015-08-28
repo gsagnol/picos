@@ -3713,14 +3713,14 @@ class Problem(object):
                         mats = [0]
                     # do we add the variable directly in a cone ?
                     if (self.options['handleConeVars'] and
-                                len(J) == 1 and  # a single var in the expression
-                                J[0] not in allconevars and  # not in a cone yet
-                                # no coef on bar vars
+                        len(J) == 1 and  # a single var in the expression
+                        J[0] not in allconevars and  # not in a cone yet
+                        # no coef on bar vars
                                 not(any([mat for mat in mats])) and
                                 h == 0 and  # no constant term
                                 #(V[0]==-1 or (J[0] not in ints)) #commented (int vars in cone yield a bug with mosek <6.59)
                             J[0] not in ints  # int. variables cannot be scaled
-                            ):
+                        ):
                         conevars.append(J[0])
                         allconevars.append(J[0])
                         fxd.append((i, J[0]))
@@ -6065,8 +6065,8 @@ class Problem(object):
                             duals.append(cvx.matrix(v))
                             duals[-1][0] = -duals[-1][0]
                         else:
-                            vr = [-0.25 * v[0] - 0.5 * v[1]] + [0.5 * \
-                                vi for vi in v[2:]] + [-0.25 * v[0] + 0.5 * v[1]]
+                            vr = [-0.25 * v[0] - 0.5 * v[1]] + [0.5 *
+                                                                vi for vi in v[2:]] + [-0.25 * v[0] + 0.5 * v[1]]
                             duals.append(cvx.matrix(vr))
                         idvarcone += szcone - len(fxd)
                         idconin += szcone - len(fxd)

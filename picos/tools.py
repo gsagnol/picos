@@ -792,7 +792,7 @@ def put_indices_on_frames(frames, indices):
         for t in frames[fi]:
             tsp = t.split('.')
             if (len(tsp) <= 2 and
-                    all([s.isdigit() for s in tsp if len(s) > 0])
+                all([s.isdigit() for s in tsp if len(s) > 0])
                 ):
                 num += 1
             else:
