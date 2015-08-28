@@ -134,6 +134,17 @@ class Problem(object):
                 
                 self._complex = False #problem has complex coefs             
 
+
+        def __del__(self):
+                #clean-up solver instances that must deleted manually
+                #TODO it looks like we do not enter here... Read doc about __del__
+                print('enter DEL')
+                del self.msk_env
+                del self.msk_task
+                del self.cplex_Instance
+                del self.gurobi_Instance
+                del self.scip_solver
+
         def __str__(self):
                 probstr='---------------------\n'               
                 probstr+='optimization problem  ({0}):\n'.format(self.type)
