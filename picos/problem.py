@@ -139,11 +139,23 @@ class Problem(object):
         """status returned by the solver. The default when
                    a new problem is created is 'unsolved'.
                 """
-
+        
         self.obj_passed = []
         """list of solver instances where the objective has been passed"""
 
         self._complex = False  # problem has complex coefs
+
+    ''' TO CHECK are we really entering this function? look at the doc of __del__
+    def __del__(self):
+        """
+        clean-up solver instances that must deleted manually
+        """
+        del self.msk_env
+        del self.msk_task
+        del self.cplex_Instance
+        del self.gurobi_Instance
+        del self.scip_solver
+    '''
 
     def __str__(self):
         probstr = '---------------------\n'
