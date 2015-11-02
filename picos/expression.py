@@ -3083,7 +3083,7 @@ class Sum_k_Largest_Exp(_ConvexExp):
                 elif self.k == n:
                     return (1 | self.exp) < exp
                 else:
-                    lbda = Ptmp.add_variable('lambda', 1, lower=0)
+                    lbda = Ptmp.add_variable('lambda', 1)
                     mu = Ptmp.add_variable('mu', self.exp.size, lower=0)
                     Ptmp.add_constraint(self.exp < lbda + mu)
                     Ptmp.add_constraint(self.k * lbda + (1 | mu) < exp)
@@ -3207,7 +3207,7 @@ class Sum_k_Smallest_Exp(_ConvexExp):
                 elif self.k == n:
                     return (1 | self.exp) > exp
                 else:
-                    lbda = Ptmp.add_variable('lambda', 1, lower=0)
+                    lbda = Ptmp.add_variable('lambda', 1)
                     mu = Ptmp.add_variable('mu', self.exp.size, lower=0)
                     Ptmp.add_constraint(-self.exp < lbda + mu)
                     Ptmp.add_constraint(self.k * lbda + (1 | mu) < -exp)
