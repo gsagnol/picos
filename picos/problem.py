@@ -5479,6 +5479,10 @@ class Problem(object):
             raise ValueError(
                 'a gurobi instance should have been created before')
 
+        # verbosity
+        if self.options['verbose'] == 0:
+            m.setParam('OutputFlag', 0)
+ 
         if not self.options['timelimit'] is None:
             m.setParam('TimeLimit', self.options['timelimit'])
         if not self.options['treememory'] is None:
@@ -5489,11 +5493,7 @@ class Problem(object):
         if not self.options['gaplim'] is None:
             m.setParam('MIPGap', self.options['gaplim'])
             # m.setParam('MIPGapAbs',self.options['gaplim'])
-
-        # verbosity
-        if self.options['verbose'] == 0:
-            m.setParam('OutputFlag', 0)
-
+    
         # convergence tolerance
         m.setParam('BarQCPConvTol', self.options['tol'])
         m.setParam('BarConvTol', self.options['tol'])
