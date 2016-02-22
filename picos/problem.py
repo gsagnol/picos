@@ -139,7 +139,7 @@ class Problem(object):
         """status returned by the solver. The default when
                    a new problem is created is 'unsolved'.
                 """
-        
+
         self.obj_passed = []
         """list of solver instances where the objective has been passed"""
 
@@ -5482,7 +5482,7 @@ class Problem(object):
         # verbosity
         if self.options['verbose'] == 0:
             m.setParam('OutputFlag', 0)
- 
+
         if not self.options['timelimit'] is None:
             m.setParam('TimeLimit', self.options['timelimit'])
         if not self.options['treememory'] is None:
@@ -5493,7 +5493,7 @@ class Problem(object):
         if not self.options['gaplim'] is None:
             m.setParam('MIPGap', self.options['gaplim'])
             # m.setParam('MIPGapAbs',self.options['gaplim'])
-    
+
         # convergence tolerance
         m.setParam('BarQCPConvTol', self.options['tol'])
         m.setParam('BarConvTol', self.options['tol'])
@@ -6360,6 +6360,8 @@ class Problem(object):
             if line.find("phase.value") > -1:
                 if line.find("pdOPT") > -1:
                     status = 'optimal'
+                elif line.find("pdFEAS") > -1:
+                    status = 'primal-dual feasible'
                 elif line.find("INF") > -1:
                     status = 'infeasible'
                 elif line.find("UNBD") > -1:
