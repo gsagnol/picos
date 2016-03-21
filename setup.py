@@ -14,6 +14,12 @@ setup(
         "numpy  >= 1.6.2",
         "six >= 1.8.0"
     ],
+    keywords=[
+        'conic optimization',
+        'linear programming',
+        'sdp',
+        'semidefinite programming'
+        ],
     classifiers=[
         'Operating System :: OS Independent',
         'Topic :: Scientific/Engineering :: Mathematics',
