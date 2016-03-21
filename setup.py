@@ -14,6 +14,12 @@ setup(
         "numpy  >= 1.6.2",
         "six >= 1.8.0"
     ],
+    classifiers=[
+        'Operating System :: OS Independent',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python'
+    ],
     url='http://picos.zib.de',
     download_url='http://picos.zib.de/dist/PICOS-1.1.1dev.tar.gz'
 ) 
