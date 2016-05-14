@@ -1679,6 +1679,8 @@ class Problem(object):
                     del self.groupsOfConstraints[stidx]
                     goc[0] = goc[0] - 1
                     self.groupsOfConstraints[stidx - 1] = goc
+
+            print
             return
 
         indtuple = ind
@@ -5387,8 +5389,15 @@ class Problem(object):
                             # rows with other constraints
                             for i in range(len(dual_values)):
                                 if dual_values[i] is None:
-                                    du = c.solution.get_dual_values(
+                                    try:
+                                        du = c.solution.get_dual_values(
                                         'lin' + str(k) + '_' + str(i))
+                                    except cplex.exceptions.CplexSolverError as ex:
+                                        if ': 0 = 0' in str(constr):#constraint 0=0
+                                            dual_values[i] = 0.
+                                            continue
+                                        else:
+                                            raise
                                     if self.objective[0] == 'min':
                                         du = -du
                                     if constr.typeOfConstraint[3] == '>':
@@ -5435,10 +5444,10 @@ class Problem(object):
             except Exception as ex:
                 if self.options['verbose'] > 0:
                     print("\033[1;31m*** Dual Solution not found\033[0m")
+                
         #-----------------#
         # return statement#
         #-----------------#
-
         sol = {
             'cplex_solution': c.solution,
             'status': status,
