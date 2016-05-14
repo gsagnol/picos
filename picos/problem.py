@@ -57,6 +57,8 @@ class Problem(object):
         self.objective = ('find', None)  # feasibility problem only
         self.constraints = []
         """list of all constraints"""
+
+        self._deleted_constraints = []
         self.variables = {}
         """dictionary of variables indexed by variable names"""
         self.countVar = 0
@@ -325,6 +327,14 @@ class Problem(object):
         if onlyvar:
             self.remove_solver_from_passed('scip')
 
+    def reset_sdpa_instance(self,onlyvar=True):
+        self.sdpa_executable = None
+        self.sdpa_dats_filename = None
+        self.sdpa_out_filename = None
+
+        if onlyvar:
+            self.remove_solver_from_passed('sdpa')
+
     def reset_solver_instances(self):
 
         self.reset_cvxopt_instance(False)
@@ -332,6 +342,7 @@ class Problem(object):
         self.reset_cplex_instance(False)
         self.reset_mosek_instance(False)
         self.reset_scip_instance(False)
+        self.reset_sdpa_instance(False)
 
         for cons in self.constraints:
             cons.passed = []
@@ -1625,7 +1636,6 @@ class Problem(object):
         """
         # TODO    *examples with list of geomeans
 
-        self.reset_solver_instances()
         if isinstance(ind, int):  # constraint given with its "raw index"
             cons = self.constraints[ind]
             if cons.typeOfConstraint[:3] == 'lin':
@@ -1650,6 +1660,8 @@ class Problem(object):
                 if cons.semidefVar:
                     cons.semidefVar.semiDef = False
 
+            cons.passed = []
+            self._deleted_constraints.append(cons)
             del self.constraints[ind]
             self.countCons -= 1
             if ind in self.consNumbering:  # single added constraint
@@ -1826,6 +1838,12 @@ class Problem(object):
         """
         defines the variables gurobi_Instance and grbvar
         """
+
+        if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'gurobi' not in cs.passed:
+                    cs.passed.append('gurobi')
+            self.reset_gurobi_instance(True)
 
         try:
             import gurobipy as grb
@@ -2436,6 +2454,11 @@ class Problem(object):
                         tmprhs[-1] > 0)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+                    if constr.Id is None:
+                        constr.Id = {}
+                    constr.Id['cplex'] = ['tmp_lhs_{0}'.format(constrKey),
+                                              'tmp_rhs_{0}'.format(constrKey),
+                                              'tmp_conequad_{0}'.format(constrKey)]
                     icone += 1
                 if constr.typeOfConstraint == 'RScone':
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
@@ -2475,6 +2498,11 @@ class Problem(object):
                         tmprhs[-1] > 0)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+                    if constr.Id is None:
+                        constr.Id = {}
+                    constr.Id['cplex'] = ['tmp_lhs_{0}'.format(constrKey),
+                                              'tmp_rhs_{0}'.format(constrKey),
+                                              'tmp_conequad_{0}'.format(constrKey)]
                     icone += 1
 
         NUMVAR_NEW = int(_bsum([(var.endIndex - var.startIndex)  # new vars including cone vars
@@ -2724,6 +2752,10 @@ class Problem(object):
                         rhs.append(r)
                         irow += 1
                         rownames.append('lin' + str(constrKey) + '_' + str(i))
+                        if constr.Id is None:
+                            constr.Id = {}
+                        constr.Id.setdefault('cplex',[])
+                        constr.Id['cplex'].append('lin' + str(constrKey) + '_' + str(i))
 
                     if self.options['verbose'] > 1:
                         #<--display progress
@@ -2796,6 +2828,31 @@ class Problem(object):
             print(prog, "\r", end="")
             print()
 
+        print_message_not_printed_yet = True
+        for cs in self._deleted_constraints:
+            if 'cplex' in cs.passed:
+                continue
+            else:
+                cs.passed.append('cplex')
+
+            if print_message_not_printed_yet and self.options['verbose'] > 0:
+                print()
+                print('Passing to cplex...')
+                print_message_not_printed_yet = False
+
+            print(cs.Id['cplex'])
+            for i in cs.Id['cplex']:
+                if cs.typeOfConstraint == 'quad':
+                    c.quadratic_constraints.delete(i)
+                elif cs.typeOfConstraint.startswith('lin'):
+                    c.linear_constraints.delete(i)
+                else:
+                    if i.startswith('tmp_conequad'):
+                        c.quadratic_constraints.delete(i)
+                    else:
+                        c.linear_constraints.delete(i)
+
+
         if self.options['verbose'] > 0:
             print()
             print('Passing to cplex...')
@@ -2864,6 +2921,12 @@ class Problem(object):
         new_cvxopt_cons_only: if True, consider only cons where 'cvxopt' not in passed
         reset: if True, reset the cvxoptVars at the beginning.
         """
+        if any([('cvxopt' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'cvxopt' not in cs.passed:
+                    cs.passed.append('cvxopt')
+            self.reset_cvxopt_instance(True)
+
         ss = self.numberOfVars
         # initial values
         if self.cvxoptVars['A'] is None:
@@ -3154,6 +3217,12 @@ class Problem(object):
         """
         defines the variables msk_env and msk_task used by the solver mosek.
         """
+        if any([('mosek' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'mosek' not in cs.passed:
+                    cs.passed.append('mosek')
+            self.reset_mosek_instance(True)
+
         if self.options['verbose'] > 0:
             print('build mosek instance')
         #import mosek
@@ -4049,6 +4118,12 @@ class Problem(object):
         Defines the variables sdpa_executable, sdpa_dats_filename, and
         sdpa_out_filename used by the sdpa solver.
         """
+        if any([('sdpa' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'sdpa' not in cs.passed:
+                    cs.passed.append('sdpa')
+            self.reset_sdpa_instance(True)
+
         def which(program):
             import os
 
@@ -4085,6 +4160,12 @@ class Problem(object):
         Defines the variables scip_solver, scip_vars and scip_obj,
         used by the zibopt solver.
         """
+        if any([('scip' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'scip' not in cs.passed:
+                    cs.passed.append('scip')
+            self.reset_scip_instance(True)
+
         try:
             from zibopt import scip
         except:
@@ -5390,8 +5471,7 @@ class Problem(object):
                             for i in range(len(dual_values)):
                                 if dual_values[i] is None:
                                     try:
-                                        du = c.solution.get_dual_values(
-                                        'lin' + str(k) + '_' + str(i))
+                                        du = c.solution.get_dual_values(constr.Id['cplex'][i])
                                     except cplex.exceptions.CplexSolverError as ex:
                                         if ': 0 = 0' in str(constr):#constraint 0=0
                                             dual_values[i] = 0.
