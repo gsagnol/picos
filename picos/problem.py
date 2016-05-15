@@ -1660,6 +1660,7 @@ class Problem(object):
                 if cons.semidefVar:
                     cons.semidefVar.semiDef = False
 
+            cons.original_index = ind
             cons.passed = []
             self._deleted_constraints.append(cons)
             del self.constraints[ind]
@@ -2419,6 +2420,7 @@ class Problem(object):
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
                         # remove_variable should never called (we let it for
                         # security)
+                        print('removing some vars, argh')
                         self.remove_variable(
                             '__tmplhs[{0}]__'.format(constrKey))
                     if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
@@ -2454,12 +2456,20 @@ class Problem(object):
                         tmprhs[-1] > 0)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+
                     if constr.Id is None:
                         constr.Id = {}
-                    constr.Id['cplex'] = ['tmp_lhs_{0}'.format(constrKey),
-                                              'tmp_rhs_{0}'.format(constrKey),
-                                              'tmp_conequad_{0}'.format(constrKey)]
+                    constr.Id.setdefault('cplex',[])
+                    for i in range(constr.Exp1.size[0] * constr.Exp1.size[1]):
+                        constr.Id['cplex'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
+                    for i in range(constr.Exp2.size[0] * constr.Exp2.size[1]):
+                        constr.Id['cplex'].append('lintmp_rhs_{0}_{1}'.format(constrKey,i))
+                    constr.Id['cplex'].append('tmp_conequad_{0}'.format(constrKey))
+                    cs = newcons['tmp_conequad_{0}'.format(constrKey)]
+                    cs.myconstring = 'tmp_conequad_{0}'.format(constrKey)
+
                     icone += 1
+
                 if constr.typeOfConstraint == 'RScone':
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
                         self.remove_variable(
@@ -2498,11 +2508,18 @@ class Problem(object):
                         tmprhs[-1] > 0)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+
                     if constr.Id is None:
                         constr.Id = {}
-                    constr.Id['cplex'] = ['tmp_lhs_{0}'.format(constrKey),
-                                              'tmp_rhs_{0}'.format(constrKey),
-                                              'tmp_conequad_{0}'.format(constrKey)]
+                    constr.Id.setdefault('cplex',[])
+                    for i in range(constr.Exp1.size[0] * constr.Exp1.size[1] + 1):
+                        constr.Id['cplex'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
+
+                    constr.Id['cplex'].append('lintmp_rhs_{0}_{1}'.format(constrKey,0))
+                    constr.Id['cplex'].append('tmp_conequad_{0}'.format(constrKey))
+                    cs = newcons['tmp_conequad_{0}'.format(constrKey)]
+                    cs.myconstring = 'tmp_conequad_{0}'.format(constrKey)
+
                     icone += 1
 
         NUMVAR_NEW = int(_bsum([(var.endIndex - var.startIndex)  # new vars including cone vars
@@ -2648,6 +2665,7 @@ class Problem(object):
         ql = []
         qq = []
         qc = []
+        qnames = []
 
         # join all constraints
         def join_iter(it1, it2):
@@ -2804,6 +2822,10 @@ class Problem(object):
                 ql += [l_exp]
                 qq += [q_exp]
                 qc += [qcs]
+                if constr.myconstring is not None and 'tmp_conequad' in constr.myconstring:
+                    qnames.append(constr.myconstring)
+                else:
+                    qnames.append(None)
 
                 if self.options['verbose'] > 1:
                     #<--display progress
@@ -2829,6 +2851,7 @@ class Problem(object):
             print()
 
         print_message_not_printed_yet = True
+        todel_from_boundcons = []
         for cs in self._deleted_constraints:
             if 'cplex' in cs.passed:
                 continue
@@ -2837,10 +2860,21 @@ class Problem(object):
 
             if print_message_not_printed_yet and self.options['verbose'] > 0:
                 print()
-                print('Passing to cplex...')
+                print('Removing constraints from Cplex instance...')
                 print_message_not_printed_yet = False
 
-            print(cs.Id['cplex'])
+            import pdb;pdb.set_trace()
+            sgn = cs.typeOfConstraint[3]
+            todel_from_boundcons.append(cs.original_index)
+            for i,j,b,v in self.cplex_boundcons[cs.original_index]:
+                if sgn == '=':
+                    lb[j] = -cplex.infinity
+                    ub[j] = cplex.infinity
+                elif (sgn == '<' and v>0) or (sgn == '>' and v<0):
+                    ub[j] = cplex.infinity
+                elif (sgn == '<' and v>0) or (sgn == '>' and v<0):
+                    lb[j] = -cplex.infinity
+
             for i in cs.Id['cplex']:
                 if cs.typeOfConstraint == 'quad':
                     c.quadratic_constraints.delete(i)
@@ -2852,6 +2886,9 @@ class Problem(object):
                     else:
                         c.linear_constraints.delete(i)
 
+        if todel_from_boundcons:
+            #TODO HERE
+            del boundcons[i]
 
         if self.options['verbose'] > 0:
             print()
@@ -2874,11 +2911,12 @@ class Problem(object):
 
         if len(rows) > 0:
             c.linear_constraints.set_coefficients(zip(rows, cols, vals))
-        for lp, qp, qcs in zip(ql, qq, qc):
+        for lp, qp, qcs,nam in zip(ql, qq, qc,qnames):
             c.quadratic_constraints.add(lin_expr=lp,
                                         quad_expr=qp,
                                         rhs=qcs,
-                                        sense="L")
+                                        sense="L",
+                                        name = nam)
 
         if self.options['hotstart'] and len(mipstart_ind) > 0:
             c.MIP_starts.add(cplex.SparsePair(
@@ -5489,13 +5527,14 @@ class Problem(object):
 
                         elif constr.typeOfConstraint == 'SOcone':
                             dual_values = []
+                            rhs_id = [id for id in constr.Id['cplex'] if '_rhs_' in id][0]
                             dual_values.append(
-                                c.solution.get_dual_values(
-                                    'lintmp_rhs_' + str(k) + '_0'))
+                                c.solution.get_dual_values(rhs_id))
                             dim = constr.Exp1.size[0] * constr.Exp1.size[1]
-                            for i in range(dim):
-                                dual_values.append(-c.solution.get_dual_values(
-                                    'lintmp_lhs_' + str(k) + '_' + str(i)))
+                            lhs_id = [id for id in constr.Id['cplex'] if '_lhs_' in id]
+                            assert dim == len(lhs_id)
+                            for ids in lhs_id:
+                                dual_values.append(-c.solution.get_dual_values(ids))
                             if self.objective[0] == 'min':
                                 duals.append(-cvx.matrix(dual_values))
                             else:
@@ -5503,13 +5542,14 @@ class Problem(object):
 
                         elif constr.typeOfConstraint == 'RScone':
                             dual_values = []
+                            rhs_id = [id for id in constr.Id['cplex'] if '_rhs_' in id][0]
                             dual_values.append(
-                                c.solution.get_dual_values(
-                                    'lintmp_rhs_' + str(k) + '_0'))
+                                c.solution.get_dual_values(rhs_id))
                             dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
-                            for i in range(dim):
-                                dual_values.append(-c.solution.get_dual_values(
-                                    'lintmp_lhs_' + str(k) + '_' + str(i)))
+                            lhs_id = [id for id in constr.Id['cplex'] if '_lhs_' in id]
+                            assert dim == len(lhs_id)
+                            for ids in lhs_id:
+                                dual_values.append(-c.solution.get_dual_values(ids))
                             if self.objective[0] == 'min':
                                 duals.append(-cvx.matrix(dual_values))
                             else:
