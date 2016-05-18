@@ -103,6 +103,9 @@ class Problem(object):
         self.cplex_Instance = None
         self.cplex_boundcons = None
 
+        #TODO so far, works for cplex only
+        self.pass_simple_cons_as_bounds = False
+
         self.msk_env = None
         self.msk_task = None
         self.msk_fxd = None
@@ -2364,7 +2367,7 @@ class Problem(object):
 
         if (self.cplex_Instance is None):
             c = cplex.Cplex()
-            boundcons = {}
+            boundcons = []
 
         else:
             c = self.cplex_Instance
@@ -2514,6 +2517,7 @@ class Problem(object):
                     constr.Id.setdefault('cplex',[])
                     for i in range(constr.Exp1.size[0] * constr.Exp1.size[1] + 1):
                         constr.Id['cplex'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
+
 
                     constr.Id['cplex'].append('lintmp_rhs_{0}_{1}'.format(constrKey,0))
                     constr.Id['cplex'].append('tmp_conequad_{0}'.format(constrKey))
@@ -2680,14 +2684,14 @@ class Problem(object):
         irow = 0
 
         for constrKey, constr in allcons:
+            # init of boundcons[key]
+            boundcons.append([])
             if 'cplex' in constr.passed:
                 continue
             else:
                 constr.passed.append('cplex')
 
             if constr.typeOfConstraint[:3] == 'lin':
-                # init of boundcons[key]
-                boundcons[constrKey] = []
 
                 # parse the (i,j,v) triple
                 ijv = []
@@ -2729,7 +2733,7 @@ class Problem(object):
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
-                    if len(jv) == 1:
+                    if len(jv) == 1 and self.pass_simple_cons_as_bounds:
                         # BOUND
                         j, v = jv[0]
                         b = r / float(v)
@@ -2755,7 +2759,8 @@ class Problem(object):
                                     ub[j] = b
                         if constr.typeOfConstraint[3] == '=':
                             b = '='
-                        boundcons[constrKey].append((i, j, b, v))
+                        if isinstance(constrKey,int):#a regular constraint, not a tmp constraint for cones
+                            boundcons[constrKey].append((i, j, b, v))
                     else:
                         if constr.typeOfConstraint[:4] == 'lin<':
                             senses += "L"  # lower
@@ -2837,7 +2842,7 @@ class Problem(object):
                     #-->
 
             elif constr.typeOfConstraint[2:] == 'cone':
-                boundcons[constrKey] = []
+                pass
                 # will be handled in the newcons dictionary
 
             else:
@@ -2863,7 +2868,6 @@ class Problem(object):
                 print('Removing constraints from Cplex instance...')
                 print_message_not_printed_yet = False
 
-            import pdb;pdb.set_trace()
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
             for i,j,b,v in self.cplex_boundcons[cs.original_index]:
@@ -2885,9 +2889,11 @@ class Problem(object):
                         c.quadratic_constraints.delete(i)
                     else:
                         c.linear_constraints.delete(i)
+                        ind,jj = [int(kk) for kk in i.split('hs_',1)[1].split('_')]
+                        varname = '__tmp'+i.split('hs_')[0][-1]+'hs[{0}]___{1}'.format(ind,jj)
+                        c.variables.delete(varname)
 
-        if todel_from_boundcons:
-            #TODO HERE
+        for i in todel_from_boundcons:
             del boundcons[i]
 
         if self.options['verbose'] > 0:
