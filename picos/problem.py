@@ -2435,7 +2435,6 @@ class Problem(object):
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
                         # remove_variable should never called (we let it for
                         # security)
-                        print('removing some vars, argh')
                         self.remove_variable(
                             '__tmplhs[{0}]__'.format(constrKey))
                     if '__tmprhs[{0}]__'.format(constrKey) in self.variables:
@@ -2870,6 +2869,7 @@ class Problem(object):
             print()
 
         print_message_not_printed_yet = True
+        warning_message_not_printed_yet = True
         todel_from_boundcons = []
         for cs in self._deleted_constraints:
             if 'cplex' in cs.passed:
@@ -2884,6 +2884,16 @@ class Problem(object):
 
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
+            if (self.options['verbose'] > 0 and
+                self.cplex_boundcons[cs.original_index] and
+                self.options['pass_simple_cons_as_bound'] and
+                warning_message_not_printed_yet):
+
+                print("\033[1;31m*** You have been removing a constraint that can be "+
+                      "(partly) interpreted as a variable bound. This is not safe when "
+                      "the option ``pass_simple_cons_as_bound`` is set to True\033[0m")
+
+
             for i,j,b,v in self.cplex_boundcons[cs.original_index]:
                 if sgn == '=':
                     lb[j] = -cplex.infinity
