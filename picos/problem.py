@@ -103,9 +103,6 @@ class Problem(object):
         self.cplex_Instance = None
         self.cplex_boundcons = None
 
-        #TODO so far, works for cplex only
-        self.pass_simple_cons_as_bounds = False
-
         self.msk_env = None
         self.msk_task = None
         self.msk_fxd = None
@@ -608,6 +605,12 @@ class Problem(object):
             When this option is set to ``None`` (default), PICOS chooses automatically whether the problem
             itself should be passed to the solver, or rather its dual.
 
+          * ``pass_simple_cons_as_bound = False`` : If set to ``True``, linear constraints involving a
+            single variable are passed to the solvers as a bound on the variable. This may speed-up
+            the solving process (?), but is not safe if you indend to remove this constraint later
+            and re-solve the problem.
+            *This option currently works only with cplex, mosek and gurobi*.
+
         * Specific options available for cvxopt/smcp:
 
           * ``feastol = None`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
@@ -740,6 +743,7 @@ class Problem(object):
                            'handleBarVars': True,
                            'handleConeVars': True,
                            'solve_via_dual': None,
+                           'pass_simple_cons_as_bound' : False,
                            }
 
         self._options = _NonWritableDict(default_options)
@@ -1894,6 +1898,8 @@ class Problem(object):
 
         newcons = {}
         newvars = []
+        posvars = []
+
         if self.numberConeConstraints > 0:
             for constrKey, constr in enumerate(self.constraints):
                 if 'gurobi' in constr.passed:
@@ -1906,7 +1912,7 @@ class Problem(object):
                             noconstant = self.add_variable(
                                 '__noconstant__', 1)
                             newvars.append(('__noconstant__', 1))
-                        newcons['noconstant'] = (noconstant > 0)
+                            posvars.append(noconstant.startIndex)
                         # no variable shift -> same noconstant var as before
                 if constr.typeOfConstraint == 'SOcone':
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
@@ -1941,11 +1947,11 @@ class Problem(object):
                     newcons['tmp_rhs_{0}'.format(constrKey)] = (
                         constr.Exp2 - noconstant == tmprhs[-1])
                     # conic constraints
-                    newcons['tmp_conesign_{0}'.format(constrKey)] = (
-                        tmprhs[-1] > 0)
+                    posvars.append(tmprhs[-1].startIndex)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
                     icone += 1
+
                 if constr.typeOfConstraint == 'RScone':
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
                         self.remove_variable(
@@ -1980,8 +1986,7 @@ class Problem(object):
                     newcons['tmp_rhs_{0}'.format(constrKey)] = (
                         constr.Exp2 + constr.Exp3 - noconstant == tmprhs[-1])
                     # conic constraints
-                    newcons['tmp_conesign_{0}'.format(constrKey)] = (
-                        tmprhs[-1] > 0)
+                    posvars.append(tmprhs[-1].startIndex)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
                     icone += 1
@@ -2025,6 +2030,9 @@ class Problem(object):
                         lb[sj + ind] = lo
                     if not(up is None):
                         ub[sj + ind] = up
+
+            for i in posvars: #bounds for dummy cone variables
+                lb[i]=0.
 
             vartopass = sorted([(variable.gurobi_startIndex, variable) for (kvar, variable)
                                 in six.iteritems(self.variables)
@@ -2204,7 +2212,7 @@ class Problem(object):
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
-                    if len(jv) == 1:
+                    if len(jv) == 1 and self.options['pass_simple_cons_as_bound']:
                         # BOUND
                         name, v = jv[0]
                         xj = m.getVarByName(name)
@@ -2405,6 +2413,9 @@ class Problem(object):
 
         newcons = {}
         newvars = []
+
+        posvars = []
+
         if self.numberConeConstraints > 0:
             for constrKey, constr in enumerate(self.constraints):
                 if 'cplex' in constr.passed:
@@ -2417,7 +2428,8 @@ class Problem(object):
                             noconstant = self.add_variable(
                                 '__noconstant__', 1)
                             newvars.append(('__noconstant__', 1))
-                        newcons['noconstant'] = (noconstant > 0)
+                            posvars.append(noconstant.startIndex)
+
                         # no variable shift -> same noconstant var as before
                 if constr.typeOfConstraint == 'SOcone':
                     if '__tmplhs[{0}]__'.format(constrKey) in self.variables:
@@ -2454,9 +2466,8 @@ class Problem(object):
                         constr.Exp1 + v_cons * noconstant == tmplhs[-1])
                     newcons['tmp_rhs_{0}'.format(constrKey)] = (
                         constr.Exp2 - noconstant == tmprhs[-1])
+                    posvars.append(tmprhs[-1].startIndex)
                     # conic constraints
-                    newcons['tmp_conesign_{0}'.format(constrKey)] = (
-                        tmprhs[-1] > 0)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
 
@@ -2507,8 +2518,7 @@ class Problem(object):
                     newcons['tmp_rhs_{0}'.format(constrKey)] = (
                         constr.Exp2 + constr.Exp3 - noconstant == tmprhs[-1])
                     # conic constraints
-                    newcons['tmp_conesign_{0}'.format(constrKey)] = (
-                        tmprhs[-1] > 0)
+                    posvars.append(tmprhs[-1].startIndex)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
 
@@ -2544,9 +2554,10 @@ class Problem(object):
 
         colnames = []
         types = []
-        ub = {}
+
         lb = {}
-        # TODO pb if bounds of old variables changed
+        ub = {}
+
         if NUMVAR_NEW:
 
             # specify bounds later, in constraints
@@ -2670,6 +2681,7 @@ class Problem(object):
         qq = []
         qc = []
         qnames = []
+        qind = c.quadratic_constraints.get_num()
 
         # join all constraints
         def join_iter(it1, it2):
@@ -2733,7 +2745,7 @@ class Problem(object):
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
-                    if len(jv) == 1 and self.pass_simple_cons_as_bounds:
+                    if len(jv) == 1 and self.options['pass_simple_cons_as_bound']:
                         # BOUND
                         j, v = jv[0]
                         b = r / float(v)
@@ -2829,8 +2841,10 @@ class Problem(object):
                 qc += [qcs]
                 if constr.myconstring is not None and 'tmp_conequad' in constr.myconstring:
                     qnames.append(constr.myconstring)
+                    qind+=1
                 else:
-                    qnames.append(None)
+                    qnames.append('q'+str(qind))
+                    qind+=1
 
                 if self.options['verbose'] > 1:
                     #<--display progress
@@ -2901,6 +2915,11 @@ class Problem(object):
             print('Passing to cplex...')
 
         c.variables.add(names=colnames, types=types)
+
+        #nonnegative constraints for dummy variables in cone:
+        for i in posvars:
+            lb[i]=0.
+
         if lb:
             c.variables.set_lower_bounds(six.iteritems(lb))
         if ub:
@@ -3694,17 +3713,19 @@ class Problem(object):
 
                 for i in range(szcons):
                     jv = itojv.get(i, [])
-                    J = [jvk[0] for jvk in jv]
+                    J0 = [jvk[0] for jvk in jv]
                     V = [jvk[1] for jvk in jv]
 
-                    is_fixed_var = (len(J) == 1)
+                    is_fixed_var = (len(J0) == 1) and self.options['pass_simple_cons_as_bound']
                     if is_fixed_var:
-                        j0 = J[0]
+                        j0 = J0[0]
                         v0 = V[0]
                     if self.options['handleBarVars']:
                         J, V, mats = self._separate_linear_cons(
-                            J, V, idxsdpvars)
-                    if is_fixed_var and len(J) == 0:
+                            J0, V, idxsdpvars)
+                    else:
+                        J = J0
+                    if len(J0) == 1 and len(J) == 0:
                         is_fixed_var = False  # this is a bound constraint on a bar var, handle as normal cons
                         if (v0 > 0 and cons.typeOfConstraint == 'lin<') or (
                                 v0 < 0 and cons.typeOfConstraint == 'lin>'):
@@ -7024,7 +7045,7 @@ class Problem(object):
         for i, jv in six.iteritems(itojv):
             J = [jvk[0] for jvk in jv]
             V = [jvk[1] for jvk in jv]
-            if len(J) == 1 and (not (i in [t[1]
+            if len(J) == 1 and self.options['pass_simple_cons_as_bound'] and (not (i in [t[1]
                                            for t in self.cvxoptVars['quadcons']])):
                 # bounded variable
                 if J[0] in bounds:
