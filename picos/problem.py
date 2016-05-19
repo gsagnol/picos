@@ -1867,7 +1867,7 @@ class Problem(object):
 
         if (self.gurobi_Instance is None):
             m = grb.Model()
-            boundcons = {}
+            boundcons = []
             grbcons = {}
         else:
             m = self.gurobi_Instance
@@ -1950,6 +1950,18 @@ class Problem(object):
                     posvars.append(tmprhs[-1].startIndex)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+
+                    if constr.Id is None:
+                        constr.Id = {}
+                    constr.Id.setdefault('gurobi',[])
+                    for i in range(constr.Exp1.size[0] * constr.Exp1.size[1]):
+                        constr.Id['gurobi'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
+                    for i in range(constr.Exp2.size[0] * constr.Exp2.size[1]):
+                        constr.Id['gurobi'].append('lintmp_rhs_{0}_{1}'.format(constrKey,i))
+                    constr.Id['gurobi'].append('tmp_conequad_{0}'.format(constrKey))
+                    cs = newcons['tmp_conequad_{0}'.format(constrKey)]
+                    cs.myconstring = 'tmp_conequad_{0}'.format(constrKey)
+
                     icone += 1
 
                 if constr.typeOfConstraint == 'RScone':
@@ -1989,6 +2001,17 @@ class Problem(object):
                     posvars.append(tmprhs[-1].startIndex)
                     newcons['tmp_conequad_{0}'.format(constrKey)] = (
                         -tmprhs[-1]**2 + (tmplhs[-1] | tmplhs[-1]) < 0)
+
+                    if constr.Id is None:
+                        constr.Id = {}
+                    constr.Id.setdefault('gurobi',[])
+                    for i in range(constr.Exp1.size[0] * constr.Exp1.size[1] + 1):
+                        constr.Id['gurobi'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
+                    constr.Id['gurobi'].append('lintmp_rhs_{0}_{1}'.format(constrKey,0))
+                    constr.Id['gurobi'].append('tmp_conequad_{0}'.format(constrKey))
+                    cs = newcons['tmp_conequad_{0}'.format(constrKey)]
+                    cs.myconstring = 'tmp_conequad_{0}'.format(constrKey)
+
                     icone += 1
 
         NUMVAR_NEW = int(_bsum([(var.endIndex - var.startIndex)  # new vars including cone vars
@@ -2160,16 +2183,19 @@ class Problem(object):
                             six.iteritems(newcons))
 
         irow = 0
+        qind = m.NumQConstrs
 
         for constrKey, constr in allcons:
+            # init of boundcons[key]
+            if isinstance(constrKey,int):
+                boundcons.append([])
+
             if 'gurobi' in constr.passed:
                 continue
             else:
                 constr.passed.append('gurobi')
 
             if constr.typeOfConstraint[:3] == 'lin':
-                # init of boundcons[key]
-                boundcons[constrKey] = []
 
                 # parse the (i,j,v) triple
                 ijv = []
@@ -2233,7 +2259,8 @@ class Problem(object):
                                     xj.ub = b
                         if constr.typeOfConstraint[3] == '=':
                             b = '='
-                        boundcons[constrKey].append((i, name, b, v))
+                        if isinstance(constrKey,int):
+                            boundcons[constrKey].append((i, name, b, v))
                     else:
                         LEXP = grb.LinExpr(
                             [v for j, v in jv],
@@ -2245,6 +2272,10 @@ class Problem(object):
                             grbcons[name] = m.addConstr(LEXP >= r, name=name)
                         elif constr.typeOfConstraint[:4] == 'lin=':
                             grbcons[name] = m.addConstr(LEXP == r, name=name)
+                        if constr.Id is None:
+                            constr.Id = {}
+                        constr.Id.setdefault('gurobi',[])
+                        constr.Id['gurobi'].append(name)
 
                         irow += 1
 
@@ -2294,7 +2325,16 @@ class Problem(object):
                 qcs = 0.
                 if not(constr.Exp1.aff.constant is None):
                     qcs = - constr.Exp1.aff.constant[0]
-                m.addQConstr(q_exp + l_exp <= qcs)
+
+                #name
+                if constr.myconstring is not None and 'tmp_conequad' in constr.myconstring:
+                    qname = constr.myconstring
+                    qind+=1
+                else:
+                    qname = 'q'+str(qind)
+                    qind+=1
+
+                m.addQConstr(q_exp + l_exp <= qcs, qname)
 
                 if self.options['verbose'] > 1:
                     #<--display progress
@@ -2306,7 +2346,7 @@ class Problem(object):
                     #-->
 
             elif constr.typeOfConstraint[2:] == 'cone':
-                boundcons[constrKey] = []
+                pass
                 # will be handled in the newcons dictionary
 
             else:
@@ -2320,6 +2360,8 @@ class Problem(object):
             print()
 
         m.update()
+
+        #TODO HERE loop on deleted_constraints
 
         self.gurobi_Instance = m
         self.grbvar.extend(x)
@@ -2527,7 +2569,6 @@ class Problem(object):
                     for i in range(constr.Exp1.size[0] * constr.Exp1.size[1] + 1):
                         constr.Id['cplex'].append('lintmp_lhs_{0}_{1}'.format(constrKey,i))
 
-
                     constr.Id['cplex'].append('lintmp_rhs_{0}_{1}'.format(constrKey,0))
                     constr.Id['cplex'].append('tmp_conequad_{0}'.format(constrKey))
                     cs = newcons['tmp_conequad_{0}'.format(constrKey)]
@@ -2696,7 +2737,8 @@ class Problem(object):
 
         for constrKey, constr in allcons:
             # init of boundcons[key]
-            boundcons.append([])
+            if isinstance(constrKey,int):
+                boundcons.append([])
             if 'cplex' in constr.passed:
                 continue
             else:
