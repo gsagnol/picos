@@ -1847,11 +1847,11 @@ class Problem(object):
         defines the variables gurobi_Instance and grbvar
         """
 
-        if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
-            for cs in self._deleted_constraints:
-                if 'gurobi' not in cs.passed:
-                    cs.passed.append('gurobi')
-            self.reset_gurobi_instance(True)
+        #if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
+        #    for cs in self._deleted_constraints:
+        #        if 'gurobi' not in cs.passed:
+        #            cs.passed.append('gurobi')
+        #    self.reset_gurobi_instance(True)
 
         try:
             import gurobipy as grb
@@ -2188,14 +2188,15 @@ class Problem(object):
         qind = m.NumQConstrs
 
         for constrKey, constr in allcons:
-            # init of boundcons[key]
-            if isinstance(constrKey,int):
-                boundcons.append([])
 
             if 'gurobi' in constr.passed:
                 continue
             else:
                 constr.passed.append('gurobi')
+
+            # init of boundcons[key]
+            if isinstance(constrKey,int):
+                boundcons.append([])
 
             if constr.typeOfConstraint[:3] == 'lin':
 
@@ -2336,7 +2337,7 @@ class Problem(object):
                     qname = 'q'+str(qind)
                     qind+=1
 
-                m.addQConstr(q_exp + l_exp <= qcs, qname)
+                grbcons[qname] = m.addQConstr(q_exp + l_exp <= qcs, qname)
 
                 if self.options['verbose'] > 1:
                     #<--display progress
@@ -2402,7 +2403,7 @@ class Problem(object):
                     xj.lb = -grb_infty
 
             for i in cs.Id['gurobi']:
-                m.remove(m.getConstrByName(i))
+                m.remove(self.grbcons[i])
                 if 'cone' in cs.typeOfConstraint and not(i.startswith('tmp_conequad')):
                     ind,jj = [int(kk) for kk in i.split('hs_',1)[1].split('_')]
                     varname = '__tmp'+i.split('hs_')[0][-1]+'hs[{0}]___{1}'.format(ind,jj)
@@ -2786,13 +2787,15 @@ class Problem(object):
         irow = 0
 
         for constrKey, constr in allcons:
-            # init of boundcons[key]
-            if isinstance(constrKey,int):
-                boundcons.append([])
+
             if 'cplex' in constr.passed:
                 continue
             else:
                 constr.passed.append('cplex')
+
+            # init of boundcons[key]
+            if isinstance(constrKey,int):
+                boundcons.append([])
 
             if constr.typeOfConstraint[:3] == 'lin':
 
@@ -5920,10 +5923,8 @@ class Problem(object):
                             if dual_values[i] is None:
                                 # getConstrByName is buggy if model updated several times,
                                 # so we store the constraints ourselves.
-                                # du = m.getConstrByName(
-                                #        'lin'+str(k)+'_'+str(i)).pi
-                                du = self.grbcons[
-                                    'lin' + str(k) + '_' + str(i)].pi
+                                # du = m.getConstrByName(constr.Id['gurobi'][i]).pi
+                                du = self.grbcons[constr.Id['gurobi'][i]].pi
                                 if self.objective[0] == 'min':
                                     du = -du
                                 if constr.typeOfConstraint[3] == '>':
@@ -5935,15 +5936,13 @@ class Problem(object):
 
                     elif constr.typeOfConstraint == 'SOcone':
                         dual_values = []
-                        dual_values.append(
-                            self.grbcons[
-                                'lintmp_rhs_' +
-                                str(k) +
-                                '_0'].pi)
+                        rhs_id = [id for id in constr.Id['gurobi'] if '_rhs_' in id][0]
+                        dual_values.append(self.grbcons[rhs_id].pi)
                         dim = constr.Exp1.size[0] * constr.Exp1.size[1]
-                        for i in range(dim):
-                            dual_values.append(
-                                -self.grbcons['lintmp_lhs_' + str(k) + '_' + str(i)].pi)
+                        lhs_id = [id for id in constr.Id['gurobi'] if '_lhs_' in id]
+                        assert dim == len(lhs_id)
+                        for ids in lhs_id:
+                            dual_values.append(-self.grbcons[ids].pi)
                         if self.objective[0] == 'min':
                             duals.append(-cvx.matrix(dual_values))
                         else:
@@ -5951,12 +5950,13 @@ class Problem(object):
 
                     elif constr.typeOfConstraint == 'RScone':
                         dual_values = []
-                        dual_values.append(
-                            self.grbcons['lintmp_rhs_' + str(k) + '_0'].pi)
+                        rhs_id = [id for id in constr.Id['gurobi'] if '_rhs_' in id][0]
+                        dual_values.append(self.grbcons[rhs_id].pi)
                         dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
-                        for i in range(dim):
-                            dual_values.append(
-                                -self.grbcons['lintmp_lhs_' + str(k) + '_' + str(i)].pi)
+                        lhs_id = [id for id in constr.Id['gurobi'] if '_lhs_' in id]
+                        assert dim == len(lhs_id)
+                        for ids in lhs_id:
+                            dual_values.append(-self.grbcons[ids].pi)
                         if self.objective[0] == 'min':
                             duals.append(-cvx.matrix(dual_values))
                         else:
