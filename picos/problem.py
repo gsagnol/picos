@@ -1135,7 +1135,8 @@ class Problem(object):
         :param key: Optional parameter to describe the constraint with a key string.
         :type key: str.
         :param ret: Do you want the added constraint to be returned ?
-                    This can be useful to access the dual of this constraint.
+                    This can be a useful handle to extract the optimal dual variable of this constraint
+                    or to delete the constraint with delete().
                     Note: The constraint is always returned if the option
                     ``return_constraints`` is set to ``True``.
         :type ret: bool.
