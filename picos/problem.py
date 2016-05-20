@@ -1881,6 +1881,8 @@ class Problem(object):
 
         self.options._set('solver', 'gurobi')
 
+        grb_infty = 1e20
+
         # create new variable and quad constraints to handle socp
         tmplhs = []
         tmprhs = []
@@ -2361,7 +2363,55 @@ class Problem(object):
 
         m.update()
 
-        #TODO HERE loop on deleted_constraints
+        #constraints deletion
+        print_message_not_printed_yet = True
+        warning_message_not_printed_yet = True
+        todel_from_boundcons = []
+        for cs in self._deleted_constraints:
+            if 'gurobi' in cs.passed:
+                continue
+            else:
+                cs.passed.append('gurobi')
+
+            if print_message_not_printed_yet and self.options['verbose'] > 0:
+                print()
+                print('Removing constraints from Gurobi instance...')
+                print_message_not_printed_yet = False
+
+            sgn = cs.typeOfConstraint[3]
+            todel_from_boundcons.append(cs.original_index)
+            if (self.options['verbose'] > 0 and
+                self.grb_boundcons[cs.original_index] and
+                self.options['pass_simple_cons_as_bound'] and
+                warning_message_not_printed_yet):
+
+                print("\033[1;31m*** You have been removing a constraint that can be "+
+                      "(partly) interpreted as a variable bound. This is not safe when "
+                      "the option ``pass_simple_cons_as_bound`` is set to True\033[0m")
+
+                warning_message_not_printed_yet = False
+
+            for i,name,b,v in self.grb_boundcons[cs.original_index]:
+                xj = m.getVarByName(name)
+                if sgn == '=':
+                    xj.lb = -grb_infty
+                    xj.ub = grb_infty
+                elif (sgn == '<' and v>0) or (sgn == '>' and v<0):
+                    xj.ub = grb_infty
+                elif (sgn == '<' and v>0) or (sgn == '>' and v<0):
+                    xj.lb = -grb_infty
+
+            for i in cs.Id['gurobi']:
+                m.remove(m.getConstrByName(i))
+                if 'cone' in cs.typeOfConstraint and not(i.startswith('tmp_conequad')):
+                    ind,jj = [int(kk) for kk in i.split('hs_',1)[1].split('_')]
+                    varname = '__tmp'+i.split('hs_')[0][-1]+'hs[{0}]___{1}'.format(ind,jj)
+                    m.remove(m.getVarByName(varname))
+
+        for i in todel_from_boundcons:
+            del boundcons[i]
+
+        m.update()
 
         self.gurobi_Instance = m
         self.grbvar.extend(x)
@@ -2390,18 +2440,18 @@ class Problem(object):
         else:
             return self._complex
             """
-                TODO delete?
-                if self.numberSDPConstraints>0:
-                        for c in self.constraints:
-                                if c.typeOfConstraint.startswith('sdp'):
-                                      if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
-                                              return True
-                                      if (c.Exp1-c.Exp2).constant.typecode=='z':
-                                              return True
+            TODO delete?
+            if self.numberSDPConstraints>0:
+                    for c in self.constraints:
+                            if c.typeOfConstraint.startswith('sdp'):
+                                  if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
+                                          return True
+                                  if (c.Exp1-c.Exp2).constant.typecode=='z':
+                                          return True
 
 
-                return False
-                """
+            return False
+            """
 
     def _make_cplex_instance(self):
         """
@@ -2934,6 +2984,7 @@ class Problem(object):
                 print("\033[1;31m*** You have been removing a constraint that can be "+
                       "(partly) interpreted as a variable bound. This is not safe when "
                       "the option ``pass_simple_cons_as_bound`` is set to True\033[0m")
+                warning_message_not_printed_yet = False
 
 
             for i,j,b,v in self.cplex_boundcons[cs.original_index]:
