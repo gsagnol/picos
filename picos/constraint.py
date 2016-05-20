@@ -59,7 +59,8 @@ class Constraint(object):
             Exp2,
             Exp3=None,
             dualVariable=None,
-            key=None):
+            key=None,
+            ):
         from .expression import AffinExp
         self.typeOfConstraint = typeOfConstraint
         u"""A string from the following values,
@@ -232,6 +233,22 @@ class Constraint(object):
                 self.Exp1.size[0], self.Exp1.size[1])
         return constr + self.constring() + ' #'
 
+    def delete(self):
+        """
+        deletes the constraint from Problem
+        """
+        if self.Exp1.factors:
+            prb = self.Exp1.factors.keys()[0].parent_problem
+        elif self.Exp2.factors:
+            prb = self.Exp2.factors.keys()[0].parent_problem
+        elif self.Exp3 is not None and self.Exp3.factors:
+            prb = self.Exp3.factors.keys()[0].parent_problem
+        else:
+            return
+
+        cind = prb.constraints.index(self)
+        prb.remove_constraint(cind)
+
     def constring(self):
         if not(self.myconstring is None):
             return self.myconstring
@@ -376,6 +393,34 @@ class _Convex_Constraint(Constraint):
     def __repr__(self):
         return '# ' + self.constypestr + ' : ' + self.constring() + '#'
 
+    def delete(self):
+        parent_problem = self.find_parent_problem()
+        if parent_problem is None:
+            return
+        for cons in self.Ptmp.constraints:
+            cind = parent_problem.constraints.index(cons)
+            parent_problem.remove_constraint(cind)
+
+    def find_parent_problem(self):
+        dummy_prefixes = ('_geo',
+                          '_nop',
+                          '_ntp',
+                          '_ndt',
+                          '_nts',
+                          '_npq',
+                          '_nsk')
+        for cons in self.Ptmp.constraints:
+            for v in cons.Exp1.factors:
+                if v.name[:4] not in dummy_prefixes:
+                    return v.parent_problem
+            for v in cons.Exp2.factors:
+                if v.name[:4] not in dummy_prefixes:
+                    return v.parent_problem
+            if cons.Exp3 is not None:
+                for v in cons.Exp3.factors:
+                    if v.name[:4] not in dummy_prefixes:
+                        return v.parent_problem
+        return None
 
 class Flow_Constraint(_Convex_Constraint):
     """ A temporary object used to pass a flow constraint.

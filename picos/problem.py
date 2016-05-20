@@ -611,6 +611,10 @@ class Problem(object):
             and re-solve the problem.
             *This option currently works only with cplex, mosek and gurobi*.
 
+          * ``return_constraints = False`` : If set to ``True``, the default behaviour of the function
+            :func:`add_constraint() <picos.Problem.add_constraint>` is to return
+            the created constraint.
+
         * Specific options available for cvxopt/smcp:
 
           * ``feastol = None`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
@@ -744,6 +748,7 @@ class Problem(object):
                            'handleConeVars': True,
                            'solve_via_dual': None,
                            'pass_simple_cons_as_bound' : False,
+                           'return_constraints' : False,
                            }
 
         self._options = _NonWritableDict(default_options)
@@ -1131,6 +1136,8 @@ class Problem(object):
         :type key: str.
         :param ret: Do you want the added constraint to be returned ?
                     This can be useful to access the dual of this constraint.
+                    Note: The constraint is always returned if the option
+                    ``return_constraints`` is set to ``True``.
         :type ret: bool.
         """
         # SPECIAL CASE OF A NONSTANDARD CONVEX CONSTRAINT
@@ -1150,7 +1157,7 @@ class Problem(object):
             goc = self.groupsOfConstraints[indcons]
             goc[1] = cons.constring() + '\n'
             self.countGeomean += 1
-            if ret:
+            if self.options['return_constraints'] or ret:
                 return cons
             else:
                 return
@@ -1216,7 +1223,7 @@ class Problem(object):
             # is it a simple constraint of the form X>>0 ?
             if cons.semidefVar:
                 cons.semidefVar.semiDef = True
-        if ret:
+        if self.options['return_constraints'] or ret:
             return cons
 
     def add_list_of_constraints(
@@ -1256,6 +1263,8 @@ class Problem(object):
         :type key: str.
         :param ret: Do you want the added list of constraints to be returned ?
                     This can be useful to access the duals of these constraints.
+                    Note: The constraint is always returned if the option
+                    ``return_constraints`` is set to ``True``.
         :type ret: bool.
 
         **Example:**
@@ -1371,7 +1380,7 @@ class Problem(object):
                 goctodel.append(goc)
         for goc in goctodel:
             del self.groupsOfConstraints[goc]
-        if ret:
+        if self.options['return_constraints'] or ret:
             return lst
 
     def get_valued_variable(self, name):
@@ -1668,7 +1677,12 @@ class Problem(object):
                     cons.semidefVar.semiDef = False
 
             cons.original_index = ind
-            cons.passed = []
+            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip')
+                              if solver not in cons.passed]
+            cons.passed = not_passed_yet
+            #deleted constraint is considered as 'passed', i.e. it can be ignored, if it
+            #was not yet part of the solver instance
+
             self._deleted_constraints.append(cons)
             del self.constraints[ind]
             self.countCons -= 1
@@ -2382,9 +2396,10 @@ class Problem(object):
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
             if (self.options['verbose'] > 0 and
-                self.grb_boundcons[cs.original_index] and
                 self.options['pass_simple_cons_as_bound'] and
-                warning_message_not_printed_yet):
+                warning_message_not_printed_yet and
+                self.grb_boundcons[cs.original_index]
+                ):
 
                 print("\033[1;31m*** You have been removing a constraint that can be "+
                       "(partly) interpreted as a variable bound. This is not safe when "
@@ -2980,9 +2995,10 @@ class Problem(object):
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
             if (self.options['verbose'] > 0 and
-                self.cplex_boundcons[cs.original_index] and
                 self.options['pass_simple_cons_as_bound'] and
-                warning_message_not_printed_yet):
+                warning_message_not_printed_yet and
+                self.cplex_boundcons[cs.original_index]
+                ):
 
                 print("\033[1;31m*** You have been removing a constraint that can be "+
                       "(partly) interpreted as a variable bound. This is not safe when "
