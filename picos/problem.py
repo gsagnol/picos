@@ -3840,7 +3840,7 @@ class Problem(object):
                     V = [jvk[1] for jvk in jv]
 
                     is_fixed_var = (len(J0) == 1) and self.options['pass_simple_cons_as_bound']
-                    if is_fixed_var:
+                    if len(J0) == 1:
                         j0 = J0[0]
                         v0 = V[0]
                     if self.options['handleBarVars']:
