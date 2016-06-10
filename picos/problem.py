@@ -4822,7 +4822,6 @@ class Problem(object):
                         or self.options['solver'] == 'cvxopt-mosek'
                         or self.options['solver'] == 'smcp'
                         or self.options['solver'] == 'cvxopt'):
-
                     primals, duals, obj, sol = self._cvxopt_solve()
 
                 # For cplex
@@ -5019,6 +5018,7 @@ class Problem(object):
                          for Gsi in self.cvxoptVars['Gs']]
             dims['l'] = self.cvxoptVars['Gl'].size[0]
             dims['q'] = [Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+
             G = self.cvxoptVars['Gl']
             h = self.cvxoptVars['hl']
             # handle the equalities as 2 ineq for smcp
@@ -5069,7 +5069,6 @@ class Problem(object):
                     sol = smcp.solvers.conelp(self.cvxoptVars['c'],
                                               G, h, dims)
             else:
-
                 if self.options['verbose'] > 0:
                     print('--------------------------')
                     print('  cvxopt CONELP solver')
@@ -5714,7 +5713,7 @@ class Problem(object):
             except Exception as ex:
                 if self.options['verbose'] > 0:
                     print("\033[1;31m*** Dual Solution not found\033[0m")
-                
+
         #-----------------#
         # return statement#
         #-----------------#
@@ -6651,13 +6650,59 @@ class Problem(object):
                 x_vec = [
                     float(x) for x in line[
                         line.rfind('{') + 1:line.find('}')].strip().split(',')]
+            if line.find("yMat =") > -1:
+                dual_solution = []
+                while True:
+                    sol_mat = None
+                    in_matrix = False
+                    i = 0
+                    for row in file_:
+                        if row.find('}') < 0:
+                            continue
+                        if row.startswith('}'):
+                            break
+                        if row.find('{') != row.rfind('{'):
+                            in_matrix = True
+                        numbers = row[row.rfind('{')+1:
+                                      row.find('}')].strip().split(',')
+                        if sol_mat is None:
+                            if in_matrix:
+                                sol_mat = cvx.matrix(0.0, (len(numbers),
+                                                           len(numbers)))
+                            else:
+                                sol_mat = cvx.matrix(0.0, (1, len(numbers)))
+                        for j, number in enumerate(numbers):
+                            sol_mat[i, j] = float(number)
+                        if row.find('}') != row.rfind('}') or not in_matrix:
+                            break
+                        i += 1
+                    dual_solution.append(sol_mat)
+                    if row.startswith('}'):
+                        break
+                if len(dual_solution) > 0 and dual_solution[-1] is None:
+                    dual_solution = dual_solution[:-1]
+
         file_.close()
         os.remove(self.sdpa_dats_filename)
         os.remove(self.sdpa_out_filename)
-
+        dims = {}
+        dims['s'] = [int(np.sqrt(Gsi.size[0]))
+                     for Gsi in self.cvxoptVars['Gs']]
+        dims['l'] = self.cvxoptVars['Gl'].size[0]
+        dims['q'] = [Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+        if self.cvxoptVars['A'].size[0] > 0:
+            dims['l'] += (2 * self.cvxoptVars['A'].size[0])
         if self.options['verbose'] > 0:
             print('SDPA solution status: ' + status)
+        JP = list(set(self.cvxoptVars['A'].I))
+        IP = range(len(JP))
+        VP = [1] * len(JP)
 
+        # is there a constraint of the form 0==a(a not 0) ?
+        if any([b for (i, b) in enumerate(
+                self.cvxoptVars['b']) if i not in JP]):
+            raise Exception('infeasible constraint of the form 0=a')
+        P = cvx.spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         # Convert primal solution
         primals = {}
         for var in self.variables.keys():
@@ -6668,13 +6713,50 @@ class Problem(object):
                 value = svecm1(cvx.matrix(value))  # value was the svec
                 # representation of X
             primals[var] = cvx.matrix(value, self.variables[var].size)
-
-        # Dual solution is not parsed yet
         duals = []
+        if 'noduals' in self.options and self.options['noduals']:
+            pass
+        else:
+            printnodual = False
+            indy, indzl, indzs = 0, 0, 0
+            ieq = self.cvxoptVars['Gl'].size[0]
+            neq = (dims['l'] - ieq) // 2
+            if neq > 0:
+                soleq = dual_solution[0][0, ieq:ieq + neq]
+                soleq -= dual_solution[0][0, ieq + neq:ieq + 2 * neq]
+            else:
+                soleq = None
+            if ieq + neq > 0:
+                indzs = 1
+            else:
+                indzs = 0
+            for k, consk in enumerate(self.constraints):
+                # Equality
+                if consk.typeOfConstraint == 'lin=':
+                    if not (soleq is None):
+                        consSz = np.product(consk.Exp1.size)
+                        duals.append((P.T * soleq.T)[indy:indy + consSz])
+                        indy += consSz
+                    else:
+                        printnodual = True
+                        duals.append(None)
+                # Inequality
+                elif consk.typeOfConstraint[:3] == 'lin':
+                    consSz = np.product(consk.Exp1.size)
+                    duals.append(dual_solution[0, indzl:indzl + consSz])
+                    indzl += consSz
+                # SOCP constraint [Rotated or not]
+                elif consk.typeOfConstraint[2:] == 'cone':
+                    raise NotImplemented
+                # SDP constraint
+                elif consk.typeOfConstraint[:3] == 'sdp':
+                    duals.append(dual_solution[indzs])
+                    indzs += 1
+            if printnodual and self.options['verbose'] > 0:
+                    print("\033[1;31m*** Dual Solution not found\033[0m")
         #------------------#
         # return statement #
         #------------------#
-
         solt = {}
         solt['status'] = status
         solt['time'] = tend - tstart
@@ -7248,7 +7330,6 @@ class Problem(object):
         #--------------------#
         if not any(self.cvxoptVars.values()):
             self._make_cvxopt_instance()
-
         dims = {}
         dims['s'] = [int(np.sqrt(Gsi.size[0]))
                      for Gsi in self.cvxoptVars['Gs']]
@@ -7257,7 +7338,7 @@ class Problem(object):
         G = self.cvxoptVars['Gl']
         h = self.cvxoptVars['hl']
 
-        # handle the equalities as 2 ineq for smcp
+        # handle the equalities as 2 ineq
         if self.cvxoptVars['A'].size[0] > 0:
             G = cvx.sparse([G, self.cvxoptVars['A']])
             G = cvx.sparse([G, -self.cvxoptVars['A']])
