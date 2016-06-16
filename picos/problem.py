@@ -2231,12 +2231,15 @@ class Problem(object):
 
                 # constraint of the form 0*x==a
                 if len(itojv) != szcons:
-                    for i in (set(range(szcons)) - set(itojv.keys())):
+                    zero_rows = (set(range(szcons)) - set(itojv.keys()))
+                    for i in zero_rows:
                         if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i] < 0) or
                                 (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i] > 0) or
                                 (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                             raise Exception(
                                 'you try to add a constraint of the form 0 * x == 1')
+                    
+                    constr.zero_rows = list(zero_rows)
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
@@ -2468,11 +2471,11 @@ class Problem(object):
         if (self.cplex_Instance is None):
             c = cplex.Cplex()
             boundcons = []
-
+            
         else:
             c = self.cplex_Instance
-            boundcons = self.cplex_boundcons
-
+            boundcons = self.cplex_boundcons #stores index of constraints interpreted as a bound
+            
         sense_opt = self.objective[0]
         if sense_opt == 'max':
             c.objective.set_sense(c.objective.sense.maximize)
@@ -2827,12 +2830,14 @@ class Problem(object):
 
                 # constraint of the form 0*x==a
                 if len(itojv) != szcons:
-                    for i in (set(range(szcons)) - set(itojv.keys())):
+                    zero_rows = (set(range(szcons)) - set(itojv.keys()))
+                    for i in zero_rows:
                         if ((constr.typeOfConstraint[:4] == 'lin<' and rhstmp[i] < 0) or
                                 (constr.typeOfConstraint[:4] == 'lin>' and rhstmp[i] > 0) or
                                 (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                             raise Exception(
                                 'you try to add a constraint of the form 0 * x == 1')
+                    constr.zero_rows = list(zero_rows) 
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
@@ -5593,6 +5598,7 @@ class Problem(object):
                         if constr.typeOfConstraint[:3] == 'lin':
                             dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                             dual_values = [None] * dim
+                            
                             # rows with var bounds
                             for (i, j, b, v) in self.cplex_boundcons[k]:
                                 xj = c.solution.get_values(j)
@@ -5636,23 +5642,21 @@ class Problem(object):
                                     dual_values[i] = 0.
 
                             # rows with other constraints
+                            iii = 0
                             for i in range(len(dual_values)):
+                                if hasattr(constr,'zero_rows') and i in constr.zero_rows:
+                                    dual_values[i] = 0. #constr 0*z <=> b
+                                    continue
                                 if dual_values[i] is None:
-                                    try:
-                                        du = c.solution.get_dual_values(constr.Id['cplex'][i])
-                                    except cplex.exceptions.CplexSolverError as ex:
-                                        if ': 0 = 0' in str(constr):#constraint 0=0
-                                            dual_values[i] = 0.
-                                            continue
-                                        else:
-                                            raise
+                                    du = c.solution.get_dual_values(constr.Id['cplex'][iii])
                                     if self.objective[0] == 'min':
                                         du = -du
                                     if constr.typeOfConstraint[3] == '>':
                                         dual_values[i] = -du
                                     else:
                                         dual_values[i] = du
-                            #import pdb;pdb.set_trace()
+                                    iii += 1
+                            
                             duals.append(cvx.matrix(dual_values))
 
                         elif constr.typeOfConstraint == 'SOcone':
@@ -5692,6 +5696,7 @@ class Problem(object):
                             duals.append(None)
 
             except Exception as ex:
+                import pdb;pdb.set_trace()
                 if self.options['verbose'] > 0:
                     print("\033[1;31m*** Dual Solution not found\033[0m")
                 
@@ -5915,8 +5920,13 @@ class Problem(object):
                                     dual_values[i] = 0.  # unactive constraint
                             else:
                                 dual_values[i] = 0.
+                        
                         # rows with other constraints
+                        iii = 0.
                         for i in range(len(dual_values)):
+                            if hasattr(constr,'zero_rows') and i in constr.zero_rows:
+                                dual_values[i] = 0. #constr 0*z <=> b
+                                continue
                             if dual_values[i] is None:
                                 # getConstrByName is buggy if model updated several times,
                                 # so we store the constraints ourselves.
