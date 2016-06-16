@@ -611,6 +611,10 @@ class Problem(object):
             and re-solve the problem.
             *This option currently works only with cplex, mosek and gurobi*.
 
+          * ``return_constraints = False`` : If set to ``True``, the default behaviour of the function
+            :func:`add_constraint() <picos.Problem.add_constraint>` is to return
+            the created constraint.
+
         * Specific options available for cvxopt/smcp:
 
           * ``feastol = None`` : feasibility tolerance passed to `cvx.solvers.options <http://abel.ee.ucla.edu/cvxopt/userguide/coneprog.html#algorithm-parameters>`_
@@ -744,6 +748,7 @@ class Problem(object):
                            'handleConeVars': True,
                            'solve_via_dual': None,
                            'pass_simple_cons_as_bound' : False,
+                           'return_constraints' : False,
                            }
 
         self._options = _NonWritableDict(default_options)
@@ -1130,7 +1135,10 @@ class Problem(object):
         :param key: Optional parameter to describe the constraint with a key string.
         :type key: str.
         :param ret: Do you want the added constraint to be returned ?
-                    This can be useful to access the dual of this constraint.
+                    This can be a useful handle to extract the optimal dual variable of this constraint
+                    or to delete the constraint with delete().
+                    Note: The constraint is always returned if the option
+                    ``return_constraints`` is set to ``True``.
         :type ret: bool.
         """
         # SPECIAL CASE OF A NONSTANDARD CONVEX CONSTRAINT
@@ -1150,7 +1158,7 @@ class Problem(object):
             goc = self.groupsOfConstraints[indcons]
             goc[1] = cons.constring() + '\n'
             self.countGeomean += 1
-            if ret:
+            if self.options['return_constraints'] or ret:
                 return cons
             else:
                 return
@@ -1216,7 +1224,7 @@ class Problem(object):
             # is it a simple constraint of the form X>>0 ?
             if cons.semidefVar:
                 cons.semidefVar.semiDef = True
-        if ret:
+        if self.options['return_constraints'] or ret:
             return cons
 
     def add_list_of_constraints(
@@ -1256,6 +1264,8 @@ class Problem(object):
         :type key: str.
         :param ret: Do you want the added list of constraints to be returned ?
                     This can be useful to access the duals of these constraints.
+                    Note: The constraint is always returned if the option
+                    ``return_constraints`` is set to ``True``.
         :type ret: bool.
 
         **Example:**
@@ -1371,7 +1381,7 @@ class Problem(object):
                 goctodel.append(goc)
         for goc in goctodel:
             del self.groupsOfConstraints[goc]
-        if ret:
+        if self.options['return_constraints'] or ret:
             return lst
 
     def get_valued_variable(self, name):
@@ -1668,7 +1678,12 @@ class Problem(object):
                     cons.semidefVar.semiDef = False
 
             cons.original_index = ind
-            cons.passed = []
+            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip')
+                              if solver not in cons.passed]
+            cons.passed = not_passed_yet
+            #deleted constraint is considered as 'passed', i.e. it can be ignored, if it
+            #was not yet part of the solver instance
+
             self._deleted_constraints.append(cons)
             del self.constraints[ind]
             self.countCons -= 1
@@ -1847,11 +1862,11 @@ class Problem(object):
         defines the variables gurobi_Instance and grbvar
         """
 
-        if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
-            for cs in self._deleted_constraints:
-                if 'gurobi' not in cs.passed:
-                    cs.passed.append('gurobi')
-            self.reset_gurobi_instance(True)
+        #if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
+        #    for cs in self._deleted_constraints:
+        #        if 'gurobi' not in cs.passed:
+        #            cs.passed.append('gurobi')
+        #    self.reset_gurobi_instance(True)
 
         try:
             import gurobipy as grb
@@ -2188,14 +2203,15 @@ class Problem(object):
         qind = m.NumQConstrs
 
         for constrKey, constr in allcons:
-            # init of boundcons[key]
-            if isinstance(constrKey,int):
-                boundcons.append([])
 
             if 'gurobi' in constr.passed:
                 continue
             else:
                 constr.passed.append('gurobi')
+
+            # init of boundcons[key]
+            if isinstance(constrKey,int):
+                boundcons.append([])
 
             if constr.typeOfConstraint[:3] == 'lin':
 
@@ -2339,7 +2355,7 @@ class Problem(object):
                     qname = 'q'+str(qind)
                     qind+=1
 
-                m.addQConstr(q_exp + l_exp <= qcs, qname)
+                grbcons[qname] = m.addQConstr(q_exp + l_exp <= qcs, qname)
 
                 if self.options['verbose'] > 1:
                     #<--display progress
@@ -2384,9 +2400,10 @@ class Problem(object):
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
             if (self.options['verbose'] > 0 and
-                self.grb_boundcons[cs.original_index] and
                 self.options['pass_simple_cons_as_bound'] and
-                warning_message_not_printed_yet):
+                warning_message_not_printed_yet and
+                self.grb_boundcons[cs.original_index]
+                ):
 
                 print("\033[1;31m*** You have been removing a constraint that can be "+
                       "(partly) interpreted as a variable bound. This is not safe when "
@@ -2405,7 +2422,7 @@ class Problem(object):
                     xj.lb = -grb_infty
 
             for i in cs.Id['gurobi']:
-                m.remove(m.getConstrByName(i))
+                m.remove(self.grbcons[i])
                 if 'cone' in cs.typeOfConstraint and not(i.startswith('tmp_conequad')):
                     ind,jj = [int(kk) for kk in i.split('hs_',1)[1].split('_')]
                     varname = '__tmp'+i.split('hs_')[0][-1]+'hs[{0}]___{1}'.format(ind,jj)
@@ -2789,13 +2806,15 @@ class Problem(object):
         irow = 0
 
         for constrKey, constr in allcons:
-            # init of boundcons[key]
-            if isinstance(constrKey,int):
-                boundcons.append([])
+
             if 'cplex' in constr.passed:
                 continue
             else:
                 constr.passed.append('cplex')
+
+            # init of boundcons[key]
+            if isinstance(constrKey,int):
+                boundcons.append([])
 
             if constr.typeOfConstraint[:3] == 'lin':
 
@@ -2982,9 +3001,10 @@ class Problem(object):
             sgn = cs.typeOfConstraint[3]
             todel_from_boundcons.append(cs.original_index)
             if (self.options['verbose'] > 0 and
-                self.cplex_boundcons[cs.original_index] and
                 self.options['pass_simple_cons_as_bound'] and
-                warning_message_not_printed_yet):
+                warning_message_not_printed_yet and
+                self.cplex_boundcons[cs.original_index]
+                ):
 
                 print("\033[1;31m*** You have been removing a constraint that can be "+
                       "(partly) interpreted as a variable bound. This is not safe when "
@@ -3825,7 +3845,7 @@ class Problem(object):
                     V = [jvk[1] for jvk in jv]
 
                     is_fixed_var = (len(J0) == 1) and self.options['pass_simple_cons_as_bound']
-                    if is_fixed_var:
+                    if len(J0) == 1:
                         j0 = J0[0]
                         v0 = V[0]
                     if self.options['handleBarVars']:
@@ -4807,7 +4827,6 @@ class Problem(object):
                         or self.options['solver'] == 'cvxopt-mosek'
                         or self.options['solver'] == 'smcp'
                         or self.options['solver'] == 'cvxopt'):
-
                     primals, duals, obj, sol = self._cvxopt_solve()
 
                 # For cplex
@@ -5004,6 +5023,7 @@ class Problem(object):
                          for Gsi in self.cvxoptVars['Gs']]
             dims['l'] = self.cvxoptVars['Gl'].size[0]
             dims['q'] = [Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+
             G = self.cvxoptVars['Gl']
             h = self.cvxoptVars['hl']
             # handle the equalities as 2 ineq for smcp
@@ -5054,7 +5074,6 @@ class Problem(object):
                     sol = smcp.solvers.conelp(self.cvxoptVars['c'],
                                               G, h, dims)
             else:
-
                 if self.options['verbose'] > 0:
                     print('--------------------------')
                     print('  cvxopt CONELP solver')
@@ -5699,7 +5718,7 @@ class Problem(object):
                 import pdb;pdb.set_trace()
                 if self.options['verbose'] > 0:
                     print("\033[1;31m*** Dual Solution not found\033[0m")
-                
+
         #-----------------#
         # return statement#
         #-----------------#
@@ -5930,10 +5949,8 @@ class Problem(object):
                             if dual_values[i] is None:
                                 # getConstrByName is buggy if model updated several times,
                                 # so we store the constraints ourselves.
-                                # du = m.getConstrByName(
-                                #        'lin'+str(k)+'_'+str(i)).pi
-                                du = self.grbcons[
-                                    'lin' + str(k) + '_' + str(i)].pi
+                                # du = m.getConstrByName(constr.Id['gurobi'][i]).pi
+                                du = self.grbcons[constr.Id['gurobi'][i]].pi
                                 if self.objective[0] == 'min':
                                     du = -du
                                 if constr.typeOfConstraint[3] == '>':
@@ -5945,15 +5962,13 @@ class Problem(object):
 
                     elif constr.typeOfConstraint == 'SOcone':
                         dual_values = []
-                        dual_values.append(
-                            self.grbcons[
-                                'lintmp_rhs_' +
-                                str(k) +
-                                '_0'].pi)
+                        rhs_id = [id for id in constr.Id['gurobi'] if '_rhs_' in id][0]
+                        dual_values.append(self.grbcons[rhs_id].pi)
                         dim = constr.Exp1.size[0] * constr.Exp1.size[1]
-                        for i in range(dim):
-                            dual_values.append(
-                                -self.grbcons['lintmp_lhs_' + str(k) + '_' + str(i)].pi)
+                        lhs_id = [id for id in constr.Id['gurobi'] if '_lhs_' in id]
+                        assert dim == len(lhs_id)
+                        for ids in lhs_id:
+                            dual_values.append(-self.grbcons[ids].pi)
                         if self.objective[0] == 'min':
                             duals.append(-cvx.matrix(dual_values))
                         else:
@@ -5961,12 +5976,13 @@ class Problem(object):
 
                     elif constr.typeOfConstraint == 'RScone':
                         dual_values = []
-                        dual_values.append(
-                            self.grbcons['lintmp_rhs_' + str(k) + '_0'].pi)
+                        rhs_id = [id for id in constr.Id['gurobi'] if '_rhs_' in id][0]
+                        dual_values.append(self.grbcons[rhs_id].pi)
                         dim = 1 + constr.Exp1.size[0] * constr.Exp1.size[1]
-                        for i in range(dim):
-                            dual_values.append(
-                                -self.grbcons['lintmp_lhs_' + str(k) + '_' + str(i)].pi)
+                        lhs_id = [id for id in constr.Id['gurobi'] if '_lhs_' in id]
+                        assert dim == len(lhs_id)
+                        for ids in lhs_id:
+                            dual_values.append(-self.grbcons[ids].pi)
                         if self.objective[0] == 'min':
                             duals.append(-cvx.matrix(dual_values))
                         else:
@@ -6644,13 +6660,59 @@ class Problem(object):
                 x_vec = [
                     float(x) for x in line[
                         line.rfind('{') + 1:line.find('}')].strip().split(',')]
+            if line.find("yMat =") > -1:
+                dual_solution = []
+                while True:
+                    sol_mat = None
+                    in_matrix = False
+                    i = 0
+                    for row in file_:
+                        if row.find('}') < 0:
+                            continue
+                        if row.startswith('}'):
+                            break
+                        if row.find('{') != row.rfind('{'):
+                            in_matrix = True
+                        numbers = row[row.rfind('{')+1:
+                                      row.find('}')].strip().split(',')
+                        if sol_mat is None:
+                            if in_matrix:
+                                sol_mat = cvx.matrix(0.0, (len(numbers),
+                                                           len(numbers)))
+                            else:
+                                sol_mat = cvx.matrix(0.0, (1, len(numbers)))
+                        for j, number in enumerate(numbers):
+                            sol_mat[i, j] = float(number)
+                        if row.find('}') != row.rfind('}') or not in_matrix:
+                            break
+                        i += 1
+                    dual_solution.append(sol_mat)
+                    if row.startswith('}'):
+                        break
+                if len(dual_solution) > 0 and dual_solution[-1] is None:
+                    dual_solution = dual_solution[:-1]
+
         file_.close()
         os.remove(self.sdpa_dats_filename)
         os.remove(self.sdpa_out_filename)
-
+        dims = {}
+        dims['s'] = [int(np.sqrt(Gsi.size[0]))
+                     for Gsi in self.cvxoptVars['Gs']]
+        dims['l'] = self.cvxoptVars['Gl'].size[0]
+        dims['q'] = [Gqi.size[0] for Gqi in self.cvxoptVars['Gq']]
+        if self.cvxoptVars['A'].size[0] > 0:
+            dims['l'] += (2 * self.cvxoptVars['A'].size[0])
         if self.options['verbose'] > 0:
             print('SDPA solution status: ' + status)
+        JP = list(set(self.cvxoptVars['A'].I))
+        IP = range(len(JP))
+        VP = [1] * len(JP)
 
+        # is there a constraint of the form 0==a(a not 0) ?
+        if any([b for (i, b) in enumerate(
+                self.cvxoptVars['b']) if i not in JP]):
+            raise Exception('infeasible constraint of the form 0=a')
+        P = cvx.spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         # Convert primal solution
         primals = {}
         for var in self.variables.keys():
@@ -6661,13 +6723,50 @@ class Problem(object):
                 value = svecm1(cvx.matrix(value))  # value was the svec
                 # representation of X
             primals[var] = cvx.matrix(value, self.variables[var].size)
-
-        # Dual solution is not parsed yet
         duals = []
+        if 'noduals' in self.options and self.options['noduals']:
+            pass
+        else:
+            printnodual = False
+            indy, indzl, indzs = 0, 0, 0
+            ieq = self.cvxoptVars['Gl'].size[0]
+            neq = (dims['l'] - ieq) // 2
+            if neq > 0:
+                soleq = dual_solution[0][0, ieq:ieq + neq]
+                soleq -= dual_solution[0][0, ieq + neq:ieq + 2 * neq]
+            else:
+                soleq = None
+            if ieq + neq > 0:
+                indzs = 1
+            else:
+                indzs = 0
+            for k, consk in enumerate(self.constraints):
+                # Equality
+                if consk.typeOfConstraint == 'lin=':
+                    if not (soleq is None):
+                        consSz = np.product(consk.Exp1.size)
+                        duals.append((P.T * soleq.T)[indy:indy + consSz])
+                        indy += consSz
+                    else:
+                        printnodual = True
+                        duals.append(None)
+                # Inequality
+                elif consk.typeOfConstraint[:3] == 'lin':
+                    consSz = np.product(consk.Exp1.size)
+                    duals.append(dual_solution[0, indzl:indzl + consSz])
+                    indzl += consSz
+                # SOCP constraint [Rotated or not]
+                elif consk.typeOfConstraint[2:] == 'cone':
+                    raise NotImplemented
+                # SDP constraint
+                elif consk.typeOfConstraint[:3] == 'sdp':
+                    duals.append(dual_solution[indzs])
+                    indzs += 1
+            if printnodual and self.options['verbose'] > 0:
+                    print("\033[1;31m*** Dual Solution not found\033[0m")
         #------------------#
         # return statement #
         #------------------#
-
         solt = {}
         solt['status'] = status
         solt['time'] = tend - tstart
@@ -7241,7 +7340,6 @@ class Problem(object):
         #--------------------#
         if not any(self.cvxoptVars.values()):
             self._make_cvxopt_instance()
-
         dims = {}
         dims['s'] = [int(np.sqrt(Gsi.size[0]))
                      for Gsi in self.cvxoptVars['Gs']]
@@ -7250,7 +7348,7 @@ class Problem(object):
         G = self.cvxoptVars['Gl']
         h = self.cvxoptVars['hl']
 
-        # handle the equalities as 2 ineq for smcp
+        # handle the equalities as 2 ineq
         if self.cvxoptVars['A'].size[0] > 0:
             G = cvx.sparse([G, self.cvxoptVars['A']])
             G = cvx.sparse([G, -self.cvxoptVars['A']])
