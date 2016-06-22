@@ -791,7 +791,7 @@ def SOCP3Test(solver_to_test):
         #3d test (socp with rotated cones)
         primal=prob_multiresponse_multiconstraints.copy()
         try:
-                primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
+                primal.solve(solver=solver_to_test,timelimit=1,maxit=100)
         except Exception as ex:
                 return (False,repr(ex))
         

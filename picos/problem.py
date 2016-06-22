@@ -5661,21 +5661,19 @@ class Problem(object):
                                     dual_values[i] = 0.
 
                             # rows with other constraints
-                            iii = 0
-                            for i in range(len(dual_values)):
-                                if hasattr(constr,'zero_rows') and i in constr.zero_rows:
+                            if hasattr(constr,'zero_rows'):
+                                for i in constr.zero_rows:
                                     dual_values[i] = 0. #constr 0*z <=> b
-                                    continue
-                                if dual_values[i] is None:
-                                    du = c.solution.get_dual_values(constr.Id['cplex'][iii])
-                                    if self.objective[0] == 'min':
-                                        du = -du
-                                    if constr.typeOfConstraint[3] == '>':
-                                        dual_values[i] = -du
-                                    else:
-                                        dual_values[i] = du
-                                    iii += 1
-                            
+                            for consname in constr.Id['cplex']:
+                                id = int(consname[consname.rfind('_')+1:])
+                                du = c.solution.get_dual_values(consname)
+                                if self.objective[0] == 'min':
+                                    du = -du
+                                if constr.typeOfConstraint[3] == '>':
+                                    dual_values[id] = -du
+                                else:
+                                    dual_values[id] = du
+
                             duals.append(cvx.matrix(dual_values))
 
                         elif constr.typeOfConstraint == 'SOcone':
@@ -5941,22 +5939,18 @@ class Problem(object):
                                 dual_values[i] = 0.
                         
                         # rows with other constraints
-                        iii = 0.
-                        for i in range(len(dual_values)):
-                            if hasattr(constr,'zero_rows') and i in constr.zero_rows:
+                        if hasattr(constr,'zero_rows'):
+                            for i in constr.zero_rows:
                                 dual_values[i] = 0. #constr 0*z <=> b
-                                continue
-                            if dual_values[i] is None:
-                                # getConstrByName is buggy if model updated several times,
-                                # so we store the constraints ourselves.
-                                # du = m.getConstrByName(constr.Id['gurobi'][i]).pi
-                                du = self.grbcons[constr.Id['gurobi'][i]].pi
-                                if self.objective[0] == 'min':
-                                    du = -du
-                                if constr.typeOfConstraint[3] == '>':
-                                    dual_values[i] = -du
-                                else:
-                                    dual_values[i] = du
+                        for consname in constr.Id['gurobi']:
+                            id = int(consname[consname.rfind('_')+1:])
+                            du = self.grbcons[consname].pi
+                            if self.objective[0] == 'min':
+                                du = -du
+                            if constr.typeOfConstraint[3] == '>':
+                                dual_values[id] = -du
+                            else:
+                                dual_values[id] = du
 
                         duals.append(cvx.matrix(dual_values))
 
