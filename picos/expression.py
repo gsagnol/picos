@@ -248,7 +248,7 @@ class AffinExp(Expression):
         affstr += ' #'
         return affstr
 
-    def copy(self):
+    def hard_copy(self):
         import copy
         facopy = {}
         for f, m in six.iteritems(
@@ -257,6 +257,14 @@ class AffinExp(Expression):
 
         conscopy = copy.deepcopy(self.constant)
         return AffinExp(facopy, conscopy, self.size, self.string)
+
+    def copy(self):
+        excopy = 1*self
+        excopy.string = self.string
+        return excopy
+
+    def soft_copy(self):
+        return AffinExp(self.factors, self.constant, self.size, self.string)
 
     def affstring(self):
         return self.string
@@ -855,7 +863,6 @@ class AffinExp(Expression):
         return self.__xor__(fact)
 
     def __rmul__(self, fact):
-        selfcopy = self.copy()
 
         if isinstance(fact, AffinExp):
             if fact.isconstant():
@@ -864,24 +871,35 @@ class AffinExp(Expression):
                 raise Exception('not implemented')
         else:
             fac, facString = _retrieve_matrix(fact, self.size[0])
-        if fac.size == (1, 1) and selfcopy.size[0] != 1:
-            fac = fac[0] * cvx.spdiag([1.] * selfcopy.size[0])
+
+        if isinstance(self,Variable):
+            return AffinExp(factors={self: fac}, size=(fac.size[0], self.size[1]), string=facString+' * '+self.string)
+
+        selfcopy = self.soft_copy()
+
+        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, int) or isinstance(fact, np.float64) or
+          isinstance(fact, np.int64) or isinstance(fact, np.complex128) or isinstance(fact, complex) or
+          (hasattr(fact,'size') and fact.size==(1,1)) or (hasattr(fact,'shape') and fact.shape in ((1,),(1,1))) )
+
         if self.size == (1, 1) and fac.size[1] != 1:
             oldstring = selfcopy.string
             selfcopy = selfcopy.diag(fac.size[1])
             selfcopy.string = oldstring
         if selfcopy.size[0] != fac.size[1]:
             raise Exception('incompatible dimensions')
-        bfac = _blocdiag(fac, selfcopy.size[1])
-        for k in selfcopy.factors:
-            newfac = bfac * selfcopy.factors[k]
-            selfcopy.factors[k] = newfac
-        if selfcopy.constant is None:
-            newfac = None
+        if is_scalar_mult:
+            bfac = fac[0]
         else:
-            newfac = bfac * selfcopy.constant
-        selfcopy.constant = newfac
-        selfcopy._size = (fac.size[0], selfcopy.size[1])
+            bfac = _blocdiag(fac, selfcopy.size[1])
+        newfac = {}
+        for k in selfcopy.factors:
+            newfac[k] = bfac * selfcopy.factors[k]
+        if selfcopy.constant is None:
+            newcons = None
+        else:
+            newcons = bfac * selfcopy.constant
+
+        selfcopy = AffinExp(factors=newfac,constant=newcons, size=(fac.size[0], self.size[1]), string=selfcopy.string)
         # the following removes 'I' from the string when a matrix is multiplied
         # by the identity. We leave the 'I' when the factor of identity is a
         # scalar
@@ -945,12 +963,15 @@ class AffinExp(Expression):
             else:  # normal matrix multiplication, we expect a size
                 fac, facString = _retrieve_matrix(fact, self.size[1])
 
-        # fast scalar mult
-        if fac.size == (1, 1):
+        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, int) or isinstance(fact, np.float64) or
+          isinstance(fact, np.int64) or isinstance(fact, np.complex128) or isinstance(fact, complex) or
+          (hasattr(fact,'size') and fact.size==(1,1)) or (hasattr(fact,'shape') and fact.shape in ((1,),(1,1))) )
+
+        if is_scalar_mult:
             alpha = fac[0]
             newfacs = {}
             for k, M in six.iteritems(self.factors):
-                newfacs[k] = cvx.spmatrix(alpha * M.V, M.I, M.J, M.size)
+                newfacs[k] = alpha * M
             if self.constant is None:
                 newcons = None
             else:
@@ -966,14 +987,14 @@ class AffinExp(Expression):
                 '*' +
                 sstring)
 
-        selfcopy = self.copy()
+        selfcopy = self.soft_copy()
 
         if self.size == (1, 1) and fac.size[0] != 1:
             oldstring = selfcopy.string
             selfcopy = selfcopy.diag(fac.size[0])
             selfcopy.string = oldstring
 
-        prod = (self.T.__rmul__(fac.T)).T
+        prod = (selfcopy.T.__rmul__(fac.T)).T
         prod._size = (selfcopy.size[0], fac.size[1])
         # the following removes 'I' from the string when a matrix is multiplied
         # by the identity. We leave the 'I' when the factor of identity is a
@@ -1018,7 +1039,6 @@ class AffinExp(Expression):
         return dotp
 
     def __ror__(self, fact):  # scalar product
-        selfcopy = self.copy()
         if not(isinstance(fact, AffinExp)):
             fac, facString = _retrieve_matrix(fact, self.size)
             fact = AffinExp(
@@ -3307,6 +3327,9 @@ class Variable(AffinExp):
     def __repr__(self):
         return '# variable {0}:({1} x {2}),{3} #'.format(
             self.name, self.size[0], self.size[1], self.vtype)
+
+    def __iadd__(self, term):
+        raise NotImplementedError('variable must not be changed inplace. Try to cast the first term of the sum as an AffinExp, e.g. by adding 0 to it.')
 
     @property
     def bnd(self):
