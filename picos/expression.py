@@ -872,8 +872,11 @@ class AffinExp(Expression):
         else:
             fac, facString = _retrieve_matrix(fact, self.size[0])
 
-        if isinstance(self,Variable):
-            return AffinExp(factors={self: fac}, size=(fac.size[0], self.size[1]), string=facString+' * '+self.string)
+        if (isinstance(self,Variable) and 
+          self.vtype not in ('symmetric','antisym',) and 
+          not (self.size == (1, 1) and fac.size[1] != 1)):
+            bfac = _blocdiag(fac, self.size[1])
+            return AffinExp(factors={self: bfac}, size=(fac.size[0], self.size[1]), string=facString+' * '+self.string)
 
         selfcopy = self.soft_copy()
 
@@ -899,7 +902,7 @@ class AffinExp(Expression):
         else:
             newcons = bfac * selfcopy.constant
 
-        selfcopy = AffinExp(factors=newfac,constant=newcons, size=(fac.size[0], self.size[1]), string=selfcopy.string)
+        selfcopy = AffinExp(factors=newfac,constant=newcons, size=(fac.size[0], selfcopy.size[1]), string=selfcopy.string)
         # the following removes 'I' from the string when a matrix is multiplied
         # by the identity. We leave the 'I' when the factor of identity is a
         # scalar
