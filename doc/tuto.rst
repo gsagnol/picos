@@ -935,7 +935,9 @@ Below is a *hello world* example, which writes a simple MIP to a **.lp** file:
 .. testcode::
         
         import picos as pic
-        prob = pic.Problem()
+        prob = pic.Problem(pass_simple_cons_as_bound = True)
+        #with this option, x>1.5 is recognized as a variable bound
+        #instead of a constraint.
         y = prob.add_variable('y',1, vtype='integer')
         x = prob.add_variable('x',1)
         prob.add_constraint(x>1.5)

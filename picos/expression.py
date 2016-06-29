@@ -867,16 +867,37 @@ class AffinExp(Expression):
         if isinstance(fact, AffinExp):
             if fact.isconstant():
                 fac, facString = cvx.sparse(fact.eval()), fact.string
+                if fac.size == (1, 1) and self.size[0] != 1:
+                    fac = _blocdiag(fac, self.size[0])
             else:
                 raise Exception('not implemented')
-        else:
-            fac, facString = _retrieve_matrix(fact, self.size[0])
 
-        if (isinstance(self,Variable) and 
-          self.vtype not in ('symmetric','antisym',) and 
-          not (self.size == (1, 1) and fac.size[1] != 1)):
+        #fast handling for the most standard case (no need to go inside retrieve_matrix)
+        if (isinstance(self,Variable) and
+          self.vtype not in ('symmetric','antisym',) and
+          hasattr(fact,'size') and isinstance(fact.size,tuple) and
+          len(fact.size)==2 and fact.size[1]==self.size[0]):
+            if not isinstance(fact,AffinExp):
+                facString = '[ {0} x {1} MAT ]'.format(*fact.size)
+                fac = fact
             bfac = _blocdiag(fac, self.size[1])
-            return AffinExp(factors={self: bfac}, size=(fac.size[0], self.size[1]), string=facString+' * '+self.string)
+            return AffinExp(factors={self: bfac}, size=(fac.size[0], self.size[1]), string=facString+'*'+self.string)
+
+        if not isinstance(fact, AffinExp):
+            fac, facString = _retrieve_matrix(fact, self.size[0])
+            # the following removes 'I' from the string when a matrix is multiplied
+            # by the identity. We leave the 'I' when the factor of identity is a
+            # scalar
+            if len(facString) > 0:
+                if (facString[-1] == 'I' and (len(facString) == 1 or facString[-2].isdigit()
+                   or facString[-2] == '.') and (self.size != (1, 1))):
+                    facString = facString[:-1]
+
+        if (isinstance(self,Variable) and
+          self.vtype not in ('symmetric','antisym',) and
+          self.size[0] == fac.size[1]):
+            bfac = _blocdiag(fac, self.size[1])
+            return AffinExp(factors={self: bfac}, size=(fac.size[0], self.size[1]), string=facString+'*'+self.string)
 
         selfcopy = self.soft_copy()
 
@@ -903,13 +924,7 @@ class AffinExp(Expression):
             newcons = bfac * selfcopy.constant
 
         selfcopy = AffinExp(factors=newfac,constant=newcons, size=(fac.size[0], selfcopy.size[1]), string=selfcopy.string)
-        # the following removes 'I' from the string when a matrix is multiplied
-        # by the identity. We leave the 'I' when the factor of identity is a
-        # scalar
-        if len(facString) > 0:
-            if facString[-1] == 'I' and (len(facString) == 1 or facString[-2].isdigit(
-            ) or facString[-2] == '.') and (self.size != (1, 1)):
-                facString = facString[:-1]
+
         sstring = selfcopy.affstring()
         if len(facString) > 0:
             if ('+' in sstring) or ('-' in sstring):

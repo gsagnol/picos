@@ -903,40 +903,23 @@ def eval_dict(dict_of_variables):
 #        Tools of the interface
 #---------------------------------------------
 
-def _blocdiag(X, n, sub1=0, sub2='n'):
+def _blocdiag(X, n):
     """
     makes diagonal blocs of X, for indices in [sub1,sub2[
     n indicates the total number of blocks (horizontally)
     """
-    if sub2 == 'n':
-        sub2 = n
-    ''' OLD VERSION (inefficient)
-        zz=cvx.spmatrix([],[],[],(X.size[0],X.size[1]))
-        mat=[]
-        for i in range(n):
-                col=[]
-                for k in range(n):
-                        if (k>=sub1 and k<sub2):
-                                if (i==k):
-                                        col.append(X)
-                                else:
-                                        col.append(zz)
-                mat.append(col)
-        return cvx.sparse(mat)
-        '''
     if not isinstance(X, cvx.base.spmatrix):
         X = cvx.sparse(X)
-    I = []
-    J = []
-    V = []
-    i0 = 0
-    for k in range(sub1, sub2):
-        I.extend([xi + i0 for xi in X.I])
-        J.extend([xj + X.size[1] * k for xj in X.J])
-        V.extend(X.V)
-        i0 += X.size[0]
-    return cvx.spmatrix(V, I, J, (i0, X.size[1] * n))
-
+    if n==1:
+        return X
+    else:
+        Z = cvx.spmatrix([],[],[],X.size)
+        mat = []
+        for i in range(n):
+            col = [Z]*(n-1)
+            col.insert(i,X)
+            mat.append(col)
+        return cvx.sparse(mat)
 
 def lse(exp):
     """
@@ -1296,11 +1279,12 @@ def _retrieve_matrix(mat, exSize=None):
         raise NameError('unexpected mat variable')
 
     # make sure it's sparse
-    retmat = cvx.sparse(retmat)
+    if not isinstance(mat, cvx.base.spmatrix):
+        retmat = cvx.sparse(retmat)
 
     # look for a more appropriate string...
     if retstr is None:
-        retstr = '[ {0} x {1} MAT ]'.format(retmat.size[0], retmat.size[1])
+        retstr = '[ {0} x {1} MAT ]'.format(*retmat.size)
     if not retmat:  # |0|
         if retmat.size == (1, 1):
             retstr = '0'
@@ -1330,6 +1314,7 @@ def _retrieve_matrix(mat, exSize=None):
     #(1,1) matrix but not appropriate size
     if retmat.size == (1, 1) and (exSize not in [(1, 1), 1, None]):
         return _retrieve_matrix(retmat[0], exSize)
+
     return retmat, retstr
 
 
