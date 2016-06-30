@@ -6603,16 +6603,17 @@ class Problem(object):
         #-------------------------------#
         #  Can we solve it with SDPA? #
         #-------------------------------#
-        if self.type in ('unknown type', 'LP', 'QCQP,QP', 'SOCP', 'ConeP',
-                         'GP', 'general-obj', 'MIP', 'MIQCP', 'MIQP',
-                         'Mixed (SOCP+quad)', 'MISOCP',
-                         'Mixed (MISOCP+quad)', 'Mixed (SDP+quad)'):
+        if self.type in ( 'unknown type', 'GP', 'general-obj', 'MIP', 'MIQCP', 'MIQP',
+                         'Mixed (MISOCP+quad)', 'MISOCP',
+                         #'Mixed (SOCP+quad)', 'Mixed (SDP+quad)',
+                         #'LP', 'QCQP','QP', 'SOCP', 'ConeP',
+                         ):
             raise NotAppropriateSolverError(
                 "'SDPA' cannot solve problems of type {0}".format(
                     self.type))
 
         #-----------------------------#
-        #  create the sdpaopt instance #
+        # create the sdpaopt instance #
         #-----------------------------#
         self._make_sdpaopt()
 
@@ -6649,6 +6650,8 @@ class Problem(object):
                     status = 'unknown'
             if line.find("objValPrimal") > -1:
                 obj = float((line.split())[2])
+                if self.objective[0]=='max':
+                    obj *= -1
             if line.find("xVec =") > -1:
                 line = six.next(file_)
                 x_vec = [
@@ -6747,11 +6750,13 @@ class Problem(object):
                 # Inequality
                 elif consk.typeOfConstraint[:3] == 'lin':
                     consSz = np.product(consk.Exp1.size)
-                    duals.append(dual_solution[0, indzl:indzl + consSz])
+                    duals.append(dual_solution[0][indzl:indzl + consSz])
                     indzl += consSz
                 # SOCP constraint [Rotated or not]
                 elif consk.typeOfConstraint[2:] == 'cone':
-                    raise NotImplemented
+                    M = dual_solution[indzs]
+                    duals.append(cvx.matrix([np.trace(M), -2*M[-1,:-1].T]))
+                    indzs += 1
                 # SDP constraint
                 elif consk.typeOfConstraint[:3] == 'sdp':
                     duals.append(dual_solution[indzs])
@@ -6956,7 +6961,7 @@ class Problem(object):
                 'smcp',
                 'zibopt']
         elif tp == 'SDP':
-            order = ['mosek7', 'cvxopt', 'smcp']
+            order = ['mosek7', 'cvxopt', 'sdpa', 'smcp']
         elif tp == 'ConeP':
             order = ['mosek7', 'cvxopt', 'smcp']
         elif tp == 'GP':
