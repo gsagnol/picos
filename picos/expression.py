@@ -664,37 +664,72 @@ class AffinExp(Expression):
     H = property(Htranspose, setH, delH, "Hermitian transposition")
     """Hermitian (or conjugate) transposition"""
 
-    def inplace_partial_transpose(self, dim=None):
+    def inplace_partial_transpose(self, dim_1 = None,subsystems=None, dim_2=None):
         if isinstance(self, Variable):
             raise Exception(
                 'partial_transpose should not be called on a Variable object')
         size = self.size
 
-        if dim is None:
+        if dim_1 is None:
             subsize = int((size[0])**0.5)
             if subsize != (size[0])**0.5 or size[0] != size[1]:
                 raise ValueError(
                     'partial_transpose can only be applied to n**2 x n**2 matrices when the dimensions of subsystems are not defined')
-            dim = [subsize, subsize]
-        if size[0] % dim[0] != 0:
-            raise ValueError(
-                'dimension of sub-blocks must be dividers of the dimension of the expression to which partial_transpose is applied.')
-        if size[1] % dim[1] != 0:
-            raise ValueError(
-                'dimension of sub-blocks must be dividers of the dimension of the expression to which partial_transpose is applied.')
-
-        newsize = ((size[0] * dim[1]) // dim[0], (size[1] * dim[0]) // dim[1])
+            dim_1 = (subsize, subsize)
+            
+        if dim_2 is None:
+            dim_2 = dim_1
+            
+        assert isinstance(dim_1,tuple)
+        assert isinstance(dim_2,tuple)
+        assert (len(dim_1)==len(dim_2))
+        
+        assert (np.product(dim_1) == size[0]),'the size of subsystems do not match the size of the entire matrix'
+        assert (np.product(dim_2) == size[1]),'the size of subsystems do not match the size of the entire matrix'
+            
+        N = len(dim_1)
+        
+        if subsystems is None:
+            subsystems = (N-1,)
+        if isinstance(subsystems,int):
+            subsystems = (subsystems,)
+            
+        assert all([i in range(N) for i in subsystems])
+        
+        newdim_1 = ()
+        newdim_2 = ()
+        for i in range(N):
+            if i in subsystems:
+                newdim_1 += (dim_2[i],)
+                newdim_2 += (dim_1[i],)
+            else:
+                newdim_2 += (dim_2[i],)
+                newdim_1 += (dim_1[i],)
+                
+        newsize = (np.product(newdim_1),np.product(newdim_2))
+        
+        def block_indices(dims,ii):
+            inds = []
+            rem = ii
+            for k in range(len(dims)):
+                blk,rem = divmod(rem,np.product(dims[k+1:]))
+                inds.append(int(blk))
+            
+            return inds
+                
         for k in self.factors:
             I0 = []
             J = self.factors[k].J
             V = self.factors[k].V
             for i in self.factors[k].I:
                 column, row = divmod(i, size[0])
-                row_block, lrow = divmod(row, dim[0])
-                column_block, lcolumn = divmod(column, dim[1])
-                row = row_block * dim[1] + lcolumn
-                column = column_block * dim[0] + lrow
-                I0.append(column * newsize[0] + row)
+                row_blocks = block_indices(dim_1,row)
+                col_blocks = block_indices(dim_2,column)
+                new_rblock = [col_blocks[l] if l in subsystems else row_blocks[l] for l in range(N)]
+                new_cblock = [row_blocks[l] if l in subsystems else col_blocks[l] for l in range(N)]
+                newrow = int(sum([new_rblock[l] * np.product(newdim_1[l+1:]) for l in range(N)]))
+                newcol = int(sum([new_cblock[l] * np.product(newdim_2[l+1:]) for l in range(N)]))
+                I0.append(newcol * newsize[0] + newrow)
             self.factors[k] = cvx.spmatrix(V, I0, J, self.factors[k].size)
         if not (self.constant is None):
             spconstant = cvx.sparse(self.constant)
@@ -703,11 +738,13 @@ class AffinExp(Expression):
             I0 = []
             for i in spconstant.I:
                 column, row = divmod(i, size[0])
-                row_block, lrow = divmod(row, dim[0])
-                column_block, lcolumn = divmod(column, dim[1])
-                row = row_block * dim[1] + lcolumn
-                column = column_block * dim[0] + lrow
-                I0.append(column * newsize[0] + row)
+                row_blocks = block_indices(dim_1,row)
+                col_blocks = block_indices(dim_2,column)
+                new_rblock = [col_blocks[l] if l in subsystems else row_blocks[l] for l in range(N)]
+                new_cblock = [row_blocks[l] if l in subsystems else col_blocks[l] for l in range(N)]
+                newrow = int(sum([new_rblock[l] * np.product(dim_1[l+1:]) for l in range(N)]))
+                newcol = int(sum([new_cblock[l] * np.product(dim_2[l+1:]) for l in range(N)]))
+                I0.append(newcol * newsize[0] + newrow)
             self.constant = cvx.spmatrix(V, I0, J, spconstant.size)
         self._size = newsize
         if (('*' in self.affstring()) or ('/' in self.affstring())
@@ -716,9 +753,9 @@ class AffinExp(Expression):
         else:
             self.string += '.Tx'
 
-    def partial_transpose(self, dim=None):
+    def partial_transpose(self, dim_1=None, subsystems=None, dim_2=None):
         selfcopy = self.copy()
-        selfcopy.inplace_partial_transpose(dim)
+        selfcopy.inplace_partial_transpose(dim_1,subsystems,dim_2)
         return selfcopy
 
     def setTx(self, value):

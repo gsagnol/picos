@@ -525,24 +525,29 @@ def lambda_min(exp):
     return sum_k_smallest_lambda(exp, 1)
 
 
-def partial_transpose(exp, dim=None):
-    r"""Partial transpose of the Affine Expression. If ``exp`` is matrix
-    :class:`AffinExp <picos.AffinExp>` partitionned
-    in subblocks :math:`A_{ij}`, the partial transpose of ``exp`` is
-    a block matrix whose (i,j)-block equals :math:`A_{ij}^T`
-    (as opposed to :math:`A_{ji}^T` in the case of a regular transposition).
-
-    The optional parameter ``dim`` is a tuple of int can be used to specify
-    the dimension of the subblocks (all subblocks must have the same size,
-    so ``exp.size[0]`` must be divisible by ``dim[0]``
-    and ``exp.size[1]`` must be divisible by ``dim[1]``).
-
-    The default value ``dim=None`` automatically computes the size of the subblocks,
-    assuming that ``exp`` is a :math:`n^2 \times n^2`-square matrix
-    with blocks of size :math:`n \times n`.
-    The partial transpose of a :math:`n^2 \times n^2` -matrix can also
-    be constructed with the property :attr:`Tx <picos.Expression.Tx>` of an affine expression.
-
+def partial_transpose(exp, dims_1=None, subsystems = None, dims_2=None):
+    r"""Partial transpose of an Affine Expression, with respect to 
+    given subsystems. If ``X`` is a matrix
+    :class:`AffinExp <picos.AffinExp>`
+    that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
+    for some matrices :math:`A_0,\ldots,A_{n-1}`
+    of respective sizes ``dims_1[0] x dims_2[0]``, ... , ``dims_1[n-1] x dims_2[n-1]``,
+    this function returns the matrix
+    :math:`Y = B_0 \otimes B_{n-1}`,
+    where :math:`B_i=A_i^T` if ``i in subsystems``, and  :math:`B_i=A_i` otherwise.
+    
+    The optional parameters ``dims_1`` and ``dims_2`` are tuples specifying the dimension
+    of each subsystem :math:`A_i`. Subsystems must be a ``tuple`` (or an ``int``) with the
+    index of all subsystems to be transposed.
+    
+    The default value ``dims_1=None`` automatically computes the size of the subblocks,
+    assuming that ``exp`` is a :math:`n^k \times n^k`-square matrix, 
+    for the smallest appropriate value of :math:`k\leq 5`, that is ``dims_1=(n,)*k``.
+        
+    If ``dims_2`` is not specified, it is assumed that the subsystems :math:`A_i` are square,
+    i.e., ``dims_2=dims_1``. If ``subsystems`` is not specified, the default assumes that
+    only the last system must be transposed, i.e., ``subsystems = (len(dims_1)-1,)``
+    
     **Example:**
 
     >>> import picos as pic
@@ -555,22 +560,24 @@ def partial_transpose(exp, dim=None):
     [ 1.00e+00  5.00e+00  9.00e+00  1.30e+01]
     [ 2.00e+00  6.00e+00  1.00e+01  1.40e+01]
     [ 3.00e+00  7.00e+00  1.10e+01  1.50e+01]
-    >>> print X.Tx #standard partial transpose (with respect to the 2x2 blocks) #doctest: +NORMALIZE_WHITESPACE
+    >>> print X.Tx #standard partial transpose (with respect to the 2x2 blocks and 2d subsystem) #doctest: +NORMALIZE_WHITESPACE
     [ 0.00e+00  1.00e+00  8.00e+00  9.00e+00]
     [ 4.00e+00  5.00e+00  1.20e+01  1.30e+01]
     [ 2.00e+00  3.00e+00  1.00e+01  1.10e+01]
     [ 6.00e+00  7.00e+00  1.40e+01  1.50e+01]
-    >>> print pic.partial_transpose(X,(2,1)) #(and now with respect to blocks of size 2x1) #doctest: +NORMALIZE_WHITESPACE
-    [ 0.00e+00  1.00e+00  4.00e+00  5.00e+00  8.00e+00  9.00e+00  1.20e+01 ... ]
-    [ 2.00e+00  3.00e+00  6.00e+00  7.00e+00  1.00e+01  1.10e+01  1.40e+01 ... ]
+    >>> print pic.partial_transpose(X,(2,2),0) #(now with respect to the first subsystem) #doctest: +NORMALIZE_WHITESPACE
+    [ 0.00e+00  4.00e+00  2.00e+00  6.00e+00]
+    [ 1.00e+00  5.00e+00  3.00e+00  7.00e+00]
+    [ 8.00e+00  1.20e+01  1.00e+01  1.40e+01]
+    [ 9.00e+00  1.30e+01  1.10e+01  1.50e+01]
 
     """
-    return exp.partial_transpose(dim)
+    return exp.partial_transpose(dims_1,subsystems,dims_2)
 
 
 def partial_trace(X, k=1, dim=None):
     r"""Partial trace of an Affine Expression, with respect to the ``k`` th subsystem for a tensor product of dimensions ``dim``.
-    If ``X`` is matrix
+    If ``X`` is a matrix
     :class:`AffinExp <picos.AffinExp>`
     that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
     for some **square matrices** :math:`A_0,\ldots,A_{n-1}`
@@ -594,7 +601,7 @@ def partial_trace(X, k=1, dim=None):
     [ 1.00e+00  5.00e+00  9.00e+00  1.30e+01]
     [ 2.00e+00  6.00e+00  1.00e+01  1.40e+01]
     [ 3.00e+00  7.00e+00  1.10e+01  1.50e+01]
-    >>> print pic.partial_trace(X) #partial transpose with respect to second subsystem (k=1) #doctest: +NORMALIZE_WHITESPACE
+    >>> print pic.partial_trace(X) #partial trace with respect to second subsystem (k=1) #doctest: +NORMALIZE_WHITESPACE
     [ 5.00e+00  2.10e+01]
     [ 9.00e+00  2.50e+01]
     >>> print pic.partial_trace(X,0) #and now with respect to first subsystem (k=0) #doctest: +NORMALIZE_WHITESPACE
