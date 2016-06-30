@@ -7281,6 +7281,24 @@ class Problem(object):
                 iaff += 1
 
         # bounds
+        #hard-coded
+        for varname in self.varNames:
+            var = self.variables[varname]
+            for ind, (lo, up) in six.iteritems(var.bnd):
+                (clo, cup) = bounds.get(var.startIndex + ind, (None, None))
+                if lo is None:
+                    lo = -INFINITY
+                if up is None:
+                    up = INFINITY
+                if clo is None:
+                    clo = -INFINITY
+                if cup is None:
+                    cup = INFINITY
+                nlo = max(clo, lo)
+                nup = min(cup, up)
+                bounds[var.startIndex + ind] = (nlo, nup)
+        
+        
         f.write("Bounds\n")
         for i in range(self.numberOfVars):
             if i in bounds:
@@ -7338,7 +7356,7 @@ class Problem(object):
         # makes the instance #
         #--------------------#
         if not any(self.cvxoptVars.values()):
-            self._make_cvxopt_instance()
+            self._make_cvxopt_instance(hard_coded_bounds=True)
         dims = {}
         dims['s'] = [int(np.sqrt(Gsi.size[0]))
                      for Gsi in self.cvxoptVars['Gs']]
