@@ -542,7 +542,7 @@ def partial_transpose(exp, dims_1=None, subsystems = None, dims_2=None):
     
     The default value ``dims_1=None`` automatically computes the size of the subblocks,
     assuming that ``exp`` is a :math:`n^k \times n^k`-square matrix, 
-    for the smallest appropriate value of :math:`k\leq 5`, that is ``dims_1=(n,)*k``.
+    for the *smallest* appropriate value of :math:`k \in [2,6]`, that is ``dims_1=(n,)*k``.
         
     If ``dims_2`` is not specified, it is assumed that the subsystems :math:`A_i` are square,
     i.e., ``dims_2=dims_1``. If ``subsystems`` is not specified, the default assumes that

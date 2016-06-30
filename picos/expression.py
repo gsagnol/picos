@@ -671,11 +671,14 @@ class AffinExp(Expression):
         size = self.size
 
         if dim_1 is None:
-            subsize = int((size[0])**0.5)
-            if subsize != (size[0])**0.5 or size[0] != size[1]:
+            try : 
+                s0 = size[0]
+                k = [s0**(1./i)==int(s0**(1./i)) for i in range(2,7)].index(True)+2
+                subsize = int(s0**(1./k))
+                dim_1 = (subsize,)*k
+            except ValueError:
                 raise ValueError(
-                    'partial_transpose can only be applied to n**2 x n**2 matrices when the dimensions of subsystems are not defined')
-            dim_1 = (subsize, subsize)
+                    'partial_transpose can only be applied to n**k x n**k matrices when the dimensions of subsystems are not defined')
             
         if dim_2 is None:
             dim_2 = dim_1
