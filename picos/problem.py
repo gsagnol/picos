@@ -113,6 +113,10 @@ class Problem(object):
         # a pair (k,j) in msk_scaledcols[i] means that the variable x'[j]
         # passed to mosek belongs to the ith cone, in the kth position.
         self.msk_fxdconevars = None
+        #index of active mosek cones (i.e., not deleted)
+        self.msk_active_cones = None
+        #total number of cones passed to mosek (including cones that may have been deleted since)
+        self.msk_num_passed_cones = None
 
         self.scip_solver = None
         self.scip_vars = None
@@ -313,6 +317,8 @@ class Problem(object):
         self.msk_scaledcols = None
         self.msk_fxd = None
         self.msk_fxdconevars = None
+        self.msk_active_cones = None
+        self.msk_num_passed_cones = None
 
         if onlyvar:
             self.remove_solver_from_passed('mosek')
@@ -1678,7 +1684,7 @@ class Problem(object):
                     cons.semidefVar.semiDef = False
 
             cons.original_index = ind
-            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip')
+            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip','sdpa')
                               if solver not in cons.passed]
             cons.passed = not_passed_yet
             #deleted constraint is considered as 'passed', i.e. it can be ignored, if it
@@ -1862,11 +1868,15 @@ class Problem(object):
         defines the variables gurobi_Instance and grbvar
         """
 
-        #if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
-        #    for cs in self._deleted_constraints:
-        #        if 'gurobi' not in cs.passed:
-        #            cs.passed.append('gurobi')
-        #    self.reset_gurobi_instance(True)
+        '''
+        #this is not needed anymore, because we handle deleted constraints dynamically
+
+        if any([('gurobi' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'gurobi' not in cs.passed:
+                    cs.passed.append('gurobi')
+            self.reset_gurobi_instance(True)
+        '''
 
         try:
             import gurobipy as grb
@@ -3408,11 +3418,16 @@ class Problem(object):
         """
         defines the variables msk_env and msk_task used by the solver mosek.
         """
+
+
+        #thi is not needed anymore, because we are handling deleted constraints dynamically in mosek
+        '''
         if any([('mosek' not in cs.passed) for cs in self._deleted_constraints]):
             for cs in self._deleted_constraints:
                 if 'mosek' not in cs.passed:
                     cs.passed.append('mosek')
             self.reset_mosek_instance(True)
+        '''
 
         if self.options['verbose'] > 0:
             print('build mosek instance')
@@ -3510,6 +3525,9 @@ class Problem(object):
 
         NUMCON = NUMCON_OLD + NUMCON_NEW
 
+        NUMCONES = task.getnumcone()
+
+
         NUMSDP = self.numberSDPConstraints
         if NUMSDP > 0:
             #indices = [(v.startIndex,v.endIndex-v.startIndex) for v in self.variables.values()]
@@ -3571,7 +3589,7 @@ class Problem(object):
             # shift in the conic constraints
             nc = task.getnumcone()
             if nc:
-                sub = [0] * NUMVAR_OLD
+                sub = None# [0] * NUMVAR_OLD
             for icone in range(nc):
                 (ctype, cpar, sz) = task.getcone(icone, sub)
                 shiftsub = [(s + NUMVAR_NEW if s >= NUMVAR0_OLD else s)
@@ -3786,6 +3804,12 @@ class Problem(object):
             fxdvars = {}
         iaff = NUMCON_OLD
         icone = NUMVAR
+        idx_cone = self.msk_num_passed_cones
+        if idx_cone is None:
+            idx_cone = 0
+        active_cones = self.msk_active_cones
+        if active_cones is None:
+            active_cones = []
         tridex = {}
         isdp = len(BARVARDIM_OLD)
         scaled_cols = self.msk_scaledcols
@@ -3863,8 +3887,7 @@ class Problem(object):
                             lo = rhstmp[i] / v0
                             up = None
                         if j0 in vbnds:
-                            # we handle the cons here, so do not add it at the
-                            # end
+                            # we handle the cons here, so do not add it at the end
                             bdj0 = vbnds[j0]
                             if (bdj0[0] == lo) and (lo is not None):
                                 if bdj0[1] is None:
@@ -3903,6 +3926,12 @@ class Problem(object):
                             fxdvars[idcons].append((i, J[0], -V[0]))
                         else:
                             fxdvars[idcons].append((i, J[0], V[0]))
+
+                        if cons.Id is None:
+                            cons.Id = {}
+                        cons.Id.setdefault('mosek',[])
+                        cons.Id['mosek'].append(('var',J[0]))
+
                         NUMCON -= 1
                         # remove one unnecessary constraint at the end
                         if version7:
@@ -3934,6 +3963,12 @@ class Problem(object):
                         elif cons.typeOfConstraint[3] == '>':
                             task.putbound(
                                 mosek.accmode.con, iaff, mosek.boundkey.lo, b, INFINITY)
+
+                        if cons.Id is None:
+                            cons.Id = {}
+                        cons.Id.setdefault('mosek',[])
+                        cons.Id['mosek'].append(iaff)
+
                         iaff += 1
 
             # conic constraints:
@@ -4022,6 +4057,12 @@ class Problem(object):
                         task.putbound(
                             mosek.accmode.con, iaff, mosek.boundkey.fx, h, h)
                         conevars.append(icone)
+
+                        if cons.Id is None:
+                            cons.Id = {}
+                        cons.Id.setdefault('mosek',[])
+                        cons.Id['mosek'].append(iaff)
+
                         iaff += 1
                         icone += 1
                 iend = icone
@@ -4031,6 +4072,13 @@ class Problem(object):
                 else:
                     task.appendcone(mosek.conetype.quad, 0.0, conevars)
 
+                if cons.Id is None:
+                    cons.Id = {}
+                cons.Id.setdefault('mosek',[])
+                cons.Id['mosek'].append(('cone',idx_cone))
+                active_cones.append(idx_cone)
+                idx_cone += 1
+
                 for j in range(istart, iend):  # make extra variable free
                     task.putbound(
                         mosek.accmode.var, j, mosek.boundkey.fr, 0., 0.)
@@ -4038,6 +4086,11 @@ class Problem(object):
 
             # SDP constraints:
             elif cons.typeOfConstraint.startswith('sdp'):
+                if cons.Id is None:
+                        cons.Id = {}
+                cons.Id.setdefault('mosek',[])
+                cons.Id['mosek'].append(('sdp',isdp))
+
                 if self.options['handleBarVars'] and cons.semidefVar:
                     isdp += 1
                     continue
@@ -4123,6 +4176,12 @@ class Problem(object):
                     task.putbaraij(iaff, isdp, [Eij], [1.0])
                     task.putbound(
                         mosek.accmode.con, iaff, mosek.boundkey.fx, h, h)
+
+                    if cons.Id is None:
+                            cons.Id = {}
+                    cons.Id.setdefault('mosek',[])
+                    cons.Id['mosek'].append(iaff)
+
                     iaff += 1
                 isdp += 1
             # quadratic constraints:
@@ -4196,11 +4255,18 @@ class Problem(object):
                 task.putqconk(iaff, subI, subJ, subV)
                 task.putbound(mosek.accmode.con, iaff,
                               mosek.boundkey.up, -INFINITY, rhs)
+
+                if cons.Id is None:
+                    cons.Id = {}
+                cons.Id.setdefault('mosek',[])
+                cons.Id['mosek'].append(iaff)
+
                 iaff += 1
+
             else:
                 raise Exception(
                     'type of constraint not handled (yet ?) for mosek:{0}'.format(
-                        constr.typeOfConstraint))
+                        cons.typeOfConstraint))
 
         # bounds on vars and bar vars
         bndjj = []
@@ -4251,19 +4317,27 @@ class Problem(object):
                         matij = task.appendsparsesymmat(
                             mlo.size[0],
                             [i], [j], [0.5])
-                        lo = v * (2**0.5)
-                        up = mup[i, j] * (2**0.5)
+                        lo = v #* (2**0.5) [no sqrt(2), because hard-coded bounds have already this factor saved internally]
+                        up = mup[i, j] #* (2**0.5)
+
+                    if version7:
+                        task.appendcons(1)
+                    else:
+                        task.append(mosek.accmode.con, 1)
+                    NUMCON += 1
+
                     task.putbaraij(iaff, indsdpvar[imat], [matij], [1.0])
-                    if lo <= -INFINITY:
+                    if lo <= -INFINITY/1.42: #because infinity, however, is not scaled wrt sqrt(2)
                         task.putbound(
                             mosek.accmode.con, iaff, mosek.boundkey.up, -INFINITY, up)
-                    elif up >= INFINITY:
+                    elif up >= INFINITY/1.42:
                         task.putbound(
                             mosek.accmode.con, iaff, mosek.boundkey.lo, lo, INFINITY)
                     else:
                         task.putbound(
                             mosek.accmode.con, iaff, mosek.boundkey.ra, lo, up)
                     iaff += 1
+
 
         # scale columns of variables in cones (simple change of variable which
         # avoids adding an extra var)
@@ -4288,6 +4362,48 @@ class Problem(object):
                 task.getcslice(j, j + 1, cj)
                 task.putcj(j, cj[0] / v)
 
+
+        # !mosek! constraints deletion TODO here check which cones to remove and which affs (save dict original id-> current id?)
+
+        print_message_not_printed_yet = True
+        cones_to_remove = []
+        aff_to_remove = []
+        for cs in self._deleted_constraints:
+            if 'mosek' in cs.passed:
+                continue
+            else:
+                cs.passed.append('mosek')
+
+            if print_message_not_printed_yet and self.options['verbose'] > 0:
+                print()
+                print('Removing constraints from Mosek instance...')
+                print_message_not_printed_yet = False
+
+
+                warning_message_not_printed_yet = False
+
+            if (cs.Id is None) or ('mosek' not in cs.Id):
+                raise NotImplementedError("\033[1;31m*** You tried to remove a constraint from a problem that is solve via its dual. This is not implemented (yet)."+
+                                                  "Try to set the option ``solve_via_dual`` to False"+
+                                                  "For now, you can run ``reset_solver_instances()`` and solve the problem again.\033[0m")
+
+            for i in cs.Id['mosek']:
+                if isinstance(i,tuple):
+                    if i[0]=='var':
+                        raise NotImplementedError("\033[1;31m*** You have been removing a constraint that can be "+
+                            "(partly) interpreted as a variable bound. This is not safe when "+
+                            "the option ``pass_simple_cons_as_bound`` is set to True."+
+                            "Try to run ``reset_solver_instances()`` and solve the problem again.\033[0m")
+                    elif i[0]=='sdp':
+                        raise NotImplementedError("\033[1;31m*** You tried to remove an sdp constraint. This is not implemented (yet)."+
+                                                  "Try to run ``reset_solver_instances()`` and solve the problem again.\033[0m")
+                    elif i[0]=='cone':
+                        cones_to_remove.append(i[1])
+                else:
+                    aff_to_remove.append(i)
+
+        print(aff_to_remove,cones_to_remove)
+
         # objective sense
         if self.objective[0] == 'max':
             task.putobjsense(mosek.objsense.maximize)
@@ -4299,6 +4415,8 @@ class Problem(object):
         self.msk_fxd = fxdvars
         self.msk_scaledcols = scaled_cols
         self.msk_fxdconevars = fxdconevars
+        self.msk_active_cones = active_cones
+        self.msk_num_passed_cones = idx_cone
 
         if reset_hbv_True:
             self.options._set('handleBarVars', True)
@@ -4715,10 +4833,20 @@ class Problem(object):
         elif solve_via_dual:
             converted = False
             raiseexp = False
+            remove_cons_exp = False
             try:
                 if self.options['verbose'] > 0:
                     print('*** Dualizing the problem...  ***')
                 dual = self.dualize()
+                if self.options['solver'].startswith('mosek') and any([('mosek' not in cs.passed) for cs in self._deleted_constraints]):
+                    remove_cons_exp = True
+                    for cs in self._deleted_constraints:
+                        if 'mosek' not in cs.passed:
+                            cs.passed.append('mosek')
+                        self.reset_mosek_instance(True)
+                    raise NotImplementedError("\033[1;31m*** You tried to remove a constraint from a problem that is solved via its dual. This is not implemented (yet)."+
+                                  "The mosek instance has been reset. "+
+                                  "Now, you can retry to solve it.\033[0m")
             except QuadAsSocpError as ex:
                 if self.options['convert_quad_to_socp_if_needed']:
                     pcop = self.copy()
@@ -4738,6 +4866,8 @@ class Problem(object):
                 # if nosocpquad:
                     # raise QuadAsSocpError('Try to convert the quadratic constraints as cone constraints '+
                         #'with the function convert_quad_to_socp().')
+                if remove_cons_exp:
+                    raise(ex)
                 if raiseexp:
                     # raise(ex)
                     if self.options['verbose'] > 0:
@@ -4746,6 +4876,14 @@ class Problem(object):
                         print(ex)
                         print ('I retry to solve without dualizing')
                     return self.solve(solve_via_dual=False)
+
+                for cs in self.constraints:
+                    if self.options['solver'].startswith('mosek'):
+                        cs.passed.append('mosek')
+                    elif self.options['solver'] in ('cvxopt','smcp'):
+                        cs.passed.append('cvxopt')
+                    elif self.options['solver']=='sdpa':
+                        cs.passed.append('sdpa')
 
                 sol = dual.solve()
                 obj = -sol['obj']
