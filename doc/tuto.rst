@@ -477,6 +477,46 @@ Similarly, the constraint ``Y > |0|`` can be accessed by
 ``prob.get_constraint((0,0))`` (first constraint of the first group), or
 ``prob.get_constraint((0,))`` (unique constraint of the first group).
 
+.. _delcons:
+
+Removing constraints
+--------------------
+
+It can be useful to remove some constraints, especially for
+dynamic approaches such as column generation. Re-creating an instance from
+scratch after each iteration would be inefficient. Instead, PICOS allows
+one to modify the solver instance and to re-solve it on the fly
+(for ``mosek``, ``cplex`` and ``gurobi``). It is not possible to change
+directly a constraint, but you can delete a constraint from model, and
+then re-add the modified constraint.
+
+To delete a constraint, you must have a handle to this constraint. To this end,
+you can pass the option ``return constraints`` when you create the instance of the problem.
+The next example shows an example in which the constraint ``2*x1<=1`` is replaced by ``2*x1+x2 <= 1``
+
+  >>> prb = pic.Problem(return_constraints=True)
+  >>> x1 = prb.add_variable('x1',1)
+  >>> lhs = 2*x1
+  >>> cons = prb.add_constraint(lhs <= 1)
+  >>> # now we add the variable y, and add it to the lhs of the constraint
+  >>> x2 = prb.add_variable('x2',1)
+  >>> lhs += x2
+  >>> cons.delete()
+  >>> newcons = prb.add_constraint(lhs <= 1)
+  >>> print prb #doctest: +NORMALIZE_WHITESPACE Todo here and explain better cutting plane
+    ---------------------
+    optimization problem  (LP):
+    2 variables, 1 affine constraints
+    <BLANKLINE>
+    x2  : (1, 1), continuous
+    x1  : (1, 1), continuous
+    <BLANKLINE>
+        find vars
+    such that
+      2.0*x1 + x2 < 1.0
+    ---------------------
+
+  
 .. _flowcons:
 
 Flow constraints in Graphs
