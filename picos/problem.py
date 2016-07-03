@@ -115,8 +115,8 @@ class Problem(object):
         self.msk_fxdconevars = None
         #index of active mosek cones (i.e., not deleted)
         self.msk_active_cones = None
-        #total number of cones passed to mosek (including cones that may have been deleted since)
-        self.msk_num_passed_cones = None
+        #index of active mosek constraints (not deleted)
+        self.msk_active_cons = None
 
         self.scip_solver = None
         self.scip_vars = None
@@ -318,7 +318,7 @@ class Problem(object):
         self.msk_fxd = None
         self.msk_fxdconevars = None
         self.msk_active_cones = None
-        self.msk_num_passed_cones = None
+        self.msk_active_cons = None
 
         if onlyvar:
             self.remove_solver_from_passed('mosek')
@@ -3802,14 +3802,25 @@ class Problem(object):
         fxdvars = self.msk_fxd
         if fxdvars is None:
             fxdvars = {}
-        iaff = NUMCON_OLD
+
         icone = NUMVAR
-        idx_cone = self.msk_num_passed_cones
-        if idx_cone is None:
-            idx_cone = 0
+
         active_cones = self.msk_active_cones
-        if active_cones is None:
+        if not active_cones:
             active_cones = []
+            idx_cone = 0
+        else:
+            idx_cone = active_cones[-1] + 1
+
+        #iaff = NUMCON_OLD
+        active_cons = self.msk_active_cons
+        if not active_cons:
+            active_cons = []
+            iaff = 0
+        else:
+            iaff = active_cons[-1] + 1
+
+
         tridex = {}
         isdp = len(BARVARDIM_OLD)
         scaled_cols = self.msk_scaledcols
@@ -3968,6 +3979,7 @@ class Problem(object):
                             cons.Id = {}
                         cons.Id.setdefault('mosek',[])
                         cons.Id['mosek'].append(iaff)
+                        active_cons.append(iaff)
 
                         iaff += 1
 
@@ -4062,6 +4074,7 @@ class Problem(object):
                             cons.Id = {}
                         cons.Id.setdefault('mosek',[])
                         cons.Id['mosek'].append(iaff)
+                        active_cons.append(iaff)
 
                         iaff += 1
                         icone += 1
@@ -4181,6 +4194,7 @@ class Problem(object):
                             cons.Id = {}
                     cons.Id.setdefault('mosek',[])
                     cons.Id['mosek'].append(iaff)
+                    active_cons.append(iaff)
 
                     iaff += 1
                 isdp += 1
@@ -4260,6 +4274,7 @@ class Problem(object):
                     cons.Id = {}
                 cons.Id.setdefault('mosek',[])
                 cons.Id['mosek'].append(iaff)
+                active_cons.append(iaff)
 
                 iaff += 1
 
@@ -4336,6 +4351,7 @@ class Problem(object):
                     else:
                         task.putbound(
                             mosek.accmode.con, iaff, mosek.boundkey.ra, lo, up)
+                    active_cons.append(iaff)
                     iaff += 1
 
 
@@ -4363,7 +4379,7 @@ class Problem(object):
                 task.putcj(j, cj[0] / v)
 
 
-        # !mosek! constraints deletion TODO here check which cones to remove and which affs (save dict original id-> current id?)
+        # constraints deletion
 
         print_message_not_printed_yet = True
         cones_to_remove = []
@@ -4402,7 +4418,17 @@ class Problem(object):
                 else:
                     aff_to_remove.append(i)
 
-        print(aff_to_remove,cones_to_remove)
+
+        idx_aff_to_remove = np.searchsorted(active_cons,aff_to_remove)
+        task.removecons(idx_aff_to_remove)
+        for ii in idx_aff_to_remove[::-1]:
+            del active_cons[ii]
+
+        idx_cones_to_remove = np.searchsorted(active_cones,cones_to_remove)
+        task.removecones(idx_cones_to_remove)
+        for ii in idx_cones_to_remove[::-1]:
+            del active_cones[ii]
+
 
         # objective sense
         if self.objective[0] == 'max':
@@ -4416,7 +4442,7 @@ class Problem(object):
         self.msk_scaledcols = scaled_cols
         self.msk_fxdconevars = fxdconevars
         self.msk_active_cones = active_cones
-        self.msk_num_passed_cones = idx_cone
+        self.msk_active_cons = active_cons
 
         if reset_hbv_True:
             self.options._set('handleBarVars', True)
