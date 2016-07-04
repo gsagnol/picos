@@ -32,6 +32,18 @@ on every function of PICOS.
 
 **News**
 
+ * 4 Jul. 16: **Picos** :ref:`1.1.2 <download>` **Released**
+    Major release with following changes:
+      * Improved efficiency for the processing of large expressions.
+      * It is now possible to dynamically add and remove constraints, e.g. for column generation approaches, cf. :ref:`this paragraph <delcons>` for an example.
+        For an easier use, the function :func:`add_constraint() <picos.Problem.add_constraint()>` now returns a handle to the constraint when the option :func:`return_constraints=True <picos.Problem.set_all_options_to_default()>`
+        has been passed to the problem. Then, constraints can be deleted by using :func:`constraint.delete() <picos.Constraint.delete()>`.
+      * In previous versions, PICOS detected constraints that could be interpreted as a bound on a variable. This was creating a mess to delete constraints,
+        so the default behaviour is now to pass all constraints as such. To stick to the old behaviour, use the option :func:`pass_simple_cons_as_bound=True <picos.Problem.set_all_options_to_default()>`.
+      * New signature for the function :func:`partial_transpose() <picos.tools.partial_transpose()>`, which can now transpose arbitrary subsystems from a kronecker product.
+      * Corrections of minor bugs with complex expressions.
+      * Better support for the SDPA solver.
+
  * 29 Aug. 15: **Picos** :ref:`1.1.1 <download>` **Released**
     Minor release with following changes:
      * Partial trace of an Affine Expression, cf. :func:`partial_trace() <picos.tools.partial_trace>`
@@ -44,22 +56,6 @@ on every function of PICOS.
     
     * PICOS is now available on `github <http://github.com/gsagnol/picos>`_.
     
-
- * 30 Jan. 15: **Picos** :ref:`1.0.2 <download>` **Released**
-    Major release with following new functionalities:
-     * Support (read and write) for ``.cbf`` problem files (`conic benchmark format <http://cblib.zib.de/>`_ ), which should be the standard for (mixed integer) conic optimization problems, cf. :func:`write_to_file <picos.Problem.write_to_file>` and :func:`import_cbf <picos.tools.import_cbf>` . 
-     * Improved support for complex SDP (more efficient implementation of :func:`to_real() <picos.Problem.to_real>` , corrected bug in the implementation of the scalar product for Hermitian matrices and the conjugate of a complex expression, support for equality constraints involving complex coefficients)
-     * Support for inequalities involving the sum of k largest elements of an affine expression, or the k largest eigenvalues of a symmetric matrix expression, cf. the functions :func:`sum_k_largest() <picos.tools.sum_k_largest>` , :func:`sum_k_smallest() <picos.tools.sum_k_smallest>` , :func:`sum_k_largest_lambda() <picos.tools.sum_k_largest_lambda>`, :func:`sum_k_smallest_lambda() <picos.tools.sum_k_smallest_lambda>`, :func:`lambda_max() <picos.tools.lambda_max>` and :func:`lambda_min() <picos.tools.lambda_min>` .
-     * Support for inequalities involving the :math:`L_{p,q}-` norm of an affine expresison, cf. :func:`norm() <picos.tools.norm>` .
-     * New ``vtype`` for antisymmetric matrix variables ( :attr:`vtype <picos.Variable.vtype>` ``= antisym``).
-     * Constraints can be specified as membership in a :class:`Set <picos.Set>` . Sets can be created by the functions :func:`ball() <picos.tools.ball>` , :func:`simplex() <picos.tools.simplex>`, and :func:`truncated_simplex() <picos.tools.truncated_simplex>` .
-     * New functions :func:`maximize <picos.Problem.maximize>` and :func:`maximize <picos.Problem.minimize>` to specify the objective function of a problem and solve it. 
-
-    And many thanks to `Petter Wittek <http://peterwittek.com/>`_ for the following improvements, who were motivated by the use of PICOS in the package `ncpol2sdpa <http://peterwittek.github.io/ncpol2sdpa/>`_ for optimization over noncommutative polynomials:
-     * More efficient implementation of the writer to the sparse - SDPA file format (:func:`write_to_file <picos.Problem.write_to_file>`)
-     * Hadamard (elementwise) product of affine expression is implemented, as an overload of the ``^`` operator,   cf. an example :ref:`here <overloads>` .
-     * Partial transposition of an Affine Expression, cf. :func:`partial_transpose() <picos.tools.partial_transpose>` or the :attr:`Tx <picos.AffinExp.Tx>` attribute.
-     
  * Former changes are listed :ref:`here <changes>`.
 
 .. _contents:

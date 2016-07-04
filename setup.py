@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='PICOS',
-    version='1.1.2.dev',
+    version='1.1.3.dev',
     author='G. Sagnol',
     author_email='sagnol@zib.de',
     packages=['picos'],
@@ -27,5 +27,5 @@ setup(
         'Programming Language :: Python'
     ],
     url='http://picos.zib.de',
-    download_url='http://picos.zib.de/dist/PICOS-1.1.1dev.tar.gz'
+    download_url='http://picos.zib.de/dist/PICOS-1.1.3.dev.tar.gz'
 ) 

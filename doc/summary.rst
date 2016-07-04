@@ -136,9 +136,9 @@
 |:func:`simplex(a) <picos.tools.simplex>`                     | a standard simplex                                               |
 |                                                             | :math:`\{x\geq 0: \Vert x \Vert_1 \leq a \}`                     |
 +-------------------------------------------------------------+------------------------------------------------------------------+
-|:func:`truncated_simplex(a) <picos.tools.truncated_simplex>` |                     a set of the form                            |
-|                                                             |:math:`\{ 0\leq x\leq 1: \Vert x \Vert_1 \leq a\}`  or            |
-|                                                             |:math:`\{x: \Vert x \Vert_\infty \leq 1 \Vert x \Vert_1 \leq a\}` |
+|:func:`truncated_simplex(a) <picos.tools.truncated_simplex>` | a set of the form                                                |
+|                                                             |:math:`\{ 0\leq x\leq 1: \Vert x \Vert_1 \leq a\}`, or            |
+|                                                             |:math:`\{x: \Vert x \Vert_\infty \leq 1; \Vert x \Vert_1 \leq a\}`|
 +-------------------------------------------------------------+------------------------------------------------------------------+
 
 
@@ -149,16 +149,16 @@
 To transform a problem
 ----------------------
 
-+-----------------------------------------------------------------+-------------------------------------------+
-| **function**                                                    |  **short doc**                            |
-+=================================================================+===========================================+
-|:func:`convert_quad_to_socp() <picos.tools.convert_quad_to_socp>`| replaces quadratic constraints by         |
-|                                                                 | equivalent second order cone constraints  |
-+-----------------------------------------------------------------+-------------------------------------------+
-|:func:`to_real() <picos.tools.to_real>`                          | transform complex SDP to real SDP         |
-+-----------------------------------------------------------------+-------------------------------------------+
-|:func:`dualize() <picos.tools.dualize>`                          | returns Lagrangian dual of a problem      |
-+-----------------------------------------------------------------+-------------------------------------------+
++-----------------------------------------------------------------+------------------------------------------------------+
+| **function**                                                    |  **short doc**                                       |
++=================================================================+======================================================+
+|:func:`convert_quad_to_socp() <picos.tools.convert_quad_to_socp>`| replaces quadratic constraints by                    |
+|                                                                 | equivalent second order cone constraints             |
++-----------------------------------------------------------------+------------------------------------------------------+
+|:func:`to_real() <picos.tools.to_real>`                          | transform complex SDP to equivalent real-valued SDP  |
++-----------------------------------------------------------------+------------------------------------------------------+
+|:func:`dualize() <picos.tools.dualize>`                          | returns Lagrangian dual of a problem                 |
++-----------------------------------------------------------------+------------------------------------------------------+
 
 Get information on a problem
 ----------------------------
@@ -170,7 +170,7 @@ Get information on a problem
 +-----------------------------------------------------------------------------------------+-------------------------------------------+
 |:func:`get_valued_variable(name) <picos.Problem.get_valued_variable>`                    | gets the value of the variable ``name``   |
 +-----------------------------------------------------------------------------------------+-------------------------------------------+
-|:func:`check_current_value_feasibility() <picos.Problem.check_current_value_feasibility>`| are the current variable value  feasible? |
+|:func:`check_current_value_feasibility() <picos.Problem.check_current_value_feasibility>`| are the current variable value feasible?  |
 +-----------------------------------------------------------------------------------------+-------------------------------------------+
 |:func:`obj_value() <picos.Problem.obj_value>`                                            | objective for the current variable values |
 +-----------------------------------------------------------------------------------------+-------------------------------------------+

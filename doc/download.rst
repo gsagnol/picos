@@ -6,7 +6,7 @@ Download
 
 The latest version of PICOS can be downloaded here:
 
-        `picos-1.1.1 <dist/PICOS-1.1.1.tar.gz>`_
+        `picos-1.1.2 <dist/PICOS-1.1.2.tar.gz>`_
 
 Installation instructions are explained
 :ref:`here <requirements>`.
@@ -14,6 +14,8 @@ Installation instructions are explained
 
 
 **Older versions**
+
+  `picos-1.1.1 <dist/PICOS-1.1.1.tar.gz>`_
 
   `picos-1.1.0 <dist/PICOS-1.1.0.tar.gz>`_
 

@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-# Picos 1.1.2.dev : A pyton Interface To Conic Optimization Solvers
+# Picos 1.1.3.dev : A pyton Interface To Conic Optimization Solvers
 # Copyright (C) 2012  Guillaume Sagnol
 #
 # This program is free software: you can redistribute it and/or modify
@@ -533,11 +533,11 @@ def partial_transpose(exp, dims_1=None, subsystems = None, dims_2=None):
     for some matrices :math:`A_0,\ldots,A_{n-1}`
     of respective sizes ``dims_1[0] x dims_2[0]``, ... , ``dims_1[n-1] x dims_2[n-1]``,
     this function returns the matrix
-    :math:`Y = B_0 \otimes B_{n-1}`,
+    :math:`Y = B_0 \otimes \cdots \otimes B_{n-1}`,
     where :math:`B_i=A_i^T` if ``i in subsystems``, and  :math:`B_i=A_i` otherwise.
     
     The optional parameters ``dims_1`` and ``dims_2`` are tuples specifying the dimension
-    of each subsystem :math:`A_i`. Subsystems must be a ``tuple`` (or an ``int``) with the
+    of each subsystem :math:`A_i`. The argument ``subsystems`` must be a ``tuple`` (or an ``int``) with the
     index of all subsystems to be transposed.
     
     The default value ``dims_1=None`` automatically computes the size of the subblocks,

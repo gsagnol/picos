@@ -1,7 +1,7 @@
 # coding: utf-8
 
 #-------------------------------------------------------------------
-# Picos 1.1.2.dev : A pyton Interface To Conic Optimization Solvers
+# Picos 1.1.3.dev : A pyton Interface To Conic Optimization Solvers
 # Copyright (C) 2012  Guillaume Sagnol
 #
 # This program is free software: you can redistribute it and/or modify
@@ -541,7 +541,8 @@ class Problem(object):
     def set_all_options_to_default(self):
         """set all the options to their default.
         The following options are available, and can be passed
-        as pairs of the form ``key=value`` to :func:`solve() <picos.Problem.solve>` :
+        as pairs of the form ``key=value`` when the :class:`Problem <picos.Problem>` object is created,
+        or to the function :func:`solve() <picos.Problem.solve>` :
 
         * General options common to all solvers:
 
@@ -3817,8 +3818,10 @@ class Problem(object):
         if not active_cons:
             active_cons = []
             iaff = 0
+            idx_aff = 0
         else:
-            iaff = active_cons[-1] + 1
+            iaff = len(active_cons)
+            idx_aff = active_cons[-1] + 1
 
 
         tridex = {}
@@ -3953,7 +3956,10 @@ class Problem(object):
                     else:
                         b = rhstmp[i]
                         if version7:
-                            task.putarow(iaff, J, V)
+                            try:
+                                task.putarow(iaff, J, V)
+                            except:
+                                import pdb;pdb.set_trace()
                         else:
                             task.putaijlist([iaff] * len(J), J, V)
                         if self.options['handleBarVars']:
@@ -3978,10 +3984,11 @@ class Problem(object):
                         if cons.Id is None:
                             cons.Id = {}
                         cons.Id.setdefault('mosek',[])
-                        cons.Id['mosek'].append(iaff)
-                        active_cons.append(iaff)
+                        cons.Id['mosek'].append(idx_aff)
+                        active_cons.append(idx_aff)
 
                         iaff += 1
+                        idx_aff += 1
 
             # conic constraints:
             elif cons.typeOfConstraint.endswith('cone'):
@@ -4073,10 +4080,11 @@ class Problem(object):
                         if cons.Id is None:
                             cons.Id = {}
                         cons.Id.setdefault('mosek',[])
-                        cons.Id['mosek'].append(iaff)
-                        active_cons.append(iaff)
+                        cons.Id['mosek'].append(idx_aff)
+                        active_cons.append(idx_aff)
 
                         iaff += 1
+                        idx_aff += 1
                         icone += 1
                 iend = icone
                 # sk in quadratic cone
@@ -4193,10 +4201,11 @@ class Problem(object):
                     if cons.Id is None:
                             cons.Id = {}
                     cons.Id.setdefault('mosek',[])
-                    cons.Id['mosek'].append(iaff)
-                    active_cons.append(iaff)
+                    cons.Id['mosek'].append(idx_aff)
+                    active_cons.append(idx_aff)
 
                     iaff += 1
+                    idx_aff += 1
                 isdp += 1
             # quadratic constraints:
             elif cons.typeOfConstraint == 'quad':
@@ -4273,10 +4282,11 @@ class Problem(object):
                 if cons.Id is None:
                     cons.Id = {}
                 cons.Id.setdefault('mosek',[])
-                cons.Id['mosek'].append(iaff)
-                active_cons.append(iaff)
+                cons.Id['mosek'].append(idx_aff)
+                active_cons.append(idx_aff)
 
                 iaff += 1
+                idx_aff += 1
 
             else:
                 raise Exception(

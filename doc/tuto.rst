@@ -492,31 +492,37 @@ then re-add the modified constraint.
 
 To delete a constraint, you must have a handle to this constraint. To this end,
 you can pass the option ``return constraints`` when you create the instance of the problem.
-The next example shows an example in which the constraint ``2*x1<=1`` is replaced by ``2*x1+x2 <= 1``
+The next code shows an example in which a variable ``x2`` is added to the model,
+which appears as ``+3*x2`` in the objective function and as ``+x2`` in the LHS of a constraint.
 
   >>> prb = pic.Problem(return_constraints=True)
   >>> x1 = prb.add_variable('x1',1)
   >>> lhs = 2*x1
+  >>> obj = 5*x1
   >>> cons = prb.add_constraint(lhs <= 1)
-  >>> # now we add the variable y, and add it to the lhs of the constraint
+  >>> sol = prb.maximize(obj,verbose=0)
+  >>> #--------------------------------------
+  >>> #at this place, the user can use his favorite method to solve the 'pricing problem'.
+  >>> #Let us assume that this phase suggests to add a new variable 'x2' in the model,
+  >>> #which appears as `+3*x2` in the objective function, and as `+x2` in the LHS of the constraint.
   >>> x2 = prb.add_variable('x2',1)
   >>> lhs += x2
+  >>> obj += 3*x2
   >>> cons.delete()
   >>> newcons = prb.add_constraint(lhs <= 1)
-  >>> print prb #doctest: +NORMALIZE_WHITESPACE Todo here and explain better cutting plane
-    ---------------------
-    optimization problem  (LP):
-    2 variables, 1 affine constraints
-    <BLANKLINE>
-    x2  : (1, 1), continuous
-    x1  : (1, 1), continuous
-    <BLANKLINE>
-        find vars
-    such that
-      2.0*x1 + x2 < 1.0
-    ---------------------
+  >>> print prb   #doctest: +NORMALIZE_WHITESPACE
+  ---------------------
+  optimization problem  (LP):
+  2 variables, 1 affine constraints
+  <BLANKLINE>
+  x2  : (1, 1), continuous
+  x1  : (1, 1), continuous
+  <BLANKLINE>
+      maximize 5.0*x1 + 3.0*x2
+  such that
+    2.0*x1 + x2 < 1.0
+  ---------------------
 
-  
 .. _flowcons:
 
 Flow constraints in Graphs

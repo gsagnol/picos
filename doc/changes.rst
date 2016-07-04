@@ -8,6 +8,18 @@
 Change History
 ==============
 
+ * 4 Jul. 16: **Picos** :ref:`1.1.2 <download>` **Released**
+    Major release with following changes:
+      * Improved efficiency for the processing of large expressions.
+      * It is now possible to dynamically add and remove constraints, e.g. for column generation approaches, cf. :ref:`this paragraph <delcons>` for an example.
+        For an easier use, the function :func:`add_constraint() <picos.Problem.add_constraint()>` now returns a handle to the constraint when the option :func:`return_constraints=True <picos.Problem.set_all_options_to_default()>`
+        has been passed to the problem. Then, constraints can be deleted by using :func:`constraint.delete() <picos.Constraint.delete()>`.
+      * In previous versions, PICOS detected constraints that could be interpreted as a bound on a variable. This was creating a mess to delete constraints,
+        so the default behaviour is now to pass all constraints as such. To stick to the old behaviour, use the option :func:`pass_simple_cons_as_bound=True <picos.Problem.set_all_options_to_default()>`.
+      * New signature for the function :func:`partial_transpose() <picos.tools.partial_transpose()>`, which can now transpose arbitrary subsystems from a kronecker product.
+      * Corrections of minor bugs with complex expressions.
+      * Better support for the SDPA solver.
+
  * 29 Aug. 15: **Picos** :ref:`1.1.1 <download>` **Released**
     Minor release with following changes:
      * Partial trace of an Affine Expression, cf. :func:`partial_trace() <picos.tools.partial_trace>`
