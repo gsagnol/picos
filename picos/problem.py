@@ -4502,7 +4502,47 @@ class Problem(object):
         self.sdpa_out_filename = tmp_filename + ".out"
         self._write_sdpa(self.sdpa_dats_filename)
 
+
     def _make_zibopt(self):
+        """
+        Defines the variables scip_solver, scip_vars and scip_obj,
+        used by the zibopt solver.
+        """
+        if any([('scip' not in cs.passed) for cs in self._deleted_constraints]):
+            for cs in self._deleted_constraints:
+                if 'scip' not in cs.passed:
+                    cs.passed.append('scip')
+            self.reset_scip_instance(True)
+
+        try:
+            import pyscipopt
+        except:
+            raise ImportError('scip library not found')
+        
+        self.scip_model = pyscipopt.Model()
+        
+        self.scip_vars = []
+        
+        for name,variable in self.variables.iteritem():
+            for i in range(x.size[0]*x.size[1]):
+                 self.scip_vars.append( model.addVar(name+'_'+str(i)))
+        
+        for cons in self.constraints:
+            if cons[:3]=='lin':
+                pass
+                
+                expression = cons.Exp1 - cons.Exp2
+                for i,j,v in zip(expression.factors.I, expression.factors.J, expression.factors.V):
+                    pass
+                    #TODO
+
+                
+            else:
+                raise NotImplementedError('not implemented yet')
+
+
+
+    def _make_zibopt_old(self):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
         used by the zibopt solver.

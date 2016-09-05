@@ -1,0 +1,21 @@
+import picos as pic
+P = pic.Problem()
+x = P.add_variable('x',1)
+y = P.add_variable('y',1)
+P.add_constraint(2*x + y <= 1)
+P.add_constraint(x + 3*y <= 1)
+P.set_objective('max',3*x+5*y)
+P.solve()
+
+
+
+import pyscipopt
+model = pyscipopt.Model()
+x = model.addVar('x')
+y = model.addVar('y')
+model.setObjective(3*x+5*y,'maximize')
+model.addCons(2*x + y <= 1)
+model.addCons(x + 3*y <= 1)
+model.optimize()
+
+
