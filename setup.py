@@ -18,7 +18,9 @@ setup(
         'conic optimization',
         'linear programming',
         'sdp',
-        'semidefinite programming'
+        'semidefinite programming',
+        'socp',
+        'convex optimization'
         ],
     classifiers=[
         'Operating System :: OS Independent',
