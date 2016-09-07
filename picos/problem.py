@@ -4522,23 +4522,29 @@ class Problem(object):
         self.scip_model = pyscipopt.Model()
         
         self.scip_vars = []
-        
+        #Variablen festlegen und dem model hinzufügen
         for name,variable in self.variables.iteritem():
             for i in range(x.size[0]*x.size[1]):
-                 self.scip_vars.append( model.addVar(name+'_'+str(i)))
-        
-        for cons in self.constraints:
-            if cons[:3]=='lin':
-                pass
-                
-                expression = cons.Exp1 - cons.Exp2
-                for i,j,v in zip(expression.factors.I, expression.factors.J, expression.factors.V):
-                    pass
-                    #TODO
+                 self.scip_vars.append( model.addVar(name+'_'+str(i))) 
 
-                
+        for cons in self.constraints: 
+            if cons[:3]=='lin':
+              # model.addCons(.....)
+                pass 
+            if cons[3:]=='<': 
+                # model.addCons(.....)
+                pass
             else:
-                raise NotImplementedError('not implemented yet')
+              
+              pass
+            expression = cons.Exp1 - cons.Exp2
+        for i,j,v in zip(expression.factors.I, expression.factors.J, expression.factors.V):
+                    pass
+                    
+                    #TODO
+             
+        else:
+            raise NotImplementedError('not implemented yet')
 
 
 
