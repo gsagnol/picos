@@ -4522,20 +4522,38 @@ class Problem(object):
         self.scip_model = pyscipopt.Model()
         
         self.scip_vars = []
-        
-        for name,variable in self.variables.iteritem():
-            for i in range(x.size[0]*x.size[1]):
-                 self.scip_vars.append( model.addVar(name+'_'+str(i)))
-        
+
+        current_index = 0
+        for name,variable in self.variables.iteritems():
+            variable.scip_startIndex = current_index
+            sz = variable.size[0]*variable.size[1]
+            for i in range(sz):
+                 self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i)))
+            current_index += sz
+
         for cons in self.constraints:
-            if cons[:3]=='lin':
+            if cons.typeOfConstraint[:3]=='lin':
                 pass
                 
                 expression = cons.Exp1 - cons.Exp2
-                for i,j,v in zip(expression.factors.I, expression.factors.J, expression.factors.V):
-                    pass
-                    #TODO
+                lhs = [0] * expression.size[0]*expression.size[1]
+                for variable in expression.factors:
+                    start_index = variable.scip_startIndex
+                    for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
+                        lhs[i] += v*self.scip_vars[j+start_index]
+                if expression.constant:
+                    for i in range(expression.size[0]*expression.size[1]):
+                        lhs[i] +=  expression.constant[i]
 
+                for lhsi in lhs:
+                    if cons.typeOfConstraint[3]=='<':
+                        self.scip_model.addCons(lhsi <= 0)
+                    elif cons.typeOfConstraint[3]=='>':
+                        self.scip_model.addCons(lhsi >= 0)
+                    elif cons.typeOfConstraint[3]=='=':
+                        self.scip_model.addCons(lhsi == 0)
+                    else:
+                        raise ValueError('unknown type of constraint: '+cons.typeOfConstraint)
                 
             else:
                 raise NotImplementedError('not implemented yet')
