@@ -4522,32 +4522,60 @@ class Problem(object):
         self.scip_model = pyscipopt.Model()
         
         self.scip_vars = []
-        #Variablen festlegen und dem model hinzufügen
-        for name,variable in self.variables.iteritem():
-            for i in range(x.size[0]*x.size[1]):
-                 self.scip_vars.append( model.addVar(name+'_'+str(i))) 
 
-        for cons in self.constraints: 
-            if cons[:3]=='lin':
-              # model.addCons(.....)
-                pass 
-            if cons[3:]=='<': 
-                # model.addCons(.....)
+        current_index = 0
+        for name,variable in self.variables.iteritems():
+            variable.scip_startIndex = current_index
+            sz = variable.size[0]*variable.size[1]
+            for i in range(sz):
+                 self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i)))
+            current_index += sz
+
+        for cons in self.constraints:
+            if cons.typeOfConstraint[:3]=='lin':
                 pass
+                
+                expression = cons.Exp1 - cons.Exp2
+                lhs = [0] * expression.size[0]*expression.size[1]
+                for variable in expression.factors:
+                    start_index = variable.scip_startIndex
+                    for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
+                        lhs[i] += v*self.scip_vars[j+start_index]
+                if expression.constant:
+                    for i in range(expression.size[0]*expression.size[1]):
+                        lhs[i] +=  expression.constant[i]
+
+                for lhsi in lhs:
+                    if cons.typeOfConstraint[3]=='<':
+                        self.scip_model.addCons(lhsi <= 0)
+                    elif cons.typeOfConstraint[3]=='>':
+                        self.scip_model.addCons(lhsi >= 0)
+                    elif cons.typeOfConstraint[3]=='=':
+                        self.scip_model.addCons(lhsi == 0)
+                    else:
+                        raise ValueError('unknown type of constraint: '+cons.typeOfConstraint)
+                
             else:
-              
-              pass
-            expression = cons.Exp1 - cons.Exp2
-        for i,j,v in zip(expression.factors.I, expression.factors.J, expression.factors.V):
-                    pass
-                    
-                    #TODO
+                raise NotImplementedError('not implemented yet')
              
+       #Hier versuchen das objective umzuschreiben:
+        obj = self.objective
+        if obj[:4]=='max':                          #aus max, maximize machen
+           self.scip_model.set_objective(objective[4:]+','+'maximize') #dann objective zusammensetzen mit objective (z.b. 3*x+5*y) und 'maximize' was scip versteht
+        elif obj[:4]=='min':                       #das gleiche für minimize
+           self.scip_model.set_objective(objective[4:]+','+'minimize') 
         else:
-            raise NotImplementedError('not implemented yet')
-
-
-
+           raise ValueError('unknown type of objective: '+obj_value)
+        print(objective)
+    '''     
+        for variable in obj.factors:
+            start_index = variable.scip_startIndex
+            for i,j,v in zip(obj.factors[variable].I, obj.factors[variable].J, obj.factors[variable].V):
+                lhs[i] += v*self.scip_vars[j+start_index]
+        if expression.constant:
+            for i in range(expression.size[0]*expression.size[1]):
+                lhs[i] +=  expression.constant[i]
+    '''
     def _make_zibopt_old(self):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
@@ -6695,8 +6723,24 @@ class Problem(object):
         sol = {'mosek_task': task, 'status': status, 'time': tend - tstart}
 
         return (primals, duals, obj, sol)
-
+    
     def _zibopt_solve(self):
+        #TODO
+         if self.type in (
+                'unknown type',
+                'MISDP',
+                'GP',
+                'SDP',
+                'ConeP',
+                'Mixed (SDP+quad)'):
+            raise NotAppropriateSolverError(
+                "'scip' cannot solve problems of type {0}".format(
+                    self.type))
+         else:
+	     model.optimize()
+        
+    
+    def _zibopt_solve_old(self):
         """
         Solves the problem with the zib optimization suite
         """
@@ -6733,30 +6777,6 @@ class Problem(object):
         #--------------------#
         #  call the solver   #
         #--------------------#
-        import time
-        tstart = time.time()
-
-        if self.objective[0] == 'max':
-            if self.scip_obj is None:
-                sol = self.scip_solver.maximize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol)
-            else:  # quadratic obj
-                sol = self.scip_solver.maximize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol,
-                                                objective=self.scip_obj)
-        else:
-            if self.scip_obj is None:
-                sol = self.scip_solver.minimize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol)
-            else:  # quadratic obj
-                sol = self.scip_solver.minimize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol,
-                                                objective=self.scip_obj)
-        tend = time.time()
 
         if sol.optimal:
             status = 'optimal'

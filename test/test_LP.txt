@@ -6,6 +6,7 @@ P.add_constraint(2*x + y <= 1)
 P.add_constraint(x + 3*y <= 1)
 P.set_objective('max',3*x+5*y)
 P.solve()
+<<<<<<< HEAD
 _____
 import picos as pic
 P = pic.Problem()
@@ -16,14 +17,82 @@ P.add_constraint(2*x + 2*y <= 1)
 P.set_objective('max',6*x+5*y)
 P.solve()
 ______
+=======
+>>>>>>> 3daa90bd51c300683c8117d16a65b8a56b76946d
 
 import pyscipopt
 model = pyscipopt.Model()
 x = model.addVar('x')
 y = model.addVar('y')
-model.setObjective(3*x+5*y,'maximize')
-model.addCons(2*x + y <= 1)
-model.addCons(x + 3*y <= 1)
+model.setObjective(300*x+500*y,'maximize')
+model.addCons(x+2*y <= 170)
+model.addCons(x+y <= 150)
+model.addCons(3*y <= 180)
+model.optimize()
+
+-----Daten abrufen scip:-----
+1. model.getObjVal() -> Wert des objectives
+2. model.getVal(x) -> x Wert wird ausgegeben
+3. model.getVal(y) -> y Wert wird ausgegeben
+(bzw. je nachdem, wie die Variablen belegt wurden)
+---------
+
+
+import cvxopt as cvx
+import picos as pic
+P = pic.Problem()
+x = P.add_variable('x',3,lower=0)
+y = P.add_variable('y',1)
+a = cvx.matrix([1,2,3])
+P.add_constraint((a|x) + y <= 1)
+P.add_constraint(x[2]+x[0] + 3*y <= 1)
+P.add_constraint(x <= 1)
+P.set_objective('max',3*x[0]+5*y)
+P.solve()
+print x,y
+
+
+import pyscipopt
+model = pyscipopt.Model()
+x0 = model.addVar('x0')
+x1 = model.addVar('x1')
+x2 = model.addVar('x2')
+y = model.addVar('y')
+scip_vars = [x0,x1,x2,y]
+model.setObjective(3*scip_vars[0]+5*scip_vars[3],'maximize')
+model.addCons(a[0]*scip_vars[0]+a[1]*scip_vars[1]+a[2]*scip_vars[2]+scip_vars[3] <= 1)
+model.addCons(scip_vars[2]+scip_vars[0]+3*scip_vars[3] <= 1)
+
+#x>=0
+model.addCons(scip_vars[0] >= 0)
+model.addCons(scip_vars[1] >= 0)
+model.addCons(scip_vars[2] >= 0)
+#x<=1
+model.addCons(scip_vars[0] <= 1)
+model.addCons(scip_vars[1] <= 1)
+model.addCons(scip_vars[2] <= 1)
+
 model.optimize()
 
 
+
+#beispiel constraint "(a|x) + y <= 1"
+#ziel : model.addCons(a[0]*scip_vars[0]+a[1]*scip_vars[1]+a[2]*scip_vars[2]+scip_vars[3] <= 1)
+cons = P.constraints[0]
+expression = cons.Exp1 - cons.Exp2
+
+lhs = [0] * expression.size[0]*expression.size[1]
+for variable in expression.factors:
+    start_index = variable.startIndex
+    for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
+        lhs[i] += v*scip_vars[j+start_index]
+if expression.constant:
+    for i in range(expression.size[0]*expression.size[1]):
+        lhs[i] +=  expression.constant[i]
+
+for lhsi in lhs:
+    model.addCons(lhsi<=0)
+
+Änderungen in den Zeilen: 6721 -> _zibopt_solve(self)
+			  4562 -> objective umschreiben
+			  8948 -> cplex Beispiel
