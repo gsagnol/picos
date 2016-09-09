@@ -24,12 +24,14 @@ import pyscipopt
 model = pyscipopt.Model()
 x = model.addVar('x')
 y = model.addVar('y')
-model.setObjective(300*x+500*y,'maximize')
+model.setObjective(300*x+500*y,'maximize') 
 model.addCons(x+2*y <= 170)
 model.addCons(x+y <= 150)
 model.addCons(3*y <= 180)
 model.optimize()
 
+wäre super wenn auch mit diesem objective gelöst wird:
+model.setObjective('max',300*x+500*y)
 -----Daten abrufen scip:-----
 1. model.getObjVal() -> Wert des objectives
 2. model.getVal(x) -> x Wert wird ausgegeben

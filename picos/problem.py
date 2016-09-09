@@ -4557,8 +4557,8 @@ class Problem(object):
                 
             else:
                 raise NotImplementedError('not implemented yet')
-             
-       #Hier versuchen das objective umzuschreiben:
+        
+        #Hier versuchen das objective umzuschreiben:
         obj = self.objective
         if obj[:4]=='max':                          #aus max, maximize machen
            self.scip_model.set_objective(objective[4:]+','+'maximize') #dann objective zusammensetzen mit objective (z.b. 3*x+5*y) und 'maximize' was scip versteht
@@ -4566,8 +4566,8 @@ class Problem(object):
            self.scip_model.set_objective(objective[4:]+','+'minimize') 
         else:
            raise ValueError('unknown type of objective: '+obj_value)
-        print(objective)
-    '''     
+        
+        #nicht funktionstüchtig:
         for variable in obj.factors:
             start_index = variable.scip_startIndex
             for i,j,v in zip(obj.factors[variable].I, obj.factors[variable].J, obj.factors[variable].V):
@@ -4575,7 +4575,7 @@ class Problem(object):
         if expression.constant:
             for i in range(expression.size[0]*expression.size[1]):
                 lhs[i] +=  expression.constant[i]
-    '''
+   
     def _make_zibopt_old(self):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
@@ -6724,22 +6724,98 @@ class Problem(object):
 
         return (primals, duals, obj, sol)
     
-    def _zibopt_solve(self):
+    def _zibopt_solve(self):  #Brauchbare Teile der alten Methode kopiert, nicht benötigten Block durch model. optimize ersetzt.
         #TODO
-         if self.type in (
-                'unknown type',
-                'MISDP',
-                'GP',
-                'SDP',
-                'ConeP',
-                'Mixed (SDP+quad)'):
-            raise NotAppropriateSolverError(
-                "'scip' cannot solve problems of type {0}".format(
-                    self.type))
-         else:
-	     model.optimize()
+        if self.type in (
+               'unknown type',
+               'GP',
+               'SDP',
+               'ConeP',
+               'Mixed (SDP+quad)',
+               'MISDP'):
+           raise NotAppropriateSolverError(
+               "'zibopt' cannot solve problems of type {0}".format(
+                   self.type)) 
+	       
+        #-----------------------------#
+        #  create the zibopt instance #
+        #-----------------------------#
         
-    
+        self._make_zibopt()
+
+        timelimit = 10000000.
+        gaplim = self.options['tol']
+        nbsol = -1
+        if not self.options['timelimit'] is None:
+            timelimit = self.options['timelimit']
+        if not(self.options['gaplim'] is None or self.is_continuous()):
+            gaplim = self.options['gaplim']
+        if not self.options['nbsol'] is None:
+            nbsol = self.options['nbsol']
+
+        #--------------------#
+        #  call the solver   #
+        #--------------------#
+        
+        model.optimize()
+        
+        if sol.optimal:
+            status = 'optimal'
+        elif sol.infeasible:
+            status = 'infeasible'
+        elif sol.unbounded:
+            status = 'unbounded'
+        elif sol.inforunbd:
+            status = 'infeasible or unbounded'
+        else:
+            status = 'unknown'
+
+        if self.options['verbose'] > 0:
+            print('zibopt solution status: ' + status)
+
+        #----------------------#
+        # retrieve the primals #
+        #----------------------#
+        primals = {}
+        obj = sol.objective
+        if 'noprimals' in self.options and self.options['noprimals']:
+            pass
+        else:
+            try:
+                val = sol.values()
+                primals = {}
+                for var in self.variables.keys():
+                    si = self.variables[var].startIndex
+                    ei = self.variables[var].endIndex
+                    varvect = self.scip_vars[si:ei]
+                    value = [val[v] for v in varvect]
+                    if self.variables[var].vtype in ('symmetric',):
+                        value = svecm1(cvx.matrix(value))  # value was the svec
+                        # representation of X
+                    primals[var] = cvx.matrix(value,
+                                              self.variables[var].size)
+            except Exception as ex:
+                primals = {}
+                obj = None
+                if self.options['verbose'] > 0:
+                    print("\033[1;31m*** Primal Solution not found\033[0m")
+
+        #----------------------#
+        # retrieve the duals #
+        #----------------------#
+
+        # not available by python-zibopt (yet ? )
+        duals = []
+        #------------------#
+        # return statement #
+        #------------------#
+
+        solt = {}
+        solt['zibopt_sol'] = sol
+        solt['status'] = status
+        solt['time'] = tend - tstart
+        return (primals, duals, obj, solt)
+        
     def _zibopt_solve_old(self):
         """
         Solves the problem with the zib optimization suite
@@ -6778,6 +6854,31 @@ class Problem(object):
         #  call the solver   #
         #--------------------#
 
+        import time
+        tstart = time.time()
+
+        if self.objective[0] == 'max':
+            if self.scip_obj is None:
+                sol = self.scip_solver.maximize(time=timelimit,
+                                                gap=gaplim,
+                                                nsol=nbsol)
+            else:  # quadratic obj
+                sol = self.scip_solver.maximize(time=timelimit,
+                                                gap=gaplim,
+                                                nsol=nbsol,
+                                                objective=self.scip_obj)
+        else:
+            if self.scip_obj is None:
+                sol = self.scip_solver.minimize(time=timelimit,
+                                                gap=gaplim,
+                                                nsol=nbsol)
+            else:  # quadratic obj
+                sol = self.scip_solver.minimize(time=timelimit,
+                                                gap=gaplim,
+                                                nsol=nbsol,
+                                                objective=self.scip_obj)
+        tend = time.time()
+        
         if sol.optimal:
             status = 'optimal'
         elif sol.infeasible:
