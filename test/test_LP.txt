@@ -30,7 +30,7 @@ model.addCons(x+y <= 150)
 model.addCons(3*y <= 180)
 model.optimize()
 
-wäre super wenn auch mit diesem objective gelöst wird:
+wï¿½re super wenn auch mit diesem objective gelï¿½st wird:
 model.setObjective('max',300*x+500*y)
 -----Daten abrufen scip:-----
 1. model.getObjVal() -> Wert des objectives
@@ -78,6 +78,15 @@ model.optimize()
 
 
 
+
+
+P._make_zibopt()
+P.scip_model.optimize()
+
+
+
+
+
 #beispiel constraint "(a|x) + y <= 1"
 #ziel : model.addCons(a[0]*scip_vars[0]+a[1]*scip_vars[1]+a[2]*scip_vars[2]+scip_vars[3] <= 1)
 cons = P.constraints[0]
@@ -95,6 +104,6 @@ if expression.constant:
 for lhsi in lhs:
     model.addCons(lhsi<=0)
 
-Änderungen in den Zeilen: 6721 -> _zibopt_solve(self)
+ï¿½nderungen in den Zeilen: 6721 -> _zibopt_solve(self)
 			  4562 -> objective umschreiben
 			  8948 -> cplex Beispiel

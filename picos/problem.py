@@ -4503,6 +4503,25 @@ class Problem(object):
         self._write_sdpa(self.sdpa_dats_filename)
 
 
+    def _convert_picos_exp_to_scip_exp(self,expression):
+        """
+        input: picos Affine Expression or None (expression = 0 in this case)
+        returns: list of (scalar) scip expression (one for each coordinate of the Affine expression given in input
+        """
+        import pyscipopt
+        if expression is None:
+            lhs = [pyscipopt.linexpr.LinExpr()]
+        else:
+            lhs = [pyscipopt.linexpr.LinExpr()] * expression.size[0]*expression.size[1]
+            for variable in expression.factors:
+                start_index = variable.scip_startIndex
+                for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
+                    lhs[i] += v*self.scip_vars[j+start_index]
+            if expression.constant:
+                for i in range(expression.size[0]*expression.size[1]):
+                    lhs[i] +=  expression.constant[i]
+        return lhs
+
     def _make_zibopt(self):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
@@ -4536,15 +4555,7 @@ class Problem(object):
                 pass
                 
                 expression = cons.Exp1 - cons.Exp2
-                lhs = [0] * expression.size[0]*expression.size[1]
-                for variable in expression.factors:
-                    start_index = variable.scip_startIndex
-                    for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
-                        lhs[i] += v*self.scip_vars[j+start_index]
-                if expression.constant:
-                    for i in range(expression.size[0]*expression.size[1]):
-                        lhs[i] +=  expression.constant[i]
-
+                lhs = self._convert_picos_exp_to_scip_exp(expression)
                 for lhsi in lhs:
                     if cons.typeOfConstraint[3]=='<':
                         self.scip_model.addCons(lhsi <= 0)
@@ -4558,24 +4569,20 @@ class Problem(object):
             else:
                 raise NotImplementedError('not implemented yet')
         
-        #Hier versuchen das objective umzuschreiben:
-        obj = self.objective
-        if obj[:4]=='max':                          #aus max, maximize machen
-           self.scip_model.set_objective(objective[4:]+','+'maximize') #dann objective zusammensetzen mit objective (z.b. 3*x+5*y) und 'maximize' was scip versteht
-        elif obj[:4]=='min':                       #das gleiche für minimize
-           self.scip_model.set_objective(objective[4:]+','+'minimize') 
+        obj_sense, obj_exp = self.objective
+
+        if obj_exp is None or isinstance(obj_exp,AffinExp):
+            scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
         else:
-           raise ValueError('unknown type of objective: '+obj_value)
-        
-        #nicht funktionstüchtig:
-        for variable in obj.factors:
-            start_index = variable.scip_startIndex
-            for i,j,v in zip(obj.factors[variable].I, obj.factors[variable].J, obj.factors[variable].V):
-                lhs[i] += v*self.scip_vars[j+start_index]
-        if expression.constant:
-            for i in range(expression.size[0]*expression.size[1]):
-                lhs[i] +=  expression.constant[i]
-   
+            raise NotImplementedError('the scip interface does not allow non-linear objective functions (yet).')
+
+        if obj_sense == 'max':
+           self.scip_model.setObjective(scip_obj,'maximize')
+        elif obj_sense in ('min','find'):
+           self.scip_model.setObjective(scip_obj,'minimize')
+        else:
+           raise ValueError('unknown type of objective sense: '+obj_sense)
+
     def _make_zibopt_old(self):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
@@ -6724,7 +6731,7 @@ class Problem(object):
 
         return (primals, duals, obj, sol)
     
-    def _zibopt_solve(self):  #Brauchbare Teile der alten Methode kopiert, nicht benötigten Block durch model. optimize ersetzt.
+    def _zibopt_solve(self):  #Brauchbare Teile der alten Methode kopiert, nicht benï¿½tigten Block durch model. optimize ersetzt.
         #TODO
         if self.type in (
                'unknown type',
@@ -6756,19 +6763,13 @@ class Problem(object):
         #--------------------#
         #  call the solver   #
         #--------------------#
-        
-        model.optimize()
-        
-        if sol.optimal:
-            status = 'optimal'
-        elif sol.infeasible:
-            status = 'infeasible'
-        elif sol.unbounded:
-            status = 'unbounded'
-        elif sol.inforunbd:
-            status = 'infeasible or unbounded'
-        else:
-            status = 'unknown'
+
+        import time
+        tstart = time.time()
+        self.scip_model.optimize()
+        tend = time.time()
+
+        status = self.scip_model.getStatus()
 
         if self.options['verbose'] > 0:
             print('zibopt solution status: ' + status)
@@ -6777,23 +6778,24 @@ class Problem(object):
         # retrieve the primals #
         #----------------------#
         primals = {}
-        obj = sol.objective
+        obj = self.scip_model.getObjVal()
         if 'noprimals' in self.options and self.options['noprimals']:
             pass
         else:
             try:
                 val = sol.values()
                 primals = {}
-                for var in self.variables.keys():
+                for var in self.variables:
                     si = self.variables[var].startIndex
                     ei = self.variables[var].endIndex
                     varvect = self.scip_vars[si:ei]
                     value = [val[v] for v in varvect]
+
                     if self.variables[var].vtype in ('symmetric',):
                         value = svecm1(cvx.matrix(value))  # value was the svec
                         # representation of X
-                    primals[var] = cvx.matrix(value,
-                                              self.variables[var].size)
+                    primals[var] = cvx.matrix(value,self.variables[var].size)
+
             except Exception as ex:
                 primals = {}
                 obj = None
@@ -6806,12 +6808,12 @@ class Problem(object):
 
         # not available by python-zibopt (yet ? )
         duals = []
+
         #------------------#
         # return statement #
         #------------------#
 
         solt = {}
-        solt['zibopt_sol'] = sol
         solt['status'] = status
         solt['time'] = tend - tstart
         return (primals, duals, obj, solt)
