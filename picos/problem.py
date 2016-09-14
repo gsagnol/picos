@@ -4526,6 +4526,12 @@ class Problem(object):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
         used by the zibopt solver.
+
+
+        TODO:
+        _ variable bounds
+        _ variable type (in particular, integer)
+        _ quadratic expressions
         """
         if any([('scip' not in cs.passed) for cs in self._deleted_constraints]):
             for cs in self._deleted_constraints:
@@ -4547,8 +4553,16 @@ class Problem(object):
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
             for i in range(sz):
-                 self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i)))
+
+                (li,ui) = variable.bnd.get(i,(None,None))
+                if li is None:
+                    li = -INFINITY
+
+                #TODO if that tests the vtype of the variable (continuous, binary, else...)
+                self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
+
+
 
         for cons in self.constraints:
             if cons.typeOfConstraint[:3]=='lin':
@@ -5130,7 +5144,7 @@ class Problem(object):
         if 'noprimals' in self.options and self.options['noprimals']:
             pass
         else:
-            for k in primals.keys():
+            for k in primals:
                 if not primals[k] is None:
                     self.set_var_value(k, primals[k], optimalvar=True)
 
@@ -6784,20 +6798,18 @@ class Problem(object):
             pass
         else:
             try:
-		#import pdb; pdb.set_trace()
-                #val = self.scip_model #welcher Wert wird benötigt?
-                primals = {} #wieso wird primals hier noch einmal angelegt?
-                for var in self.variables.values():    #diese for Schleife umändern, damit P.solve benutzt werden kann
-                    si = self.scip_model.getVal(self.scip_vars[var].scip_startIndex)
-                    ei = self.scip_model.getVal(self.scip_vars[var]).endIndex
-                    #ei = self.variables[var].endIndex
-                    varvect = self.scip_vars[si:ei]
-                    value = [val[v] for v in varvect]
+                primals = {}
+                for var in self.variables.values():
+                    si = var.scip_startIndex
+                    ei = si + var.size[0]*var.size[1]
 
-                    if self.variables[var].vtype in ('symmetric',):
+                    varvect = self.scip_vars[si:ei]
+                    value = [self.scip_model.getVal(v) for v in varvect]
+
+                    if var.vtype in ('symmetric',):
                         value = svecm1(cvx.matrix(value))  # value was the svec
                         # representation of X
-                    primals[var] = cvx.matrix(value,self.variables[var].size)
+                    primals[var.name] = cvx.matrix(value,var.size)
 
             except Exception as ex:
                 primals = {}

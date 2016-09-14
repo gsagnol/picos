@@ -103,3 +103,21 @@ for lhsi in lhs:
 �nderungen in den Zeilen: 6721 -> _zibopt_solve(self)
 			  4562 -> objective umschreiben
 			  8948 -> cplex Beispiel
+
+
+
+#Knapsack
+
+weights = [4, 2, 6, 3, 7, 5]
+costs = [7, 2, 5, 4, 3, 4]
+knapsackSize = 15
+
+import picos as pic
+P = pic.Problem()
+#n = P.add_variable('n',6,vtype='integer',lower=0,upper=2)
+n = P.add_variable('n',6,vtype='binary')
+P.add_constraint( (n|weights) <= knapsackSize)
+#this is equivalent to
+#P.add_constraint( pic.sum([n[i]*weights[i] for i in range(6)],'i') <= knapsackSize)
+P.set_objective('max', (n|costs))
+
