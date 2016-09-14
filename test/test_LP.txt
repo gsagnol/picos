@@ -78,12 +78,8 @@ model.optimize()
 
 
 
-
-
 P._make_zibopt()
 P.scip_model.optimize()
-
-
 
 
 

@@ -6731,8 +6731,8 @@ class Problem(object):
 
         return (primals, duals, obj, sol)
     
-    def _zibopt_solve(self):  #Brauchbare Teile der alten Methode kopiert, nicht benï¿½tigten Block durch model. optimize ersetzt.
-        #TODO
+    def _zibopt_solve(self): 
+      
         if self.type in (
                'unknown type',
                'GP',
@@ -6777,17 +6777,20 @@ class Problem(object):
         #----------------------#
         # retrieve the primals #
         #----------------------#
+        #TODO
         primals = {}
         obj = self.scip_model.getObjVal()
         if 'noprimals' in self.options and self.options['noprimals']:
             pass
         else:
             try:
-                val = sol.values()
-                primals = {}
-                for var in self.variables:
-                    si = self.variables[var].startIndex
-                    ei = self.variables[var].endIndex
+		#import pdb; pdb.set_trace()
+                #val = self.scip_model #welcher Wert wird benötigt?
+                primals = {} #wieso wird primals hier noch einmal angelegt?
+                for var in self.variables.values():    #diese for Schleife umändern, damit P.solve benutzt werden kann
+                    si = self.scip_model.getVal(self.scip_vars[var].scip_startIndex)
+                    ei = self.scip_model.getVal(self.scip_vars[var]).endIndex
+                    #ei = self.variables[var].endIndex
                     varvect = self.scip_vars[si:ei]
                     value = [val[v] for v in varvect]
 
