@@ -1703,7 +1703,7 @@ def available_solvers():
     except (ImportError, SyntaxError):
         pass
     try:
-        import zibopt as zo
+        import pyscipopt as zo
         lst.append('zibopt')
         del zo
     except ImportError:

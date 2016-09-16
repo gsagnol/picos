@@ -118,7 +118,7 @@ class Problem(object):
         #index of active mosek constraints (not deleted)
         self.msk_active_cons = None
 
-        self.scip_solver = None
+        self.scip_model = None
         self.scip_vars = None
         self.scip_obj = None
 
@@ -160,7 +160,7 @@ class Problem(object):
         del self.msk_task
         del self.cplex_Instance
         del self.gurobi_Instance
-        del self.scip_solver
+        del self.scip_model
     '''
 
     def __str__(self):
@@ -326,7 +326,7 @@ class Problem(object):
     def reset_scip_instance(self, onlyvar=True):
         """reset the variables used by the solver scip"""
 
-        self.scip_solver = None
+        self.scip_model = None
         self.scip_vars = None
         self.scip_obj = None
 
@@ -4502,7 +4502,6 @@ class Problem(object):
         self.sdpa_out_filename = tmp_filename + ".out"
         self._write_sdpa(self.sdpa_dats_filename)
 
-
     def _convert_picos_exp_to_scip_exp(self,expression):
         """
         input: picos Affine Expression or None (expression = 0 in this case)
@@ -4511,8 +4510,19 @@ class Problem(object):
         import pyscipopt
         if expression is None:
             lhs = [pyscipopt.linexpr.LinExpr()]
+        elif isinstance(expression,QuadExp):
+            lhs = self._convert_picos_exp_to_scip_exp(expression.aff)
+            for var1,var2 in expression.quad:
+                Q = expression.quad[var1,var2]
+                start_index_1 = var1.scip_startIndex
+                start_index_2 = var2.scip_startIndex
+                for i,j,v in zip(Q.I, Q.J, Q.V):
+                    lhs[0] += v*self.scip_vars[i+start_index_1] * self.scip_vars[j+start_index_2]
+
         else:
-            lhs = [pyscipopt.linexpr.LinExpr()] * expression.size[0]*expression.size[1]
+            lhs = []
+            for _ in range(expression.size[0]*expression.size[1]):
+                lhs.append(pyscipopt.linexpr.LinExpr())
             for variable in expression.factors:
                 start_index = variable.scip_startIndex
                 for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
@@ -4553,22 +4563,28 @@ class Problem(object):
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
             for i in range(sz):           
-	        (li,ui) = variable.bnd.get(i,(None,None))
-	        if li is None:
-		    li = -INFINITY
-            #TODO if that tests the vtype of the variable (continuous, binary, else...)
-                if variable.vtype == 'integer':
-                    self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I'))
+                (li,ui) = variable.bnd.get(i,(None,None))
+                if li is None:
+                    li = -INFINITY
+                if ui is None:
+                    ui = INFINITY
+                if variable.vtype == 'binary':
+                    self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I',lb=0,ub=1))
+                elif variable.vtype == 'integer':
+                    li = int(np.ceil(li))
+                    ui = int(np.floor(ui))
+                    self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I',lb=li,ub=ui))
                 else:
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
 
-
-
         for cons in self.constraints:
+            if 'scip' in cons.passed:
+                continue
+            else:
+                cons.passed.append('scip')
+
             if cons.typeOfConstraint[:3]=='lin':
-                pass
-                
                 expression = cons.Exp1 - cons.Exp2
                 lhs = self._convert_picos_exp_to_scip_exp(expression)
                 for lhsi in lhs:
@@ -4580,278 +4596,44 @@ class Problem(object):
                         self.scip_model.addCons(lhsi == 0)
                     else:
                         raise ValueError('unknown type of constraint: '+cons.typeOfConstraint)
-                
+            elif cons.typeOfConstraint == 'quad':
+                expression = cons.Exp1
+                lhs = self._convert_picos_exp_to_scip_exp(expression)
+                for lhsi in lhs:
+                     self.scip_model.addCons(lhsi <= 0)
+            elif cons.typeOfConstraint.endswith('cone'):
+                if cons.typeOfConstraint[:2]=='RS':
+                    expression = cons.Exp1.T*cons.Exp1 - cons.Exp2*cons.Exp3
+                elif cons.typeOfConstraint[:2]=='SO':
+                    expression = cons.Exp1.T*cons.Exp1 - cons.Exp2*cons.Exp2
+                else:
+                    raise ValueError('unknown type of constraint: '+cons.typeOfConstraint)
+                lhs = self._convert_picos_exp_to_scip_exp(expression)
+                for lhsi in lhs:
+                     self.scip_model.addCons(lhsi <= 0)
             else:
                 raise NotImplementedError('not implemented yet')
         
         obj_sense, obj_exp = self.objective
 
         if obj_exp is None or isinstance(obj_exp,AffinExp):
-            scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
+            self.scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
         else:
             raise NotImplementedError('the scip interface does not allow non-linear objective functions (yet).')
 
         if obj_sense == 'max':
-           self.scip_model.setObjective(scip_obj,'maximize')
+           self.scip_model.setObjective(self.scip_obj,'maximize')
         elif obj_sense in ('min','find'):
-           self.scip_model.setObjective(scip_obj,'minimize')
+           self.scip_model.setObjective(self.scip_obj,'minimize')
         else:
            raise ValueError('unknown type of objective sense: '+obj_sense)
 
-    def _make_zibopt_old(self):
-        """
-        Defines the variables scip_solver, scip_vars and scip_obj,
-        used by the zibopt solver.
-        """
-        if any([('scip' not in cs.passed) for cs in self._deleted_constraints]):
-            for cs in self._deleted_constraints:
-                if 'scip' not in cs.passed:
-                    cs.passed.append('scip')
-            self.reset_scip_instance(True)
-
-        try:
-            from zibopt import scip
-        except:
-            raise ImportError('scip library not found')
-
-        ###
-        # INVALID SCIP STAGE error if we try to update a model that has already been solved. So we reset all
-        ###
-        # we only handle the case where only the objective has changed
-        if (self.scip_solver is not None and
-                not('scip' in self.obj_passed) and
-                all([('scip' in v.passed) for v in self.variables.values()]) and
-                all([('scip' in cs.passed) for cs in self.constraints])):
-
-            # define scip_obj
-            newobj = self.objective[1]
-            x = self.scip_vars
-            ob = 0
-
-            if isinstance(newobj, QuadExp):
-                for i, j in newobj.quad:
-                    si, ei = i.startIndex, i.endIndex
-                    sj, ej = j.startIndex, j.endIndex
-                    Qij = newobj.quad[i, j]
-                    if not isinstance(Qij, cvx.spmatrix):
-                        Qij = cvx.sparse(Qij)
-                    for ii, jj, vv in zip(Qij.I, Qij.J, Qij.V):
-                        ob += vv * x[ii + si] * x[jj + sj]
-                newobj = newobj.aff
-
-            if not(newobj is None):
-                for v, fac in six.iteritems(newobj.factors):
-                    if not isinstance(fac, cvx.spmatrix):
-                        fac = cvx.sparse(fac)
-                    sv = v.startIndex
-                    for jj, vv in zip(fac.J, fac.V):
-                        ob += vv * x[jj + sv]
-                if not(newobj.constant is None):
-                    ob += newobj.constant[0]
-            self.scip_obj = ob
-            return
-
-        self.scip_solver = None
-        self.scip_vars = None
-        self.scip_obj = None
-        for cons in self.constraints:
-            if 'scip' in cons.passed:
-                cons.passed.remove('scip')
-        if 'scip' in self.obj_passed:
-            self.obj_passed.remove('scip')
-        for var in self.variables.values():
-            if 'scip' in var.passed:
-                var.passed.remove('scip')
-
-        if self.scip_solver is None:
-            scip_solver = scip.solver(quiet=not(self.options['verbose']))
-        else:
-            scip_solver = self.scip_solver
-
-        self._make_cvxopt_instance(
-            aff_part_of_quad=False,
-            cone_as_quad=True,
-            new_scip_cons_only=True,
-            reset=True)
-
-        if bool(
-            self.cvxoptVars['Gs']) or bool(
-            self.cvxoptVars['F']) or bool(
-                self.cvxoptVars['Gq']):
-            raise Exception(
-                'SDP, SOCP, or GP constraints are not implemented in zibopt')
-
-        # max handled directly by scip
-        if self.objective[0] == 'max':
-            self.cvxoptVars['c'] = -self.cvxoptVars['c']
-
-        zib_types = {'continuous': scip.CONTINUOUS,
-                     'integer': scip.INTEGER,
-                     'binary': scip.BINARY,
-                     'symmetric': scip.CONTINUOUS
-                     }
-        types = [0] * self.cvxoptVars['A'].size[1]
-        lb = {}
-        ub = {}
-
-        for (var, variable) in six.iteritems(self.variables):
-            si = variable.startIndex
-            ei = variable.endIndex
-            for ind, (lo, up) in six.iteritems(variable.bnd):
-                if not(lo is None):
-                    lb[si + ind] = lo
-                if not(up is None):
-                    ub[si + ind] = up
-            vtype = variable.vtype
-            try:
-                types[si:ei] = [zib_types[vtype]] * (ei - si)
-            except:
-                raise Exception(
-                    'this vtype is not handled by scip: ' + str(vtype))
-
-        if self.scip_vars is None:
-            x = []
-        else:
-            x = self.scip_vars
-
-        INFINITYZO = 1e10
-
-        sortedvars = sorted([(var.startIndex, var)
-                             for varname, var in six.iteritems(self.variables)])
-        for si, var in sortedvars:
-            if 'scip' in var.passed:
-                # TODO how do we modify type and bounds ? and coef if not obj_passed ?
-                # For now it doesnt matter because scip instance is reset each
-                # time.
-                pass
-            else:
-                var.passed.append('scip')
-                varsize = var.endIndex - si
-                for i in range(si, si + varsize):
-                    if not(self.cvxoptVars['c'] is None):
-                        x.append(scip_solver.variable(types[i],
-                                                      lower=lb.get(i, -INFINITYZO),
-                                                      upper=ub.get(i, INFINITYZO),
-                                                      coefficient=self.cvxoptVars['c'][i])
-                                 )
-                    else:
-                        x.append(scip_solver.variable(types[i], lower=lb.get(
-                            i, -INFINITYZO), upper=ub.get(i, INFINITYZO)))
-
-        # equalities
-        Ai, Aj, Av = (self.cvxoptVars['A'].I, self.cvxoptVars[
-                      'A'].J, self.cvxoptVars['A'].V)
-        ijvs = sorted(zip(Ai, Aj, Av))
-        del Ai, Aj, Av
-        itojv = {}
-        lasti = -1
-        for (i, j, v) in ijvs:
-            if i == lasti:
-                itojv[i].append((j, v))
-            else:
-                lasti = i
-                itojv[i] = [(j, v)]
-
-        for i, jv in six.iteritems(itojv):
-            exp = 0
-            for term in jv:
-                exp += term[1] * x[term[0]]
-            scip_solver += exp == self.cvxoptVars['b'][i]
-
-        # inequalities
-        Gli, Glj, Glv = (self.cvxoptVars['Gl'].I, self.cvxoptVars[
-                         'Gl'].J, self.cvxoptVars['Gl'].V)
-        ijvs = sorted(zip(Gli, Glj, Glv))
-        del Gli, Glj, Glv
-        itojv = {}
-        lasti = -1
-        for (i, j, v) in ijvs:
-            if i == lasti:
-                itojv[i].append((j, v))
-            else:
-                lasti = i
-                itojv[i] = [(j, v)]
-
-        for i, jv in six.iteritems(itojv):
-            exp = 0
-            for term in jv:
-                exp += term[1] * x[term[0]]
-            scip_solver += exp <= self.cvxoptVars['hl'][i]
-
-        ###
-        # quadratic constraints (including SOC constraints)
-        for (k, iaff) in self.cvxoptVars['quadcons']:
-            subI = []
-            subJ = []
-            subV = []
-            consk = self.constraints[k]
-            if k == '_obj':
-                x.append(scip_solver.variable(
-                    zib_types['continuous'],
-                    lower=-INFINITYZO,
-                    upper=INFINITYZO
-                ))
-                qexpr = self.objective[1]
-            else:
-                if consk.typeOfConstraint == 'quad':
-                    qexpr = consk.Exp1
-                if consk.typeOfConstraint == 'SOcone':
-                    qexpr = (consk.Exp1 | consk.Exp1) - (
-                        consk.Exp2 * consk.Exp2)
-                    (e2x, e2c) = self._makeGandh(consk.Exp2)
-                    exp = e2c[0]
-                    for j, v in zip(e2x.J, e2x.V):
-                        exp += v * x[j]
-                    if e2x:
-                        scip_solver += exp >= 0
-                if consk.typeOfConstraint == 'RScone':
-                    qexpr = (consk.Exp1 | consk.Exp1) - (
-                        consk.Exp2 * consk.Exp3)
-                    (e2x, e2c) = self._makeGandh(consk.Exp2)
-                    exp = e2c[0]
-                    for j, v in zip(e2x.J, e2x.V):
-                        exp += v * x[j]
-                    if e2x:
-                        scip_solver += exp >= 0
-
-            qd = 0
-            for i, j in qexpr.quad:
-                si, ei = i.startIndex, i.endIndex
-                sj, ej = j.startIndex, j.endIndex
-                Qij = qexpr.quad[i, j]
-                if not isinstance(Qij, cvx.spmatrix):
-                    Qij = cvx.sparse(Qij)
-                for ii, jj, vv in zip(Qij.I, Qij.J, Qij.V):
-                    qd += vv * x[ii + si] * x[jj + sj]
-
-            if not(qexpr.aff is None):
-                for v, fac in six.iteritems(qexpr.aff.factors):
-                    if not isinstance(fac, cvx.spmatrix):
-                        fac = cvx.sparse(fac)
-                    sv = v.startIndex
-                    for jj, vv in zip(fac.J, fac.V):
-                        qd += vv * x[jj + sv]
-                if not(qexpr.aff.constant is None):
-                    qd += qexpr.aff.constant[0]
-
-            if k == '_obj':
-                if self.objective[0] == 'max':
-                    scip_solver += (x[-1] - qd) <= 0
-                else:
-                    scip_solver += (qd - x[-1]) <= 0
-                self.scip_obj = x[-1]
-            else:
-                scip_solver += qd <= 0
-        ###
-
-        self.scip_solver = scip_solver
-        self.scip_vars = x
 
     """
-        -----------------------------------------------
-        --                CALL THE SOLVER            --
-        -----------------------------------------------
-        """
+    -----------------------------------------------
+    --                CALL THE SOLVER            --
+    -----------------------------------------------
+    """
 
     def minimize(self, obj, **options):
         """
@@ -6830,126 +6612,6 @@ class Problem(object):
         #------------------#
 
         solt = {}
-        solt['status'] = status
-        solt['time'] = tend - tstart
-        return (primals, duals, obj, solt)
-        
-    def _zibopt_solve_old(self):
-        """
-        Solves the problem with the zib optimization suite
-        """
-
-        #-------------------------------#
-        #  Can we solve it with zibopt? #
-        #-------------------------------#
-        if self.type in (
-                'unknown type',
-                'GP',
-                'SDP',
-                'ConeP',
-                'Mixed (SDP+quad)',
-                'MISDP'):
-            raise NotAppropriateSolverError(
-                "'zibopt' cannot solve problems of type {0}".format(
-                    self.type))
-
-        #-----------------------------#
-        #  create the zibopt instance #
-        #-----------------------------#
-        self._make_zibopt()
-
-        timelimit = 10000000.
-        gaplim = self.options['tol']
-        nbsol = -1
-        if not self.options['timelimit'] is None:
-            timelimit = self.options['timelimit']
-        if not(self.options['gaplim'] is None or self.is_continuous()):
-            gaplim = self.options['gaplim']
-        if not self.options['nbsol'] is None:
-            nbsol = self.options['nbsol']
-
-        #--------------------#
-        #  call the solver   #
-        #--------------------#
-
-        import time
-        tstart = time.time()
-
-        if self.objective[0] == 'max':
-            if self.scip_obj is None:
-                sol = self.scip_solver.maximize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol)
-            else:  # quadratic obj
-                sol = self.scip_solver.maximize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol,
-                                                objective=self.scip_obj)
-        else:
-            if self.scip_obj is None:
-                sol = self.scip_solver.minimize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol)
-            else:  # quadratic obj
-                sol = self.scip_solver.minimize(time=timelimit,
-                                                gap=gaplim,
-                                                nsol=nbsol,
-                                                objective=self.scip_obj)
-        tend = time.time()
-        
-        if sol.optimal:
-            status = 'optimal'
-        elif sol.infeasible:
-            status = 'infeasible'
-        elif sol.unbounded:
-            status = 'unbounded'
-        elif sol.inforunbd:
-            status = 'infeasible or unbounded'
-        else:
-            status = 'unknown'
-
-        if self.options['verbose'] > 0:
-            print('zibopt solution status: ' + status)
-
-        #----------------------#
-        # retrieve the primals #
-        #----------------------#
-        primals = {}
-        obj = sol.objective
-        if 'noprimals' in self.options and self.options['noprimals']:
-            pass
-        else:
-            try:
-                val = sol.values()
-                primals = {}
-                for var in self.variables.keys():
-                    si = self.variables[var].startIndex
-                    ei = self.variables[var].endIndex
-                    varvect = self.scip_vars[si:ei]
-                    value = [val[v] for v in varvect]
-                    if self.variables[var].vtype in ('symmetric',):
-                        value = svecm1(cvx.matrix(value))  # value was the svec
-                        # representation of X
-                    primals[var] = cvx.matrix(value,
-                                              self.variables[var].size)
-            except Exception as ex:
-                primals = {}
-                obj = None
-                if self.options['verbose'] > 0:
-                    print("\033[1;31m*** Primal Solution not found\033[0m")
-
-        #----------------------#
-        # retrieve the duals #
-        #----------------------#
-
-        # not available by python-zibopt (yet ? )
-        duals = []
-        #------------------#
-        # return statement #
-        #------------------#
-
-        solt = {}
-        solt['zibopt_sol'] = sol
         solt['status'] = status
         solt['time'] = tend - tstart
         return (primals, duals, obj, solt)

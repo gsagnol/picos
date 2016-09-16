@@ -113,10 +113,94 @@ knapsackSize = 15
 
 import picos as pic
 P = pic.Problem()
-#n = P.add_variable('n',6,vtype='integer',lower=0,upper=2)
-n = P.add_variable('n',6,vtype='binary')
+n = P.add_variable('n',6,vtype='integer',lower=0,upper=2)
+#n = P.add_variable('n',6,vtype='binary')
 P.add_constraint( (n|weights) <= knapsackSize)
 #this is equivalent to
 #P.add_constraint( pic.sum([n[i]*weights[i] for i in range(6)],'i') <= knapsackSize)
 P.set_objective('max', (n|costs))
+
+
+
+import cvxopt as cvx
+import picos as pic
+P = pic.Problem()
+x = P.add_variable('x',3,lower=0)
+y = P.add_variable('y',1)
+a = cvx.matrix([1,2,3])
+P.add_constraint((a|x) + y <= 1)
+P.add_constraint(x[2]+x[0] + 3*y <= 1)
+P.add_constraint(x <= 1)
+P.add_constraint(x[0]**2 < y)
+P.set_objective('max',3*x[0]+5*y)
+P.solve()
+print x,y
+
+
+
+
+import picos as pic
+import cvxopt as cvx
+A=[ cvx.matrix([[1,0,0,0,0],
+                [0,3,0,0,0],
+                [0,0,1,0,0]]),
+    cvx.matrix([[0,0,2,0,0],
+                [0,1,0,0,0],
+                [0,0,0,1,0]]),
+    cvx.matrix([[0,0,0,2,0],
+                [4,0,0,0,0],
+                [0,0,1,0,0]]),
+    cvx.matrix([[1,0,0,0,0],
+                [0,0,2,0,0],
+                [0,0,0,0,4]]),
+    cvx.matrix([[1,0,2,0,0],
+                [0,3,0,1,2],
+                [0,0,1,2,0]]),
+    cvx.matrix([[0,1,1,1,0],
+                [0,3,0,1,0],
+                [0,0,2,2,0]]),
+    cvx.matrix([[1,2,0,0,0],
+                [0,3,3,0,5],
+                [1,0,0,2,0]]),
+    cvx.matrix([[1,0,3,0,1],
+                [0,3,2,0,0],
+                [1,0,0,2,0]])
+  ]
+
+c = cvx.matrix([1,2,3,4,5])
+
+#create the problems
+
+lp = pic.Problem()
+AA=[cvx.sparse(a,tc='d').T for a in A]
+AA.append(cvx.sparse([0,3,0,0,0]).T)
+s=len(AA)
+AA=pic.new_param('A',AA)
+cc=pic.new_param('c',c)
+x=lp.add_variable('x',5)
+
+lp.add_constraint(AA[5]*x < 3)
+lp.add_constraint(AA[6]*x > 2)
+lp.add_constraint(AA[7]*x == 2.5)
+
+
+lp.add_constraint(x>0)
+
+lp.set_objective('max',cc.T*x)
+
+
+dualp=pic.Problem()
+mu5=dualp.add_variable('mu5',3)
+mu6=dualp.add_variable('mu6',3)
+mu7=dualp.add_variable('mu7',3)
+
+dualp.add_constraint(mu5>0)
+dualp.add_constraint(mu6>0)
+dualp.add_constraint(AA[5].T*mu5-AA[6].T*mu6+AA[7].T*mu7==cc)
+
+dualp.set_objective('min',(2.5|mu7)-(2|mu6)+(3|mu5))
+
+
+
+
 
