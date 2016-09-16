@@ -4553,7 +4553,12 @@ class Problem(object):
             import pyscipopt
         except:
             raise ImportError('scip library not found')
-        
+
+        obj_sense, obj_exp = self.objective
+        if isinstance(obj_exp,QuadExp):
+            self.convert_quadobj_to_constraint()
+            obj_sense, obj_exp = self.objective
+
         self.scip_model = pyscipopt.Model()
         
         self.scip_vars = []
@@ -4614,8 +4619,6 @@ class Problem(object):
             else:
                 raise NotImplementedError('not implemented yet')
         
-        obj_sense, obj_exp = self.objective
-
         if obj_exp is None or isinstance(obj_exp,AffinExp):
             self.scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
         else:
@@ -8310,6 +8313,23 @@ class Problem(object):
         self.reset_solver_instances()
         if self.options['verbose'] > 0:
             print('done.')
+
+
+    def convert_quadobj_to_constraint(self):
+        """
+        replace quadratic objective by equivalent quadratic constraint
+        """
+        if isinstance(self.objective[1], QuadExp):
+            if '_obj_' not in self.variables:
+                obj = self.add_variable('_obj_', 1)
+            else:
+                obj = self.get_variable('_obj_')
+            if self.objective[0] == 'min':
+                self.add_constraint(obj > self.objective[1])
+                self.set_objective('min', obj)
+            else:
+                self.add_constraint(obj < self.objective[1])
+                self.set_objective('max', obj)
 
     def to_real(self):
         """

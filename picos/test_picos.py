@@ -1089,7 +1089,7 @@ conic_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SOCP4','SDP','coneP']
 
 results={}
 for solver in avs:
-        if solver == 'smcp':continue#TODO TMP
+        #if solver == 'smcp':continue#TODO TMP
         results[solver]={}
         for pclas in prob_classes:
                 results[solver][pclas]=eval(pclas.upper()+'Test')(solver)
@@ -1127,7 +1127,7 @@ print(linesep)
 for pclas in prob_classes:
         clasln='|{0:^15}|'.format(pclas)
         for solver in avs:
-                if solver == 'smcp':continue#TODO TMP
+                #if solver == 'smcp':continue#TODO TMP
                 if results[solver][pclas][0]:
                         if pclas in conic_classes:
                                 clasln+='    OK*   |'
