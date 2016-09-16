@@ -4547,19 +4547,20 @@ class Problem(object):
         self.scip_model = pyscipopt.Model()
         
         self.scip_vars = []
-
+        picvtype = 'None'
         current_index = 0
         for name,variable in self.variables.iteritems():
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
-            for i in range(sz):
-
-                (li,ui) = variable.bnd.get(i,(None,None))
-                if li is None:
-                    li = -INFINITY
-
-                #TODO if that tests the vtype of the variable (continuous, binary, else...)
-                self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
+            for i in range(sz):           
+	        (li,ui) = variable.bnd.get(i,(None,None))
+	        if li is None:
+		    li = -INFINITY
+            #TODO if that tests the vtype of the variable (continuous, binary, else...)
+                if variable.vtype == 'integer':
+                    self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I'))
+                else:
+                    self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
 
 

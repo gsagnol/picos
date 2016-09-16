@@ -10,8 +10,7 @@ P.solve()
 _____
 import picos as pic
 P = pic.Problem()
-x = P.add_variable('x',1)
-y = P.add_variable('y',1)
+ 
 P.add_constraint(4*x + 2*y <= 1)
 P.add_constraint(2*x + 2*y <= 1)
 P.set_objective('max',6*x+5*y)
