@@ -671,7 +671,7 @@ class AffinExp(Expression):
         size = self.size
 
         if dim_1 is None:
-            try : 
+            try :
                 s0 = size[0]
                 k = [s0**(1./i)==int(s0**(1./i)) for i in range(2,7)].index(True)+2
                 subsize = int(s0**(1./k))
@@ -679,26 +679,26 @@ class AffinExp(Expression):
             except ValueError:
                 raise ValueError(
                     'partial_transpose can only be applied to n**k x n**k matrices when the dimensions of subsystems are not defined')
-            
+
         if dim_2 is None:
             dim_2 = dim_1
-            
+
         assert isinstance(dim_1,tuple)
         assert isinstance(dim_2,tuple)
         assert (len(dim_1)==len(dim_2))
-        
+
         assert (np.product(dim_1) == size[0]),'the size of subsystems do not match the size of the entire matrix'
         assert (np.product(dim_2) == size[1]),'the size of subsystems do not match the size of the entire matrix'
-            
+
         N = len(dim_1)
-        
+
         if subsystems is None:
             subsystems = (N-1,)
         if isinstance(subsystems,int):
             subsystems = (subsystems,)
-            
+
         assert all([i in range(N) for i in subsystems])
-        
+
         newdim_1 = ()
         newdim_2 = ()
         for i in range(N):
@@ -708,18 +708,18 @@ class AffinExp(Expression):
             else:
                 newdim_2 += (dim_2[i],)
                 newdim_1 += (dim_1[i],)
-                
-        newsize = (np.product(newdim_1),np.product(newdim_2))
-        
+
+        newsize = (int(np.product(newdim_1)), int(np.product(newdim_2)))
+
         def block_indices(dims,ii):
             inds = []
             rem = ii
             for k in range(len(dims)):
                 blk,rem = divmod(rem,np.product(dims[k+1:]))
                 inds.append(int(blk))
-            
+
             return inds
-                
+
         for k in self.factors:
             I0 = []
             J = self.factors[k].J
