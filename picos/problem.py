@@ -717,6 +717,11 @@ class Problem(object):
             ``gurobi_params={'NodeLimit' : 25}``
             limits the number of nodes visited by the MIP optimizer to 25.
 
+        * Specific options available for sdpa:
+
+          * ``sdpa_executable = 'sdpa'`` : The sdpa executable name.
+
+          * ``sdpa_params = '-pt 0'`` : str of extra parameters to pass to sdpa.
         """
         # Additional, hidden option (requires a patch of smcp, to use conlp to
         # interface the feasible starting point solver):
@@ -756,6 +761,8 @@ class Problem(object):
                            'solve_via_dual': None,
                            'pass_simple_cons_as_bound' : False,
                            'return_constraints' : False,
+                           'sdpa_executable': 'sdpa',
+                           'sdpa_params': '-pt 0',
                            }
 
         self._options = _NonWritableDict(default_options)
@@ -780,7 +787,7 @@ class Problem(object):
             # because we must pass in make_mosek_instance again.
             self.reset_solver_instances()
         if key not in self.options:
-            raise AttributeError('unkown option key :' + str(key))
+            raise AttributeError('unknown option key :' + str(key))
         self.options._set(key, val)
         if key == 'verbose' and isinstance(val, bool):
             self.options._set('verbose', int(val))
@@ -4460,7 +4467,7 @@ class Problem(object):
         if self.options['verbose'] > 0:
             print('mosek instance built')
 
-    def _make_sdpaopt(self):
+    def _make_sdpaopt(self, sdpa_executable='sdpa'):
         """
         Defines the variables sdpa_executable, sdpa_dats_filename, and
         sdpa_out_filename used by the sdpa solver.
@@ -4490,9 +4497,9 @@ class Problem(object):
 
             return None
 
-        self.sdpa_executable = "sdpa"
-        if which(self.sdpa_executable) is None:
-            raise OSError(solverexecutable + " is not in the path")
+        self.sdpa_executable = sdpa_executable
+        if which(sdpa_executable) is None:
+            raise OSError(sdpa_executable + " is not in the path")
 
         import tempfile
         tempfile_ = tempfile.NamedTemporaryFile()
@@ -6789,7 +6796,7 @@ class Problem(object):
         #-----------------------------#
         # create the sdpaopt instance #
         #-----------------------------#
-        self._make_sdpaopt()
+        self._make_sdpaopt(self.options['sdpa_executable'])
 
         #--------------------#
         #  call the solver   #
@@ -6798,13 +6805,13 @@ class Problem(object):
         import os
         from subprocess import call
         tstart = time.time()
+        params = [self.sdpa_executable, self.sdpa_dats_filename,
+                  self.sdpa_out_filename] + self.options['sdpa_params'].split()
         if self.options['verbose'] >= 1:
-            call([self.sdpa_executable, self.sdpa_dats_filename,
-                  self.sdpa_out_filename])
+            call(params)
         else:
             with open(os.devnull, "w") as fnull:
-                call([self.sdpa_executable, self.sdpa_dats_filename,
-                      self.sdpa_out_filename], stdout=fnull, stderr=fnull)
+                call(params, stdout=fnull, stderr=fnull)
         tend = time.time()
         #-----------------------#
         # retrieve the solution #
