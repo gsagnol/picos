@@ -6805,8 +6805,9 @@ class Problem(object):
         import os
         from subprocess import call
         tstart = time.time()
-        params = [self.sdpa_executable, self.sdpa_dats_filename,
-                  self.sdpa_out_filename] + self.options['sdpa_params'].split()
+        params = [self.sdpa_executable, '-ds', self.sdpa_dats_filename,
+                  '-o', self.sdpa_out_filename] + \
+                  self.options['sdpa_params'].split()
         if self.options['verbose'] >= 1:
             call(params)
         else:
