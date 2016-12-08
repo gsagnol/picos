@@ -6907,7 +6907,7 @@ class Problem(object):
             pass
         else:
             printnodual = False
-            indy, indzl, indzs = 0, 0, 0
+            indy, indzl, indzq, indzs = 0, 0, 0, 0
             ieq = self.cvxoptVars['Gl'].size[0]
             neq = (dims['l'] - ieq) // 2
             if neq > 0:
@@ -6916,9 +6916,8 @@ class Problem(object):
             else:
                 soleq = None
             if ieq + neq > 0:
-                indzs = 1
-            else:
-                indzs = 0
+                indzq = indzs = 1
+            indzs += len(dims['q'])
             for k, consk in enumerate(self.constraints):
                 # Equality
                 if consk.typeOfConstraint == 'lin=':
@@ -6936,9 +6935,9 @@ class Problem(object):
                     indzl += consSz
                 # SOCP constraint [Rotated or not]
                 elif consk.typeOfConstraint[2:] == 'cone':
-                    M = dual_solution[indzs]
+                    M = dual_solution[indzq]
                     duals.append(cvx.matrix([np.trace(M), -2*M[-1,:-1].T]))
-                    indzs += 1
+                    indzq += 1
                 # SDP constraint
                 elif consk.typeOfConstraint[:3] == 'sdp':
                     duals.append(dual_solution[indzs])
