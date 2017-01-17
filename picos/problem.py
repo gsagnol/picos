@@ -717,6 +717,16 @@ class Problem(object):
             ``gurobi_params={'NodeLimit' : 25}``
             limits the number of nodes visited by the MIP optimizer to 25.
 
+        * Specific options available for scip:
+            
+          * ``scip_params = {}`` : a dictionary of
+            `scip parameters <http://scip.zib.de/doc-2.0.2/html/PARAMETERS.html>`_
+            to be set before the scip
+            optimizer is called. For example,
+            ``scip_params = {'lp/threads' : 4}``
+            sets the number of threads to solve the LPs at 4.
+          
+
         * Specific options available for sdpa:
 
           * ``sdpa_executable = 'sdpa'`` : The sdpa executable name.
@@ -751,6 +761,7 @@ class Problem(object):
                            'cplex_params': {},
                            'mosek_params': {},
                            'gurobi_params': {},
+                           'scip_params': {},
                            'convert_quad_to_socp_if_needed': True,
                            'hotstart': False,
                            'uboundlimit': None,
@@ -6563,16 +6574,29 @@ class Problem(object):
             if self.options['feastol']:
                 self.scip_model.setRealParam('numerics/feastol',self.options['feastol'])
             self.scip_model.setRealParam('limits/time',timelimit)
-            self.scip_model.setLongintParam('limits/nodes',nbsol)
+            self.scip_model.setIntParam('limits/solutions',nbsol)
             if self.options['treememory']:
                 self.scip_model.setRealParam('limits/memory',self.options['treememory'])
             
-            #TODO dictionary of custom options
-            
+            for par, val in six.iteritems(self.options['scip_params']):
+                if isinstance(par,bool):
+                    self.scip_model.setBoolParam(par,val)
+                elif isinstance(par,str):
+                    try:
+                        self.scip_model.setStringParam(par,val)
+                    except:
+                        self.scip_model.setCharParam(par,val)
+                elif isinstance(par,float):
+                    self.scip_model.setRealParam(par,val)
+                elif isinstance(par,int):
+                    try:
+                        self.scip_model.setIntParam(par,val)
+                    except:
+                        self.scip_model.setLongintParam(par,val)
             
         except ValueError as e:
             print('Warning: some options were not set !')
-            print e
+            print(e)
             
 
         #--------------------#
