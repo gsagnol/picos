@@ -4585,7 +4585,7 @@ class Problem(object):
                     ui = int(np.floor(ui))
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I',lb=li,ub=ui))
                 else:
-                    print li,ui
+                    print((li,ui))
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
 
