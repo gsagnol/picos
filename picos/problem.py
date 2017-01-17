@@ -2470,19 +2470,6 @@ class Problem(object):
             return True
         else:
             return self._complex
-            """
-            TODO delete?
-            if self.numberSDPConstraints>0:
-                    for c in self.constraints:
-                            if c.typeOfConstraint.startswith('sdp'):
-                                  if 'z' in [M.typecode for M in (c.Exp1-c.Exp2).factors.values()]:
-                                          return True
-                                  if (c.Exp1-c.Exp2).constant.typecode=='z':
-                                          return True
-
-
-            return False
-            """
 
     def _make_cplex_instance(self):
         """

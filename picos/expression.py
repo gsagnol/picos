@@ -87,6 +87,21 @@ class Expression(object):
         raise ValueError(
             'del_simple_var_value can only be called on a Variable')
 
+    def has_complex_coef(self):
+        hcc = False
+        if hasattr(self,'quad'):
+            hcc = 'z' in [m.typecode for m in self.quad.values()]
+        if hasattr(self,'aff'):
+            hcc = hcc or ('z' in [m.typecode for m in self.aff.factors.values()])
+            if self.aff.constant:
+                hcc = hcc or ('z' == self.aff.constant.typecode)
+        if hasattr(self,'factors'):
+            hcc = hcc or ('z' in [m.typecode for m in self.factors.values()])
+            if self.aff.constant:
+                hcc = hcc or ('z' == self.constant.typecode)
+        return hcc
+
+
     value = property(
         eval,
         set_value,
@@ -108,7 +123,14 @@ class Expression(object):
                      * The expression involves variables of a problem
                        that has already been solved, so that the variables
                        are set at their optimal values.
-
+    """
+        
+    @property
+    def size(self):
+        """size of the affine expression"""
+        return self._size
+        
+    """
         **Example**
 
         >>> import picos as pic
@@ -1991,6 +2013,7 @@ class QuadExp(Expression):
 
     def __init__(self, quad, aff, string, LR=None):
         Expression.__init__(self, string)
+        self._size = (1,1)
         self.quad = quad
         """dictionary of quadratic forms,
                 stored as matrices representing bilinear forms
@@ -2008,7 +2031,7 @@ class QuadExp(Expression):
                      * ``LR=(aff,None)`` when the expression is equal to ``||aff||**2``
                      * ``LR=(aff1,aff2)`` when the expression is equal to ``aff1*aff2``.
                 """
-
+        
     def __str__(self):
         if self.is_valued():
             return str(self.value[0])
