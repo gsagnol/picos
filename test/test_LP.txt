@@ -5,7 +5,7 @@ y = P.add_variable('y',1)
 P.add_constraint(2*x + y <= 1)
 P.add_constraint(x + 3*y <= 1)
 P.set_objective('max',3*x+5*y)
-P.solve()
+P.solve(solver='scip')
 <<<<<<< HEAD
 _____
 import picos as pic
@@ -187,7 +187,7 @@ lp.add_constraint(AA[7]*x == 2.5)
 lp.add_constraint(x>0)
 
 lp.set_objective('max',cc.T*x)
-
+lp.solve(solver='scip')
 
 dualp=pic.Problem()
 mu5=dualp.add_variable('mu5',3)
