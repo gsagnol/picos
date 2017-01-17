@@ -4573,12 +4573,12 @@ class Problem(object):
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
             for i in range(sz):      
-                INFINITY=100.
+                INFINITY_SCIP=1e12
                 (li,ui) = variable.bnd.get(i,(None,None))
                 if li is None:
-                    li = -INFINITY
+                    li = -INFINITY_SCIP
                 if ui is None:
-                    ui = INFINITY
+                    ui = INFINITY_SCIP
                 if variable.vtype == 'binary':
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I',lb=0,ub=1))
                 elif variable.vtype == 'integer':
