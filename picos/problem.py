@@ -4573,7 +4573,7 @@ class Problem(object):
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
             for i in range(sz):      
-                INFINITY_SCIP=1e12
+                INFINITY_SCIP=1e14
                 (li,ui) = variable.bnd.get(i,(None,None))
                 if li is None:
                     li = -INFINITY_SCIP
@@ -4586,7 +4586,6 @@ class Problem(object):
                     ui = int(np.floor(ui))
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),vtype='I',lb=li,ub=ui))
                 else:
-                    print((li,ui))
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
 
@@ -6571,8 +6570,7 @@ class Problem(object):
         # set options  #
         #--------------#
         
-        #try:
-        if False:
+        try:
             self.scip_model.setRealParam('numerics/barrierconvtol',gaplim)
             if self.options['feastol']:
                 self.scip_model.setRealParam('numerics/feastol',self.options['feastol'])
@@ -6597,9 +6595,9 @@ class Problem(object):
                     except:
                         self.scip_model.setLongintParam(par,val)
             
-        #except ValueError as e:
-        #    print('Warning: some options were not set !')
-        #    print(e)
+        except ValueError as e:
+            print('Warning: some options were not set !')
+            print(e)
             
 
         #--------------------#
