@@ -4572,7 +4572,8 @@ class Problem(object):
         for name,variable in self.variables.iteritems():
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
-            for i in range(sz):           
+            for i in range(sz):      
+                INFINITY=100.
                 (li,ui) = variable.bnd.get(i,(None,None))
                 if li is None:
                     li = -INFINITY
