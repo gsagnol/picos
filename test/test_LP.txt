@@ -1,11 +1,37 @@
+lp = pic.Problem()
+AA=[cvx.sparse(a,tc='d').T for a in A]
+AA.append(cvx.sparse([0,3,0,0,0]).T)
+s=len(AA)
+AA=pic.new_param('A',AA)
+cc=pic.new_param('c',c)
+x=lp.add_variable('x',5)
+
+lp.add_constraint(AA[5]*x < 3)
+lp.add_constraint(AA[6]*x > 2)
+lp.add_constraint(AA[7]*x == 2.5)
+
+
+lp.add_constraint(x>0)
+
+lp.set_objective('max',cc.T*x)
+lp.solve(solver='scip')
+
+#the above works but not the next one...
+
+
+
 import picos as pic
 P = pic.Problem()
 x = P.add_variable('x',1)
-y = P.add_variable('y',1)
+y = P.add_variable('y',1,lower=0.5)
 P.add_constraint(2*x + y <= 1)
 P.add_constraint(x + 3*y <= 1)
 P.set_objective('max',3*x+5*y)
 P.solve(solver='scip')
+
+
+
+
 <<<<<<< HEAD
 _____
 import picos as pic

@@ -4541,12 +4541,6 @@ class Problem(object):
         """
         Defines the variables scip_solver, scip_vars and scip_obj,
         used by the zibopt solver.
-
-
-        TODO:
-        _ variable bounds
-        _ variable type (in particular, integer)
-        _ quadratic expressions
         """
         if any([('scip' not in cs.passed) for cs in self._deleted_constraints]):
             for cs in self._deleted_constraints:
@@ -4564,12 +4558,22 @@ class Problem(object):
             self.convert_quadobj_to_constraint()
             obj_sense, obj_exp = self.objective
 
-        self.scip_model = pyscipopt.Model()
-        
-        self.scip_vars = []
+        if (self.scip_model is None):
+            self.scip_model = pyscipopt.Model()
+            self.scip_vars = []
+            current_index = 0
+        else:
+            current_index = self.scip_var_index
+                    
+
         picvtype = 'None'
         current_index = 0
-        for name,variable in self.variables.iteritems():
+        
+        for name, variable in six.iteritems(self.variables):
+            if 'scip' in variable.passed:
+                continue
+        
+            variable.passed.append('scip')
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
             for i in range(sz):      
@@ -4588,6 +4592,7 @@ class Problem(object):
                 else:
                     self.scip_vars.append(self.scip_model.addVar(name+'_'+str(i),lb=li,ub=ui))
             current_index += sz
+            self.scip_var_index = current_index
 
         for cons in self.constraints:
             if 'scip' in cons.passed:
