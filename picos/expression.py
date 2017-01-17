@@ -87,6 +87,21 @@ class Expression(object):
         raise ValueError(
             'del_simple_var_value can only be called on a Variable')
 
+    def has_complex_coef(self):
+        hcc = False
+        if hasattr(self,'quad'):
+            hcc = 'z' in [m.typecode for m in self.quad.values()]
+        if hasattr(self,'aff'):
+            hcc = hcc or ('z' in [m.typecode for m in self.aff.factors.values()])
+            if self.aff.constant:
+                hcc = hcc or ('z' == self.aff.constant.typecode)
+        if hasattr(self,'factors'):
+            hcc = hcc or ('z' in [m.typecode for m in self.factors.values()])
+            if self.aff.constant:
+                hcc = hcc or ('z' == self.constant.typecode)
+        return hcc
+
+
     value = property(
         eval,
         set_value,
@@ -108,7 +123,14 @@ class Expression(object):
                      * The expression involves variables of a problem
                        that has already been solved, so that the variables
                        are set at their optimal values.
-
+    """
+        
+    @property
+    def size(self):
+        """size of the affine expression"""
+        return self._size
+        
+    """
         **Example**
 
         >>> import picos as pic
@@ -671,7 +693,7 @@ class AffinExp(Expression):
         size = self.size
 
         if dim_1 is None:
-            try : 
+            try :
                 s0 = size[0]
                 k = [s0**(1./i)==int(s0**(1./i)) for i in range(2,7)].index(True)+2
                 subsize = int(s0**(1./k))
@@ -679,26 +701,26 @@ class AffinExp(Expression):
             except ValueError:
                 raise ValueError(
                     'partial_transpose can only be applied to n**k x n**k matrices when the dimensions of subsystems are not defined')
-            
+
         if dim_2 is None:
             dim_2 = dim_1
-            
+
         assert isinstance(dim_1,tuple)
         assert isinstance(dim_2,tuple)
         assert (len(dim_1)==len(dim_2))
-        
+
         assert (np.product(dim_1) == size[0]),'the size of subsystems do not match the size of the entire matrix'
         assert (np.product(dim_2) == size[1]),'the size of subsystems do not match the size of the entire matrix'
-            
+
         N = len(dim_1)
-        
+
         if subsystems is None:
             subsystems = (N-1,)
         if isinstance(subsystems,int):
             subsystems = (subsystems,)
-            
+
         assert all([i in range(N) for i in subsystems])
-        
+
         newdim_1 = ()
         newdim_2 = ()
         for i in range(N):
@@ -708,18 +730,18 @@ class AffinExp(Expression):
             else:
                 newdim_2 += (dim_2[i],)
                 newdim_1 += (dim_1[i],)
-                
-        newsize = (np.product(newdim_1),np.product(newdim_2))
-        
+
+        newsize = (int(np.product(newdim_1)), int(np.product(newdim_2)))
+
         def block_indices(dims,ii):
             inds = []
             rem = ii
             for k in range(len(dims)):
                 blk,rem = divmod(rem,np.product(dims[k+1:]))
                 inds.append(int(blk))
-            
+
             return inds
-                
+
         for k in self.factors:
             I0 = []
             J = self.factors[k].J
@@ -941,7 +963,7 @@ class AffinExp(Expression):
 
         selfcopy = self.soft_copy()
 
-        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, int) or isinstance(fact, np.float64) or
+        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, six.integer_types) or isinstance(fact, np.float64) or
           isinstance(fact, np.int64) or isinstance(fact, np.complex128) or isinstance(fact, complex) or
           (hasattr(fact,'size') and fact.size==(1,1)) or (hasattr(fact,'shape') and fact.shape in ((1,),(1,1))) )
 
@@ -1991,6 +2013,7 @@ class QuadExp(Expression):
 
     def __init__(self, quad, aff, string, LR=None):
         Expression.__init__(self, string)
+        self._size = (1,1)
         self.quad = quad
         """dictionary of quadratic forms,
                 stored as matrices representing bilinear forms
@@ -2008,7 +2031,7 @@ class QuadExp(Expression):
                      * ``LR=(aff,None)`` when the expression is equal to ``||aff||**2``
                      * ``LR=(aff1,aff2)`` when the expression is equal to ``aff1*aff2``.
                 """
-
+        
     def __str__(self):
         if self.is_valued():
             return str(self.value[0])

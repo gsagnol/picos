@@ -151,8 +151,9 @@ def sum(lst, it=None, indices=None):
                 1, 1), string='0')
     if not(all([isinstance(exi, Expression) for exi in lst])):
         return builtins.sum(lst)
-    if 'z' in [m.typecode for exp in lst for m in exp.factors.values()
-               ]:  # complex expression
+    #if 'z' in [m.typecode for exp in lst for m in exp.factors.values()
+    #           ]:  # complex expression
+    if any([exp.has_complex_coef() for exp in lst]):
         affSum = new_param('', cvx.matrix(0., lst[0].size, tc='z'))
     else:
         affSum = new_param('', cvx.matrix(0., lst[0].size, tc='d'))
@@ -1131,7 +1132,7 @@ def _retrieve_matrix(mat, exSize=None):
             retmat = cvx.matrix(np.array(mat), exSize, tc=tc)
         else:  # no possible match
             retmat = cvx.matrix(np.array(mat), tc=tc)
-    elif (isinstance(mat, float) or isinstance(mat, int) or isinstance(mat, np.float64) or
+    elif (isinstance(mat, float) or isinstance(mat, six.integer_types) or isinstance(mat, np.float64) or
           isinstance(mat, np.int64) or isinstance(mat, np.complex128) or isinstance(mat, complex)):
         if 'complex' in str(type(mat)):
             mat = complex(mat)
