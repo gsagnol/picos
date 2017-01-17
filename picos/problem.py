@@ -6569,7 +6569,8 @@ class Problem(object):
         # set options  #
         #--------------#
         
-        try:
+        #try:
+        if False:
             self.scip_model.setRealParam('numerics/barrierconvtol',gaplim)
             if self.options['feastol']:
                 self.scip_model.setRealParam('numerics/feastol',self.options['feastol'])
@@ -6594,9 +6595,9 @@ class Problem(object):
                     except:
                         self.scip_model.setLongintParam(par,val)
             
-        except ValueError as e:
-            print('Warning: some options were not set !')
-            print(e)
+        #except ValueError as e:
+        #    print('Warning: some options were not set !')
+        #    print(e)
             
 
         #--------------------#
