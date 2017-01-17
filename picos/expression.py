@@ -963,7 +963,7 @@ class AffinExp(Expression):
 
         selfcopy = self.soft_copy()
 
-        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, int) or isinstance(fact, np.float64) or
+        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, six.integer_types) or isinstance(fact, np.float64) or
           isinstance(fact, np.int64) or isinstance(fact, np.complex128) or isinstance(fact, complex) or
           (hasattr(fact,'size') and fact.size==(1,1)) or (hasattr(fact,'shape') and fact.shape in ((1,),(1,1))) )
 
