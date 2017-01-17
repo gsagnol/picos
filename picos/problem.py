@@ -4616,7 +4616,7 @@ class Problem(object):
         if obj_exp is None or isinstance(obj_exp,AffinExp):
             self.scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
         else:
-            raise NotImplementedError('the scip interface does not allow non-linear objective functions (yet).')
+            raise NotImplementedError('the scip interface does not allow non-linear objective functions (yet). Try to add an auxiliary variable t and use the epigraph form min t: f(x)<=t')
 
         if obj_sense == 'max':
            self.scip_model.setObjective(self.scip_obj,'maximize')
@@ -6554,6 +6554,27 @@ class Problem(object):
         if not self.options['nbsol'] is None:
             nbsol = self.options['nbsol']
 
+        #--------------#
+        # set options  #
+        #--------------#
+        
+        try:
+            self.scip_model.setRealParam('numerics/barrierconvtol',gaplim)
+            if self.options['feastol']:
+                self.scip_model.setRealParam('numerics/feastol',self.options['feastol'])
+            self.scip_model.setRealParam('limits/time',timelimit)
+            self.scip_model.setLongintParam('limits/nodes',nbsol)
+            if self.options['treememory']:
+                self.scip_model.setRealParam('limits/memory',self.options['treememory'])
+            
+            #TODO dictionary of custom options
+            
+            
+        except ValueError as e:
+            print('Warning: some options were not set !')
+            print e
+            
+
         #--------------------#
         #  call the solver   #
         #--------------------#
@@ -6571,7 +6592,6 @@ class Problem(object):
         #----------------------#
         # retrieve the primals #
         #----------------------#
-        #TODO
         primals = {}
         obj = self.scip_model.getObjVal()
         if 'noprimals' in self.options and self.options['noprimals']:
