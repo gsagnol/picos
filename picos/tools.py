@@ -85,6 +85,7 @@ __all__ = ['_retrieve_matrix',
            '_cplx_mat_to_real_mat',
            '_cplx_vecmat_to_real_vecmat',
            '_is_idty',
+           'kron'
            ]
 
 
@@ -2111,6 +2112,87 @@ def _is_idty(mat, vtype='continuous'):
         if not (_svecm1_identity('antisym', (n, n)) - mat):
             return True
     return False
+
+
+def kron(A,B):
+    """
+    Kronecker product of 2 expression, at least one of which must be constant
+    
+    **Example:**
+
+    >>> import picos as pic
+    >>> import cvxopt as cvx
+    >>> P = pic.Problem()
+    >>> X = P.add_variable('X',(4,3))
+    >>> X.value = cvx.matrix(range(12),(4,3))
+    >>> I = pic.new_param('I',np.eye(2))
+    >>> print pic.kron(I,X) #doctest: +NORMALIZE_WHITESPACE
+    [ 0.00e+00  4.00e+00  8.00e+00  0.00e+00  0.00e+00  0.00e+00]
+    [ 1.00e+00  5.00e+00  9.00e+00  0.00e+00  0.00e+00  0.00e+00]
+    [ 2.00e+00  6.00e+00  1.00e+01  0.00e+00  0.00e+00  0.00e+00]
+    [ 3.00e+00  7.00e+00  1.10e+01  0.00e+00  0.00e+00  0.00e+00]
+    [ 0.00e+00  0.00e+00  0.00e+00  0.00e+00  4.00e+00  8.00e+00]
+    [ 0.00e+00  0.00e+00  0.00e+00  1.00e+00  5.00e+00  9.00e+00]
+    [ 0.00e+00  0.00e+00  0.00e+00  2.00e+00  6.00e+00  1.00e+01]
+    [ 0.00e+00  0.00e+00  0.00e+00  3.00e+00  7.00e+00  1.10e+01]
+
+    """
+    
+    from .expression import AffinExp
+    
+    if not isinstance(A,AffinExp):
+        expA, nameA = _retrieve_matrix(A)
+    else:
+        expA, nameA = A,A.string
+    
+    if not isinstance(B,AffinExp):
+        expB, nameB = _retrieve_matrix(B)
+    else:
+        expB, nameB = B,B.string
+        
+    if expA.isconstant():
+        AA = np.array(cvx.matrix(expA.value))
+        kron_fact = {}
+        for x, Bx in six.iteritems(expB.factors):
+            #Blst contains matrix such that B=\sum x_i B_i (+constant)
+            Blst = []
+            AkronB = []
+            for k in range(Bx.size[1]):
+                Blst.append(np.reshape(cvx.matrix(Bx[:,k]),expB.size[::-1]).T)
+                AkronB.append(np.kron(AA,Blst[-1]))
+            kron_fact[x] = cvx.sparse([list(AkronB[k].T.ravel()) for k in range(Bx.size[1])])
+        kron_cons = None
+        if expB.constant:
+            Bcons = np.reshape(cvx.matrix(expB.constant),expB.size[::-1]).T
+            AkronB = np.kron(AA,Bcons)
+            kron_cons = cvx.sparse(list(AkronB.T.ravel()))
+            
+        kron_size = (expA.size[0] * expB.size[0], expA.size[1] * expB.size[1])
+        kron_string =  nameA+'⊗ ('+nameB+')'
+    elif expB.isconstant():
+        BB = np.array(cvx.matrix(expB.value))
+        kron_fact = {}
+        for x, Ax in six.iteritems(expA.factors):
+            #Blst contains matrix such that B=\sum x_i B_i (+constant)
+            Alst = []
+            AkronB = []
+            for k in range(Ax.size[1]):
+                Alst.append(np.reshape(cvx.matrix(Ax[:,k]),expA.size[::-1]).T)
+                AkronB.append(np.kron(Alst[-1],BB))
+            kron_fact[x] = cvx.sparse([list(AkronB[k].T.ravel()) for k in range(Ax.size[1])])
+        kron_cons = None
+        if expA.constant:
+            Acons = np.reshape(cvx.matrix(expA.constant),expA.size[::-1]).T
+            AkronB = np.kron(Acons,BB)
+            kron_cons = cvx.sparse(list(AkronB.T.ravel()))
+            
+        kron_size = (expA.size[0] * expB.size[0], expA.size[1] * expB.size[1])
+        kron_string =  '('+ nameA+') ⊗ '+nameB
+    else:
+        raise NotImplementedError('kron product with quadratic terms')
+    return AffinExp(kron_fact,constant=kron_cons,size=kron_size,string=kron_string)
+        
+    
 
 
 def _read_sdpa(filename):
