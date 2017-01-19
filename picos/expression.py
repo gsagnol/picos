@@ -97,7 +97,7 @@ class Expression(object):
                 hcc = hcc or ('z' == self.aff.constant.typecode)
         if hasattr(self,'factors'):
             hcc = hcc or ('z' in [m.typecode for m in self.factors.values()])
-            if self.aff.constant:
+            if self.constant:
                 hcc = hcc or ('z' == self.constant.typecode)
         return hcc
 
