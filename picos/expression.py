@@ -124,12 +124,12 @@ class Expression(object):
                        that has already been solved, so that the variables
                        are set at their optimal values.
     """
-        
+
     @property
     def size(self):
         """size of the affine expression"""
         return self._size
-        
+
     """
         **Example**
 
@@ -821,7 +821,6 @@ class AffinExp(Expression):
         pdimred = np.product(dim_reduced)
 
         fact = cvx.spmatrix([], [], [], (pdimred**2, pdim**2))
-
         for iii in itertools.product(*[range(i) for i in dim_reduced]):
             for jjj in itertools.product(*[range(j) for j in dim_reduced]):
                 # element iii,jjj of the partial trace
@@ -851,7 +850,7 @@ class AffinExp(Expression):
                                      for j in range(len(dim))]))
 
                     colij_l = col_l * pdim + row_l
-                    fact[rowij, colij_l] = 1
+                    fact[int(rowij), int(colij_l)] = 1
 
         newfacs = {}
         for x in self.factors:
@@ -2031,7 +2030,7 @@ class QuadExp(Expression):
                      * ``LR=(aff,None)`` when the expression is equal to ``||aff||**2``
                      * ``LR=(aff1,aff2)`` when the expression is equal to ``aff1*aff2``.
                 """
-        
+
     def __str__(self):
         if self.is_valued():
             return str(self.value[0])
