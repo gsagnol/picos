@@ -85,7 +85,10 @@ __all__ = ['_retrieve_matrix',
            '_cplx_mat_to_real_mat',
            '_cplx_vecmat_to_real_vecmat',
            '_is_idty',
-           'kron'
+           'kron',
+           '_is_integer',
+           '_is_realvalued',
+           '_is_numeric'
            ]
 
 
@@ -164,7 +167,7 @@ def sum(lst, it=None, indices=None):
         sumstr = '_'
         if not indices is None:
             sumstr += '{'
-        if isinstance(it, tuple) and len(it) == 2 and isinstance(it[1], int):
+        if isinstance(it, tuple) and len(it) == 2 and _is_integer(it[1]):
             it = (it,)
         if isinstance(it, list):
             it = tuple(it)
@@ -1090,6 +1093,7 @@ def _retrieve_matrix(mat, exSize=None):
     """
     retstr = None
     from .expression import Expression
+    
     if isinstance(mat, Expression) and mat.is_valued():
         if isinstance(
                 mat.value,
@@ -1133,8 +1137,7 @@ def _retrieve_matrix(mat, exSize=None):
             retmat = cvx.matrix(np.array(mat), exSize, tc=tc)
         else:  # no possible match
             retmat = cvx.matrix(np.array(mat), tc=tc)
-    elif (isinstance(mat, float) or isinstance(mat, six.integer_types) or isinstance(mat, np.float64) or
-          isinstance(mat, np.int64) or isinstance(mat, np.complex128) or isinstance(mat, complex)):
+    elif _is_numeric(mat):
         if 'complex' in str(type(mat)):
             mat = complex(mat)
             if mat.imag:
@@ -1149,7 +1152,7 @@ def _retrieve_matrix(mat, exSize=None):
             if exSize is None:
                 # no exSize-> scalar
                 retmat = cvx.matrix(0., (1, 1))
-            elif isinstance(exSize, int):
+            elif _is_integer(exSize):
                 # exSize is an int -> 0 * identity matrix
                 retmat = cvx.spmatrix([], [], [], (exSize, exSize))
             elif isinstance(exSize, tuple):
@@ -1161,7 +1164,7 @@ def _retrieve_matrix(mat, exSize=None):
             if exSize is None:
                 # no exSize-> scalar
                 retmat = cvx.matrix(mat, (1, 1), tc=tc)
-            elif isinstance(exSize, int):
+            elif _is_integer(exSize):
                 # exSize is an int -> alpha * identity matrix
                 retmat = mat * cvx.spdiag([1.] * exSize)
                 retstr += 'I'
@@ -1266,7 +1269,7 @@ def _retrieve_matrix(mat, exSize=None):
                 if not(szstr.isdigit()):
                     raise Exception('this string shlud have the format "I(n)"')
                 sz = int(szstr)
-                if (not exSize is None) and ((isinstance(exSize, int) and exSize != sz) or (
+                if (not exSize is None) and ((_is_integer(exSize) and exSize != sz) or (
                         isinstance(exSize, tuple) and ((exSize[0] != sz) or (exSize[1] != sz)))):
                     raise Exception('exSize does not match the n in "I(n)"')
                 exSize = (sz, sz)
@@ -1624,14 +1627,13 @@ def new_param(name, value):
     """
     from .expression import AffinExp
     if isinstance(value, list):
-        if all([isinstance(x, int) or isinstance(x, float)
-                or isinstance(x, complex) for x in value]):
+        if all([_is_numeric(x) for x in value]):
             # list with numeric data
             term, termString = _retrieve_matrix(value, None)
             return AffinExp({}, constant=term[:], size=term.size, string=name)
         elif (all([isinstance(x, list) for x in value]) and
               all([len(x) == len(value[0]) for x in value]) and
-              all([isinstance(xi, int) or isinstance(xi, float) for x in value for xi in x])
+              all([_is_realvalued(xi) for x in value for xi in x])
               ):
             # list of numeric lists of the same length
             sz = len(value), len(value[0])
@@ -1759,7 +1761,7 @@ def offset_in_lil(lil, offset, lower):
     which are larger than ``lower``.
     """
     for i, l in enumerate(lil):
-        if isinstance(l, int):
+        if _is_integer(l):
             if l > lower:
                 lil[i] -= offset
         elif isinstance(l, list):
@@ -2113,6 +2115,23 @@ def _is_idty(mat, vtype='continuous'):
             return True
     return False
 
+
+def _is_integer(x):
+    return isinstance(x,six.integer_types) or isinstance(x,np.int64)
+
+def _is_numeric(x):
+    return (isinstance(x, float) or
+            isinstance(x, six.integer_types) or
+            isinstance(x, np.float64) or
+            isinstance(x, np.int64) or
+            isinstance(x, np.complex128) or
+            isinstance(x, complex))
+
+def _is_realvalued(x):
+    return (isinstance(x, float) or
+            isinstance(x, six.integer_types) or
+            isinstance(x, np.float64) or
+            isinstance(x, np.int64))
 
 def kron(A,B):
     """
