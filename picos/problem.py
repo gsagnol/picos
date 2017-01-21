@@ -522,7 +522,7 @@ class Problem(object):
             I.extend(facvar.I)
             J.extend([si + j for j in facvar.J])
             V.extend(facvar.V)
-        G = cvx.spmatrix(V, I, J, (n1, self.numberOfVars))
+        G = spmatrix(V, I, J, (n1, self.numberOfVars))
 
         # is it really sparse ?
         # if cvx.nnz(G)/float(G.size[0]*G.size[1])>0.5:
@@ -718,14 +718,14 @@ class Problem(object):
             limits the number of nodes visited by the MIP optimizer to 25.
 
         * Specific options available for scip:
-            
+
           * ``scip_params = {}`` : a dictionary of
             `scip parameters <http://scip.zib.de/doc-2.0.2/html/PARAMETERS.html>`_
             to be set before the scip
             optimizer is called. For example,
             ``scip_params = {'lp/threads' : 4}``
             sets the number of threads to solve the LPs at 4.
-          
+
 
         * Specific options available for sdpa:
 
@@ -2283,7 +2283,7 @@ class Problem(object):
                                 (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                             raise Exception(
                                 'you try to add a constraint of the form 0 * x == 1')
-                    
+
                     constr.zero_rows = list(zero_rows)
 
                 for i, jv in six.iteritems(itojv):
@@ -2504,11 +2504,11 @@ class Problem(object):
         if (self.cplex_Instance is None):
             c = cplex.Cplex()
             boundcons = []
-            
+
         else:
             c = self.cplex_Instance
             boundcons = self.cplex_boundcons #stores index of constraints interpreted as a bound
-            
+
         sense_opt = self.objective[0]
         if sense_opt == 'max':
             c.objective.set_sense(c.objective.sense.maximize)
@@ -2872,7 +2872,7 @@ class Problem(object):
                                 (constr.typeOfConstraint[:4] == 'lin=' and rhstmp[i] != 0)):
                             raise Exception(
                                 'you try to add a constraint of the form 0 * x == 1')
-                    constr.zero_rows = list(zero_rows) 
+                    constr.zero_rows = list(zero_rows)
 
                 for i, jv in six.iteritems(itojv):
                     r = rhstmp[i]
@@ -3140,9 +3140,9 @@ class Problem(object):
             reset = True
 
         if reset:
-            self.cvxoptVars['A'] = cvx.spmatrix([], [], [], (0, ss), tc='d')
+            self.cvxoptVars['A'] = spmatrix([], [], [], (0, ss), tc='d')
             self.cvxoptVars['b'] = cvx.matrix([], (0, 1), tc='d')
-            self.cvxoptVars['Gl'] = cvx.spmatrix([], [], [], (0, ss), tc='d')
+            self.cvxoptVars['Gl'] = spmatrix([], [], [], (0, ss), tc='d')
             self.cvxoptVars['hl'] = cvx.matrix([], (0, 1), tc='d')
             self.cvxoptVars['Gq'] = []
             self.cvxoptVars['hq'] = []
@@ -3151,16 +3151,16 @@ class Problem(object):
             self.cvxoptVars['quadcons'] = []
         elif ss > self.cvxoptVars['A'].size[1]:
             nv = ss - self.cvxoptVars['A'].size[1]
-            self.cvxoptVars['A'] = cvx.sparse([[self.cvxoptVars['A']], [cvx.spmatrix(
+            self.cvxoptVars['A'] = cvx.sparse([[self.cvxoptVars['A']], [spmatrix(
                 [], [], [], (self.cvxoptVars['A'].size[0], nv), tc='d')]])
-            self.cvxoptVars['Gl'] = cvx.sparse([[self.cvxoptVars['Gl']], [cvx.spmatrix(
+            self.cvxoptVars['Gl'] = cvx.sparse([[self.cvxoptVars['Gl']], [spmatrix(
                 [], [], [], (self.cvxoptVars['Gl'].size[0], nv), tc='d')]])
             for i, Gqi in enumerate(self.cvxoptVars['Gq']):
                 self.cvxoptVars['Gq'][i] = cvx.sparse(
-                    [[Gqi], [cvx.spmatrix([], [], [], (Gqi.size[0], nv), tc='d')]])
+                    [[Gqi], [spmatrix([], [], [], (Gqi.size[0], nv), tc='d')]])
             for i, Gsi in enumerate(self.cvxoptVars['Gs']):
                 self.cvxoptVars['Gs'][i] = cvx.sparse(
-                    [[Gsi], [cvx.spmatrix([], [], [], (Gsi.size[0], nv), tc='d')]])
+                    [[Gsi], [spmatrix([], [], [], (Gsi.size[0], nv), tc='d')]])
 
         # objective
         if not((new_scip_cons_only and 'scip' in self.obj_passed) or
@@ -3205,7 +3205,7 @@ class Problem(object):
         elif self.cvxoptVars['c'].size[0] < ss:
             nv = ss - self.cvxoptVars['c'].size[0]
             self.cvxoptVars['c'] = cvx.matrix(cvx.sparse(
-                [self.cvxoptVars['c'], cvx.spmatrix([], [], [], (nv, 1), tc='d')]))
+                [self.cvxoptVars['c'], spmatrix([], [], [], (nv, 1), tc='d')]))
 
         if new_cvxopt_cons_only:
             for var in self.variables.values():
@@ -3381,7 +3381,7 @@ class Problem(object):
                 while j >= nextsdp[1]:
                     mats.append(
                         svecm1(
-                            cvx.spmatrix(
+                            spmatrix(
                                 vs,
                                 js,
                                 [0] *
@@ -3406,7 +3406,7 @@ class Problem(object):
         while len(mats) < len(idx_sdp_vars):
             mats.append(
                 svecm1(
-                    cvx.spmatrix(
+                    spmatrix(
                         vs,
                         js,
                         [0] *
@@ -4564,19 +4564,19 @@ class Problem(object):
             current_index = 0
         else:
             current_index = self.scip_var_index
-                    
+
 
         picvtype = 'None'
         current_index = 0
-        
+
         for name, variable in six.iteritems(self.variables):
             if 'scip' in variable.passed:
                 continue
-        
+
             variable.passed.append('scip')
             variable.scip_startIndex = current_index
             sz = variable.size[0]*variable.size[1]
-            for i in range(sz):      
+            for i in range(sz):
                 INFINITY_SCIP=1e14
                 (li,ui) = variable.bnd.get(i,(None,None))
                 if li is None:
@@ -4629,7 +4629,7 @@ class Problem(object):
                      self.scip_model.addCons(lhsi <= 0)
             else:
                 raise NotImplementedError('not implemented yet')
-        
+
         if obj_exp is None or isinstance(obj_exp,AffinExp):
             self.scip_obj = self._convert_picos_exp_to_scip_exp(obj_exp)[0]
         else:
@@ -5122,7 +5122,7 @@ class Problem(object):
             if any([b for (i, b) in enumerate(
                     self.cvxoptVars['b']) if i not in JP]):
                 raise Exception('infeasible constraint of the form 0=a')
-            P = cvx.spmatrix(
+            P = spmatrix(
                 VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
             self.cvxoptVars['A'] = P * self.cvxoptVars['A']
             self.cvxoptVars['b'] = P * self.cvxoptVars['b']
@@ -5683,7 +5683,7 @@ class Problem(object):
                         if constr.typeOfConstraint[:3] == 'lin':
                             dim = constr.Exp1.size[0] * constr.Exp1.size[1]
                             dual_values = [None] * dim
-                            
+
                             # rows with var bounds
                             for (i, j, b, v) in self.cplex_boundcons[k]:
                                 xj = c.solution.get_values(j)
@@ -6003,7 +6003,7 @@ class Problem(object):
                                     dual_values[i] = 0.  # unactive constraint
                             else:
                                 dual_values[i] = 0.
-                        
+
                         # rows with other constraints
                         if hasattr(constr,'zero_rows'):
                             for i in constr.zero_rows:
@@ -6541,9 +6541,9 @@ class Problem(object):
         sol = {'mosek_task': task, 'status': status, 'time': tend - tstart}
 
         return (primals, duals, obj, sol)
-    
-    def _zibopt_solve(self): 
-      
+
+    def _zibopt_solve(self):
+
         if self.type in (
                'unknown type',
                'GP',
@@ -6553,12 +6553,12 @@ class Problem(object):
                'MISDP'):
            raise NotAppropriateSolverError(
                "'zibopt' cannot solve problems of type {0}".format(
-                   self.type)) 
-	       
+                   self.type))
+
         #-----------------------------#
         #  create the zibopt instance #
         #-----------------------------#
-        
+
         self._make_zibopt()
 
         timelimit = 10000000.
@@ -6574,7 +6574,7 @@ class Problem(object):
         #--------------#
         # set options  #
         #--------------#
-        
+
         try:
             self.scip_model.setRealParam('numerics/barrierconvtol',gaplim)
             if self.options['feastol']:
@@ -6583,7 +6583,7 @@ class Problem(object):
             self.scip_model.setIntParam('limits/solutions',nbsol)
             if self.options['treememory']:
                 self.scip_model.setRealParam('limits/memory',self.options['treememory'])
-            
+
             for par, val in six.iteritems(self.options['scip_params']):
                 if isinstance(par,bool):
                     self.scip_model.setBoolParam(par,val)
@@ -6599,11 +6599,11 @@ class Problem(object):
                         self.scip_model.setIntParam(par,val)
                     except:
                         self.scip_model.setLongintParam(par,val)
-            
+
         except ValueError as e:
             print('Warning: some options were not set !')
             print(e)
-            
+
 
         #--------------------#
         #  call the solver   #
@@ -6778,7 +6778,7 @@ class Problem(object):
         if any([b for (i, b) in enumerate(
                 self.cvxoptVars['b']) if i not in JP]):
             raise Exception('infeasible constraint of the form 0=a')
-        P = cvx.spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
+        P = spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         # Convert primal solution
         primals = {}
         for var in self.variables.keys():
@@ -7365,8 +7365,8 @@ class Problem(object):
                 nlo = max(clo, lo)
                 nup = min(cup, up)
                 bounds[var.startIndex + ind] = (nlo, nup)
-        
-        
+
+
         f.write("Bounds\n")
         for i in range(self.numberOfVars):
             if i in bounds:
@@ -7459,7 +7459,7 @@ class Problem(object):
                 self.cvxoptVars['b']) if i not in JP]):
             raise Exception('infeasible constraint of the form 0=a')
 
-        P = cvx.spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
+        P = spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         self.cvxoptVars['A'] = P * self.cvxoptVars['A']
         self.cvxoptVars['b'] = P * self.cvxoptVars['b']
         c = self.cvxoptVars['c']
@@ -8049,7 +8049,7 @@ class Problem(object):
             szcons = [s for tp, s in structcons]
 
             b = parsed_blocks.get(
-                'BCOORD', cvx.spmatrix(
+                'BCOORD', spmatrix(
                     [], [], [], (Ncons, 1)))
             bvecs = _break_rows(b, szcons)
             consexp = []
@@ -8058,7 +8058,7 @@ class Problem(object):
                 consexp.append(new_param('b[' + str(i) + ']', bi))
 
             A = parsed_blocks.get(
-                'ACOORD', cvx.spmatrix(
+                'ACOORD', spmatrix(
                     [], [], [], (Ncons, Nvars)))
             Ablc = _break_rows(A, szcons)
             for i, Ai in enumerate(Ablc):
@@ -8103,7 +8103,7 @@ class Problem(object):
         if 'PSDCON' in parsed_blocks:
             Dblocks = parsed_blocks.get(
                 'DCOORD', [
-                    cvx.spmatrix(
+                    spmatrix(
                         [], [], [], (ni, ni)) for ni in parsed_blocks['PSDCON']])
             Hblocks = parsed_blocks.get('HCOORD', {})
 
@@ -8229,13 +8229,13 @@ class Problem(object):
                 j, v = int(lsplit[0]), float(lsplit[1])
                 J.append(j)
                 V.append(v)
-            return cvx.spmatrix(
+            return spmatrix(
                 V, [0] * len(J), J, (1, parsed_blocks['VAR'][0]))
         elif blocname == 'OBJBCOORD':
             return float(f.readline())
         elif blocname == 'OBJFCOORD':
             n = int(f.readline())
-            Fobj = [cvx.spmatrix([], [], [], (ni, ni))
+            Fobj = [spmatrix([], [], [], (ni, ni))
                     for ni in parsed_blocks['PSDVAR'][0]]
             for k in range(n):
                 lsplit = f.readline().split()
@@ -8254,7 +8254,7 @@ class Problem(object):
                     lsplit[2]), int(lsplit[3]), float(lsplit[4]))
                 if i not in Fblocks:
                     Fblocks[i] = [
-                        cvx.spmatrix(
+                        spmatrix(
                             [], [], [], (ni, ni)) for ni in parsed_blocks['PSDVAR'][0]]
 
                 Fblocks[i][j][row, col] = v
@@ -8272,7 +8272,7 @@ class Problem(object):
                 I.append(i)
                 J.append(j)
                 V.append(v)
-            return cvx.spmatrix(
+            return spmatrix(
                 V, I, J, (parsed_blocks['CON'][0], parsed_blocks['VAR'][0]))
         elif blocname == 'BCOORD':
             n = int(f.readline())
@@ -8283,7 +8283,7 @@ class Problem(object):
                 i, v = int(lsplit[0]), float(lsplit[1])
                 I.append(i)
                 V.append(v)
-            return cvx.spmatrix(
+            return spmatrix(
                 V, I, [0] * len(I), (parsed_blocks['CON'][0], 1))
         elif blocname == 'HCOORD':
             n = int(f.readline())
@@ -8294,7 +8294,7 @@ class Problem(object):
                     lsplit[2]), int(lsplit[3]), float(lsplit[4]))
                 if j not in Hblocks:
                     Hblocks[j] = [
-                        cvx.spmatrix(
+                        spmatrix(
                             [], [], [], (ni, ni)) for ni in parsed_blocks['PSDCON']]
 
                 Hblocks[j][i][row, col] = v
@@ -8303,7 +8303,7 @@ class Problem(object):
             return Hblocks
         elif blocname == 'DCOORD':
             n = int(f.readline())
-            Dblocks = [cvx.spmatrix([], [], [], (ni, ni))
+            Dblocks = [spmatrix([], [], [], (ni, ni))
                        for ni in parsed_blocks['PSDCON']]
             for k in range(n):
                 lsplit = f.readline().split()

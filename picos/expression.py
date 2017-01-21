@@ -293,7 +293,7 @@ class AffinExp(Expression):
 
     def eval(self, ind=None):
         if self.constant is None:
-            val = cvx.spmatrix([], [], [], (self.size[0] * self.size[1], 1))
+            val = spmatrix([], [], [], (self.size[0] * self.size[1], 1))
         else:
             val = self.constant
         if self.is0():
@@ -559,7 +559,7 @@ class AffinExp(Expression):
                   bsize2 for i in self.factors[k].I]
             J = self.factors[k].J
             V = self.factors[k].V
-            self.factors[k] = cvx.spmatrix(V, I0, J, self.factors[k].size)
+            self.factors[k] = spmatrix(V, I0, J, self.factors[k].size)
 
         if not (self.constant is None):
             self.constant = cvx.matrix(self.constant,
@@ -606,7 +606,7 @@ class AffinExp(Expression):
                     col, row = divmod(j, n)
                     J0.append(row * n + col)
                     V0.append(v.conjugate())
-                self.factors[k] = cvx.spmatrix(V0, I, J0, fack.size)
+                self.factors[k] = spmatrix(V0, I, J0, fack.size)
 
             elif self.factors[k].typecode == 'z':
                 Fr = self.factors[k].real()
@@ -647,7 +647,7 @@ class AffinExp(Expression):
                 J0 = [(j // vsize) + (j % vsize) *
                       vsize2 for j in self.factors[k].J]
                 V0 = [v.conjugate() for v in self.factors[k].V]
-                self.factors[k] = cvx.spmatrix(
+                self.factors[k] = spmatrix(
                     V0, I0, J0, self.factors[k].size)
             else:
                 F = self.factors[k]
@@ -656,7 +656,7 @@ class AffinExp(Expression):
                 I0 = [(i // bsize) + (i % bsize) * bsize2 for i in F.I]
                 J = F.J
                 V = [v.conjugate() for v in F.V]
-                self.factors[k] = cvx.spmatrix(V, I0, J, F.size)
+                self.factors[k] = spmatrix(V, I0, J, F.size)
 
         if not (self.constant is None):
             if self.constant.typecode == 'z':
@@ -755,7 +755,7 @@ class AffinExp(Expression):
                 newrow = int(sum([new_rblock[l] * np.product(newdim_1[l+1:]) for l in range(N)]))
                 newcol = int(sum([new_cblock[l] * np.product(newdim_2[l+1:]) for l in range(N)]))
                 I0.append(newcol * newsize[0] + newrow)
-            self.factors[k] = cvx.spmatrix(V, I0, J, self.factors[k].size)
+            self.factors[k] = spmatrix(V, I0, J, self.factors[k].size)
         if not (self.constant is None):
             spconstant = cvx.sparse(self.constant)
             J = spconstant.J
@@ -770,7 +770,7 @@ class AffinExp(Expression):
                 newrow = int(sum([new_rblock[l] * np.product(dim_1[l+1:]) for l in range(N)]))
                 newcol = int(sum([new_cblock[l] * np.product(dim_2[l+1:]) for l in range(N)]))
                 I0.append(newcol * newsize[0] + newrow)
-            self.constant = cvx.spmatrix(V, I0, J, spconstant.size)
+            self.constant = spmatrix(V, I0, J, spconstant.size)
         self._size = newsize
         if (('*' in self.affstring()) or ('/' in self.affstring())
                 or ('+' in self.affstring()) or ('-' in self.affstring())):
@@ -820,7 +820,7 @@ class AffinExp(Expression):
         dim_reduced = tuple(dim_reduced)
         pdimred = np.product(dim_reduced)
 
-        fact = cvx.spmatrix([], [], [], (pdimred**2, pdim**2))
+        fact = spmatrix([], [], [], (pdimred**2, pdim**2))
         for iii in itertools.product(*[range(i) for i in dim_reduced]):
             for jjj in itertools.product(*[range(j) for j in dim_reduced]):
                 # element iii,jjj of the partial trace
@@ -889,7 +889,7 @@ class AffinExp(Expression):
         if selfcopy.size[0] != fac.size[0] or selfcopy.size[1] != fac.size[1]:
             raise Exception('incompatible dimensions')
         mm, nn = selfcopy.size
-        bfac = cvx.spmatrix([], [], [], (mm * nn, mm * nn))
+        bfac = spmatrix([], [], [], (mm * nn, mm * nn))
         for i, j, v in zip(fac.I, fac.J, fac.V):
             bfac[j * mm + i, j * mm + i] = v
         for k in selfcopy.factors:
@@ -1196,7 +1196,7 @@ class AffinExp(Expression):
                             raise
                     """old implementation without try-block; the new one is safer !
 
-                                        if ((isinstance(self.constant,cvx.spmatrix) and isinstance(term.constant,cvx.matrix))) or (
+                                        if ((isinstance(self.constant,spmatrix) and isinstance(term.constant,cvx.matrix))) or (
                                                term.constant.typecode=='z' and self.constant.typecode=='d'):
                                                   #inplace op not defined
                                                   self.constant=cvx.matrix(self.constant,tc=term.constant.typecode)
@@ -1403,7 +1403,7 @@ class AffinExp(Expression):
                     II.append(l)
                     JJ.append(J[j])
                     VV.append(V[j])
-            newfacs[k] = cvx.spmatrix(
+            newfacs[k] = spmatrix(
                 VV, II, JJ, (len(rangeT), self.factors[k].size[1]))
 
         if not self.constant is None:
@@ -1559,7 +1559,7 @@ class AffinExp(Expression):
         selfcopy = self.copy()
         idx = cvx.spdiag([1.] * dim)[:].I
         for k in self.factors:
-            selfcopy.factors[k] = cvx.spmatrix(
+            selfcopy.factors[k] = spmatrix(
                 [], [], [], (dim**2, self.factors[k].size[1]))
             for i in idx:
                 selfcopy.factors[k][i, :] = self.factors[k]
@@ -1599,12 +1599,12 @@ class AffinExp(Expression):
                         if self.factors[k].typecode == 'z':
                             faci = self.factors[k].imag()
                         else:
-                            faci = cvx.spmatrix([], [], [], facr.size)
+                            faci = spmatrix([], [], [], facr.size)
                         expr = exp.factors[k].real()
                         if exp.factors[k].typecode == 'z':
                             expi = exp.factors[k].imag()
                         else:
-                            expi = cvx.spmatrix([], [], [], expr.size)
+                            expi = spmatrix([], [], [], expr.size)
                         newfac = (cvx.sparse([[facr, expr]]) +
                                   1j * cvx.sparse([[faci, expi]]))
                     else:
@@ -1616,22 +1616,22 @@ class AffinExp(Expression):
                     s2 = exp.factors[k].size[1]
                     if exp.factors[
                             k].typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newfac = (cvx.sparse([[cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k].real()]]) +
-                                  1j * cvx.sparse([[cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k].imag()]]))
+                        newfac = (cvx.sparse([[spmatrix([], [], [], (s1, s2)), exp.factors[k].real()]]) +
+                                  1j * cvx.sparse([[spmatrix([], [], [], (s1, s2)), exp.factors[k].imag()]]))
                     else:
                         newfac = cvx.sparse(
-                            [[cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k]]])
+                            [[spmatrix([], [], [], (s1, s2)), exp.factors[k]]])
                     self.factors[k] = newfac
                 else:
                     s1 = exp.size[0] * exp.size[1]
                     s2 = self.factors[k].size[1]
                     if self.factors[
                             k].typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newfac = (cvx.sparse([[self.factors[k].real(), cvx.spmatrix([], [], [], (s1, s2))]]) +
-                                  1j * cvx.sparse([[self.factors[k].imag(), cvx.spmatrix([], [], [], (s1, s2))]]))
+                        newfac = (cvx.sparse([[self.factors[k].real(), spmatrix([], [], [], (s1, s2))]]) +
+                                  1j * cvx.sparse([[self.factors[k].imag(), spmatrix([], [], [], (s1, s2))]]))
                     else:
                         newfac = cvx.sparse(
-                            [[self.factors[k], cvx.spmatrix([], [], [], (s1, s2))]])
+                            [[self.factors[k], spmatrix([], [], [], (s1, s2))]])
                     self.factors[k] = newfac
             if self.constant is None and exp.constant is None:
                 pass
@@ -1641,7 +1641,7 @@ class AffinExp(Expression):
                 if not self.constant is None:
                     newCons = self.constant
                 else:
-                    newCons = cvx.spmatrix([], [], [], (s1, 1))
+                    newCons = spmatrix([], [], [], (s1, 1))
                 if not exp.constant is None:
                     # it seems there is a bug with sparse with complex inputs
                     if newCons.typecode == 'z' or exp.constant.typecode == 'z':
@@ -1649,23 +1649,23 @@ class AffinExp(Expression):
                         if exp.constant.typecode == 'z':
                             expi = exp.constant.imag()
                         else:
-                            expi = cvx.spmatrix([], [], [], expr.size)
+                            expi = spmatrix([], [], [], expr.size)
                         csr = newCons.real()
                         if newCons.typecode == 'z':
                             csi = newCons.imag()
                         else:
-                            csi = cvx.spmatrix([], [], [], csr.size)
+                            csi = spmatrix([], [], [], csr.size)
                         newCons = (cvx.sparse([[csr, expr]]) +
                                    1j * cvx.sparse([[csi, expi]]))
                     else:
                         newCons = cvx.sparse([[newCons, exp.constant]])
                 else:
                     if newCons.typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newCons = (cvx.sparse([[newCons.real(), cvx.spmatrix([], [], [], (s2, 1))]]) +
-                                   1j * cvx.sparse([[newCons.imag(), cvx.spmatrix([], [], [], (s2, 1))]]))
+                        newCons = (cvx.sparse([[newCons.real(), spmatrix([], [], [], (s2, 1))]]) +
+                                   1j * cvx.sparse([[newCons.imag(), spmatrix([], [], [], (s2, 1))]]))
                     else:
                         newCons = cvx.sparse(
-                            [[newCons, cvx.spmatrix([], [], [], (s2, 1))]])
+                            [[newCons, spmatrix([], [], [], (s2, 1))]])
                 self.constant = newCons
             self._size = (exp.size[0], exp.size[1] + self.size[1])
             sstring = self.string
@@ -1723,12 +1723,12 @@ class AffinExp(Expression):
                         if self.factors[k].typecode == 'z':
                             faci = self.factors[k].imag()
                         else:
-                            faci = cvx.spmatrix([], [], [], facr.size)
+                            faci = spmatrix([], [], [], facr.size)
                         expr = exp.factors[k].real()
                         if exp.factors[k].typecode == 'z':
                             expi = exp.factors[k].imag()
                         else:
-                            expi = cvx.spmatrix([], [], [], expr.size)
+                            expi = spmatrix([], [], [], expr.size)
                         newfac = (cvx.sparse([facr, expr]) +
                                   1j * cvx.sparse([faci, expi]))
                     else:
@@ -1739,22 +1739,22 @@ class AffinExp(Expression):
                     s2 = exp.factors[k].size[1]
                     if exp.factors[
                             k].typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newfac = (cvx.sparse([cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k].real(
-                        )]) + 1j * cvx.sparse([cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k].imag()]))
+                        newfac = (cvx.sparse([spmatrix([], [], [], (s1, s2)), exp.factors[k].real(
+                        )]) + 1j * cvx.sparse([spmatrix([], [], [], (s1, s2)), exp.factors[k].imag()]))
                     else:
                         newfac = cvx.sparse(
-                            [cvx.spmatrix([], [], [], (s1, s2)), exp.factors[k]])
+                            [spmatrix([], [], [], (s1, s2)), exp.factors[k]])
                     self.factors[k] = newfac
                 else:
                     s1 = exp.size[0] * exp.size[1]
                     s2 = self.factors[k].size[1]
                     if self.factors[
                             k].typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newfac = (cvx.sparse([self.factors[k].real(), cvx.spmatrix([], [], [], (s1, s2))]) +
-                                  1j * cvx.sparse([self.factors[k].imag(), cvx.spmatrix([], [], [], (s1, s2))]))
+                        newfac = (cvx.sparse([self.factors[k].real(), spmatrix([], [], [], (s1, s2))]) +
+                                  1j * cvx.sparse([self.factors[k].imag(), spmatrix([], [], [], (s1, s2))]))
                     else:
                         newfac = cvx.sparse(
-                            [self.factors[k], cvx.spmatrix([], [], [], (s1, s2))])
+                            [self.factors[k], spmatrix([], [], [], (s1, s2))])
                     self.factors[k] = newfac
 
             if self.constant is None and exp.constant is None:
@@ -1765,7 +1765,7 @@ class AffinExp(Expression):
                 if not self.constant is None:
                     newCons = self.constant
                 else:
-                    newCons = cvx.spmatrix([], [], [], (s1, 1))
+                    newCons = spmatrix([], [], [], (s1, 1))
                 if not exp.constant is None:
                     # it seems there is a bug with sparse with complex inputs
                     if newCons.typecode == 'z' or exp.constant.typecode == 'z':
@@ -1773,23 +1773,23 @@ class AffinExp(Expression):
                         if exp.constant.typecode == 'z':
                             expi = exp.constant.imag()
                         else:
-                            expi = cvx.spmatrix([], [], [], expr.size)
+                            expi = spmatrix([], [], [], expr.size)
                         csr = newCons.real()
                         if newCons.typecode == 'z':
                             csi = newCons.imag()
                         else:
-                            csi = cvx.spmatrix([], [], [], csr.size)
+                            csi = spmatrix([], [], [], csr.size)
                         newCons = (cvx.sparse([csr, expr]) +
                                    1j * cvx.sparse([csi, expi]))
                     else:
                         newCons = cvx.sparse([newCons, exp.constant])
                 else:
                     if newCons.typecode == 'z':  # it seems there is a bug with sparse with complex inputs
-                        newCons = (cvx.sparse([newCons.real(), cvx.spmatrix([], [], [], (s2, 1))]) +
-                                   1j * cvx.sparse([newCons.imag(), cvx.spmatrix([], [], [], (s2, 1))]))
+                        newCons = (cvx.sparse([newCons.real(), spmatrix([], [], [], (s2, 1))]) +
+                                   1j * cvx.sparse([newCons.imag(), spmatrix([], [], [], (s2, 1))]))
                     else:
                         newCons = cvx.sparse(
-                            [newCons, cvx.spmatrix([], [], [], (s2, 1))])
+                            [newCons, spmatrix([], [], [], (s2, 1))])
                 self.constant = newCons
 
             self._size = (exp.size[0] + self.size[0], exp.size[1])
@@ -3582,7 +3582,7 @@ class Variable(AffinExp):
             ii.append(idx[0])
             jj.append(idx[1])
             vv.append(lo)
-        spLO = cvx.spmatrix(vv, ii, jj, self.size)
+        spLO = spmatrix(vv, ii, jj, self.size)
         if self.vtype in ('symmetric',):
             spLO = svec(spLO)
         for i, j, v in zip(spLO.I, spLO.J, spLO.V):
@@ -3673,7 +3673,7 @@ class Variable(AffinExp):
                 ii.append(idx[0])
                 jj.append(idx[1])
                 vv.append(up)
-        spUP = cvx.spmatrix(vv, ii, jj, self.size)
+        spUP = spmatrix(vv, ii, jj, self.size)
         if self.vtype in ('symmetric',):
             spUP = svec(spUP)
         for i, j, v in zip(spUP.I, spUP.J, spUP.V):
@@ -3873,7 +3873,7 @@ class Variable(AffinExp):
         II = range(nsz)
         JJ = rangeT
         VV = [1.] * nsz
-        newfacs = {self: cvx.spmatrix(VV, II, JJ, (nsz, sz))}
+        newfacs = {self: spmatrix(VV, II, JJ, (nsz, sz))}
         if not self.constant is None:
             newcons = self.constant[rangeT]
         else:

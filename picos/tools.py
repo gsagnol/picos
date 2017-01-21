@@ -88,7 +88,8 @@ __all__ = ['_retrieve_matrix',
            'kron',
            '_is_integer',
            '_is_realvalued',
-           '_is_numeric'
+           '_is_numeric',
+           'spmatrix'
            ]
 
 
@@ -217,7 +218,7 @@ def _break_cols(mat, sizes):
             J[block].append(j)
         else:
             J[block].append(j - cumsz[block - 1])
-    return [cvx.spmatrix(V[k], I[k], J[k], (mat.size[0], sz))
+    return [spmatrix(V[k], I[k], J[k], (mat.size[0], sz))
             for k, sz in enumerate(sizes)]
 
 
@@ -238,7 +239,7 @@ def _break_rows(mat, sizes):
             I[block].append(i)
         else:
             I[block].append(i - cumsz[block - 1])
-    return [cvx.spmatrix(V[k], I[k], J[k], (sz, mat.size[1]))
+    return [spmatrix(V[k], I[k], J[k], (sz, mat.size[1]))
             for k, sz in enumerate(sizes)]
 
 
@@ -531,7 +532,7 @@ def lambda_min(exp):
 
 
 def partial_transpose(exp, dims_1=None, subsystems = None, dims_2=None):
-    r"""Partial transpose of an Affine Expression, with respect to 
+    r"""Partial transpose of an Affine Expression, with respect to
     given subsystems. If ``X`` is a matrix
     :class:`AffinExp <picos.AffinExp>`
     that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
@@ -540,19 +541,19 @@ def partial_transpose(exp, dims_1=None, subsystems = None, dims_2=None):
     this function returns the matrix
     :math:`Y = B_0 \otimes \cdots \otimes B_{n-1}`,
     where :math:`B_i=A_i^T` if ``i in subsystems``, and  :math:`B_i=A_i` otherwise.
-    
+
     The optional parameters ``dims_1`` and ``dims_2`` are tuples specifying the dimension
     of each subsystem :math:`A_i`. The argument ``subsystems`` must be a ``tuple`` (or an ``int``) with the
     index of all subsystems to be transposed.
-    
+
     The default value ``dims_1=None`` automatically computes the size of the subblocks,
-    assuming that ``exp`` is a :math:`n^k \times n^k`-square matrix, 
+    assuming that ``exp`` is a :math:`n^k \times n^k`-square matrix,
     for the *smallest* appropriate value of :math:`k \in [2,6]`, that is ``dims_1=(n,)*k``.
-        
+
     If ``dims_2`` is not specified, it is assumed that the subsystems :math:`A_i` are square,
     i.e., ``dims_2=dims_1``. If ``subsystems`` is not specified, the default assumes that
     only the last system must be transposed, i.e., ``subsystems = (len(dims_1)-1,)``
-    
+
     **Example:**
 
     >>> import picos as pic
@@ -925,7 +926,7 @@ def _blocdiag(X, n):
     if n==1:
         return X
     else:
-        Z = cvx.spmatrix([],[],[],X.size)
+        Z = spmatrix([],[],[],X.size)
         mat = []
         for i in range(n):
             col = [Z]*(n-1)
@@ -995,7 +996,7 @@ def diag(exp, dim=1):
         for d in range(dim):
             for i in I:
                 newI.append(idx[i + n * m * d])
-        expcopy.factors[k] = cvx.spmatrix(
+        expcopy.factors[k] = spmatrix(
             V * dim, newI, J * dim, ((dim * n * m)**2, exp.factors[k].size[1]))
     expcopy.constant = cvx.matrix(0., ((dim * n * m)**2, 1))
     if not exp.constant is None:
@@ -1025,7 +1026,7 @@ def diag_vect(exp):
     idx = cvx.spdiag([1.] * n)[:].I
     expcopy = AffinExp(exp.factors.copy(), exp.constant, exp.size,
                        exp.string)
-    proj = cvx.spmatrix([1.] * n, range(n), idx,
+    proj = spmatrix([1.] * n, range(n), idx,
                         (n, exp.size[0] * exp.size[1]))
     for k in exp.factors.keys():
         expcopy.factors[k] = proj * expcopy.factors[k]
@@ -1093,7 +1094,7 @@ def _retrieve_matrix(mat, exSize=None):
     """
     retstr = None
     from .expression import Expression
-    
+
     if isinstance(mat, Expression) and mat.is_valued():
         if isinstance(
                 mat.value,
@@ -1154,10 +1155,10 @@ def _retrieve_matrix(mat, exSize=None):
                 retmat = cvx.matrix(0., (1, 1))
             elif _is_integer(exSize):
                 # exSize is an int -> 0 * identity matrix
-                retmat = cvx.spmatrix([], [], [], (exSize, exSize))
+                retmat = spmatrix([], [], [], (exSize, exSize))
             elif isinstance(exSize, tuple):
                 # exSize is a tuple -> zeros of desired size
-                retmat = cvx.spmatrix([], [], [], exSize)
+                retmat = spmatrix([], [], [], exSize)
             retstr = ''
         else:
             retstr = str(mat)
@@ -1258,7 +1259,7 @@ def _retrieve_matrix(mat, exSize=None):
                 i1, i2 = exSize
             else:
                 raise Exception('size unspecified')
-            retmat = cvx.spmatrix([], [], [], (i1, i2))
+            retmat = spmatrix([], [], [], (i1, i2))
             retmat[idx] = 1
         # identity
         elif (mat.startswith('I')):
@@ -1361,7 +1362,7 @@ def svec(mat, ignore_sym=False):
             else:
                 V.append(np.sqrt(2) * v)
 
-    return cvx.spmatrix(V, I, J, (s0 * (s0 + 1) // 2, 1))
+    return spmatrix(V, I, J, (s0 * (s0 + 1) // 2, 1))
 
 
 def svecm1(vec, triu=False):
@@ -1390,7 +1391,7 @@ def svecm1(vec, triu=False):
                 I.append(c)
                 J.append(r)
                 V.extend([v / np.sqrt(2)] * 2)
-    return cvx.spmatrix(V, I, J, (n, n))
+    return spmatrix(V, I, J, (n, n))
 
 
 def ltrim1(vec, uptri=True):
@@ -1438,7 +1439,7 @@ def ltrim1(vec, uptri=True):
                 J.append(i)
                 V.append(1)
             r += 1
-        H = cvx.spmatrix(V, I, J, (n**2, v))
+        H = spmatrix(V, I, J, (n**2, v))
         Hvec = H * vec
         newfacs = Hvec.factors
         newcons = Hvec.constant
@@ -1511,7 +1512,7 @@ def lowtri(exp):
                 I.append(newrow[i])
                 J.append(j)
                 V.append(v)
-        newfacs[var] = cvx.spmatrix(V, I, J, (nr, mat.size[1]))
+        newfacs[var] = spmatrix(V, I, J, (nr, mat.size[1]))
     if exp.constant is None:
         newcons = None
 
@@ -1561,7 +1562,7 @@ def _svecm1_identity(vtype, size):
                 V.append(1)
             else:
                 V.append(1 / np.sqrt(2))
-        idmat = cvx.spmatrix(V, I, J, (s0 * s0, s0 * (s0 + 1) // 2))
+        idmat = spmatrix(V, I, J, (s0 * s0, s0 * (s0 + 1) // 2))
     elif vtype == 'antisym':
         s0 = size[0]
         if size[1] != s0:
@@ -1579,10 +1580,10 @@ def _svecm1_identity(vtype, size):
                 J.append(k)
                 V.append(-1)
                 k += 1
-        idmat = cvx.spmatrix(V, I, J, (s0 * s0, s0 * (s0 - 1) // 2))
+        idmat = spmatrix(V, I, J, (s0 * s0, s0 * (s0 - 1) // 2))
     else:
         sp = size[0] * size[1]
-        idmat = cvx.spmatrix([1] * sp, range(sp), range(sp), (sp, sp))
+        idmat = spmatrix([1] * sp, range(sp), range(sp), (sp, sp))
 
     return idmat
 
@@ -1723,7 +1724,7 @@ def available_solvers():
     #        lst.remove('mosek7')
     try:
         sdpa_executable = "sdpa"
-        
+
         def which(program):
             import os
 
@@ -1742,15 +1743,15 @@ def available_solvers():
                         return exe_file
 
             return None
-        
+
         if which(sdpa_executable) is None:
             raise ImportError('sdpa not installed')
-        
+
         lst.append('sdpa')
-        
+
     except:
         pass
-    
+
     return lst
 
 
@@ -1848,17 +1849,17 @@ def _quad2norm(qd):
         ofs += v.size[0] * v.size[1]
 
     # construct quadratic matrix
-    Q = cvx.spmatrix([], [], [], (ofs, ofs))
+    Q = spmatrix([], [], [], (ofs, ofs))
     I, J, V = [], [], []
     for (xi, xj), Qij in six.iteritems(qd):
         oi = offsets[xi]
         oj = offsets[xj]
-        Qtmp = cvx.spmatrix(Qij.V, Qij.I + oi, Qij.J + oj, (ofs, ofs))
+        Qtmp = spmatrix(Qij.V, Qij.I + oi, Qij.J + oj, (ofs, ofs))
         Q += 0.5 * (Qtmp + Qtmp.T)
     # cholesky factorization V.T*V=Q
     # remove zero rows and cols
     nz = set(Q.I)
-    P = cvx.spmatrix(1., range(len(nz)), list(nz), (len(nz), ofs))
+    P = spmatrix(1., range(len(nz)), list(nz), (len(nz), ofs))
     Qp = P * Q * P.T
     try:
         import cvxopt.cholmod
@@ -1917,7 +1918,7 @@ def _copy_dictexp_to_new_vars(dct, cvars, complex=None):
                 else:
                     vr = value
                     if complex:
-                        D[cvars[var.name + '_IM_utri']] = cvx.spmatrix(
+                        D[cvars[var.name + '_IM_utri']] = spmatrix(
                             [], [], [],
                             (vr.size[0], cvars[var.name + '_IM_utri'].size[0]))
 
@@ -1935,7 +1936,7 @@ def _copy_dictexp_to_new_vars(dct, cvars, complex=None):
                         vi = value.imag()
                     else:
                         Him = copy.copy(value)
-                        vi = cvx.spmatrix([], [], [], Him.size)
+                        vi = spmatrix([], [], [], Him.size)
 
                     n = int(vi.size[1]**(0.5))
                     vv = []
@@ -1957,7 +1958,7 @@ def _copy_dictexp_to_new_vars(dct, cvars, complex=None):
                     vi = value.imag()
                 else:
                     vr = copy.copy(value)
-                    vi = cvx.spmatrix([], [], [], vr.size)
+                    vi = spmatrix([], [], [], vr.size)
                 if complex:
                     D[cvars[var.name]] = cvx.sparse([vr, vi])
                 else:
@@ -1981,7 +1982,7 @@ def _copy_exp_to_new_vars(exp, cvars, complex=None):
         newfacs = _copy_dictexp_to_new_vars(
             exp.factors, cvars, complex=complex)
         if exp.constant is None:
-            v = cvx.spmatrix([], [], [], (exp.size[0] * exp.size[1], 1))
+            v = spmatrix([], [], [], (exp.size[0] * exp.size[1], 1))
         else:
             v = exp.constant
         if complex is None:
@@ -1991,7 +1992,7 @@ def _copy_exp_to_new_vars(exp, cvars, complex=None):
             if v.typecode == 'z':
                 vi = v.imag()
             else:
-                vi = cvx.spmatrix([], [], [], v.size)
+                vi = spmatrix([], [], [], v.size)
             newcons = cvx.sparse([v.real(), vi])
             newsize = (exp.size[0], 2 * exp.size[1])
         else:
@@ -2046,7 +2047,7 @@ def _cplx_mat_to_real_mat(M):
         B = M.imag()
     else:
         A = M
-        B = cvx.spmatrix([], [], [], A.size)
+        B = spmatrix([], [], [], A.size)
     return cvx.sparse([[A, B], [-B, A]])
 
 
@@ -2132,6 +2133,50 @@ def _is_realvalued(x):
             isinstance(x, six.integer_types) or
             isinstance(x, np.float64) or
             isinstance(x, np.int64))
+
+def spmatrix(*args,**kwargs):
+    try:
+        return cvx.spmatrix(*args,**kwargs)
+    except TypeError as ex:
+        print(type(ex))
+        print(str(ex))
+        print('non-numeric' in str(ex))
+        if 'non-numeric' in str(ex):#catch exception with int64 bug of cvxopt
+            size_tc = {}
+
+            if len(args)>0:
+                V = args[0]
+            elif 'V' in kwargs:
+                V = kwargs['V']
+            else:
+                V = []
+            if len(args)>1:
+                I = args[1]
+            elif 'I' in kwargs:
+                I = kwargs['I']
+            else:
+                I = []
+            if len(args)>2:
+                J = args[2]
+            elif 'J' in kwargs:
+                J = kwargs['J']
+            else:
+                J = []
+            if len(args) > 3:
+                size_tc['size'] = args[3]
+            elif 'size' in kwargs:
+                size_tc['size'] = kwargs['size']
+            if len(args) > 4:
+                size_tc['tc'] = args[4]
+            elif 'tc' in kwargs:
+                size_tc['tc'] = kwargs['tc']
+            return cvx.spmatrix(V, [int(i) for i in I], [int(j) for j in J],**size_tc)
+        else:
+            raise
+    except Exception as ex:
+        print(type(ex))
+        import pdb;pdb.set_trace()
+
 
 def kron(A,B):
     """
