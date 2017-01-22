@@ -1042,8 +1042,7 @@ class AffinExp(Expression):
             else:  # normal matrix multiplication, we expect a size
                 fac, facString = _retrieve_matrix(fact, self.size[1])
 
-        is_scalar_mult = (isinstance(fact, float) or isinstance(fact, int) or isinstance(fact, np.float64) or
-          isinstance(fact, np.int64) or isinstance(fact, np.complex128) or isinstance(fact, complex) or
+        is_scalar_mult = (_is_numeric(fact) or
           (hasattr(fact,'size') and fact.size==(1,1)) or (hasattr(fact,'shape') and fact.shape in ((1,),(1,1))) )
 
         if is_scalar_mult:
@@ -1558,15 +1557,20 @@ class AffinExp(Expression):
             raise Exception('not implemented')
         selfcopy = self.copy()
         idx = cvx.spdiag([1.] * dim)[:].I
+        
         for k in self.factors:
+            tc = 'z' if self.factors[k].typecode=='z' else 'd'
             selfcopy.factors[k] = spmatrix(
-                [], [], [], (dim**2, self.factors[k].size[1]))
+                [], [], [], (dim**2, self.factors[k].size[1]),tc=tc)
             for i in idx:
                 selfcopy.factors[k][i, :] = self.factors[k]
-        selfcopy.constant = cvx.matrix(0., (dim**2, 1))
         if not self.constant is None:
+            tc = 'z' if self.constant.typecode=='z' else 'd'
+            selfcopy.constant = cvx.matrix(0., (dim**2, 1),tc=tc)
             for i in idx:
                 selfcopy.constant[i] = self.constant[0]
+        else:
+            selfcopy.constant = None
         selfcopy._size = (dim, dim)
         selfcopy.string = 'diag(' + selfcopy.string + ')'
         return selfcopy
