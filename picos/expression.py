@@ -44,6 +44,7 @@ __all__ = ['Expression',
            'QuadExp',
            'GeneralFun',
            'LogSumExp',
+           'SumExponential',
            '_ConvexExp',
            'GeoMeanExp',
            'NormP_Exp',
@@ -53,7 +54,8 @@ __all__ = ['Expression',
            'Variable',
            'Set',
            'Ball',
-           'Truncated_Simplex'
+           'Truncated_Simplex',
+           'Exponential_Cone'
            ]
 
 global INFINITY
@@ -1946,13 +1948,13 @@ class LogSumExp(Expression):
        If the affine expression ``z`` is of size :math:`N`,
        with elements :math:`z_1, z_2, \ldots, z_N`,
        then LogSumExp(z) represents the expression
-       :math:`\log ( \sum_{i=1}^n e^{z_i} )`.
+       :math:`\log ( \sum_{i=1}^N e^{z_i} )`.
        This class derives from :class:`Expression<picos.Expression>`.
 
 
     **Overloaded operator**
 
-            :``<``: less **or equal** than (the rhs **must be 0**, for geometrical programming)
+            :``<``: less **or equal** than (the rhs must be an affine expression, for geometrical programming)
 
     """
 
@@ -1992,12 +1994,106 @@ class LogSumExp(Expression):
         Expression.del_simple_var_value,
         "value of the logsumexp expression")
 
-    def __lt__(self, exp):
-        if exp != 0 and not(isinstance(exp, AffinExp) and exp.is0()):
-            raise Exception('rhs must be 0')
-        else:
-            return Constraint('lse', None, self.Exp, 0)
+    def __lt__(self, rhs):
+        if not isinstance(rhs,AffinExp):
+            rhs,name = _retrieve_matrix(rhs,(1,1))
+            rhs = AffinExp({}, constant=cvx.matrix(rhs), size=(1,1), string=name)
+            
+        assert rhs.size == (1,1), "rhs must be a scalar"
+        cs = Constraint('lse', None, self.Exp-rhs,0)
+        if not rhs.is0():
+            cs.myconstring = 'LSE[ ' + self.Exp.affstring() + ' ] < ' + rhs.affstring()
+        return cs
+        
 
+class SumExponential(Expression):
+    """Sum-Exp applied to an affine expression.
+       If the affine expression ``z`` is of size :math:`N`,
+       with elements :math:`z_1, z_2, \ldots, z_N`,
+       then SumExponential(z) represents the expression
+       :math:` \sum_{i=1}^N e^{z_i} `.
+       This class derives from :class:`Expression<picos.Expression>`.
+   
+   **Overloaded operator**
+
+            :``+``: addition (with another `SumExponential`)
+            
+            :``*``: multiplication (with a scalar)
+
+            :``<``: less **or equal** than (the rhs must be a SumExponential expression with a single term, for geometrical programming, or an AffinExp, for Exponential-Cone Programming)
+
+    """
+
+    def __init__(self, exp):
+
+        if not(isinstance(exp, AffinExp)):
+            term, termString = _retrieve_matrix(exp, None)
+            exp = AffinExp(factors={}, constant=term,
+                           size=term.size, string=termString)
+
+        if exp.size == (1,1):
+            Expression.__init__(self, 'Exponential[' + exp.string + ']')
+        else:
+            Expression.__init__(self, 'SumExponential[' + exp.string + ']')
+        self.Exp = exp
+
+    def __str__(self):
+        if self.is_valued():
+            return str(self.value[0])
+        else:
+            return repr(self)
+
+    def __repr__(self):
+        if self.Exp.size==(1,1):
+            lsestr = '# exponential of an affine expression: '
+        else:
+            lsestr = '# sum-exponential of an affine expression: '
+        lsestr += self.Exp.affstring()
+        lsestr += ' #'
+        return lsestr
+
+    def affstring(self):
+        if self.Exp.size==(1,1):
+            return 'Exponential[' + self.Exp.affstring() + ']'
+        else:
+            return 'SumExponential[' + self.Exp.affstring() + ']'
+
+    def eval(self, ind=None):
+        return cvx.matrix(np.sum(np.exp(self.Exp.eval(ind))),
+                          (1, 1)
+                          )
+
+    value = property(
+        eval,
+        Expression.set_value,
+        Expression.del_simple_var_value,
+        "value of the sumexp expression")
+
+    def __add__(self,term):
+        pass #TODO
+    
+    def __mul__(self,fact):
+        pass #TODO
+
+    def __lt__(self, rhs):
+        if isinstance(rhs,SumExponential):
+            assert rhs.Exp.size==(1,1), "rhs must be an affine expression or exponential of affine expression"
+            return lse(self.Exp) <= rhs.Exp
+            
+        if not isinstance(rhs,AffinExp):
+            rhs,name = _retrieve_matrix(rhs,(1,1))
+            rhs = AffinExp({}, constant=cvx.matrix(rhs), size=(1,1), string=name)
+            
+        assert rhs.size == (1,1), "rhs must be a scalar"
+        if rhs.isconstant():
+            assert rhs.value[0]>0,"nonpositive rhs of sum of exponentials"
+            return lse(self.Exp) <= np.log(rhs.value[0])
+            
+        else:
+            raise NotImplementedError('yet...')
+            #TODO here, we must introduce extra variables, and create some exp-cone constraints!
+            
+        
 
 class QuadExp(Expression):
     """
@@ -4030,3 +4126,29 @@ class Truncated_Simplex(Set):
                 size=term.size,
                 string=termString)
             return self >> exp2
+
+class Exponential_Cone(Set):
+    """
+    represents the set :math:`\operatorname{closure}\ \{(x,y,z): y>0, y\exp(x/y)\leq z \}`.
+    This object should be created by the function :func:`picos.expcone() <picos.tools.expcone>` .
+
+    ** Overloaded operators **
+
+      :``>>``: membership of the right hand side in this set.
+
+    """
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+        return '# Exponential Cone cl{(x,y,z): y>0, y exp(y/x)<=z} #'
+
+    def __repr__(self):
+        return str(self)
+    
+    def __rshift__(self, exp):
+
+        assert isinstance(exp, AffinExp), "the member of an exponential cone must be an AffinExp"
+        n = exp.size[0] * exp.size[1]    
+        assert n==3, "the member of an exponential cone must be an AffinExp of dimension 3"
+        return Constraint('expcone',None,exp,0)

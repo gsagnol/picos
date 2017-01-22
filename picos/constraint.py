@@ -130,6 +130,17 @@ class Constraint(object):
                 factors={}, constant=cvx.matrix(
                     0, (1, 1)), string='0', size=(
                     1, 1))
+        
+        if typeOfConstraint == 'expcone':
+            assert Exp1.size[0] * Exp1.size[1] == 3, "Exp1 must be of dimesison 3"
+            self.Exp1 = Exp1[:]
+            if not (Exp2 == 0 or Exp2.is0()):
+                raise NameError('lhs must be 0')
+            self.Exp2 = AffinExp(
+                factors={}, constant=cvx.matrix(
+                    0, (1, 1)), string='0', size=(
+                    1, 1))
+                    
         if typeOfConstraint == 'quad':
             if not (Exp2 == 0 or Exp2.is0()):
                 raise NameError('lhs must be 0')
@@ -137,6 +148,7 @@ class Constraint(object):
                 factors={}, constant=cvx.matrix(
                     0, (1, 1)), string='0', size=(
                     1, 1))
+        
         if typeOfConstraint[:3] == 'sdp':
             if Exp1.size != Exp2.size:
                 raise NameError('incoherent lhs and rhs')
@@ -203,6 +215,9 @@ class Constraint(object):
         if self.typeOfConstraint == 'lse':
             constr = '# ({0}x{1})-Geometric Programming constraint '.format(
                 self.Exp1.size[0], self.Exp1.size[1])
+        if self.typeOfConstraint == 'expcone':
+            constr = '# ({0}x{1})-Exponential Cone constraint '.format(
+                self.Exp1.size[0], self.Exp1.size[1])
         if self.typeOfConstraint == 'quad':
             constr = '#Quadratic constraint '
         if self.typeOfConstraint[:3] == 'sdp':
@@ -225,6 +240,9 @@ class Constraint(object):
                 self.Exp1.size[0], self.Exp1.size[1])
         if self.typeOfConstraint == 'lse':
             constr = '# ({0}x{1})-Geometric Programming constraint '.format(
+                self.Exp1.size[0], self.Exp1.size[1])
+        if self.typeOfConstraint == 'expcone':
+            constr = '# ({0}x{1})-Exponential Cone constraint '.format(
                 self.Exp1.size[0], self.Exp1.size[1])
         if self.typeOfConstraint == 'quad':
             constr = '#Quadratic constraint '
@@ -289,6 +307,8 @@ class Constraint(object):
                     self.Exp2.affstring() + ')( ' + self.Exp3.affstring() + ')'
         if self.typeOfConstraint == 'lse':
             return 'LSE[ ' + self.Exp1.affstring() + ' ] < 0'
+        if self.typeOfConstraint == 'expcone':
+            return '[ ' + self.Exp1.affstring() + ' ] in Exponential-cone'
         if self.typeOfConstraint == 'quad':
             return self.Exp1.string + ' < 0'
         if self.typeOfConstraint[:3] == 'sdp':
@@ -350,6 +370,20 @@ class Constraint(object):
         if self.typeOfConstraint == 'lse':
             from .tools import lse
             return -lse(self.Exp1).eval()
+        elif self.typeOfConstraint == 'expcone':
+            x,y,z = self.Exp1.value
+            if y < -1e-6:
+                return y
+            elif y>1e-6 and x/y<1e2:
+                return z-y*exp(x/y)
+            elif y<=1e-6:
+                if z<-1e-6:
+                    return z
+                else:
+                    return -x
+            else:
+                return z-y*exp(1e2)
+                    
         elif self.typeOfConstraint[3] == '<':
             return self.Exp2.eval() - self.Exp1.eval()
         elif self.typeOfConstraint[3] == '>':

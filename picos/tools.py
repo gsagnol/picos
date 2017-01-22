@@ -82,6 +82,7 @@ __all__ = ['_retrieve_matrix',
            'lambda_min',
            'simplex',
            'truncated_simplex',
+           'expcone',
            '_cplx_mat_to_real_mat',
            '_cplx_vecmat_to_real_vecmat',
            '_is_idty',
@@ -89,7 +90,10 @@ __all__ = ['_retrieve_matrix',
            '_is_integer',
            '_is_realvalued',
            '_is_numeric',
-           'spmatrix'
+           'spmatrix',
+           'lse',
+           'exp',
+           'sumexp'
            ]
 
 
@@ -683,7 +687,7 @@ def simplex(gamma=1):
 
 
 def truncated_simplex(gamma=1, sym=False):
-    """returns a :class:`Truncated_Simplex <picos.expression.Truncated_Simplex>` object representing object representing the set:
+    """returns a :class:`Truncated_Simplex <picos.expression.Truncated_Simplex>` object representing the set:
 
       * :math:`\{x \geq  0: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=False`` (default)
       * :math:`\{x: ||x||_\infty \leq 1,\ ||x||_1 \leq \gamma \}` if ``sym=True``.
@@ -702,6 +706,14 @@ def truncated_simplex(gamma=1, sym=False):
     from .expression import Truncated_Simplex
     return Truncated_Simplex(radius=gamma, truncated=True, nonneg=not(sym))
 
+def expcone():
+    """returns a :class:`Exponential_Cone <picos.expression.Exponential_Cone>` object representing the set :math:`\operatorname{closure}\ \{(x,y,z): y>0, y\exp(x/y)\leq z \}` 
+    
+    **Example**
+    TODO
+    """
+    from .expression import Exponential_Cone
+    return Exponential_Cone()
 
 def allIdent(lst):
     if len(lst) <= 1:
@@ -952,6 +964,35 @@ def lse(exp):
     from .expression import LogSumExp
     return LogSumExp(exp)
 
+def exp(exp):
+    """
+    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`, when applied to a scalar AffinExp
+    
+    **Example**
+    
+    #TODO
+    """
+    if _is_numeric(exp):
+        pass
+    elif hasattr(exp,'size'):
+        assert exp.size == (1,1)
+    elif hasattr(exp,'shape'):
+        assert np.product(exp.shape) == 1
+    else:
+        raise ValueError('argument should be a scalar AffinExp (or something that can be cast to a scalar AffinExp)')
+    from .expression import SumExponential
+    return SumExponential(exp)
+
+def sumexp(exp):
+    """
+    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`
+    
+    **Example**
+    
+    #TODO
+    """
+    from .expression import SumExponential
+    return SumExponential(exp)
 
 def diag(exp, dim=1):
     r"""
