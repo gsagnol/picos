@@ -44,7 +44,8 @@ __all__ = [
     'DetRootN_Constraint',
     'Sym_Trunc_Simplex_Constraint',
     'NormPQ_Constraint',
-    'Sumklargest_Constraint']
+    'Sumklargest_Constraint',
+    'SumExpConstraint']
 
 
 class Constraint(object):
@@ -442,7 +443,8 @@ class _Convex_Constraint(Constraint):
                           '_ndt',
                           '_nts',
                           '_npq',
-                          '_nsk')
+                          '_nsk',
+                          '_sue')
         for cons in self.Ptmp.constraints:
             for v in cons.Exp1.factors:
                 if v.name[:4] not in dummy_prefixes:
@@ -662,5 +664,24 @@ class Sumklargest_Constraint(_Convex_Constraint):
                         self.exp,
                         self.k).value -
                     self.rhs.value)
+
+    slack = property(slack_var, Constraint.set_slack, Constraint.del_slack)
+
+
+class SumExpConstraint(_Convex_Constraint):
+    """ A temporary object used to pass constraints involving a sum of exponentials".
+    This class derives from :class:`Constraint <picos.Constraint>`
+    """
+
+    def __init__(self, rhs, exp, Ptmp, constring):
+        self.rhs = rhs
+        self.exp = exp
+        _Convex_Constraint.__init__(self, Ptmp, constring, 'sum_exp constraint')
+        self.prefix = '_sue'
+        """prefix to be added to the names of the temporary variables when add_constraint() is called"""
+
+    def slack_var(self):
+        return cvx.matrix( self.rhs.value - sum_exp(self.exp).value
+                         )
 
     slack = property(slack_var, Constraint.set_slack, Constraint.del_slack)

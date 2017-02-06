@@ -193,7 +193,8 @@ class Problem(object):
                     '_ndt',
                     '_nts',
                     '_npq',
-                    '_nsk'):
+                    '_nsk',
+                    '_sue'):
                 continue
             if '[' in vkey and ']' in vkey:
                 lisname = vkey[:vkey.index('[')]

@@ -93,7 +93,8 @@ __all__ = ['_retrieve_matrix',
            'spmatrix',
            'lse',
            'exp',
-           'sumexp'
+           'sumexp',
+           'kullback_leibler'
            ]
 
 
@@ -964,9 +965,10 @@ def lse(exp):
     from .expression import LogSumExp
     return LogSumExp(exp)
 
-def exp(exp):
+def exp(exp,exp2=None):
     """
-    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`, when applied to a scalar AffinExp
+    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`, when applied to a scalar AffinExp. If the second optional argument is passed, 
+    a *perspective exponential* expression is formed, :math:`y \exp(x/y)`
     
     **Example**
     
@@ -980,19 +982,48 @@ def exp(exp):
         assert np.product(exp.shape) == 1
     else:
         raise ValueError('argument should be a scalar AffinExp (or something that can be cast to a scalar AffinExp)')
+    
+    if exp2 is None:
+        pass
+    elif _is_numeric(exp2):
+        pass
+    elif hasattr(exp2,'size'):
+        assert exp2.size == (1,1)
+    elif hasattr(exp2,'shape'):
+        assert np.product(exp2.shape) == 1
+    else:
+        raise ValueError('2d argument should be a scalar AffinExp (or something that can be cast to a scalar AffinExp)')
+    
     from .expression import SumExponential
-    return SumExponential(exp)
+    return SumExponential(exp,exp2)
 
-def sumexp(exp):
+def sumexp(exp,exp2=None):
     """
-    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`
+    shorter name for the constructor of the class :class:`SumExponential <picos.SumExponential>`.
+    If the second optional argument is passed, 
+    a sum *perspective exponential* expressions is formed, :math:`\sum_i y_i \exp(x_i/y_i)`.
     
     **Example**
     
     #TODO
     """
     from .expression import SumExponential
-    return SumExponential(exp)
+    return SumExponential(exp,exp2)
+
+
+def kullback_leibler(exp,exp2=None):
+    """
+    shorter name for the constructor of the class :class:`KullbackLeibler <picos.KullbackLeibler>`.
+    ``kullback_leibler(x,y)`` represents an expression of the form
+    :math:`\sum_i x_i \log(x_i/y_i)`, where ``x`` and ``y`` are affine expressions of the same dimension.
+    The default ``y=None`` sets :math:`y_i=1\ \(\forall i)`.
+    
+    **Example**
+    
+    #TODO
+    """
+    from .expression import KullbackLeibler
+    return KullbackLeibler(exp,exp2)
 
 def diag(exp, dim=1):
     r"""

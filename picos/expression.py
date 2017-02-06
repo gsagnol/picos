@@ -1412,7 +1412,9 @@ class AffinExp(Expression):
         else:
             newcons = None
 
-        if ('*' in self.affstring()) or ('+' in self.affstring()) or (
+        if indstr ==':' and self.size[1]==1:
+            newstr = self.string
+        elif ('*' in self.affstring()) or ('+' in self.affstring()) or (
                 '-' in self.affstring()) or ('/' in self.affstring()):
             newstr = '( ' + self.string + ' )[' + indstr + ']'
         else:
@@ -1976,7 +1978,7 @@ class LogSumExp(Expression):
 
     def __repr__(self):
         lsestr = '# log-sum-exp of an affine expression: '
-        lsestr += self.Exp.affstring()
+        lsestr += self.affstring()
         lsestr += ' #'
         return lsestr
 
@@ -2012,6 +2014,10 @@ class SumExponential(Expression):
        with elements :math:`z_1, z_2, \ldots, z_N`,
        then SumExponential(z) represents the expression
        :math:` \sum_{i=1}^N e^{z_i} `.
+       This class admits a second argugment (affine expression ``y`` of same dimension as ``z``),
+       so that `SumExponential(z,y)` represents :math:`\sum_{i=1}^N y_i e^{z_i/y_i} `,
+       where `y_i` will be constrained to be nonnegative.
+       
        This class derives from :class:`Expression<picos.Expression>`.
    
    **Overloaded operator**
@@ -2024,18 +2030,33 @@ class SumExponential(Expression):
 
     """
 
-    def __init__(self, exp):
+    def __init__(self, exp, exp2=None):
 
         if not(isinstance(exp, AffinExp)):
             term, termString = _retrieve_matrix(exp, None)
             exp = AffinExp(factors={}, constant=term,
                            size=term.size, string=termString)
-
+        if exp2 is None:
+            exp2 = 1.
+        if not(isinstance(exp2, AffinExp)):
+            term, termString = _retrieve_matrix(exp2, exp.size)
+            exp2 = AffinExp(factors={}, constant=term,
+                           size=term.size, string=termString)
+        
+        assert exp.size == exp2.size, 'both expressions must have the same size'
+            
         if exp.size == (1,1):
-            Expression.__init__(self, 'Exponential[' + exp.string + ']')
+            if exp2.is1():
+                Expression.__init__(self, 'Exponential[' + exp.string + ']')
+            else:
+                Expression.__init__(self, 'p-Exponential[' + exp.string +';'+ exp2.string + ']')
         else:
-            Expression.__init__(self, 'SumExponential[' + exp.string + ']')
+            if (exp2-1).is0():
+                Expression.__init__(self, 'SumExponential[' + exp.string + ']')
+            else:
+                Expression.__init__(self, 'Sum-p-Exponential[' + exp.string +';'+ exp2.string +']')
         self.Exp = exp
+        self.Exp2 = exp2
 
     def __str__(self):
         if self.is_valued():
@@ -2045,24 +2066,36 @@ class SumExponential(Expression):
 
     def __repr__(self):
         if self.Exp.size==(1,1):
-            lsestr = '# exponential of an affine expression: '
+            if self.Exp2.is1():
+                lsestr = '# exponential of an affine expression: '
+            else:
+                lsestr = '# p-exponential of 2 aff. expressions: '
         else:
-            lsestr = '# sum-exponential of an affine expression: '
-        lsestr += self.Exp.affstring()
+            if (self.Exp2-1).is0():
+                lsestr = '# sum-exponential of an affine expression: '
+            else:
+                lsestr = '# sum-p-exponential of 2 aff. expressions: '
+        lsestr += self.affstring()
         lsestr += ' #'
         return lsestr
 
     def affstring(self):
+        exps = self.Exp.affstring()
+        name = 'Exponential'
+        if not (self.Exp2-1).is0():
+            exps += ' ; '+self.Exp2.affstring()
+            name = 'p-'+name
+        
         if self.Exp.size==(1,1):
-            return 'Exponential[' + self.Exp.affstring() + ']'
+            return name+'[' + exps + ']'
         else:
-            return 'SumExponential[' + self.Exp.affstring() + ']'
+            return 'Sum'+name+'[' + exps + ']'
 
     def eval(self, ind=None):
-        return cvx.matrix(np.sum(np.exp(self.Exp.eval(ind))),
-                          (1, 1)
-                          )
-
+        xn = np.array(self.Exp.eval(ind)).ravel()
+        yn = np.array(self.Exp2.eval(ind)).ravel()
+        return cvx.matrix(yn.dot(np.exp(xn/yn)),(1,1))
+        
     value = property(
         eval,
         Expression.set_value,
@@ -2070,11 +2103,310 @@ class SumExponential(Expression):
         "value of the sumexp expression")
 
     def __add__(self,term):
-        pass #TODO
+        
+        if isinstance(term,AffinExp):
+            if term.isconstant() and term.size==(1,1):
+                tv = term.value[0]
+                assert tv >= 0, 'sum with negative constant'
+                if tv>0:
+                    return SumExponential( (self.Exp[:] // np.log(tv)),  (self.Exp2[:] // 1.) )
+                else:
+                    return SumExponential( 1*self.Exp,  1*self.Exp2 )
+                
+            else:
+                raise NotImplementedError('cannot add an expontial expression with an affine expression')
+        elif isinstance(term,SumExponential):
+            return SumExponential( (self.Exp[:] // term.Exp[:]),  (self.Exp2[:] // term.Exp2[:]) )
+        else:
+            try:
+                cons, cons_str = _retrieve_matrix(term)
+                exp2 = AffinExp(factors={}, constant=cons,
+                           size=cons.size, string=cons_str)
+                return (self + exp2)
+            except:
+                raise NotImplementedError('can only add exponential expression with another exponential expression')
+        
+    def __radd__(self,term):
+        return self+term
     
     def __mul__(self,fact):
-        pass #TODO
+        if isinstance(fact,AffinExp):
+            if fact.isconstant() and fact.size==(1,1):
+                tv = fact.value[0]
+                assert tv >= 0, 'mult with negative constant'
+                if tv>0:
+                    return SumExponential( (self.Exp + np.log(tv)),  self.Exp2 )
+                
+            else:
+                raise NotImplementedError('cannot multiply an expontial expression with a non-scalar affine expression')
+        elif isinstance(fact,SumExponential):
+            if ((self.Exp2-1).is0() and (fact.Exp2-1).is0()):
+                s0 = self.Exp.size[0]*self.Exp.size[1]
+                sf = fact.Exp.size[0]*fact.Exp.size[1]
+                if s0<sf:
+                    if s0 == 1:
+                        return SumExponential(self.Exp + fact.Exp)
+                    else:
+                        ret = 0.
+                        for i in range(s0):
+                            ret += SumExponential( self.Exp[i] + fact.Exp)
+                        return ret
+                else:
+                    if sf == 1:
+                        return SumExponential(self.Exp + fact.Exp)
+                    else:
+                        ret = 0.
+                        for i in range(sf):
+                            ret += SumExponential( self.Exp + fact.Exp[i])
+                        return ret
+            else:
+                raise NotImplementedError('cannot multiply a perspective-exponent with an exponential')
 
+        else:
+            try:
+                cons, cons_str = _retrieve_matrix(fact)
+                exp2 = AffinExp(factors={}, constant=cons,
+                           size=cons.size, string=cons_str)
+                return (self * exp2)
+            except:
+                raise NotImplementedError('can only multiply exponential expression with (constant) scalar')
+        
+    def __rmul__(self,fact):
+        return self * fact
+    
+    def __pow__(self,exponent):
+        assert _is_numeric(exponent)
+        if exponent == 0:
+            return AffinExp(factors = {},constant = 1., size=(1,1),string='1')
+        else:
+            return SumExponential(exponent*self.Exp,1*self.Exp2)
+
+    def __div__(self,fact):
+        if isinstance(fact,AffinExp):
+            assert fact.isconstant() and fact.size==(1,1), "division with non-constant or non-scalar affine expression"
+            tv = fact.value[0]
+            assert tv > 0, 'div with negative constant'
+        elif _is_numeric(fact):
+            assert fact>0, 'div with negative constant'
+        
+        return self * fact**(-1)
+    
+    def __rdiv__(self,fact):
+        return fact * self**(-1)
+            
+    def __lt__(self, rhs):
+        if isinstance(rhs,SumExponential):
+            assert rhs.Exp.size==(1,1), "rhs must be an affine expression or exponential of affine expression"
+            return lse(self.Exp) <= rhs.Exp
+            
+        if not isinstance(rhs,AffinExp):
+            rhs,name = _retrieve_matrix(rhs,(1,1))
+            rhs = AffinExp({}, constant=cvx.matrix(rhs), size=(1,1), string=name)
+            
+        assert rhs.size == (1,1), "rhs must be a scalar"
+        if rhs.isconstant():
+            assert rhs.value[0]>0,"nonpositive rhs of sum of exponentials"
+            return lse(self.Exp) <= np.log(rhs.value[0])
+            
+        #TODO 2d argument is ignored??? and implicit constraint y>0?
+        else:
+            from .problem import Problem
+            Ptmp = Problem()
+            m = self.Exp.size[0] * self.Exp.size[1]
+            v = Ptmp.add_variable('v',m)
+            
+            for i in range(m):
+                Ptmp.add_constraint( (self.Exp[i] // 1. // v[i]) << expcone())
+            Ptmp.add_constraint( (1 | v) <= rhs)
+            
+            constring = self.string + ' <= ' + rhs.string
+            cons = SumExpConstraint(self.Exp, rhs, Ptmp, constring)
+            return cons
+
+
+class KullbackLeibler(Expression):
+    """Kullback-Leibler divergence of two affine expressions.
+       If the affine expression ``z`` is of size :math:`N`,
+       with elements :math:`z_1, z_2, \ldots, z_N`,
+       then KullbackLeibler(z) represents the (negative) entropy
+       :math:` \sum_{i=1}^N z_i \log(z_i) `.
+       This class admits a second argugment (affine expression ``y`` of same dimension as ``z``),
+       so that `KullbackLeibler(z,y)` represents :math:`\sum_{i=1}^N z_i \log{z_i/y_i} `,
+       where `y_i` and `z_i` will be constrained to be nonnegative.
+       
+       This class derives from :class:`Expression<picos.Expression>`.
+   
+   **Overloaded operator**
+
+            :``+``: addition (with another `KullbackLeibler`)
+            
+            :``*``: multiplication (with a scalar)
+
+            :``<``: less **or equal** than (the rhs must be an AffinExp, for Exponential-Cone Programming)
+
+    """
+
+    def __init__(self, exp, exp2=None):
+
+        if not(isinstance(exp, AffinExp)):
+            term, termString = _retrieve_matrix(exp, None)
+            exp = AffinExp(factors={}, constant=term,
+                           size=term.size, string=termString)
+        if exp2 is None:
+            exp2 = 1.
+        if not(isinstance(exp2, AffinExp)):
+            term, termString = _retrieve_matrix(exp2, exp.size)
+            exp2 = AffinExp(factors={}, constant=term,
+                           size=term.size, string=termString)
+        
+        assert exp.size == exp2.size, 'both expressions must have the same size'
+            
+        if exp.size == (1,1):
+            if exp2.is1():
+                Expression.__init__(self, 'Entropy[' + exp.string + ']')
+            else:
+                Expression.__init__(self, 'p-log[' + exp.string +';'+ exp2.string + ']')
+        else:
+            if (exp2-1).is0():
+                Expression.__init__(self, 'Entropy[' + exp.string + ']')
+            else:
+                Expression.__init__(self, 'Kullback-Leibler[' + exp.string +';'+ exp2.string +']')
+        self.Exp = exp
+        self.Exp2 = exp2
+
+    def __str__(self):
+        if self.is_valued():
+            return str(self.value[0])
+        else:
+            return repr(self)
+
+    def __repr__(self):
+        if self.Exp.size==(1,1):
+            if self.Exp2.is1():
+                lsestr = '# entropy of an affine expression: '
+            else:
+                lsestr = '# p-log of 2 aff. expressions: '
+        else:
+            if (self.Exp2-1).is0():
+                lsestr = '# entropy of an affine expression: '
+            else:
+                lsestr = '# Kullback-Leibler of 2 aff. expressions: '
+        lsestr += self.affstring()
+        lsestr += ' #'
+        return lsestr
+
+    def affstring(self):
+        exps = self.Exp.affstring()
+        name = 'KullbackLeibler'
+        if not (self.Exp2-1).is0():
+            exps += ' ; '+self.Exp2.affstring()
+            name = 'Entropy'
+        
+        return name+'[' + exps + ']'
+
+    def eval(self, ind=None):
+        xn = np.array(self.Exp.eval(ind)).ravel()
+        yn = np.array(self.Exp2.eval(ind)).ravel()
+        return cvx.matrix(xn.dot(np.log(xn/yn)),(1,1))
+        
+    value = property(
+        eval,
+        Expression.set_value,
+        Expression.del_simple_var_value,
+        "value of the kullback-leibler expression")
+
+    def __add__(self,term):
+        
+        if isinstance(term,AffinExp):
+            if term.isconstant() and term.size==(1,1):
+                tv = term.value[0]
+                assert tv >= 0, 'sum with negative constant'
+                if tv>0:#TODO -- from here
+                    return SumExponential( (self.Exp[:] // np.log(tv)),  (self.Exp2[:] // 1.) )
+                else:
+                    return KullbackLeibler( 1*self.Exp,  1*self.Exp2 )
+                
+            else:
+                raise NotImplementedError('cannot add an expontial expression with an affine expression')
+        elif isinstance(term,SumExponential):
+            return SumExponential( (self.Exp[:] // term.Exp[:]),  (self.Exp2[:] // term.Exp2[:]) )
+        else:
+            try:
+                cons, cons_str = _retrieve_matrix(term)
+                exp2 = AffinExp(factors={}, constant=cons,
+                           size=cons.size, string=cons_str)
+                return (self + exp2)
+            except:
+                raise NotImplementedError('can only add exponential expression with another exponential expression')
+        
+    def __radd__(self,term):
+        return self+term
+    
+    def __mul__(self,fact):
+        if isinstance(fact,AffinExp):
+            if fact.isconstant() and fact.size==(1,1):
+                tv = fact.value[0]
+                assert tv >= 0, 'mult with negative constant'
+                if tv>0:
+                    return SumExponential( (self.Exp + np.log(tv)),  self.Exp2 )
+                
+            else:
+                raise NotImplementedError('cannot multiply an expontial expression with a non-scalar affine expression')
+        elif isinstance(fact,SumExponential):
+            if ((self.Exp2-1).is0() and (fact.Exp2-1).is0()):
+                s0 = self.Exp.size[0]*self.Exp.size[1]
+                sf = fact.Exp.size[0]*fact.Exp.size[1]
+                if s0<sf:
+                    if s0 == 1:
+                        return SumExponential(self.Exp + fact.Exp)
+                    else:
+                        ret = 0.
+                        for i in range(s0):
+                            ret += SumExponential( self.Exp[i] + fact.Exp)
+                        return ret
+                else:
+                    if sf == 1:
+                        return SumExponential(self.Exp + fact.Exp)
+                    else:
+                        ret = 0.
+                        for i in range(sf):
+                            ret += SumExponential( self.Exp + fact.Exp[i])
+                        return ret
+            else:
+                raise NotImplementedError('cannot multiply a perspective-exponent with an exponential')
+
+        else:
+            try:
+                cons, cons_str = _retrieve_matrix(fact)
+                exp2 = AffinExp(factors={}, constant=cons,
+                           size=cons.size, string=cons_str)
+                return (self * exp2)
+            except:
+                raise NotImplementedError('can only multiply exponential expression with (constant) scalar')
+        
+    def __rmul__(self,fact):
+        return self * fact
+    
+    def __pow__(self,exponent):
+        assert _is_numeric(exponent)
+        if exponent == 0:
+            return AffinExp(factors = {},constant = 1., size=(1,1),string='1')
+        else:
+            return SumExponential(exponent*self.Exp,1*self.Exp2)
+
+    def __div__(self,fact):
+        if isinstance(fact,AffinExp):
+            assert fact.isconstant() and fact.size==(1,1), "division with non-constant or non-scalar affine expression"
+            tv = fact.value[0]
+            assert tv > 0, 'div with negative constant'
+        elif _is_numeric(fact):
+            assert fact>0, 'div with negative constant'
+        
+        return self * fact**(-1)
+    
+    def __rdiv__(self,fact):
+        return fact * self**(-1)
+            
     def __lt__(self, rhs):
         if isinstance(rhs,SumExponential):
             assert rhs.Exp.size==(1,1), "rhs must be an affine expression or exponential of affine expression"
@@ -2090,10 +2422,20 @@ class SumExponential(Expression):
             return lse(self.Exp) <= np.log(rhs.value[0])
             
         else:
-            raise NotImplementedError('yet...')
-            #TODO here, we must introduce extra variables, and create some exp-cone constraints!
+            from .problem import Problem
+            Ptmp = Problem()
+            m = self.Exp.size[0] * self.Exp.size[1]
+            v = Ptmp.add_variable('v',m)
             
-        
+            for i in range(m):
+                Ptmp.add_constraint( (self.Exp[i] // 1. // v[i]) << expcone())
+            Ptmp.add_constraint( (1 | v) <= rhs)
+            
+            constring = self.string + ' <= ' + rhs.string
+            cons = SumExpConstraint(self.Exp, rhs, Ptmp, constring)
+            return cons
+
+
 
 class QuadExp(Expression):
     """
@@ -3978,7 +4320,11 @@ class Variable(AffinExp):
             newcons = self.constant[rangeT]
         else:
             newcons = None
-        newstr = self.string + '[' + indstr + ']'
+        
+        if indstr ==':' and self.size[1]==1:
+            newstr = self.string
+        else:
+            newstr = self.string + '[' + indstr + ']'
         # check size
         if newsize[0] == 0 or newsize[1] == 0:
             raise IndexError('slice of zero-dimension')
