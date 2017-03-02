@@ -586,12 +586,12 @@ def partial_trace(X, k=1, dim=None):
     If ``X`` is a matrix
     :class:`AffinExp <picos.AffinExp>`
     that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
-    for some  matrices :math:`A_0,\ldots,A_{n-1}`
-    of respective sizes ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]`` (if all square),
-    or ``dim[0][0] x dim[0][1]``, ...,``dim[n-1][0] x dim[n-1][1]`` (if any of them except the ``k`` th one is rectangular),
+    for some matrices :math:`A_0,\ldots,A_{n-1}`
+    of respective sizes ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]`` (``dim`` is a list of ints if all matrices are square),
+    or ``dim[0][0] x dim[0][1]``, ...,``dim[n-1][0] x dim[n-1][1]`` (``dim`` is a list of 2-tuples if any of them except the ``k`` th one is rectangular),
     this function returns the matrix
     :math:`Y = \operatorname{trace}(A_k)\quad A_0 \otimes \cdots A_{k-1} \otimes A_{k+1} \otimes \cdots \otimes A_{n-1}`.
-    
+
     The default value ``dim=None`` automatically computes the size of the subblocks,
     assuming that ``X`` is a :math:`n^2 \times n^2`-square matrix
     with blocks of size :math:`n \times n`.
