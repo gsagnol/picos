@@ -7459,6 +7459,7 @@ class Problem(object):
                 self.cvxoptVars['b']) if i not in JP]):
             raise Exception('infeasible constraint of the form 0=a')
 
+        from cvxopt import sparse, spmatrix
         P = spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         self.cvxoptVars['A'] = P * self.cvxoptVars['A']
         self.cvxoptVars['b'] = P * self.cvxoptVars['b']
@@ -7467,7 +7468,6 @@ class Problem(object):
         # make A,B,and blockstruct.                                 #
         # This code is a modification of the conelp function in smcp#
         #-----------------------------------------------------------#
-        from cvxopt import sparse, spmatrix
         Nl = dims['l']
         Nq = dims['q']
         Ns = dims['s']
