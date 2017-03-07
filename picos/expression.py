@@ -799,73 +799,82 @@ class AffinExp(Expression):
         """
 
     def partial_trace(self, k=1, dim=None):
-        """partial trace
-           cf. doc of :func:`picos.partial_trace() <picos.tools.partial_trace>`
+    """partial trace
+        cf. doc of :func:`picos.partial_trace() <picos.tools.partial_trace>`
         """
         sz = self.size
         if dim is None:
-            if sz[0] == sz[1] and (
-                    sz[0]**0.5) == int(sz[0]**0.5) and (sz[1]**0.5) == int(sz[1]**0.5):
+            if sz[0] == sz[1] and (sz[0]**0.5) == int(sz[0]**0.5) and (sz[1]**0.5) == int(sz[1]**0.5):
                 dim = (int(sz[0]**0.5), int(sz[1]**0.5))
             else:
-                raise ValueError(
-                    'The default parameter dim=None assumes X is a n**2 x n**2 matrix')
+                raise ValueError('The default parameter dim=None assumes X is a n**2 x n**2 matrix')
 
-        pdim = np.product(dim)
-        if pdim != sz[0] or pdim != sz[1]:
-            raise ValueError(
-                'The product of the sub-dimensions does not match the size of X')
+        # checks if dim is a list (or tuple) of lists (or tuples) of two integers each
+        T = [list,tuple]
+        if type(dim) in T and all([type(d) in T and len(d) == 2 for d in dim]) and all([type(n) is int for d in dim for n in d]):
+            dim = [d for d in zip(*dim)]
+            pdim = np.product(dim[0]),np.product(dim[1])
 
-        if k > len(dim):
-            raise Exception('we must have k <= len(dim)')
-
-        dim_reduced = [d for d in dim]
-        del dim_reduced[k]
-        dim_reduced = tuple(dim_reduced)
-        pdimred = np.product(dim_reduced)
-
-        fact = spmatrix([], [], [], (pdimred**2, pdim**2))
-        for iii in itertools.product(*[range(i) for i in dim_reduced]):
-            for jjj in itertools.product(*[range(j) for j in dim_reduced]):
-                # element iii,jjj of the partial trace
-
-                row = int(sum([iii[j] * np.product(dim_reduced[j + 1:])
-                               for j in range(len(dim_reduced))]))
-                col = int(sum([jjj[j] * np.product(dim_reduced[j + 1:])
-                               for j in range(len(dim_reduced))]))
-                # this corresponds to the element row,col in the matrix basis
-
-                rowij = col * pdimred + row
-                # this corresponds to the elem rowij in vectorized form
-
-                # computes the partial trace for iii,jjj
-                for l in range(dim[k]):
-                    iili = list(iii)
-                    iili.insert(k, l)
-                    iili = tuple(iili)
-
-                    jjlj = list(jjj)
-                    jjlj.insert(k, l)
-                    jjlj = tuple(jjlj)
-
-                    row_l = int(sum([iili[j] * np.product(dim[j + 1:])
-                                     for j in range(len(dim))]))
-                    col_l = int(sum([jjlj[j] * np.product(dim[j + 1:])
-                                     for j in range(len(dim))]))
-
-                    colij_l = col_l * pdim + row_l
-                    fact[int(rowij), int(colij_l)] = 1
-
-        newfacs = {}
-        for x in self.factors:
-            newfacs[x] = fact * self.factors[x]
-        if self.constant:
-            cons = fact * self.constant
+        # if dim is a single list of integers we assume that no subsystem is rectangular
+        elif type(dim) in [list,tuple] and all([type(n) is int for n in dim]):
+            pdim = np.product(dim),np.product(dim)
+            dim = (dim,dim)
         else:
-            cons = None
+            raise ValueError('Wrong dim variable')
 
-        return AffinExp(newfacs, cons, (pdimred, pdimred),
-                        'Tr_' + str(k) + '(' + self.string + ')')
+        if len(dim[0]) != len(dim[1]):
+            raise ValueError('Inconsistent number of subsystems, fix dim variable')
+
+        if pdim[0] != sz[0] or pdim[1] != sz[1]:
+            raise ValueError('The product of the sub-dimensions does not match the size of X')
+
+        if k > len(dim[0])-1:
+            raise Exception('There is no k-th subsystem, fix k or dim variable')
+
+        if dim[0][k] != dim[1][k] :
+            raise ValueError('The dimensions of the subsystem to trace over don\'t match')
+
+        dim_reduced = [list(d) for d in dim]
+        del dim_reduced[0][k]
+        del dim_reduced[1][k]
+        dim_reduced = tuple(tuple(d) for d in dim_reduced)
+        pdimred = tuple([np.product(d) for d in dim_reduced])
+        fact = cvx.spmatrix([], [], [], (np.product(pdimred), np.product(pdim)))
+
+        for iii in itertools.product(*[range(i) for i in dim_reduced[0]]):
+            for jjj in itertools.product(*[range(j) for j in dim_reduced[1]]):
+            # element iii,jjj of the partial trace
+
+            row = int(sum([iii[j] * np.product(dim_reduced[0][j + 1:]) for j in range(len(dim_reduced[0]))]))
+            col = int(sum([jjj[j] * np.product(dim_reduced[1][j + 1:]) for j in range(len(dim_reduced[1]))]))
+            # this corresponds to the element row,col in the matrix basis
+            rowij = col * pdimred[0] + row
+            # this corresponds to the elem rowij in vectorized form
+
+            # computes the partial trace for iii,jjj
+            for l in range(dim[0][k]):
+                iili = list(iii)
+                iili.insert(k, l)
+                iili = tuple(iili)
+
+                jjlj = list(jjj)
+                jjlj.insert(k, l)
+                jjlj = tuple(jjlj)
+
+                row_l = int(sum([iili[j] * np.product(dim[0][j + 1:]) for j in range(len(dim[0]))]))
+                col_l = int(sum([jjlj[j] * np.product(dim[1][j + 1:]) for j in range(len(dim[1]))]))
+
+                colij_l = col_l * pdim[0] + row_l
+                fact[int(rowij), int(colij_l)] = 1
+
+    newfacs = {}
+    for x in self.factors:
+        newfacs[x] = fact * self.factors[x]
+    if self.constant:
+        cons = fact * self.constant
+    else:
+        cons = None
+    return AffinExp(newfacs, cons, (pdimred[0],pdimred[1]), 'Tr_' + str(k) + '(' + self.string + ')')
 
     def hadamard(self, fact):
         """hadamard (elementwise) product"""
@@ -1561,7 +1570,7 @@ class AffinExp(Expression):
             raise Exception('not implemented')
         selfcopy = self.copy()
         idx = cvx.spdiag([1.] * dim)[:].I
-        
+
         for k in self.factors:
             tc = 'z' if self.factors[k].typecode=='z' else 'd'
             selfcopy.factors[k] = spmatrix(
