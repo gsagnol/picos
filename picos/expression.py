@@ -242,7 +242,11 @@ class AffinExp(Expression):
         """constant of the affine expression,
                 stored as a :func:`cvxopt sparse matrix <cvxopt:cvxopt.spmatrix>`.
                 """
-        self._size = size
+        
+        assert len(size)==2 and _is_integer(size[0]) and _is_integer(size[1])
+        #make sure they are of class `int`, otherwise compatibility problem with py3...
+        self._size = (int(size[0]), int(size[1]))
+        
         """size of the affine expression"""
         # self.string=string
 
