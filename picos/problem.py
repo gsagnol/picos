@@ -731,7 +731,8 @@ class Problem(object):
 
           * ``sdpa_executable = 'sdpa'`` : The sdpa executable name.
 
-          * ``sdpa_params = '-pt 0'`` : str of extra parameters to pass to sdpa.
+          * ``sdpa_params = {'-pt': 0}`` : dictionary of extra parameters to pass to sdpa.
+            Set 'read_solution': 'filename.out' for reading an already existing solution.
         """
         # Additional, hidden option (requires a patch of smcp, to use conlp to
         # interface the feasible starting point solver):
@@ -773,7 +774,7 @@ class Problem(object):
                            'pass_simple_cons_as_bound' : False,
                            'return_constraints' : False,
                            'sdpa_executable': 'sdpa',
-                           'sdpa_params': '-pt 0',
+                           'sdpa_params': {'-pt': 0},
                            }
 
         self._options = _NonWritableDict(default_options)
@@ -6683,23 +6684,27 @@ class Problem(object):
         #-----------------------------#
         # create the sdpaopt instance #
         #-----------------------------#
-        self._make_sdpaopt(self.options['sdpa_executable'])
-
+        import time
+        import os
         #--------------------#
         #  call the solver   #
         #--------------------#
-        import time
-        import os
-        from subprocess import call
-        tstart = time.time()
-        params = [self.sdpa_executable, '-ds', self.sdpa_dats_filename,
-                  '-o', self.sdpa_out_filename] + \
-                  self.options['sdpa_params'].split()
-        if self.options['verbose'] >= 1:
-            call(params)
+        if 'read_solution' in self.options['sdpa_params']:
+            tstart = time.time()
+            self.sdpa_out_filename = self.options['sdpa_params']['read_solution']
         else:
-            with open(os.devnull, "w") as fnull:
-                call(params, stdout=fnull, stderr=fnull)
+            from subprocess import call
+            self._make_sdpaopt(self.options['sdpa_executable'])
+            tstart = time.time()
+            params = [self.sdpa_executable, '-ds', self.sdpa_dats_filename,
+                      '-o', self.sdpa_out_filename]
+            for key in self.options['sdpa_params']:
+                params += [key, str(self.options['sdpa_params'][key])]
+            if self.options['verbose'] >= 1:
+                call(params)
+            else:
+                with open(os.devnull, "w") as fnull:
+                    call(params, stdout=fnull, stderr=fnull)
         tend = time.time()
         #-----------------------#
         # retrieve the solution #
@@ -6759,8 +6764,9 @@ class Problem(object):
                     dual_solution = dual_solution[:-1]
 
         file_.close()
-        os.remove(self.sdpa_dats_filename)
-        os.remove(self.sdpa_out_filename)
+        if 'read_solution' not in self.options['sdpa_params']:
+            os.remove(self.sdpa_dats_filename)
+            os.remove(self.sdpa_out_filename)
         dims = {}
         dims['s'] = [int(np.sqrt(Gsi.size[0]))
                      for Gsi in self.cvxoptVars['Gs']]
