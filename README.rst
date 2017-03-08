@@ -33,6 +33,8 @@ People who actively contributed to the code of Picos (in no particular order)
         * `Sergio Callegari <http://www.unibo.it/faculty/sergio.callegari>`_ 
 
         * `Petter Wittek <http://peterwittek.com/>`_
+        
+        * `Filippo Miatto <http://www.quantumphotonics.uottawa.ca/en-filippo-miatto/>`_
 
         * Paul Fournel
         

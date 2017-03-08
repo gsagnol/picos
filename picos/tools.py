@@ -586,8 +586,9 @@ def partial_trace(X, k=1, dim=None):
     If ``X`` is a matrix
     :class:`AffinExp <picos.AffinExp>`
     that can be written as :math:`X = A_0 \otimes \cdots \otimes A_{n-1}`
-    for some **square matrices** :math:`A_0,\ldots,A_{n-1}`
-    of respective sizes ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]``,
+    for some matrices :math:`A_0,\ldots,A_{n-1}`
+    of respective sizes ``dim[0] x dim[0]``, ... , ``dim[n-1] x dim[n-1]`` (``dim`` is a list of ints if all matrices are square),
+    or ``dim[0][0] x dim[0][1]``, ...,``dim[n-1][0] x dim[n-1][1]`` (``dim`` is a list of 2-tuples if any of them except the ``k`` th one is rectangular),
     this function returns the matrix
     :math:`Y = \operatorname{trace}(A_k)\quad A_0 \otimes \cdots A_{k-1} \otimes A_{k+1} \otimes \cdots \otimes A_{n-1}`.
 
@@ -2181,7 +2182,7 @@ def spmatrix(*args,**kwargs):
 def kron(A,B):
     """
     Kronecker product of 2 expression, at least one of which must be constant
-    
+
     **Example:**
 
     >>> import picos as pic
@@ -2201,19 +2202,19 @@ def kron(A,B):
     [ 0.00e+00  0.00e+00  0.00e+00  3.00e+00  7.00e+00  1.10e+01]
 
     """
-    
+
     from .expression import AffinExp
-    
+
     if not isinstance(A,AffinExp):
         expA, nameA = _retrieve_matrix(A)
     else:
         expA, nameA = A,A.string
-    
+
     if not isinstance(B,AffinExp):
         expB, nameB = _retrieve_matrix(B)
     else:
         expB, nameB = B,B.string
-        
+
     if expA.isconstant():
         AA = np.array(cvx.matrix(expA.value))
         kron_fact = {}
@@ -2230,7 +2231,7 @@ def kron(A,B):
             Bcons = np.reshape(cvx.matrix(expB.constant),expB.size[::-1]).T
             AkronB = np.kron(AA,Bcons)
             kron_cons = cvx.sparse(list(AkronB.T.ravel()))
-            
+
         kron_size = (expA.size[0] * expB.size[0], expA.size[1] * expB.size[1])
         kron_string =  nameA+'⊗ ('+nameB+')'
     elif expB.isconstant():
@@ -2249,14 +2250,14 @@ def kron(A,B):
             Acons = np.reshape(cvx.matrix(expA.constant),expA.size[::-1]).T
             AkronB = np.kron(Acons,BB)
             kron_cons = cvx.sparse(list(AkronB.T.ravel()))
-            
+
         kron_size = (expA.size[0] * expB.size[0], expA.size[1] * expB.size[1])
         kron_string =  '('+ nameA+') ⊗ '+nameB
     else:
         raise NotImplementedError('kron product with quadratic terms')
     return AffinExp(kron_fact,constant=kron_cons,size=kron_size,string=kron_string)
-        
-    
+
+
 
 
 def _read_sdpa(filename):
