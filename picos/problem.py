@@ -6692,6 +6692,8 @@ class Problem(object):
         if 'read_solution' in self.options['sdpa_params']:
             tstart = time.time()
             self.sdpa_out_filename = self.options['sdpa_params']['read_solution']
+            if not any(self.cvxoptVars.values()):
+                self._make_cvxopt_instance(hard_coded_bounds=True)
         else:
             from subprocess import call
             self._make_sdpaopt(self.options['sdpa_executable'])
@@ -6784,6 +6786,7 @@ class Problem(object):
         if any([b for (i, b) in enumerate(
                 self.cvxoptVars['b']) if i not in JP]):
             raise Exception('infeasible constraint of the form 0=a')
+        from cvxopt import spmatrix
         P = spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         # Convert primal solution
         primals = {}
