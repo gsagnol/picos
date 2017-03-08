@@ -4815,7 +4815,10 @@ class Problem(object):
                         cs.passed.append('sdpa')
 
                 sol = dual.solve()
-                obj = -sol['obj']
+                if self.objective[0] == 'min':
+                    obj = sol['obj']
+                else:
+                    obj = -sol['obj']
                 if 'noprimals' in self.options and self.options['noprimals']:
                     pass
                 else:
