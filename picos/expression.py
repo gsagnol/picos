@@ -795,11 +795,10 @@ class AffinExp(Expression):
 
     Tx = property(partial_transpose, setTx, delTx, "Partial transposition")
     """Partial transposition (for an n**2 x n**2 matrix, assumes subblocks of size n x n).
-           cf. doc of :func:`picos.partial_transpose() <picos.tools.partial_transpose>`
-        """
+           cf. doc of :func:`picos.partial_transpose() <picos.tools.partial_transpose>`"""
 
     def partial_trace(self, k=1, dim=None):
-    """partial trace
+        """partial trace
         cf. doc of :func:`picos.partial_trace() <picos.tools.partial_trace>`
         """
         sz = self.size
@@ -844,37 +843,37 @@ class AffinExp(Expression):
         for iii in itertools.product(*[range(i) for i in dim_reduced[0]]):
             for jjj in itertools.product(*[range(j) for j in dim_reduced[1]]):
             # element iii,jjj of the partial trace
+            
+                row = int(sum([iii[j] * np.product(dim_reduced[0][j + 1:]) for j in range(len(dim_reduced[0]))]))
+                col = int(sum([jjj[j] * np.product(dim_reduced[1][j + 1:]) for j in range(len(dim_reduced[1]))]))
+                # this corresponds to the element row,col in the matrix basis
+                rowij = col * pdimred[0] + row
+                # this corresponds to the elem rowij in vectorized form
+                
+                # computes the partial trace for iii,jjj
+                for l in range(dim[0][k]):
+                    iili = list(iii)
+                    iili.insert(k, l)
+                    iili = tuple(iili)
 
-            row = int(sum([iii[j] * np.product(dim_reduced[0][j + 1:]) for j in range(len(dim_reduced[0]))]))
-            col = int(sum([jjj[j] * np.product(dim_reduced[1][j + 1:]) for j in range(len(dim_reduced[1]))]))
-            # this corresponds to the element row,col in the matrix basis
-            rowij = col * pdimred[0] + row
-            # this corresponds to the elem rowij in vectorized form
+                    jjlj = list(jjj)
+                    jjlj.insert(k, l)
+                    jjlj = tuple(jjlj)
 
-            # computes the partial trace for iii,jjj
-            for l in range(dim[0][k]):
-                iili = list(iii)
-                iili.insert(k, l)
-                iili = tuple(iili)
+                    row_l = int(sum([iili[j] * np.product(dim[0][j + 1:]) for j in range(len(dim[0]))]))
+                    col_l = int(sum([jjlj[j] * np.product(dim[1][j + 1:]) for j in range(len(dim[1]))]))
 
-                jjlj = list(jjj)
-                jjlj.insert(k, l)
-                jjlj = tuple(jjlj)
+                    colij_l = col_l * pdim[0] + row_l
+                    fact[int(rowij), int(colij_l)] = 1
 
-                row_l = int(sum([iili[j] * np.product(dim[0][j + 1:]) for j in range(len(dim[0]))]))
-                col_l = int(sum([jjlj[j] * np.product(dim[1][j + 1:]) for j in range(len(dim[1]))]))
-
-                colij_l = col_l * pdim[0] + row_l
-                fact[int(rowij), int(colij_l)] = 1
-
-    newfacs = {}
-    for x in self.factors:
-        newfacs[x] = fact * self.factors[x]
-    if self.constant:
-        cons = fact * self.constant
-    else:
-        cons = None
-    return AffinExp(newfacs, cons, (pdimred[0],pdimred[1]), 'Tr_' + str(k) + '(' + self.string + ')')
+        newfacs = {}
+        for x in self.factors:
+            newfacs[x] = fact * self.factors[x]
+        if self.constant:
+            cons = fact * self.constant
+        else:
+            cons = None
+        return AffinExp(newfacs, cons, (pdimred[0],pdimred[1]), 'Tr_' + str(k) + '(' + self.string + ')')
 
     def hadamard(self, fact):
         """hadamard (elementwise) product"""
