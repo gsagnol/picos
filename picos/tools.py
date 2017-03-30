@@ -2119,13 +2119,16 @@ def _is_idty(mat, vtype='continuous'):
 
 
 def _is_integer(x):
-    return isinstance(x,six.integer_types) or isinstance(x,np.int64)
+    return (isinstance(x,six.integer_types) or
+            isinstance(x,np.int64) or
+            isinstance(x,np.int32))
 
 def _is_numeric(x):
     return (isinstance(x, float) or
             isinstance(x, six.integer_types) or
             isinstance(x, np.float64) or
             isinstance(x, np.int64) or
+            isinstance(x,np.int32) or
             isinstance(x, np.complex128) or
             isinstance(x, complex))
 
@@ -2133,7 +2136,8 @@ def _is_realvalued(x):
     return (isinstance(x, float) or
             isinstance(x, six.integer_types) or
             isinstance(x, np.float64) or
-            isinstance(x, np.int64))
+            isinstance(x, np.int64) or
+            isinstance(x,np.int32))
 
 def spmatrix(*args,**kwargs):
     try:
