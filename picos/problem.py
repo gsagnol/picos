@@ -4514,8 +4514,13 @@ class Problem(object):
         returns: list of (scalar) scip expression (one for each coordinate of the Affine expression given in input
         """
         import pyscipopt
+        if hasattr(pyscipopt,'linexpr') and hasattr(pyscipopt.scip,'LinExpr'):
+            scip_expr = pyscipopt.linexpr.LinExpr
+        else:
+            scip_expr = pyscipopt.scip.Expr
+            
         if expression is None:
-            lhs = [pyscipopt.linexpr.LinExpr()]
+            lhs = [scip_expr()]
         elif isinstance(expression,QuadExp):
             lhs = self._convert_picos_exp_to_scip_exp(expression.aff)
             for var1,var2 in expression.quad:
@@ -4528,7 +4533,7 @@ class Problem(object):
         else:
             lhs = []
             for _ in range(expression.size[0]*expression.size[1]):
-                lhs.append(pyscipopt.linexpr.LinExpr())
+                lhs.append(scip_expr())
             for variable in expression.factors:
                 start_index = variable.scip_startIndex
                 for i,j,v in zip(expression.factors[variable].I, expression.factors[variable].J, expression.factors[variable].V):
