@@ -4705,7 +4705,8 @@ class Problem(object):
         if not complexSDP:
             # do we pass the primal or the dual to the solver ?
             solve_via_dual = self.options['solve_via_dual']
-            if solve_via_dual is None:
+            if solve_via_dual is None\
+                  and 'read_solution' not in self.options['sdpa_params']:
                 if (self.numberSDPConstraints > 0 and len([1 for v in self.variables.values(
                 ) if v.semiDef]) < 0.3 * self.numberSDPConstraints):  # thats empirical !
                     solve_via_dual = True
@@ -6683,7 +6684,6 @@ class Problem(object):
             raise NotAppropriateSolverError(
                 "'SDPA' cannot solve problems of type {0}".format(
                     self.type))
-
         #-----------------------------#
         # create the sdpaopt instance #
         #-----------------------------#
@@ -6695,6 +6695,8 @@ class Problem(object):
         if 'read_solution' in self.options['sdpa_params']:
             tstart = time.time()
             self.sdpa_out_filename = self.options['sdpa_params']['read_solution']
+            if not any(self.cvxoptVars.values()):
+                self._make_cvxopt_instance(hard_coded_bounds=True)
         else:
             from subprocess import call
             self._make_sdpaopt(self.options['sdpa_executable'])
@@ -6787,6 +6789,7 @@ class Problem(object):
         if any([b for (i, b) in enumerate(
                 self.cvxoptVars['b']) if i not in JP]):
             raise Exception('infeasible constraint of the form 0=a')
+        from cvxopt import spmatrix
         P = spmatrix(VP, IP, JP, (len(IP), self.cvxoptVars['A'].size[0]))
         # Convert primal solution
         primals = {}
