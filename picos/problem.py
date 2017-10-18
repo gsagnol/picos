@@ -4836,6 +4836,7 @@ class Problem(object):
                         indices = [(v.startIndex, v.endIndex, v)
                                    for v in self.variables.values()]
                         indices = sorted(indices, reverse=True)
+
                         (start, end, var) = indices.pop()
                         varvect = []
                         if converted:
@@ -4853,6 +4854,7 @@ class Problem(object):
                         if var.vtype in ('symmetric',):
                             varvect = svecm1(cvx.matrix(varvect))
                         primals[var.name] = cvx.matrix(varvect, var.size)
+
 
                 if converted:
                     self.set_option('noduals', True)
@@ -4955,6 +4957,7 @@ class Problem(object):
         else:
             for i, d in enumerate(duals):
                 self.constraints[i].set_dualVar(d)
+
         if obj == 'toEval' and not(self.objective[1] is None):
             obj = self.objective[1].eval()[0]
         sol['obj'] = obj
@@ -6303,6 +6306,7 @@ class Problem(object):
                 print("\033[1;31m*** Primal Solution not found\033[0m")
 
         # PRIMAL VARIABLES
+
         primals = {}
 
         if 'noprimals' in self.options and self.options['noprimals']:
@@ -6522,6 +6526,7 @@ class Problem(object):
                         idconin += (szcons - len(fxd))
 
                     elif cons.typeOfConstraint[:3] == 'sdp':
+                        sz = cons.Exp1.size
                         sz = cons.Exp1.size
                         xx = [0.] * ((sz[0] * (sz[0] + 1)) // 2)
                         # xx=np.zeros((sz[0]*(sz[0]+1))/2,float)
@@ -8622,6 +8627,9 @@ class Problem(object):
         dual._options = _NonWritableDict(self.options)
         # deactivate the solve_via_dual option (to avoid further dualization)
         dual.set_option('solve_via_dual', False)
+
+        # because there is a bug with retrieval of dual variables of a linear constraints involving a symmetric matrix (due to triangularization?)
+        dual.set_option('handleBarVars', True)
         return dual
 
     """TODO primalize function (in development)

@@ -1395,7 +1395,7 @@ def svecm1(vec, triu=False):
     return spmatrix(V, I, J, (n, n))
 
 
-def ltrim1(vec, uptri=True):
+def ltrim1(vec, uptri=True,offdiag_fact=1.):
     """
     If ``vec`` is a vector or an affine expression of size n(n+1)/2, ltrim1(vec) returns a (n,n) matrix with
     the elements of vec in the lower triangle.
@@ -1418,6 +1418,8 @@ def ltrim1(vec, uptri=True):
             if r == n:
                 c += 1
                 r = c
+            if r!=c:
+                v *= offdiag_fact
             M[r, c] = v
             if r > c and uptri:
                 M[c, r] = v
