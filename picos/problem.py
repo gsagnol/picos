@@ -95,6 +95,8 @@ class Problem(object):
                            'F': None, 'g': None,  # GP constraints
                            'quadcons': None}  # other quads
 
+        self.glpk_Instance = None
+
         self.gurobi_Instance = None
         self.grbvar = []
         self.grb_boundcons = None
@@ -289,6 +291,14 @@ class Problem(object):
         if onlyvar:
             self.remove_solver_from_passed('cvxopt')
 
+    def reset_glpk_instance(self, onlyvar=True):
+        """reset the variables used by the solver glpk"""
+
+        self.glpk_Instance = None
+
+        if onlyvar:
+            self.remove_solver_from_passed('glpk')
+
     def reset_gurobi_instance(self, onlyvar=True):
         """reset the variables used by the solver gurobi"""
 
@@ -344,6 +354,7 @@ class Problem(object):
     def reset_solver_instances(self):
 
         self.reset_cvxopt_instance(False)
+        self.reset_glpk_instance(False)
         self.reset_gurobi_instance(False)
         self.reset_cplex_instance(False)
         self.reset_mosek_instance(False)
@@ -1704,7 +1715,7 @@ class Problem(object):
                     cons.semidefVar.semiDef = False
 
             cons.original_index = ind
-            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip','sdpa')
+            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','glpk','scip','sdpa')
                               if solver not in cons.passed]
             cons.passed = not_passed_yet
             #deleted constraint is considered as 'passed', i.e. it can be ignored, if it
@@ -3345,6 +3356,135 @@ class Problem(object):
             sys.stdout.flush()
             print()
 
+    def _make_glpk_instance(self):
+        if self.options['verbose'] > 0:
+            print('build glpk instance')
+
+        import swiglpk as glpk
+
+        # TODO: Allow updates to instance. (Is this even the right place for that?)
+        if self.glpk_Instance is None:
+            self.glpk_Instance = glpk.glp_create_prob();
+        else:
+            raise NotImplementedError("Updating the instance not yet supported by GLPK.")
+
+        # An alias to the problem instance.
+        p = self.glpk_Instance
+
+        # TODO: Set the objective function. (Probably at the end of this function.)
+
+        # Set the objective.
+        # TODO: Support "find" objective.
+        if self.objective[0] is "min":
+            glpk.glp_set_obj_dir(p, glpk.GLP_MIN)
+        elif self.objective[0] is "max":
+            glpk.glp_set_obj_dir(p, glpk.GLP_MAX)
+        else:
+            raise NotImplementedError("Objective {0} not supported by GLPK.".format(self.objective[0]))
+
+        # Add variables.
+        # Multideminsional variables are split into multiple scalar variables
+        # represented as matrix columns within GLPK.
+        for varName in self.varNames:
+            var = self.variables[varName]
+
+            # Add a column for every scalar variable.
+            # TODO: Make this work for higher dimensional variables?
+            numCols = var.size[0] * var.size[1]
+            glpk.glp_add_cols(p, numCols)
+
+            for localIndex, globalIndex in enumerate(range(var.startIndex, var.endIndex)):
+                # GLBK variable indices start with 1, as opposed to PICOS
+                # indices that start with 0.
+                index = globalIndex + 1
+
+                # Assign a name to the scalar variable.
+                scalarName = varName
+                if numCols > 1:
+                    x = localIndex / var.size[0]
+                    y = localIndex % var.size[0]
+                    scalarName += "_{:d}_{:d}".format(x + 1, y + 1)
+                glpk.glp_set_col_name(p, index, scalarName)
+
+                # Assign bounds to the scalar variable.
+                lower, upper = var.bnd.get(localIndex, (None, None))
+                if lower is not None and upper is not None:
+                    if lower == upper:
+                        glpk.glp_set_col_bnds(p, index, glpk.GLP_FX, lower, upper)
+                    else:
+                        glpk.glp_set_col_bnds(p, index, glpk.GLP_DB, lower, upper)
+                elif lower is not None and upper is None:
+                    glpk.glp_set_col_bnds(p, index, glpk.GLP_LO, lower, 0)
+                elif lower is None and upper is not None:
+                    glpk.glp_set_col_bnds(p, index, glpk.GLP_UP, 0, upper)
+                else:
+                    glpk.glp_set_col_bnds(p, index, glpk.GLP_FR, 0, 0)
+
+                # Assign a type to the scalar variable.
+                if var.vtype == "continuous":
+                    glpk.glp_set_col_kind(p, index, glpk.GLP_CV)
+                elif var.vtype == "integer":
+                    glpk.glp_set_col_kind(p, index, glpk.GLP_IV)
+                elif var.vtype == "binary":
+                    glpk.glp_set_col_kind(p, index, glpk.GLP_BV)
+                else:
+                    raise NotImplementedError("Variable type {0} not supported by GLPK.".format(var.vtype()))
+
+                # TODO: Set objective function coefficient for current scalar variable.
+
+        # Add constraints.
+        # Multideminsional constraints are split into multiple scalar
+        # constraints represented as matrix rows within GLPK.
+        rowOffset = 1
+        for constraintNum, constraint in enumerate(self.constraints):
+            if constraint.typeOfConstraint not in ("lin<", "lin=", "lin>"):
+                raise NotImplementedError("Non-linear constraints not supported by GLPK.")
+
+            # Add a row for every scalar constraint.
+            # Internally, GLPK uses an auxiliary variable for every such row,
+            # bounded by the right hand side of the scalar constraint put into
+            # a canonical form.
+            # TODO: Make this work for higher dimensional constraints?
+            numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
+            glpk.glp_add_rows(p, numRows)
+
+            # Transform constraint into canonical form understood by GLPK.
+            LHS = constraint.Exp1 - constraint.Exp2
+            RHS = -LHS.constant
+            LHS += RHS
+
+            # Split multidimensional constraints into multiple scalar constraints.
+            for localIndex in range(numRows):
+                # Determine the row index of the scalar constraint.
+                index = rowOffset + localIndex
+
+                # Assign a name to the scalar constraint.
+                if constraint.key:
+                    name = constraint.key
+                else:
+                    name = "rhs_{:d}".format(constraintNum)
+                if numRows > 1:
+                    x = localIndex / constraint.Exp1.size[0]
+                    y = localIndex % constraint.Exp1.size[0]
+                    name += "_{:d}_{:d}".format(x + 1, y + 1)
+                glpk.glp_set_row_name(p, index, name)
+
+                # Retrieve scalar constraint right hand side, to be used as a
+                # bound for an auxiliary variable.
+                rhs = RHS[localIndex]
+
+                # Assign bounds to the auxiliary variable.
+                if constraint.typeOfConstraint == "lin=":
+                    glpk.glp_set_row_bnds(p, index, glpk.GLP_FX, rhs, rhs)
+                elif constraint.typeOfConstraint == "lin<":
+                    glpk.glp_set_row_bnds(p, index, glpk.GLP_UP, 0, rhs)
+                elif constraint.typeOfConstraint == "lin>":
+                    glpk.glp_set_row_bnds(p, index, glpk.GLP_LO, rhs, 0)
+
+                # TODO: Set coefficients for current row.
+
+            rowOffset += numRows
+
     #-----------
     # mosek tool
     #-----------
@@ -4907,6 +5047,10 @@ class Problem(object):
                         or self.options['solver'] == 'cvxopt'):
                     primals, duals, obj, sol = self._cvxopt_solve()
 
+                # For glpk
+                elif (self.options['solver'] == 'glpk'):
+                    primals, duals, obj, sol = self._glpk_solve()
+
                 # For cplex
                 elif (self.options['solver'] == 'cplex'):
 
@@ -5324,6 +5468,49 @@ class Problem(object):
 
         solt = {'cvxopt_sol': sol, 'status': status, 'time': tend - tstart}
         return primals, duals, obj, solt
+
+    def _glpk_solve(self):
+        """
+        Solves a problem with the GLPK solver.
+        """
+
+        import swiglpk as glpk
+
+        #------------------------------#
+        #  can we solve it with GLPK ? #
+        #------------------------------#
+
+        if self.type not in ("LP", "MIP"):
+            raise NotAppropriateSolverError(
+                "'glpk' cannot solve problems of type {0}".format(self.type))
+
+        #---------------------------#
+        #  create the GLPK instance #
+        #---------------------------#
+
+        self._make_glpk_instance()
+        p = self.glpk_Instance
+
+        #-----------------------#
+        #  pass options to GLPK #
+        #-----------------------#
+
+        # TODO: Pass options to GLPK.
+
+        #--------------------#
+        #  call the solver   #
+        #--------------------#
+
+        import time
+        tstart = time.time()
+
+        if self.type == "LP":
+            glpk.glp_simplex(p, None)
+
+        tend = time.time()
+
+        # TODO: Complete this function.
+        return (None, None, None, None)
 
     def _cplex_solve(self):
         """
