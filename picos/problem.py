@@ -294,7 +294,11 @@ class Problem(object):
     def reset_glpk_instance(self, onlyvar=True):
         """reset the variables used by the solver glpk"""
 
-        self.glpk_Instance = None
+        if self.glpk_Instance is not None:
+            import swiglpk as glpk
+
+            glpk.glp_delete_prob(self.glpk_Instance)
+            self.glpk_Instance = None
 
         if onlyvar:
             self.remove_solver_from_passed('glpk')
@@ -3356,22 +3360,31 @@ class Problem(object):
             sys.stdout.flush()
             print()
 
-    def _make_glpk_instance(self):
-        if self.options['verbose'] > 0:
-            print('build glpk instance')
+    @staticmethod
+    def _picos2glpk_variable_index(globalVariableIndex):
+        return globalVariableIndex + 1
 
+    @staticmethod
+    def _glpk2picos_variable_index(globalVariableIndex):
+        return globalVariableIndex - 1
+
+    def _make_glpk_instance(self):
         import swiglpk as glpk
 
-        # TODO: Allow updates to instance. (Is this even the right place for that?)
-        if self.glpk_Instance is None:
-            self.glpk_Instance = glpk.glp_create_prob();
+        if self.options['verbose'] > 0:
+            print('build glpk instance')
+            glpk.glp_term_out(glpk.GLP_ON)
         else:
-            raise NotImplementedError("Updating the instance not yet supported by GLPK.")
+            glpk.glp_term_out(glpk.GLP_OFF)
+
+        # TODO: Allow updates to instance, if GLPK supports this.
+        if self.glpk_Instance is not None:
+            self.reset_glpk_instance()
+
+        self.glpk_Instance = glpk.glp_create_prob();
 
         # An alias to the problem instance.
         p = self.glpk_Instance
-
-        # TODO: Set the objective function. (Probably at the end of this function.)
 
         # Set the objective.
         # TODO: Support "find" objective.
@@ -3380,7 +3393,17 @@ class Problem(object):
         elif self.objective[0] is "max":
             glpk.glp_set_obj_dir(p, glpk.GLP_MAX)
         else:
-            raise NotImplementedError("Objective {0} not supported by GLPK.".format(self.objective[0]))
+            raise NotImplementedError("Objective '{0} not supported by GLPK.".format(self.objective[0]))
+
+        # Set objective function shift
+        if self.objective[1] is not None and self.objective[1].constant is not None:
+            if not isinstance(self.objective[1], AffinExp):
+                raise NotImplementedError("Non-linear objective function not supported by GLPK.")
+
+            if self.objective[1].constant.size != (1,1):
+                raise NotImplementedError("Non-scalar objective function not supported by GLPK.")
+
+            glpk.glp_set_obj_coef(p, 0, self.objective[1].constant[0])
 
         # Add variables.
         # Multideminsional variables are split into multiple scalar variables
@@ -3389,14 +3412,11 @@ class Problem(object):
             var = self.variables[varName]
 
             # Add a column for every scalar variable.
-            # TODO: Make this work for higher dimensional variables?
             numCols = var.size[0] * var.size[1]
             glpk.glp_add_cols(p, numCols)
 
-            for localIndex, globalIndex in enumerate(range(var.startIndex, var.endIndex)):
-                # GLBK variable indices start with 1, as opposed to PICOS
-                # indices that start with 0.
-                index = globalIndex + 1
+            for localIndex, picosIndex in enumerate(range(var.startIndex, var.endIndex)):
+                glpkIndex = self._picos2glpk_variable_index(picosIndex)
 
                 # Assign a name to the scalar variable.
                 scalarName = varName
@@ -3404,33 +3424,35 @@ class Problem(object):
                     x = localIndex / var.size[0]
                     y = localIndex % var.size[0]
                     scalarName += "_{:d}_{:d}".format(x + 1, y + 1)
-                glpk.glp_set_col_name(p, index, scalarName)
+                glpk.glp_set_col_name(p, glpkIndex, scalarName)
 
                 # Assign bounds to the scalar variable.
                 lower, upper = var.bnd.get(localIndex, (None, None))
                 if lower is not None and upper is not None:
                     if lower == upper:
-                        glpk.glp_set_col_bnds(p, index, glpk.GLP_FX, lower, upper)
+                        glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_FX, lower, upper)
                     else:
-                        glpk.glp_set_col_bnds(p, index, glpk.GLP_DB, lower, upper)
+                        glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_DB, lower, upper)
                 elif lower is not None and upper is None:
-                    glpk.glp_set_col_bnds(p, index, glpk.GLP_LO, lower, 0)
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_LO, lower, 0)
                 elif lower is None and upper is not None:
-                    glpk.glp_set_col_bnds(p, index, glpk.GLP_UP, 0, upper)
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_UP, 0, upper)
                 else:
-                    glpk.glp_set_col_bnds(p, index, glpk.GLP_FR, 0, 0)
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_FR, 0, 0)
 
                 # Assign a type to the scalar variable.
                 if var.vtype == "continuous":
-                    glpk.glp_set_col_kind(p, index, glpk.GLP_CV)
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_CV)
                 elif var.vtype == "integer":
-                    glpk.glp_set_col_kind(p, index, glpk.GLP_IV)
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_IV)
                 elif var.vtype == "binary":
-                    glpk.glp_set_col_kind(p, index, glpk.GLP_BV)
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_BV)
                 else:
-                    raise NotImplementedError("Variable type {0} not supported by GLPK.".format(var.vtype()))
+                    raise NotImplementedError("Variable type '{0}' not supported by GLPK.".format(var.vtype()))
 
-                # TODO: Set objective function coefficient for current scalar variable.
+                # Set objective function coefficient of the scalar variable.
+                if self.objective[1] is not None:
+                    glpk.glp_set_obj_coef(p, glpkIndex, self.objective[1].factors[var][localIndex])
 
         # Add constraints.
         # Multideminsional constraints are split into multiple scalar
@@ -3442,9 +3464,8 @@ class Problem(object):
 
             # Add a row for every scalar constraint.
             # Internally, GLPK uses an auxiliary variable for every such row,
-            # bounded by the right hand side of the scalar constraint put into
-            # a canonical form.
-            # TODO: Make this work for higher dimensional constraints?
+            # bounded by the right hand side of the scalar constraint in a
+            # canonical form.
             numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
             glpk.glp_add_rows(p, numRows)
 
@@ -3455,7 +3476,7 @@ class Problem(object):
 
             # Split multidimensional constraints into multiple scalar constraints.
             for localIndex in range(numRows):
-                # Determine the row index of the scalar constraint.
+                # Determine GLPK's row index of the scalar constraint.
                 index = rowOffset + localIndex
 
                 # Assign a name to the scalar constraint.
@@ -3481,7 +3502,25 @@ class Problem(object):
                 elif constraint.typeOfConstraint == "lin>":
                     glpk.glp_set_row_bnds(p, index, glpk.GLP_LO, rhs, 0)
 
-                # TODO: Set coefficients for current row.
+                # Set coefficients for current row.
+                # Note that GLPK requires a glpk.intArray containing column
+                # indices and a glpk.doubleArray of same size containing the
+                # coefficients for the listed column index. The first element
+                # of both arrays (with index 0) is skipped by GLPK.
+                setColumns = []
+                setCoefficients = []
+                for var, coefficients in LHS.factors.items():
+                    for localVariableIndex in range(var.endIndex - var.startIndex):
+                        glpkVariableIndex = self._picos2glpk_variable_index(var.startIndex + localVariableIndex)
+                        setColumns.append(glpkVariableIndex)
+                        setCoefficients.append(coefficients[localVariableIndex])
+                numSetColumns = len(setColumns)
+                setColumns_glpk = glpk.intArray(numSetColumns + 1)
+                setCoefficients_glpk = glpk.doubleArray(numSetColumns + 1)
+                for i in range(numSetColumns):
+                    setColumns_glpk[i + 1] = setColumns[i]
+                    setCoefficients_glpk[i + 1] = setCoefficients[i]
+                glpk.glp_set_mat_row(p, index, numSetColumns, setColumns_glpk, setCoefficients_glpk)
 
             rowOffset += numRows
 
