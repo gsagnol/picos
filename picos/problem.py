@@ -426,7 +426,7 @@ class Problem(object):
                      if ``typ=='find'``.
         """
         if typ == 'find':
-            self.objective = (typ, expr)
+            self.objective = (typ, None)
             return
         if (isinstance(expr, AffinExp) and expr.size != (1, 1)):
             raise Exception('objective should be scalar')
