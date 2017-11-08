@@ -561,15 +561,20 @@ class Problem(object):
 
         * General options common to all solvers:
 
-          * ``verbose = 1`` : verbosity level [0(quiet)|1|2(loud)]
+          * ``verbose = 1`` : Verbosity level.
+            `-1` attempts to suppress all output, even errors.
+            `0` only outputs warnings and errors.
+            `1` generates standard informative output.
+            `2` prints all available information.
 
           * ``solver = None`` : currently the available solvers are
-            ``'cvxopt'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``, ``'smcp'``, ``'zibopt'``.
-            The default
-            ``None`` means that you let picos select a suitable solver for you.
+            ``'cvxopt'``, ``'glpk'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``,
+            ``'smcp'``, ``'zibopt'``. The default ``None`` means that you let
+            picos select a suitable solver for you.
 
           * ``tol = 1e-8`` : Relative gap termination tolerance
             for interior-point optimizers (feasibility and complementary slackness).
+            *This option is currently ignored by glpk*.
 
           * ``maxit = None`` : maximum number of iterations
             (for simplex or interior-point optimizers).
@@ -580,7 +585,8 @@ class Problem(object):
             The default ``None`` selects automatically an algorithm.
             If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
             will use a primal simplex (resp. dual simplex, interior-point) algorithm.
-            *This option currently works only with cplex, mosek and gurobi*.
+            *This option currently works only with cplex, mosek and gurobi. With
+            glpk it works for LPs but not for the MIP root relaxation.*
 
           * ``lp_node_method = None`` : algorithm used to solve subproblems
             at nodes of the branching trees of mixed integer programs.
@@ -3372,7 +3378,7 @@ class Problem(object):
         import swiglpk as glpk
 
         if self.options['verbose'] > 0:
-            print('build glpk instance')
+            print('Building a GLPK problem instance.', flush=True)
             glpk.glp_term_out(glpk.GLP_ON)
         else:
             glpk.glp_term_out(glpk.GLP_OFF)
@@ -3387,8 +3393,7 @@ class Problem(object):
         p = self.glpk_Instance
 
         # Set the objective.
-        # TODO: Support "find" objective.
-        if self.objective[0] is "min":
+        if self.objective[0] in ("find", "min"):
             glpk.glp_set_obj_dir(p, glpk.GLP_MIN)
         elif self.objective[0] is "max":
             glpk.glp_set_obj_dir(p, glpk.GLP_MAX)
@@ -5512,44 +5517,232 @@ class Problem(object):
         """
         Solves a problem with the GLPK solver.
         """
-
         import swiglpk as glpk
 
-        #------------------------------#
-        #  can we solve it with GLPK ? #
-        #------------------------------#
-
+        # Check if GLPK can solve this type of problem.
         if self.type not in ("LP", "MIP"):
             raise NotAppropriateSolverError(
                 "'glpk' cannot solve problems of type {0}".format(self.type))
+        continuous = (self.type == "LP")
 
-        #---------------------------#
-        #  create the GLPK instance #
-        #---------------------------#
-
+        # Create a GLPK problem instance.
         self._make_glpk_instance()
         p = self.glpk_Instance
 
-        #-----------------------#
-        #  pass options to GLPK #
-        #-----------------------#
+        # Select LP solver (Simplex or Interior Point Method).
+        if continuous:
+            if self.options["lp_root_method"] == "interior":
+                interior = True
+            else:
+                # Default to Simplex.
+                interior = False
+            simplex = not interior
+        else:
+            simplex = interior = False
 
-        # TODO: Pass options to GLPK.
+        # Select appropriate options container.
+        if simplex:
+            options = glpk.glp_smcp()
+            glpk.glp_init_smcp(options)
+        elif interior:
+            options = glpk.glp_iptcp()
+            glpk.glp_init_iptcp(options)
+        else:
+            options = glpk.glp_iocp()
+            glpk.glp_init_iocp(options)
 
-        #--------------------#
-        #  call the solver   #
-        #--------------------#
+        # Handle "verbose" option.
+        if self.options["verbose"] < 0:
+            options.msg_lev = glpk.GLP_MSG_OFF
+        elif self.options["verbose"] == 0:
+            options.msg_lev = glpk.GLP_MSG_ERR
+        elif self.options["verbose"] == 1:
+            options.msg_lev = glpk.GLP_MSG_ON
+        elif self.options["verbose"] > 1:
+            options.msg_lev = glpk.GLP_MSG_ALL
 
+        # Handle "tol" option.
+        # Note that GLPK knows three different tolerances for Simplex but none
+        # for the Interior Point Method, while PICOS states that "tol" is meant
+        # only for the IPM.
+        # XXX: The option is unsupported but does not default to None, so we
+        #      cannot warn the user.
+        pass
+
+        # Handle "maxit" option.
+        if self.options["maxit"] is not None:
+            if simplex:
+                options.it_lim = int(self.options["maxit"])
+            else:
+                raise NotImplementedError(
+                    "GLPK supports the 'maxit' option only with Simplex.")
+
+        # Handle "lp_root_method" option.
+        # Note that the PICOS option is explicitly also meant for the MIP
+        # preprocessing step but GLPK does not support it in that scenario.
+        if self.options["lp_root_method"] is not None:
+            if not continuous:
+                raise NotImplementedError(
+                    "GLPK supports the 'lp_root_method' option only for LPs.")
+            elif self.options["lp_root_method"] == "psimplex":
+                assert(simplex)
+                options.meth = glpk.GLP_PRIMAL
+            elif self.options["lp_root_method"] == "dsimplex":
+                assert(simplex)
+                options.meth = glpk.GLP_DUAL
+
+        # Handle "lp_node_method" option.
+        if self.options["lp_node_method"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'lp_node_method' option.")
+
+        # Handle "timelimit" option.
+        if self.options["timelimit"] is not None:
+            if interior:
+                raise NotImplementedError(
+                    "GLPK does not support the 'timelimit' option with the "
+                    "Interior Point Method.")
+            options.tm_lim = 1000 * int(self.options["timelimit"])
+
+        # Handle "treememory" option.
+        if self.options["treememory"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'treememory' option.")
+
+        # Handle "gaplim" option.
+        # TODO: Find out if "mip_gap" is really equivalent to "gaplim".
+        if self.options["gaplim"] is not None:
+            if continuous:
+                # Every LP is a MIP, so setting the option for an LP is fine.
+                pass
+            options.mip_gap = float(self.options["gaplim"])
+
+        # Handle "nbsol" option.
+        if self.options["nbsol"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'nbsol' option.")
+
+        # Handle "hotstart" option.
+        if self.options["hotstart"]:
+            raise NotImplementedError(
+                "GLPK does not support the 'hotstart' option.")
+
+        # Handle "pass_simple_cons_as_bound" option.
+        # Note that this option is solver-specific, while it should not be.
+        if self.options["pass_simple_cons_as_bound"]:
+            raise NotImplementedError(
+                "GLPK does not support the 'pass_simple_cons_as_bound' option. "
+                "(Note that this option is currently solver-specific.)"
+            )
+
+        # TODO: Add GLPK-sepcific options. Candidates are:
+        #       For both Simplex and MIPs:
+        #           tol_*, out_*
+        #       For Simplex:
+        #           pricing, r_test, obj_*
+        #       For the Interior Point Method:
+        #           ord_alg
+        #       For MIPs:
+        #           *_tech, *_heur, ps_tm_lim, *_cuts, cb_size, binarize
+
+        # Attempt to solve the problem.
         import time
-        tstart = time.time()
+        startTime = time.time()
+        if simplex:
+            # TODO: glp_exact.
+            error = glpk.glp_simplex(p, options)
+        elif interior:
+            error = glpk.glp_interior(p, options)
+        else:
+            options.presolve = glpk.GLP_ON
+            error = glpk.glp_intopt(p, options)
+        endTime = time.time()
 
-        if self.type == "LP":
-            glpk.glp_simplex(p, None)
+        # TODO: Handle errors.
 
-        tend = time.time()
+        # TODO: Retrieve primals.
+        primals = {}
 
-        # TODO: Complete this function.
-        return (None, None, None, None)
+        # TODO: Retrieve primals.
+        duals = {}
+
+        # Retrieve objective value.
+        if simplex:
+            objectiveValue = glpk.glp_get_obj_val(p)
+        elif interior:
+            objectiveValue = glpk.glp_ipt_obj_val(p)
+        else:
+            objectiveValue = glpk.glp_mip_obj_val(p)
+
+        # Retrieve solution metadata.
+        solution = {}
+
+        if simplex:
+            # Set common entry "status".
+            status = glpk.glp_get_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status is glpk.GLP_FEAS:
+                solution["status"] = "feasible"
+            elif status in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNBND:
+                solution["status"] = "unbounded"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+
+            # Set GLPK-specific entry "primal_status".
+            primalStatus = glpk.glp_get_prim_stat(p)
+            if primalStatus is glpk.GLP_FEAS:
+                solution["primal_status"] = "feasible"
+            elif primalStatus in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["primal_status"] = "infeasible"
+            elif primalStatus is glpk.GLP_UNDEF:
+                solution["primal_status"] = "undefined"
+            else:
+                solution["primal_status"] = "unknown"
+
+            # Set GLPK-specific entry "dual_status".
+            dualStatus = glpk.glp_get_dual_stat(p)
+            if dualStatus is glpk.GLP_FEAS:
+                solution["dual_status"] = "feasible"
+            elif dualStatus in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["dual_status"] = "infeasible"
+            elif dualStatus is glpk.GLP_UNDEF:
+                solution["dual_status"] = "undefined"
+            else:
+                solution["dual_status"] = "unknown"
+        elif interior:
+            # Set common entry "status".
+            status = glpk.glp_ipt_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+        else:
+            # Set common entry "status".
+            status = glpk.glp_mip_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status is glpk.GLP_FEAS:
+                solution["status"] = "feasible"
+            elif status is glpk.GLP_NOFEAS:
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+
+        # Set common entry "time".
+        solution["time"] = endTime - startTime
+
+        return (primals, duals, objectiveValue, solution)
 
     def _cplex_solve(self):
         """
