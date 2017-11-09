@@ -3426,7 +3426,7 @@ class Problem(object):
                 # Assign a name to the scalar variable.
                 scalarName = varName
                 if numCols > 1:
-                    x = localIndex / var.size[0]
+                    x = localIndex // var.size[0]
                     y = localIndex % var.size[0]
                     scalarName += "_{:d}_{:d}".format(x + 1, y + 1)
                 glpk.glp_set_col_name(p, glpkIndex, scalarName)
@@ -3456,7 +3456,7 @@ class Problem(object):
                     raise NotImplementedError("Variable type '{0}' not supported by GLPK.".format(var.vtype()))
 
                 # Set objective function coefficient of the scalar variable.
-                if self.objective[1] is not None:
+                if self.objective[1] is not None and var in self.objective[1].factors:
                     glpk.glp_set_obj_coef(p, glpkIndex, self.objective[1].factors[var][localIndex])
 
         # Add constraints.
@@ -3476,7 +3476,7 @@ class Problem(object):
 
             # Transform constraint into canonical form understood by GLPK.
             LHS = constraint.Exp1 - constraint.Exp2
-            RHS = -LHS.constant
+            RHS = -AffinExp(constant=LHS.constant)
             LHS += RHS
 
             # Split multidimensional constraints into multiple scalar constraints.
@@ -3490,14 +3490,14 @@ class Problem(object):
                 else:
                     name = "rhs_{:d}".format(constraintNum)
                 if numRows > 1:
-                    x = localIndex / constraint.Exp1.size[0]
+                    x = localIndex // constraint.Exp1.size[0]
                     y = localIndex % constraint.Exp1.size[0]
                     name += "_{:d}_{:d}".format(x + 1, y + 1)
                 glpk.glp_set_row_name(p, index, name)
 
                 # Retrieve scalar constraint right hand side, to be used as a
                 # bound for an auxiliary variable.
-                rhs = RHS[localIndex]
+                rhs = RHS.constant[localIndex]
 
                 # Assign bounds to the auxiliary variable.
                 if constraint.typeOfConstraint == "lin=":
@@ -5552,13 +5552,14 @@ class Problem(object):
             glpk.glp_init_iocp(options)
 
         # Handle "verbose" option.
-        if self.options["verbose"] < 0:
+        verbosity = self.options["verbose"]
+        if verbosity < 0:
             options.msg_lev = glpk.GLP_MSG_OFF
-        elif self.options["verbose"] == 0:
+        elif verbosity == 0:
             options.msg_lev = glpk.GLP_MSG_ERR
-        elif self.options["verbose"] == 1:
+        elif verbosity == 1:
             options.msg_lev = glpk.GLP_MSG_ON
-        elif self.options["verbose"] > 1:
+        elif verbosity > 1:
             options.msg_lev = glpk.GLP_MSG_ALL
 
         # Handle "tol" option.
@@ -5585,10 +5586,10 @@ class Problem(object):
                 raise NotImplementedError(
                     "GLPK supports the 'lp_root_method' option only for LPs.")
             elif self.options["lp_root_method"] == "psimplex":
-                assert(simplex)
+                assert simplex
                 options.meth = glpk.GLP_PRIMAL
             elif self.options["lp_root_method"] == "dsimplex":
-                assert(simplex)
+                assert simplex
                 options.meth = glpk.GLP_DUAL
 
         # Handle "lp_node_method" option.
@@ -5659,12 +5660,80 @@ class Problem(object):
         endTime = time.time()
 
         # TODO: Handle errors.
+        if verbosity >= 0:
+            if error == glpk.GLP_EBADB:
+                print("Unable to start the search, because the initial "
+                    "basis specified in the problem object is invalid.")
+            elif error == glpk.GLP_ESING:
+                print("Unable to start the search, because the basis matrix "
+                    "corresponding to the initial basis is singular within "
+                    "the working precision.")
+            elif error == glpk.GLP_ECOND:
+                print("Unable to start the search, because the basis matrix "
+                    "corresponding to the initial basis is ill-conditioned.")
+            elif error == glpk.GLP_EBOUND:
+                print("Unable to start the search, because some double-bounded "
+                    "variables have incorrect bounds.")
+            elif error == glpk.GLP_EFAIL:
+                print("The search was prematurely terminated due to a solver "
+                    "failure.")
+            elif error == glpk.GLP_EOBJLL:
+                print("The search was prematurely terminated, because the "
+                    "objective function being maximized has reached its lower "
+                    "limit and continues decreasing.")
+            elif error == glpk.GLP_EOBJUL:
+                print("The search was prematurely terminated, because the "
+                    "objective function being minimized has reached its upper "
+                    "limit and continues increasing.")
+            elif error == glpk.GLP_EITLIM:
+                print("The search was prematurely terminated, because the "
+                    "simplex iteration limit has been exceeded.")
+            elif error == glpk.GLP_ETMLIM:
+                print("The search was prematurely terminated, because the time "
+                    "limit has been exceeded.")
+        if verbosity > 0:
+            if error == glpk.GLP_ENOPFS:
+                print("The LP has no primal feasible solution.")
+            if error == glpk.GLP_ENODFS:
+                print("The LP has no dual feasible solution.")
 
-        # TODO: Retrieve primals.
+        # Retrieve primals.
         primals = {}
+        if not self.options["noprimals"]:
+            for varName in self.varNames:
+                var = self.variables[varName]
+                values = []
+                for localIndex, picosIndex in enumerate(range(var.startIndex, var.endIndex)):
+                    glpkIndex = self._picos2glpk_variable_index(picosIndex)
+                    if simplex:
+                        localValue = glpk.glp_get_col_prim(p, glpkIndex);
+                    elif interior:
+                        localValue = glpk.glp_ipt_col_prim(p, glpkIndex);
+                    else:
+                        localValue = glpk.glp_mip_col_val(p, glpkIndex);
+                    values.append(localValue)
+                primals[varName] = values
 
-        # TODO: Retrieve primals.
-        duals = {}
+        # TODO: Retrieve duals.
+        duals = []
+        if not self.options["noduals"] and continuous:
+            rowOffset = 1
+            for constraintNum, constraint in enumerate(self.constraints):
+                numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
+                values = []
+                for localIndex in range(numRows):
+                    index = rowOffset + localIndex
+                    if simplex:
+                        localValue = glpk.glp_get_row_dual(p, index);
+                    elif interior:
+                        localValue = glpk.glp_ipt_row_dual(p, index);
+                    else:
+                        assert False
+                    values.append(localValue)
+                # XXX: PICOS does not call _retrieve_matrix for duals, so
+                #      convert values to a matrix of proper size here.
+                duals.append(_retrieve_matrix(values, constraint.Exp1.size)[0])
+                rowOffset += numRows
 
         # Retrieve objective value.
         if simplex:
