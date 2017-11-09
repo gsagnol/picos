@@ -3378,7 +3378,7 @@ class Problem(object):
         import swiglpk as glpk
 
         if self.options['verbose'] > 0:
-            print('Building a GLPK problem instance.', flush=True)
+            print("Building a GLPK problem instance.")
             glpk.glp_term_out(glpk.GLP_ON)
         else:
             glpk.glp_term_out(glpk.GLP_OFF)
@@ -3528,6 +3528,9 @@ class Problem(object):
                 glpk.glp_set_mat_row(p, index, numSetColumns, setColumns_glpk, setCoefficients_glpk)
 
             rowOffset += numRows
+
+        if self.options['verbose'] > 0:
+            print("GLPK problem instance built.")
 
     #-----------
     # mosek tool
@@ -5646,6 +5649,12 @@ class Problem(object):
         #       For MIPs:
         #           *_tech, *_heur, ps_tm_lim, *_cuts, cb_size, binarize
 
+        if verbosity > 0:
+            print('-----------------------------------')
+            print('    GNU Linear Programming Kit')
+            print('-----------------------------------')
+            sys.stdout.flush()
+
         # Attempt to solve the problem.
         import time
         startTime = time.time()
@@ -7525,6 +7534,7 @@ class Problem(object):
                 'mosek7',
                 'mosek6',
                 'zibopt',
+                'glpk',
                 'cvxopt',
                 'smcp']
         elif tp in ('QCQP,QP'):
@@ -7553,7 +7563,9 @@ class Problem(object):
                 'zibopt',
                 'cvxopt',
                 'smcp']
-        elif tp in ('MIP', 'MIQCP', 'MIQP'):
+        elif tp == 'MIP':
+            order = ['cplex', 'gurobi', 'mosek7', 'mosek6', 'zibopt', 'glpk']
+        elif tp in ('MIQCP', 'MIQP'):
             order = ['cplex', 'gurobi', 'mosek7', 'mosek6', 'zibopt']
         elif tp == 'Mixed (SOCP+quad)':
             order = ['mosek7', 'mosek6', 'cplex', 'gurobi', 'cvxopt', 'smcp']

@@ -1675,6 +1675,12 @@ def available_solvers():
     except ImportError:
         pass
     try:
+        import swiglpk as gl
+        lst.append('glpk')
+        del gl
+    except ImportError:
+        pass
+    try:
         import smcp as sm
         lst.append('smcp')
         del sm
