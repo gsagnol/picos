@@ -565,7 +565,7 @@ class Problem(object):
             `-1` attempts to suppress all output, even errors.
             `0` only outputs warnings and errors.
             `1` generates standard informative output.
-            `2` prints all available information.
+            `2` prints all available information for debugging purposes.
 
           * ``solver = None`` : currently the available solvers are
             ``'cvxopt'``, ``'glpk'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``,
@@ -3398,15 +3398,18 @@ class Problem(object):
         elif self.objective[0] is "max":
             glpk.glp_set_obj_dir(p, glpk.GLP_MAX)
         else:
-            raise NotImplementedError("Objective '{0} not supported by GLPK.".format(self.objective[0]))
+            raise NotImplementedError("Objective '{0} not supported by GLPK."
+                .format(self.objective[0]))
 
         # Set objective function shift
         if self.objective[1] is not None and self.objective[1].constant is not None:
             if not isinstance(self.objective[1], AffinExp):
-                raise NotImplementedError("Non-linear objective function not supported by GLPK.")
+                raise NotImplementedError("Non-linear objective function not "
+                    "supported by GLPK.")
 
             if self.objective[1].constant.size != (1,1):
-                raise NotImplementedError("Non-scalar objective function not supported by GLPK.")
+                raise NotImplementedError("Non-scalar objective function not "
+                    "supported by GLPK.")
 
             glpk.glp_set_obj_coef(p, 0, self.objective[1].constant[0])
 
@@ -3453,7 +3456,8 @@ class Problem(object):
                 elif var.vtype == "binary":
                     glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_BV)
                 else:
-                    raise NotImplementedError("Variable type '{0}' not supported by GLPK.".format(var.vtype()))
+                    raise NotImplementedError("Variable type '{0}' not "
+                        "supported by GLPK.".format(var.vtype()))
 
                 # Set objective function coefficient of the scalar variable.
                 if self.objective[1] is not None and var in self.objective[1].factors:
@@ -3465,7 +3469,8 @@ class Problem(object):
         rowOffset = 1
         for constraintNum, constraint in enumerate(self.constraints):
             if constraint.typeOfConstraint not in ("lin<", "lin=", "lin>"):
-                raise NotImplementedError("Non-linear constraints not supported by GLPK.")
+                raise NotImplementedError("Non-linear constraints not supported"
+                    " by GLPK.")
 
             # Add a row for every scalar constraint.
             # Internally, GLPK uses an auxiliary variable for every such row,
@@ -3476,36 +3481,44 @@ class Problem(object):
 
             # Transform constraint into canonical form understood by GLPK.
             LHS = constraint.Exp1 - constraint.Exp2
-            RHS = -AffinExp(constant=LHS.constant)
+            if LHS.constant:
+                RHS = AffinExp(size=LHS.size, constant=-LHS.constant)
+            else:
+                # TODO: Give every AffinExp without an explicit constant a
+                #       constant of zero?
+                RHS = AffinExp(size=LHS.size) + 0
             LHS += RHS
 
-            # Split multidimensional constraints into multiple scalar constraints.
-            for localIndex in range(numRows):
-                # Determine GLPK's row index of the scalar constraint.
-                index = rowOffset + localIndex
+            if (self.options['verbose'] > 1):
+                print("Handling PICOS Constraint: ", constraint)
 
-                # Assign a name to the scalar constraint.
+            # Split multidimensional constraints into multiple scalar constraints.
+            for localConstraintIndex in range(numRows):
+                # Determine GLPK's row index of the scalar constraint.
+                glpkConstraintIndex = rowOffset + localConstraintIndex
+
+                # Extract the scalar constraint for the current row.
+                lhs = LHS[localConstraintIndex]
+                rhs = RHS.constant[localConstraintIndex]
+
+                # Give the auxiliary variable associated with the current row a name.
                 if constraint.key:
                     name = constraint.key
                 else:
                     name = "rhs_{:d}".format(constraintNum)
                 if numRows > 1:
-                    x = localIndex // constraint.Exp1.size[0]
-                    y = localIndex % constraint.Exp1.size[0]
+                    x = localConstraintIndex // constraint.Exp1.size[0]
+                    y = localConstraintIndex % constraint.Exp1.size[0]
                     name += "_{:d}_{:d}".format(x + 1, y + 1)
-                glpk.glp_set_row_name(p, index, name)
-
-                # Retrieve scalar constraint right hand side, to be used as a
-                # bound for an auxiliary variable.
-                rhs = RHS.constant[localIndex]
+                glpk.glp_set_row_name(p, glpkConstraintIndex, name)
 
                 # Assign bounds to the auxiliary variable.
                 if constraint.typeOfConstraint == "lin=":
-                    glpk.glp_set_row_bnds(p, index, glpk.GLP_FX, rhs, rhs)
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_FX, rhs, rhs)
                 elif constraint.typeOfConstraint == "lin<":
-                    glpk.glp_set_row_bnds(p, index, glpk.GLP_UP, 0, rhs)
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_UP, 0, rhs)
                 elif constraint.typeOfConstraint == "lin>":
-                    glpk.glp_set_row_bnds(p, index, glpk.GLP_LO, rhs, 0)
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_LO, rhs, 0)
 
                 # Set coefficients for current row.
                 # Note that GLPK requires a glpk.intArray containing column
@@ -3514,9 +3527,10 @@ class Problem(object):
                 # of both arrays (with index 0) is skipped by GLPK.
                 setColumns = []
                 setCoefficients = []
-                for var, coefficients in LHS.factors.items():
+                for var, coefficients in lhs.factors.items():
                     for localVariableIndex in range(var.endIndex - var.startIndex):
-                        glpkVariableIndex = self._picos2glpk_variable_index(var.startIndex + localVariableIndex)
+                        glpkVariableIndex = self._picos2glpk_variable_index(
+                            var.startIndex + localVariableIndex)
                         setColumns.append(glpkVariableIndex)
                         setCoefficients.append(coefficients[localVariableIndex])
                 numSetColumns = len(setColumns)
@@ -3525,7 +3539,11 @@ class Problem(object):
                 for i in range(numSetColumns):
                     setColumns_glpk[i + 1] = setColumns[i]
                     setCoefficients_glpk[i + 1] = setCoefficients[i]
-                glpk.glp_set_mat_row(p, index, numSetColumns, setColumns_glpk, setCoefficients_glpk)
+                if (self.options['verbose'] > 1):
+                    print("Adding GLPK Constraint: Variables:", setColumns,
+                        "Coefficients:", setCoefficients, "RHS:", rhs)
+                glpk.glp_set_mat_row(p, glpkConstraintIndex, numSetColumns,
+                    setColumns_glpk, setCoefficients_glpk)
 
             rowOffset += numRows
 
@@ -5670,6 +5688,7 @@ class Problem(object):
 
         # TODO: Handle errors.
         if verbosity >= 0:
+            # Catch internal failures and bad problem formulations.
             if error == glpk.GLP_EBADB:
                 print("Unable to start the search, because the initial "
                     "basis specified in the problem object is invalid.")
@@ -5700,11 +5719,15 @@ class Problem(object):
             elif error == glpk.GLP_ETMLIM:
                 print("The search was prematurely terminated, because the time "
                     "limit has been exceeded.")
-        if verbosity > 0:
-            if error == glpk.GLP_ENOPFS:
+            # Catch problem infeasibility.
+            elif error == glpk.GLP_ENOPFS and verbosity > 0:
                 print("The LP has no primal feasible solution.")
-            if error == glpk.GLP_ENODFS:
+            elif error == glpk.GLP_ENODFS and verbosity > 0:
                 print("The LP has no dual feasible solution.")
+            # Catch unknown errors.
+            elif error != 0:
+                print("An unknown GLPK error (code {:d}) occured during search."
+                    .format(error))
 
         # Retrieve primals.
         primals = {}
@@ -5723,26 +5746,34 @@ class Problem(object):
                     values.append(localValue)
                 primals[varName] = values
 
-        # TODO: Retrieve duals.
+        # Retrieve duals.
+        # XXX: Returns the duals as a flat cvx.matrix to be consistent with
+        #      other solvers. This feels incorrect when the constraint was given
+        #      as a proper two dimensional matrix.
         duals = []
         if not self.options["noduals"] and continuous:
             rowOffset = 1
             for constraintNum, constraint in enumerate(self.constraints):
                 numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
                 values = []
-                for localIndex in range(numRows):
-                    index = rowOffset + localIndex
+                for localConstraintIndex in range(numRows):
+                    glpkConstraintIndex = rowOffset + localConstraintIndex
                     if simplex:
-                        localValue = glpk.glp_get_row_dual(p, index);
+                        localValue = glpk.glp_get_row_dual(p, glpkConstraintIndex);
                     elif interior:
-                        localValue = glpk.glp_ipt_row_dual(p, index);
+                        localValue = glpk.glp_ipt_row_dual(p, glpkConstraintIndex);
                     else:
                         assert False
                     values.append(localValue)
-                # XXX: PICOS does not call _retrieve_matrix for duals, so
-                #      convert values to a matrix of proper size here.
-                duals.append(_retrieve_matrix(values, constraint.Exp1.size)[0])
+                constraintRelation = constraint.typeOfConstraint[3]
+                assert constraintRelation in ("<", ">", "=")
+                if constraintRelation in ("<", "="):
+                    duals.append(cvx.matrix(values))
+                else:
+                    duals.append(-cvx.matrix(values))
                 rowOffset += numRows
+        if self.objective[0] == "min":
+            duals = [-d for d in duals]
 
         # Retrieve objective value.
         if simplex:
