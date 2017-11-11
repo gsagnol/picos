@@ -1108,8 +1108,19 @@ print('--------------------------')
 for solv in avs:
         print('\t_'+solv)
 
-print()  
-        
+print()
+
+print('Exceptions:')
+print('-----------')
+for solver in avs:
+    for pclas in prob_classes:
+            if not results[solver][pclas][0] \
+            and results[solver][pclas][1].endswith(')') \
+            and "NotAppropriateSolverError" not in results[solver][pclas][1]:
+                print(str(solver) + " @ " + str(pclas) + ": " + results[solver][pclas][1])
+
+print()
+
 linesep='+---------------+'+'----------+'*len(avs)
 emptyln='|               |'+'          |'*len(avs)
 header= '| problem class |'
