@@ -95,6 +95,8 @@ class Problem(object):
                            'F': None, 'g': None,  # GP constraints
                            'quadcons': None}  # other quads
 
+        self.glpk_Instance = None
+
         self.gurobi_Instance = None
         self.grbvar = []
         self.grb_boundcons = None
@@ -289,6 +291,18 @@ class Problem(object):
         if onlyvar:
             self.remove_solver_from_passed('cvxopt')
 
+    def reset_glpk_instance(self, onlyvar=True):
+        """reset the variables used by the solver glpk"""
+
+        if self.glpk_Instance is not None:
+            import swiglpk as glpk
+
+            glpk.glp_delete_prob(self.glpk_Instance)
+            self.glpk_Instance = None
+
+        if onlyvar:
+            self.remove_solver_from_passed('glpk')
+
     def reset_gurobi_instance(self, onlyvar=True):
         """reset the variables used by the solver gurobi"""
 
@@ -344,6 +358,7 @@ class Problem(object):
     def reset_solver_instances(self):
 
         self.reset_cvxopt_instance(False)
+        self.reset_glpk_instance(False)
         self.reset_gurobi_instance(False)
         self.reset_cplex_instance(False)
         self.reset_mosek_instance(False)
@@ -546,15 +561,20 @@ class Problem(object):
 
         * General options common to all solvers:
 
-          * ``verbose = 1`` : verbosity level [0(quiet)|1|2(loud)]
+          * ``verbose = 1`` : Verbosity level.
+            `-1` attempts to suppress all output, even errors.
+            `0` only outputs warnings and errors.
+            `1` generates standard informative output.
+            `2` prints all available information for debugging purposes.
 
           * ``solver = None`` : currently the available solvers are
-            ``'cvxopt'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``, ``'smcp'``, ``'zibopt'``.
-            The default
-            ``None`` means that you let picos select a suitable solver for you.
+            ``'cvxopt'``, ``'glpk'``, ``'cplex'``, ``'mosek'``, ``'gurobi'``,
+            ``'smcp'``, ``'zibopt'``. The default ``None`` means that you let
+            picos select a suitable solver for you.
 
           * ``tol = 1e-8`` : Relative gap termination tolerance
             for interior-point optimizers (feasibility and complementary slackness).
+            *This option is currently ignored by glpk*.
 
           * ``maxit = None`` : maximum number of iterations
             (for simplex or interior-point optimizers).
@@ -565,7 +585,8 @@ class Problem(object):
             The default ``None`` selects automatically an algorithm.
             If set to ``psimplex`` (resp. ``dsimplex``, ``interior``), the solver
             will use a primal simplex (resp. dual simplex, interior-point) algorithm.
-            *This option currently works only with cplex, mosek and gurobi*.
+            *This option currently works only with cplex, mosek and gurobi. With
+            glpk it works for LPs but not for the MIP root relaxation.*
 
           * ``lp_node_method = None`` : algorithm used to solve subproblems
             at nodes of the branching trees of mixed integer programs.
@@ -1704,7 +1725,7 @@ class Problem(object):
                     cons.semidefVar.semiDef = False
 
             cons.original_index = ind
-            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','scip','sdpa')
+            not_passed_yet = [solver for solver in ('mosek','cplex','gurobi','cvxopt','glpk','scip','sdpa')
                               if solver not in cons.passed]
             cons.passed = not_passed_yet
             #deleted constraint is considered as 'passed', i.e. it can be ignored, if it
@@ -3345,6 +3366,190 @@ class Problem(object):
             sys.stdout.flush()
             print()
 
+    @staticmethod
+    def _picos2glpk_variable_index(globalVariableIndex):
+        return globalVariableIndex + 1
+
+    @staticmethod
+    def _glpk2picos_variable_index(globalVariableIndex):
+        return globalVariableIndex - 1
+
+    def _make_glpk_instance(self):
+        import swiglpk as glpk
+
+        if self.options['verbose'] > 0:
+            print("Building a GLPK problem instance.")
+            glpk.glp_term_out(glpk.GLP_ON)
+        else:
+            glpk.glp_term_out(glpk.GLP_OFF)
+
+        # TODO: Allow updates to instance, if GLPK supports this.
+        if self.glpk_Instance is not None:
+            self.reset_glpk_instance()
+
+        self.glpk_Instance = glpk.glp_create_prob();
+
+        # An alias to the problem instance.
+        p = self.glpk_Instance
+
+        # Set the objective.
+        if self.objective[0] in ("find", "min"):
+            glpk.glp_set_obj_dir(p, glpk.GLP_MIN)
+        elif self.objective[0] is "max":
+            glpk.glp_set_obj_dir(p, glpk.GLP_MAX)
+        else:
+            raise NotImplementedError("Objective '{0} not supported by GLPK."
+                .format(self.objective[0]))
+
+        # Set objective function shift
+        if self.objective[1] is not None and self.objective[1].constant is not None:
+            if not isinstance(self.objective[1], AffinExp):
+                raise NotImplementedError("Non-linear objective function not "
+                    "supported by GLPK.")
+
+            if self.objective[1].constant.size != (1,1):
+                raise NotImplementedError("Non-scalar objective function not "
+                    "supported by GLPK.")
+
+            glpk.glp_set_obj_coef(p, 0, self.objective[1].constant[0])
+
+        # Add variables.
+        # Multideminsional variables are split into multiple scalar variables
+        # represented as matrix columns within GLPK.
+        for varName in self.varNames:
+            var = self.variables[varName]
+
+            # Add a column for every scalar variable.
+            numCols = var.size[0] * var.size[1]
+            glpk.glp_add_cols(p, numCols)
+
+            for localIndex, picosIndex in enumerate(range(var.startIndex, var.endIndex)):
+                glpkIndex = self._picos2glpk_variable_index(picosIndex)
+
+                # Assign a name to the scalar variable.
+                scalarName = varName
+                if numCols > 1:
+                    x = localIndex // var.size[0]
+                    y = localIndex % var.size[0]
+                    scalarName += "_{:d}_{:d}".format(x + 1, y + 1)
+                glpk.glp_set_col_name(p, glpkIndex, scalarName)
+
+                # Assign bounds to the scalar variable.
+                lower, upper = var.bnd.get(localIndex, (None, None))
+                if lower is not None and upper is not None:
+                    if lower == upper:
+                        glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_FX, lower, upper)
+                    else:
+                        glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_DB, lower, upper)
+                elif lower is not None and upper is None:
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_LO, lower, 0)
+                elif lower is None and upper is not None:
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_UP, 0, upper)
+                else:
+                    glpk.glp_set_col_bnds(p, glpkIndex, glpk.GLP_FR, 0, 0)
+
+                # Assign a type to the scalar variable.
+                if var.vtype == "continuous":
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_CV)
+                elif var.vtype == "integer":
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_IV)
+                elif var.vtype == "binary":
+                    glpk.glp_set_col_kind(p, glpkIndex, glpk.GLP_BV)
+                else:
+                    raise NotImplementedError("Variable type '{0}' not "
+                        "supported by GLPK.".format(var.vtype()))
+
+                # Set objective function coefficient of the scalar variable.
+                if self.objective[1] is not None and var in self.objective[1].factors:
+                    glpk.glp_set_obj_coef(p, glpkIndex, self.objective[1].factors[var][localIndex])
+
+        # Add constraints.
+        # Multideminsional constraints are split into multiple scalar
+        # constraints represented as matrix rows within GLPK.
+        rowOffset = 1
+        for constraintNum, constraint in enumerate(self.constraints):
+            if constraint.typeOfConstraint not in ("lin<", "lin=", "lin>"):
+                raise NotImplementedError("Non-linear constraints not supported"
+                    " by GLPK.")
+
+            # Add a row for every scalar constraint.
+            # Internally, GLPK uses an auxiliary variable for every such row,
+            # bounded by the right hand side of the scalar constraint in a
+            # canonical form.
+            numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
+            glpk.glp_add_rows(p, numRows)
+
+            # Transform constraint into canonical form understood by GLPK.
+            LHS = constraint.Exp1 - constraint.Exp2
+            if LHS.constant:
+                RHS = AffinExp(size=LHS.size, constant=-LHS.constant)
+            else:
+                # TODO: Give every AffinExp without an explicit constant a
+                #       constant of zero?
+                RHS = AffinExp(size=LHS.size) + 0
+            LHS += RHS
+
+            if (self.options['verbose'] > 1):
+                print("Handling PICOS Constraint: ", constraint)
+
+            # Split multidimensional constraints into multiple scalar constraints.
+            for localConstraintIndex in range(numRows):
+                # Determine GLPK's row index of the scalar constraint.
+                glpkConstraintIndex = rowOffset + localConstraintIndex
+
+                # Extract the scalar constraint for the current row.
+                lhs = LHS[localConstraintIndex]
+                rhs = RHS.constant[localConstraintIndex]
+
+                # Give the auxiliary variable associated with the current row a name.
+                if constraint.key:
+                    name = constraint.key
+                else:
+                    name = "rhs_{:d}".format(constraintNum)
+                if numRows > 1:
+                    x = localConstraintIndex // constraint.Exp1.size[0]
+                    y = localConstraintIndex % constraint.Exp1.size[0]
+                    name += "_{:d}_{:d}".format(x + 1, y + 1)
+                glpk.glp_set_row_name(p, glpkConstraintIndex, name)
+
+                # Assign bounds to the auxiliary variable.
+                if constraint.typeOfConstraint == "lin=":
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_FX, rhs, rhs)
+                elif constraint.typeOfConstraint == "lin<":
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_UP, 0, rhs)
+                elif constraint.typeOfConstraint == "lin>":
+                    glpk.glp_set_row_bnds(p, glpkConstraintIndex, glpk.GLP_LO, rhs, 0)
+
+                # Set coefficients for current row.
+                # Note that GLPK requires a glpk.intArray containing column
+                # indices and a glpk.doubleArray of same size containing the
+                # coefficients for the listed column index. The first element
+                # of both arrays (with index 0) is skipped by GLPK.
+                setColumns = []
+                setCoefficients = []
+                for var, coefficients in lhs.factors.items():
+                    for localVariableIndex in range(var.endIndex - var.startIndex):
+                        glpkVariableIndex = self._picos2glpk_variable_index(
+                            var.startIndex + localVariableIndex)
+                        setColumns.append(glpkVariableIndex)
+                        setCoefficients.append(coefficients[localVariableIndex])
+                numSetColumns = len(setColumns)
+                setColumns_glpk = glpk.intArray(numSetColumns + 1)
+                setCoefficients_glpk = glpk.doubleArray(numSetColumns + 1)
+                for i in range(numSetColumns):
+                    setColumns_glpk[i + 1] = setColumns[i]
+                    setCoefficients_glpk[i + 1] = setCoefficients[i]
+                if (self.options['verbose'] > 1):
+                    print("Adding GLPK Constraint: Variables:", setColumns,
+                        "Coefficients:", setCoefficients, "RHS:", rhs)
+                glpk.glp_set_mat_row(p, glpkConstraintIndex, numSetColumns,
+                    setColumns_glpk, setCoefficients_glpk)
+
+            rowOffset += numRows
+
+        if self.options['verbose'] > 0:
+            print("GLPK problem instance built.")
+
     #-----------
     # mosek tool
     #-----------
@@ -4907,6 +5112,10 @@ class Problem(object):
                         or self.options['solver'] == 'cvxopt'):
                     primals, duals, obj, sol = self._cvxopt_solve()
 
+                # For glpk
+                elif (self.options['solver'] == 'glpk'):
+                    primals, duals, obj, sol = self._glpk_solve()
+
                 # For cplex
                 elif (self.options['solver'] == 'cplex'):
 
@@ -5324,6 +5533,325 @@ class Problem(object):
 
         solt = {'cvxopt_sol': sol, 'status': status, 'time': tend - tstart}
         return primals, duals, obj, solt
+
+    def _glpk_solve(self):
+        """
+        Solves a problem with the GLPK solver.
+        """
+        import swiglpk as glpk
+
+        # Check if GLPK can solve this type of problem.
+        if self.type not in ("LP", "MIP"):
+            raise NotAppropriateSolverError(
+                "'glpk' cannot solve problems of type {0}".format(self.type))
+        continuous = (self.type == "LP")
+
+        # Create a GLPK problem instance.
+        self._make_glpk_instance()
+        p = self.glpk_Instance
+
+        # Select LP solver (Simplex or Interior Point Method).
+        if continuous:
+            if self.options["lp_root_method"] == "interior":
+                interior = True
+            else:
+                # Default to Simplex.
+                interior = False
+            simplex = not interior
+        else:
+            simplex = interior = False
+
+        # Select appropriate options container.
+        if simplex:
+            options = glpk.glp_smcp()
+            glpk.glp_init_smcp(options)
+        elif interior:
+            options = glpk.glp_iptcp()
+            glpk.glp_init_iptcp(options)
+        else:
+            options = glpk.glp_iocp()
+            glpk.glp_init_iocp(options)
+
+        # Handle "verbose" option.
+        verbosity = self.options["verbose"]
+        if verbosity < 0:
+            options.msg_lev = glpk.GLP_MSG_OFF
+        elif verbosity == 0:
+            options.msg_lev = glpk.GLP_MSG_ERR
+        elif verbosity == 1:
+            options.msg_lev = glpk.GLP_MSG_ON
+        elif verbosity > 1:
+            options.msg_lev = glpk.GLP_MSG_ALL
+
+        # Handle "tol" option.
+        # Note that GLPK knows three different tolerances for Simplex but none
+        # for the Interior Point Method, while PICOS states that "tol" is meant
+        # only for the IPM.
+        # XXX: The option is unsupported but does not default to None, so we
+        #      cannot warn the user.
+        pass
+
+        # Handle "maxit" option.
+        if self.options["maxit"] is not None:
+            if simplex:
+                options.it_lim = int(self.options["maxit"])
+            else:
+                raise NotImplementedError(
+                    "GLPK supports the 'maxit' option only with Simplex.")
+
+        # Handle "lp_root_method" option.
+        # Note that the PICOS option is explicitly also meant for the MIP
+        # preprocessing step but GLPK does not support it in that scenario.
+        if self.options["lp_root_method"] is not None:
+            if not continuous:
+                raise NotImplementedError(
+                    "GLPK supports the 'lp_root_method' option only for LPs.")
+            elif self.options["lp_root_method"] == "psimplex":
+                assert simplex
+                options.meth = glpk.GLP_PRIMAL
+            elif self.options["lp_root_method"] == "dsimplex":
+                assert simplex
+                options.meth = glpk.GLP_DUAL
+
+        # Handle "lp_node_method" option.
+        if self.options["lp_node_method"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'lp_node_method' option.")
+
+        # Handle "timelimit" option.
+        if self.options["timelimit"] is not None:
+            if interior:
+                raise NotImplementedError(
+                    "GLPK does not support the 'timelimit' option with the "
+                    "Interior Point Method.")
+            options.tm_lim = 1000 * int(self.options["timelimit"])
+
+        # Handle "treememory" option.
+        if self.options["treememory"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'treememory' option.")
+
+        # Handle "gaplim" option.
+        # TODO: Find out if "mip_gap" is really equivalent to "gaplim".
+        if self.options["gaplim"] is not None:
+            if continuous:
+                # Every LP is a MIP, so setting the option for an LP is fine.
+                pass
+            options.mip_gap = float(self.options["gaplim"])
+
+        # Handle "nbsol" option.
+        if self.options["nbsol"] is not None:
+            raise NotImplementedError(
+                "GLPK does not support the 'nbsol' option.")
+
+        # Handle "hotstart" option.
+        if self.options["hotstart"]:
+            raise NotImplementedError(
+                "GLPK does not support the 'hotstart' option.")
+
+        # Handle "pass_simple_cons_as_bound" option.
+        # Note that this option is solver-specific, while it should not be.
+        if self.options["pass_simple_cons_as_bound"]:
+            raise NotImplementedError(
+                "GLPK does not support the 'pass_simple_cons_as_bound' option. "
+                "(Note that this option is currently solver-specific.)"
+            )
+
+        # TODO: Add GLPK-sepcific options. Candidates are:
+        #       For both Simplex and MIPs:
+        #           tol_*, out_*
+        #       For Simplex:
+        #           pricing, r_test, obj_*
+        #       For the Interior Point Method:
+        #           ord_alg
+        #       For MIPs:
+        #           *_tech, *_heur, ps_tm_lim, *_cuts, cb_size, binarize
+
+        if verbosity > 0:
+            print('-----------------------------------')
+            print('    GNU Linear Programming Kit')
+            print('-----------------------------------')
+            sys.stdout.flush()
+
+        # Attempt to solve the problem.
+        import time
+        startTime = time.time()
+        if simplex:
+            # TODO: glp_exact.
+            error = glpk.glp_simplex(p, options)
+        elif interior:
+            error = glpk.glp_interior(p, options)
+        else:
+            options.presolve = glpk.GLP_ON
+            error = glpk.glp_intopt(p, options)
+        endTime = time.time()
+
+        # TODO: Handle errors.
+        if verbosity >= 0:
+            # Catch internal failures and bad problem formulations.
+            if error == glpk.GLP_EBADB:
+                print("Unable to start the search, because the initial "
+                    "basis specified in the problem object is invalid.")
+            elif error == glpk.GLP_ESING:
+                print("Unable to start the search, because the basis matrix "
+                    "corresponding to the initial basis is singular within "
+                    "the working precision.")
+            elif error == glpk.GLP_ECOND:
+                print("Unable to start the search, because the basis matrix "
+                    "corresponding to the initial basis is ill-conditioned.")
+            elif error == glpk.GLP_EBOUND:
+                print("Unable to start the search, because some double-bounded "
+                    "variables have incorrect bounds.")
+            elif error == glpk.GLP_EFAIL:
+                print("The search was prematurely terminated due to a solver "
+                    "failure.")
+            elif error == glpk.GLP_EOBJLL:
+                print("The search was prematurely terminated, because the "
+                    "objective function being maximized has reached its lower "
+                    "limit and continues decreasing.")
+            elif error == glpk.GLP_EOBJUL:
+                print("The search was prematurely terminated, because the "
+                    "objective function being minimized has reached its upper "
+                    "limit and continues increasing.")
+            elif error == glpk.GLP_EITLIM:
+                print("The search was prematurely terminated, because the "
+                    "simplex iteration limit has been exceeded.")
+            elif error == glpk.GLP_ETMLIM:
+                print("The search was prematurely terminated, because the time "
+                    "limit has been exceeded.")
+            # Catch problem infeasibility.
+            elif error == glpk.GLP_ENOPFS and verbosity > 0:
+                print("The LP has no primal feasible solution.")
+            elif error == glpk.GLP_ENODFS and verbosity > 0:
+                print("The LP has no dual feasible solution.")
+            # Catch unknown errors.
+            elif error != 0:
+                print("An unknown GLPK error (code {:d}) occured during search."
+                    .format(error))
+
+        # Retrieve primals.
+        primals = {}
+        if not self.options["noprimals"]:
+            for varName in self.varNames:
+                var = self.variables[varName]
+                values = []
+                for localIndex, picosIndex in enumerate(range(var.startIndex, var.endIndex)):
+                    glpkIndex = self._picos2glpk_variable_index(picosIndex)
+                    if simplex:
+                        localValue = glpk.glp_get_col_prim(p, glpkIndex);
+                    elif interior:
+                        localValue = glpk.glp_ipt_col_prim(p, glpkIndex);
+                    else:
+                        localValue = glpk.glp_mip_col_val(p, glpkIndex);
+                    values.append(localValue)
+                primals[varName] = values
+
+        # Retrieve duals.
+        # XXX: Returns the duals as a flat cvx.matrix to be consistent with
+        #      other solvers. This feels incorrect when the constraint was given
+        #      as a proper two dimensional matrix.
+        duals = []
+        if not self.options["noduals"] and continuous:
+            rowOffset = 1
+            for constraintNum, constraint in enumerate(self.constraints):
+                numRows = constraint.Exp1.size[0] * constraint.Exp1.size[1]
+                values = []
+                for localConstraintIndex in range(numRows):
+                    glpkConstraintIndex = rowOffset + localConstraintIndex
+                    if simplex:
+                        localValue = glpk.glp_get_row_dual(p, glpkConstraintIndex);
+                    elif interior:
+                        localValue = glpk.glp_ipt_row_dual(p, glpkConstraintIndex);
+                    else:
+                        assert False
+                    values.append(localValue)
+                constraintRelation = constraint.typeOfConstraint[3]
+                assert constraintRelation in ("<", ">", "=")
+                if constraintRelation in ("<", "="):
+                    duals.append(cvx.matrix(values))
+                else:
+                    duals.append(-cvx.matrix(values))
+                rowOffset += numRows
+        if self.objective[0] == "min":
+            duals = [-d for d in duals]
+
+        # Retrieve objective value.
+        if simplex:
+            objectiveValue = glpk.glp_get_obj_val(p)
+        elif interior:
+            objectiveValue = glpk.glp_ipt_obj_val(p)
+        else:
+            objectiveValue = glpk.glp_mip_obj_val(p)
+
+        # Retrieve solution metadata.
+        solution = {}
+
+        if simplex:
+            # Set common entry "status".
+            status = glpk.glp_get_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status is glpk.GLP_FEAS:
+                solution["status"] = "feasible"
+            elif status in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNBND:
+                solution["status"] = "unbounded"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+
+            # Set GLPK-specific entry "primal_status".
+            primalStatus = glpk.glp_get_prim_stat(p)
+            if primalStatus is glpk.GLP_FEAS:
+                solution["primal_status"] = "feasible"
+            elif primalStatus in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["primal_status"] = "infeasible"
+            elif primalStatus is glpk.GLP_UNDEF:
+                solution["primal_status"] = "undefined"
+            else:
+                solution["primal_status"] = "unknown"
+
+            # Set GLPK-specific entry "dual_status".
+            dualStatus = glpk.glp_get_dual_stat(p)
+            if dualStatus is glpk.GLP_FEAS:
+                solution["dual_status"] = "feasible"
+            elif dualStatus in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["dual_status"] = "infeasible"
+            elif dualStatus is glpk.GLP_UNDEF:
+                solution["dual_status"] = "undefined"
+            else:
+                solution["dual_status"] = "unknown"
+        elif interior:
+            # Set common entry "status".
+            status = glpk.glp_ipt_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status in (glpk.GLP_INFEAS, glpk.GLP_NOFEAS):
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+        else:
+            # Set common entry "status".
+            status = glpk.glp_mip_status(p)
+            if status is glpk.GLP_OPT:
+                solution["status"] = "optimal"
+            elif status is glpk.GLP_FEAS:
+                solution["status"] = "feasible"
+            elif status is glpk.GLP_NOFEAS:
+                solution["status"] = "infeasible"
+            elif status is glpk.GLP_UNDEF:
+                solution["status"] = "undefined"
+            else:
+                solution["status"] = "unknown"
+
+        # Set common entry "time".
+        solution["time"] = endTime - startTime
+
+        return (primals, duals, objectiveValue, solution)
 
     def _cplex_solve(self):
         """
@@ -7037,6 +7565,7 @@ class Problem(object):
                 'mosek7',
                 'mosek6',
                 'zibopt',
+                'glpk',
                 'cvxopt',
                 'smcp']
         elif tp in ('QCQP,QP'):
@@ -7065,7 +7594,9 @@ class Problem(object):
                 'zibopt',
                 'cvxopt',
                 'smcp']
-        elif tp in ('MIP', 'MIQCP', 'MIQP'):
+        elif tp == 'MIP':
+            order = ['cplex', 'gurobi', 'mosek7', 'mosek6', 'zibopt', 'glpk']
+        elif tp in ('MIQCP', 'MIQP'):
             order = ['cplex', 'gurobi', 'mosek7', 'mosek6', 'zibopt']
         elif tp == 'Mixed (SOCP+quad)':
             order = ['mosek7', 'mosek6', 'cplex', 'gurobi', 'cvxopt', 'smcp']
