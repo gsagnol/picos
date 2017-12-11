@@ -1,9 +1,13 @@
+#!/usr/bin/python
+
 #generate data
 
 from __future__ import print_function
 
 import cvxopt as cvx
 import picos as pic
+import sys
+import traceback
 
 A=[ cvx.matrix([[1,0,0,0,0],
                 [0,3,0,0,0],
@@ -618,12 +622,12 @@ bim.set_objective('max',x.T*(AA+BB)*y-alpha-beta)
 avs=pic.tools.available_solvers()
 
 def LP1Test(solver_to_test):
-        print('LP1',solver_to_test)
         #1st test: c optimality single response
         primal=prob_LP_c.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc()
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -658,12 +662,12 @@ def LP1Test(solver_to_test):
         return (True,primal.status)
         
 def LP2Test(solver_to_test):
-        print('LP2',solver_to_test)
         #1st test: LP in standard form
         primal=lp.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -701,12 +705,12 @@ def LP2Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP1Test(solver_to_test):
-        print('SOCP1',solver_to_test)
         #first test (A optimality)
         primal=prob_multiresponse_A.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -742,12 +746,12 @@ def SOCP1Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP2Test(solver_to_test):        
-        print('SOCP2',solver_to_test)
         #2d test (socp in standard form)
         primal=socp.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
              
         primf = primal.check_current_value_feasibility()
@@ -787,12 +791,12 @@ def SOCP2Test(solver_to_test):
         return (True,primal.status)
 
 def SOCP3Test(solver_to_test):    
-        print('SOCP3',solver_to_test)
         #3d test (socp with rotated cones)
         primal=prob_multiresponse_multiconstraints.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=100)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -836,7 +840,6 @@ def SOCP3Test(solver_to_test):
         return (True,primal.status)        
 
 def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
-        print('SOCP4',solver_to_test)
         #4th test (socp in standard form, with additional variable bounds)
         primal=socp.copy()
         #solve the problem a first time to check if constaints can be added afterwards
@@ -854,6 +857,7 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
         try:
                 sol=primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
 
         primf = primal.check_current_value_feasibility()
@@ -923,11 +927,11 @@ def SOCP4Test(solver_to_test,with_hardcoded_bound = True):
         return (True,primal.status)
         
 def SDPTest(solver_to_test):
-        print('SDP',solver_to_test)
         primal=prob_SDP_c.copy()
         try:
                 primal.solve(solver=solver_to_test,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -966,11 +970,11 @@ def SDPTest(solver_to_test):
         return (True,primal.status)
 
 def CONEPTest(solver_to_test):
-        print('CONEP',solver_to_test)
         primal=coneP.copy()
         try:
                 primal.solve(solver=solver_to_test,tol=1e-7,timelimit=1,maxit=50)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
         
         primf = primal.check_current_value_feasibility()
@@ -1022,6 +1026,7 @@ def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6,maxit=50):
         try:
                 primal2.solve(solver=solver_to_test,timelimit=1,maxit=maxit)
         except Exception as ex:
+                traceback.print_exc(file=sys.stdout)
                 return (False,repr(ex))
 
         primf = primal2.check_current_value_feasibility(tol=10*tol)
@@ -1042,43 +1047,40 @@ def testOnlyPrimal(solver_to_test,primal,obj,tol=1e-6,maxit=50):
         return (True,primal2.status)
                 
 def QCQPTest(solver_to_test):
-        print('QCQP',solver_to_test)
         return testOnlyPrimal(solver_to_test,qcqp,
                                 -12.433985877219854)
         
 def MIXED_SOCP_QPTest(solver_to_test):
-        print('MIXED SOCP QP',solver_to_test)
         return testOnlyPrimal(solver_to_test,soqcqp,
                                 -6.8780810803741055)
         
 def MIQCQPTest(solver_to_test):
-        print('MIQCQP',solver_to_test)
         return testOnlyPrimal(solver_to_test,miqcqp,
                                 -10.21427246841899,tol=1e-4,maxit=500)
          
 def GPTest(solver_to_test):
-        print('GP',solver_to_test)
         return testOnlyPrimal(solver_to_test,gp,
                                 1.0397207708399179)
 def MISOCPTest(solver_to_test):
-        print('MISOCP',solver_to_test)
         return testOnlyPrimal(solver_to_test,prob_exact_c,
                                 8.601831095537415,tol=1e-4,maxit=None)
 
 def MIPTest(solver_to_test):
-        print('MIP',solver_to_test)
         return testOnlyPrimal(solver_to_test,prob_exact_single_c,
                                 5.48076923076923,tol=1e-4,maxit=500)
 def CONEQCPTest(solver_to_test):
-        print('CONEQCP',solver_to_test)
         return testOnlyPrimal(solver_to_test,coneQP,
                 1.1541072108276682)
 
 def NON_CONVEX_QPTest(solver_to_test):
-        print('NONCONVEX QP',solver_to_test)
         return testOnlyPrimal(solver_to_test,bim,0.)
+
+def header(message, bold=False):
+        if bold:
+                print("#"*35+"\n"+"#{:^33}#".format(message)+"\n"+"#"*35)
+        else:
+                print("+"+"-"*33+"+"+"\n"+"|{:^33}|".format(message)+"\n"+"+"+"-"*33+"+")
                 
-#tests with cvxopt
 prob_classes = ['LP1','LP2','SOCP1',
                 'SOCP2','SOCP3','SOCP4','SDP','coneP','coneQCP',
                 'QCQP','Mixed_SOCP_QP','non_convex_Qp','GP',
@@ -1086,38 +1088,45 @@ prob_classes = ['LP1','LP2','SOCP1',
 
 conic_classes = ['LP1','LP2','SOCP1','SOCP2','SOCP3','SOCP4','SDP','coneP']
 
+header("Testing PICOS "+pic.__version__, bold=True)
 
+# Run all tests.
 results={}
 for solver in avs:
-        #if solver == 'smcp':continue#TODO TMP
         results[solver]={}
         for pclas in prob_classes:
+                print()
+                header("Testing "+pclas+" on "+solver)
+                print()
                 results[solver][pclas]=eval(pclas.upper()+'Test')(solver)
-
-for i in range(20): print()
-
-print('Test of PICOS Version '+pic.__version__)
-                
-print('------------------------------------------------------------------')
-print('----------------------  Results Summary  -------------------------')
-print('------------------------------------------------------------------')
 print()
-#Display available solvers
-print('list of available solvers:')
-print('--------------------------')
+
+header("Test results", bold=True)
+print()
+
+print('Version')
+print('-------')
+print('  PICOS  '+pic.__version__)
+print('  Python '+sys.version.split()[0])
+print()
+
+print('Available solvers')
+print('-----------------')
 for solv in avs:
-        print('\t_'+solv)
-
+        print('  '+solv)
 print()
 
-print('Exceptions:')
-print('-----------')
+print('Exceptions')
+print('----------')
 for solver in avs:
     for pclas in prob_classes:
             if not results[solver][pclas][0] \
             and results[solver][pclas][1].endswith(')') \
-            and "NotAppropriateSolverError" not in results[solver][pclas][1]:
-                print(str(solver) + " @ " + str(pclas) + ": " + results[solver][pclas][1])
+            and "NotAppropriateSolverError" not in results[solver][pclas][1] \
+            and "NonConvexError" not in results[solver][pclas][1] \
+            and "InappropriateSolverError" not in results[solver][pclas][1]:
+                print("  " + str(solver) + " @ " + str(pclas) + ": " + \
+                    results[solver][pclas][1])
 
 print()
 
@@ -1127,7 +1136,6 @@ header= '| problem class |'
 for solver in avs:
         #if solver == 'smcp':continue#TODO TMP
         header+='{0:^10}|'.format(solver)
-
 
 print(linesep)
 print(emptyln)
@@ -1141,46 +1149,59 @@ for pclas in prob_classes:
                 #if solver == 'smcp':continue#TODO TMP
                 if results[solver][pclas][0]:
                         if pclas in conic_classes:
-                                clasln+='    OK*   |'
+                                clasln+='  OK, OK  |'
                         else:
                                 clasln+='    OK    |'
                 else:
                         err=results[solver][pclas][1]
                         if 'NotAppropriateSolverError' in err:
                                 clasln+='          |'
+                        elif 'InappropriateSolverError' in err:
+                                clasln+='          |'
                         elif 'NonConvexError' in err:
-                                clasln+='          |'
+                                clasln+='not convex|'
                         elif 'DualizationError' in err:
-                                clasln+='          |'
+                                clasln+='dualiz.err|'
                         elif 'no Primals' in err:
-                                clasln+='  failed  |'
+                                clasln+=' noprimal |'
                         elif 'primal' in err:
-                                inf = err.split('|')[1]
-                                if 'feasible' in err:
-                                        clasln+='Pinf:'+inf+'|'
-                                else:
-                                        clasln+='gap: '+inf+'|'
+                                try:
+                                    inf = err.split('|')[1]
+                                    if 'feasible' in err:
+                                            clasln+='Pinf:'+inf+'|'
+                                    else:
+                                            clasln+='Pgap:'+inf+'|'
+                                except:
+                                    clasln+='  failed  |'
                         elif 'no dual' in err:
-                                clasln+='OK(nodual)|'
+                                clasln+='OK, nodual|'
                         elif 'dual' in err:
-                                inf = err.split('|')[1]
-                                if 'feasible' in err:
-                                        clasln+='Dinf:'+inf+'|'
-                                else:
-                                        clasln+='Dgap:'+inf+'|'
+                                try:
+                                    inf = err.split('|')[1]
+                                    if 'feasible' in err:
+                                            clasln+='Dinf:'+inf+'|'
+                                    else:
+                                            clasln+='Dgap:'+inf+'|'
+                                except:
+                                    clasln+='  failed  |'
                         else:
                                 clasln+='  failed  |'
         print(clasln)
         print(linesep)
         
 print()
-print('explanation: OK*        = test passed (optimal primal and dual variables computed).')
-print('             OK         = test passed (only the primal vars are computed for this class of problems).')
-print('             OK(nodual) = Optimal primal solution, but no dual variables were computed')
-print('             Dinf:err   = Optimal primal solution, but dual infeasibility in the order of (err)')
-print('             Dgap:err   = Optimal primal solution, but duality gap in the order of (err)')
-print('             Pinf:err   = Primal solution with has an infeasibility in the order of (err)')
-print('             gap: err   = Feasible but suboptimal solution (gap in the order of (err)')
-print('             <blank>    = class of problem not handled by this solver')
-print('             failed     = The problem was not solved')
+print('Legend')
+print('------')
+print('  <blank>    = Problem class is not handled by the solver.')
+print('  OK/OK      = Test passed (optimal primal and dual variables computed).')
+print('  OK         = Test passed (only primal solution expected for problems class).')
+print('  noprimal   = No primal solution was computed.')
+print('  Pinf:err   = Primal solution has an infeasibility in the order of (err).')
+print('  Pgap:err   = Feasible but suboptimal solution (gap in the order of (err).')
+print('  OK/nodual  = Optimal primal solution, but no dual variables were computed.')
+print('  Dinf:err   = Optimal primal solution, but dual infeasibility in the order of (err).')
+print('  Dgap:err   = Optimal primal solution, but duality gap in the order of (err).')
+print('  not convex = Problem was not solved because it is not convex.')
+print('  dualiz.err = An error occured during dualization.')
+print('  failed     = An error occured during search.')
 
