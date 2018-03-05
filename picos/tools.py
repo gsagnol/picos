@@ -1395,7 +1395,7 @@ def svecm1(vec, triu=False):
     return spmatrix(V, I, J, (n, n))
 
 
-def ltrim1(vec, uptri=True):
+def ltrim1(vec, uptri=True,offdiag_fact=1.):
     """
     If ``vec`` is a vector or an affine expression of size n(n+1)/2, ltrim1(vec) returns a (n,n) matrix with
     the elements of vec in the lower triangle.
@@ -1418,6 +1418,8 @@ def ltrim1(vec, uptri=True):
             if r == n:
                 c += 1
                 r = c
+            if r!=c:
+                v *= offdiag_fact
             M[r, c] = v
             if r > c and uptri:
                 M[c, r] = v
@@ -1670,6 +1672,12 @@ def available_solvers():
         import cvxopt as co
         lst.append('cvxopt')
         del co
+    except ImportError:
+        pass
+    try:
+        import swiglpk as gl
+        lst.append('glpk')
+        del gl
     except ImportError:
         pass
     try:
@@ -2119,13 +2127,16 @@ def _is_idty(mat, vtype='continuous'):
 
 
 def _is_integer(x):
-    return isinstance(x,six.integer_types) or isinstance(x,np.int64)
+    return (isinstance(x,six.integer_types) or
+            isinstance(x,np.int64) or
+            isinstance(x,np.int32))
 
 def _is_numeric(x):
     return (isinstance(x, float) or
             isinstance(x, six.integer_types) or
             isinstance(x, np.float64) or
             isinstance(x, np.int64) or
+            isinstance(x,np.int32) or
             isinstance(x, np.complex128) or
             isinstance(x, complex))
 
@@ -2133,7 +2144,8 @@ def _is_realvalued(x):
     return (isinstance(x, float) or
             isinstance(x, six.integer_types) or
             isinstance(x, np.float64) or
-            isinstance(x, np.int64))
+            isinstance(x, np.int64) or
+            isinstance(x,np.int32))
 
 def spmatrix(*args,**kwargs):
     try:
