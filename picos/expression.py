@@ -1936,6 +1936,8 @@ class Norm(Expression):
         if isinstance(exp, AffinExp):
             if self.exp.size != (1, 1):
                 return Constraint('SOcone', None, self.exp, exp)
+            elif not self.exp.is_real():
+                return Constraint('SOcone', None, self.exp.real // self.exp.imag, exp)
             else:
                 cons = (self.exp // -self.exp) < (exp // exp)
                 if exp.is1():
